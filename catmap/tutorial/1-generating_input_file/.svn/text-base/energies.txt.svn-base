@@ -1,0 +1,16 @@
+surface_name	site_name	species_name	formation_energy	frequencies	reference
+None	gas	CH4	0.0	[2917, 1534, 1534, 3019, 3019, 3019, 1306, 1306, 1306]	Input File Tutorial.
+None	gas	CO	2.522	[2170]	Input File Tutorial.
+None	gas	H2	0.0	[4401]	Input File Tutorial.
+None	gas	H2O	0.0	[3657, 1595, 3756]	Input File Tutorial.
+Rh	111	C	1.727	[464.9, 490.0, 535.9]	Input File Tutorial.
+Rh	111	C-O	4.624	[]	Input File Tutorial.
+Rh	111	CH	0.965	[413.3, 437.5, 487.6, 709.6, 735.1, 3045.0]	Input File Tutorial.
+Rh	111	CH2	1.125	[55, 305.5, 381.3, 468.0, 663.4, 790.2, 1356.1, 2737.7, 3003.9]	Input File Tutorial.
+Rh	111	CH3	0.644	[55, 113.5, 167.4, 621.8, 686.0, 702.5, 1381.3, 1417.5, 1575.8, 3026.6, 3093.2, 3098.9]	Input File Tutorial.
+Rh	111	CO	0.943	[60.8, 230.9, 256.0, 302.9, 469.9, 1747.3]	Input File Tutorial.
+Rh	111	H	-0.302	[462.8, 715.9, 982.5]	Input File Tutorial.
+Rh	111	H-C	2.17	[]	Input File Tutorial.
+Rh	111	H-OH	0.878	[]	Input File Tutorial.
+Rh	111	O	0.597	[359.5, 393.3, 507.0]	Input File Tutorial.
+Rh	111	OH	0.323	[55, 340.9, 396.1, 670.3, 718.0, 3681.7]	Input File Tutorial.

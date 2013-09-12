@@ -1,0 +1,626 @@
+from numpy import array
+
+import cPickle as pickle
+
+
+from mpmath import mpf 
+
+
+from mpmath import mpf 
+
+parser = None
+
+scaler = 'GeneralizedLinearScaler'
+
+thermodynamics = 'ThermoCorrections'
+
+solver = 'SteadyStateSolver'
+
+mapper = 'MinResidMapper'
+
+binary_data = pickle.load(open("CO_oxidation.pkl"))
+
+locals().update(binary_data)
+
+adsorbate_coefficient_matrix = array([[ 0.,  1.,  0.],
+       [ 1.,  0.,  0.]])
+
+adsorbate_names = ('CO_s', 'O_s')
+
+adsorbate_thermo_mode = 'frozen_adsorbate'
+
+analytical_jacobian = True
+
+atomic_reservoir_list = [{'C': 'CO2_g', 'O': 'CO_g'}, {'C': 'CO2_g', 'O': 'O2_g'}, {'C': 'CO_g', 'O': 'O2_g'}]
+
+atoms_dict = {}
+
+avoid_scaling = False
+
+coefficient_matrix = array([[ 0.        ,  1.        ,  0.        ],
+       [ 1.        ,  0.        ,  0.        ],
+       [ 0.67384428,  0.67384428,  1.83304837],
+       [ 1.43185233,  0.        ,  3.1898893 ]])
+
+coefficient_maxs = [[0.0, 1e+99, 1e+99], [1e+99, 0.0, 1e+99]]
+
+coefficient_mins = [[0.0, 0, -1e+99], [0, 0.0, -1e+99]]
+
+data_file = 'CO_oxidation.pkl'
+
+decimal_precision = 100
+
+default_constraints = ['+', '+', None]
+
+descriptor_decimal_precision = 2
+
+descriptor_dict = {'Ru': [-0.07, 1.3], 'Pt': [1.62, 1.7], 'Ag': [2.05, 2.99], 'Ni': [0.35, 1.63], 'Au': [2.61, 3.04], 'Pd': [1.55, 1.55], 'Rh': [0.55, 1.34], 'Cu': [1.07, 2.58]}
+
+descriptor_names = ('O_s', 'CO_s')
+
+descriptor_ranges = [[-1, 3], [-0.5, 4]]
+
+elementary_rxns = ([['s', 'CO_g'], ['CO_s']], [['s', 's', 'O2_g'], ['O-O_s', 's'], ['O_s', 'O_s']], [['CO_s', 'O_s'], ['O-CO_s', 's'], ['CO2_g', 's', 's']])
+
+estimate_frequencies = True
+
+extrapolate_coverages = False
+
+fixed_entropy_dict = {'H2_g': 0.00135, 'other': 0.002}
+
+force_recalculation = False
+
+frequency_dict = {'O-O_s': [], 'CO_g': [0.26904571400000005], 'O2_g': [0.19589503600000002], 'O_s': [], '*_g': [], 'O-CO_s': [], 'CO_s': [0.26904571400000005], 'g': [], 's': [], '*_s': [], 'CO2_g': [0.16527093860000003, 0.2912388858, 0.0826974614, 0.0826974614]}
+
+frequency_surface_names = []
+
+frequency_unit_conversion = 0.0001239842
+
+gas_names = ('CO2_g', 'CO_g', 'O2_g')
+
+gas_pressures = [0, 1.0, 0.3333333333333333]
+
+gas_thermo_mode = 'shomate_gas'
+
+ideal_gas_params = {'H2_g': [2, 'linear', 0], 'CH3OH_g': [2, 'nonlinear', 0], 'CH2O_g': [4, 'nonlinear', 0], 'CO_g': [1, 'linear', 0], 'O2_g': [2, 'linear', 3], 'H2O_g': [2, 'nonlinear', 0], 'CH4_g': [12, 'nonlinear', 0], 'HCOOH_g': [2, 'nonlinear', 0], 'CO2_g': [2, 'linear', 0]}
+
+input_file = 'energies.txt'
+
+interaction_cross_terms = 'geometric_positive'
+
+interaction_smearing = 0.05
+
+interaction_strength = 1
+
+interaction_surface_names = None
+
+internally_constrain_coverages = True
+
+max_bisections = 3
+
+max_initial_guesses = 3
+
+max_rootfinding_iterations = 100
+
+model_name = 'CO_oxidation'
+
+numerical_representation = 'mpmath'
+
+optimize_analytical_expressions = False
+
+output_labels = {'rate': ([['s', 'CO_g'], ['CO_s']], [['s', 's', 'O2_g'], ['O-O_s', 's'], ['O_s', 'O_s']], [['CO_s', 'O_s'], ['O-CO_s', 's'], ['CO2_g', 's', 's']]), 'production_rate': ('CO2_g', 'CO_g', 'O2_g'), 'coverage': ('CO_s', 'O_s')}
+
+output_variables = ['coverage', 'rate', 'production_rate']
+
+parameter_dict = {'O-O_s': [5.35, 5.98, 4.74, 3.79, 5.34, 7.22, 3.34, None], 'CO_s': [1.7, 2.99, 2.58, 1.34, 1.55, 3.04, 1.3, 1.63], 'O-CO_s': [4.04, 5.05, 4.18, 3.1, 4.2, 5.74, 2.53, 3.25], 'O_s': [1.62, 2.05, 1.07, 0.55, 1.55, 2.61, -0.07, 0.35]}
+
+parameter_mode = 'formation_energy'
+
+parameter_names = ('CO_s', 'O_s', 'O-CO_s', 'O-O_s')
+
+parse_headers = ['formation_energy', 'frequencies']
+
+perturbation_size = 1e-14
+
+pressure_mode = 'static'
+
+required_headers = ['species_name', 'surface_name', 'site_name', 'formation_energy', 'frequencies', 'reference']
+
+residual_threshold = 0.9
+
+resolution = 15
+
+rxn_expressions = ['*_s + CO_g -> CO*', '2*_s + O2_g <-> O-O* + *_s -> 2O*', 'CO* +  O* <-> O-CO* + * -> CO2_g + 2*']
+
+scaling_constraint_dict = {'CO_s': [0, '+', None], 'O-O_s': 'final_state', 'O-CO_s': 'initial_state', 'O_s': ['+', 0, None]}
+
+search_directions = [[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0], [-1, 1], [1, 1], [1, -1], [-1, -1]]
+
+setup_file = 'CO_oxidation.mkm'
+
+shomate_params = {'HNO3_g:298-1200': [19.63229, 153.9599, -115.8378, 32.87955, -0.249114, -146.8818, 247.7049, -134.306], 'CH4_g:298-1300': [-0.703029, 108.4773, -42.52157, 5.862788, 0.678565, -76.84376, 158.7163, -74.8731], 'CH2CH2_g:298-1200': [-6.38788, 184.4019, -112.9718, 28.49593, 0.31554, 48.17332, 163.1568, 52.46694], 'HCN_g:298-1200': [32.69373, 22.59205, -4.369142, -0.407697, -0.282399, 123.4811, 233.2597, 135.1432], 'N2_g:100-500': [28.98641, 1.853978, -9.647459, 16.63537, 0.000117, -8.671914, 226.4168, 0.0], 'O2_g:2000-6000': [20.91111, 10.72071, -2.020498, 0.146449, 9.245722, 5.337651, 237.6185, 0.0], 'CO2_g:1200-6000': [58.16639, 2.720075, -0.492289, 0.038844, -6.447293, -425.9186, 263.6125, -393.5224], 'H2_g:1000-2500': [18.563083, 12.257357, -2.859786, 0.268238, 1.97799, -1.147438, 156.288133, 0], 'HNO2_g:298-1200': [24.89974, 91.37563, -64.84614, 17.92007, -0.134737, -88.13596, 254.2671, -76.73498], 'NO_g:298-1200': [23.83491, 12.58878, -1.139011, -1.497459, 0.214194, 83.35783, 237.1219, 90.29114], 'NH3_g:298-1400': [19.99563, 49.77119, -15.37599, 1.921168, 0.189174, -53.30667, 203.8591, -45.89806], 'N2_g:500-2000': [19.50583, 19.88705, -8.598535, 1.369784, 0.527601, -4.935202, 212.39, 0.0], 'O2_g:100-700': [31.32234, -20.23531, 57.8664, -36.50624, -0.007374, -8.903471, 246.7945, 0.0], 'CO_g:1300-1600': [35.1507, 1.300095, -0.205921, 0.01355, -3.28278, -127.8375, 231.712, -110.5271], 'CH2O_g:298-1500': [5.193767, 93.23249, -44.85457, 7.882279, 0.551175, -119.3591, 202.4663, -115.8972], 'CH4_g:1300-1600': [85.81217, 11.26467, -2.114146, 0.13819, -26.42221, -153.5327, 224.4143, -74.8731], 'H2O_g:1700-6000': [41.96426, 8.622053, -1.49978, 0.098119, -11.15764, -272.1797, 219.7809, -241.8264], 'CH3CH2OH_g:273-1300': [6.372731, 273.0132, -163.0101, 38.77719, 0.334329, -7.25, 201, 0], 'H2_g:2500-6000': [43.41356, -4.293079, 1.272428, -0.096876, -20.533862, -38.515158, 162.081354, 0], 'H2_g:298-1000': [33.066178, -11.363417, 11.432816, -2.772874, -0.158558, -9.980797, 172.707974, 0], 'NO3_g:298-1200': [11.22316, 166.3889, -148.4458, 47.40598, -0.176791, 61.00858, 221.7679, 71.128], 'CO_g:298-1300': [25.56759, 6.09613, 4.054656, -2.671201, 0.131021, -118.0089, 227.3665, -110.5271], 'O2_g:700-2000': [30.03235, 8.772972, -3.988133, 0.788313, -0.741599, -11.32468, 236.1663, 0.0], 'H2O_g:500-1700': [30.092, 6.832514, 6.793435, -2.53448, 0.082139, -250.881, 223.3967, -241.8264], 'N2O_g:298-1400': [27.67988, 51.14898, -30.64454, 6.847911, -0.157906, 71.24934, 238.6164, 82.04824], 'HCOOH_g:298-1500': [3.802752304225226, 153.66217894746168, -84.64046773816926, 16.297377707561505, 0.2772064997263338, -6.16527, 212.9698972559699, 0], 'NO2_g:298-1200': [16.10857, 75.89525, -54.3874, 14.30777, 0.239423, 26.17464, 240.5386, 33.09502], 'CO2_g:298-1200': [24.99735, 55.18696, -33.69137, 7.948387, -0.136638, -403.6075, 228.2431, -393.5224], 'H2O_g:100-500': [36.303952, -24.11232, 63.64111, -38.9524, -0.01385, -10.23966, 237.39431, 0.0], 'CH3OH_g:298-1500': [-0.5448050620926607, 151.88669435629552, -78.31823594271188, 16.106518370880025, 0.4938089793474474, -5.008, 200.05003685507603, 0]}
+
+site_names = ('s', 'g')
+
+species_definitions = {'O-O_s': {'n_sites': 1, 'formation_energy': [5.35, 5.98, 4.74, 3.79, 5.34, 7.22, 3.34, None], 'name': 'O-O', 'frequencies': [], 'formation_energy_source': ['Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)'], 'site': 's', 'type': 'transition_state', 'composition': {'O': 2}}, 'CO_g': {'n_sites': 0, 'pressure': 1.0, 'formation_energy': 2.74, 'name': 'CO', 'frequencies': [0.26904571400000005], 'formation_energy_source': '"Energy Environ. Sci., 3, 1311-1315 (2010)"', 'type': 'gas', 'composition': {'C': 1, 'O': 1}, 'site': 'g'}, 'O2_g': {'n_sites': 0, 'pressure': 0.3333333333333333, 'formation_energy': 5.42, 'name': 'O2', 'frequencies': [0.19589503600000002], 'formation_energy_source': 'Falsig et al (2012)', 'type': 'gas', 'composition': {'O': 2}, 'site': 'g'}, 'O_s': {'n_sites': 1, 'formation_energy': [1.62, 2.05, 1.07, 0.55, 1.55, 2.61, -0.07, 0.35], 'name': 'O', 'frequencies': [], 'formation_energy_source': ['Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)', 'Falsig et al (2012)'], 'site': 's', 'type': 'adsorbate', 'composition': {'O': 1}}, '*_g': {'n_sites': 0, 'formation_energy': 0, 'frequencies': [], 'site': 'g', 'interaction_threshold': 0, 'total': 0, 'type': 'site', 'composition': {}, 'site_names': ['gas']}, 'O-CO_s': {'n_sites': 1, 'formation_energy': [4.04, 5.05, 4.18, 3.1, 4.2, 5.74, 2.53, 3.25], 'name': 'O-CO', 'frequencies': [], 'formation_energy_source': ['"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"'], 'site': 's', 'type': 'transition_state', 'composition': {'C': 1, 'O': 2}}, 'CO_s': {'n_sites': 1, 'formation_energy': [1.7, 2.99, 2.58, 1.34, 1.55, 3.04, 1.3, 1.63], 'name': 'CO', 'frequencies': [0.26904571400000005], 'formation_energy_source': ['"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', '"Angew. Chem. Int. Ed., 47, 4835 (2008)"'], 'site': 's', 'type': 'adsorbate', 'composition': {'C': 1, 'O': 1}}, 'g': {'n_sites': 0, 'formation_energy': 0, 'frequencies': [], 'site': 'g', 'interaction_threshold': 0, 'total': 0, 'type': 'site', 'composition': {}, 'site_names': ['gas']}, 's': {'n_sites': 1, 'formation_energy': 0, 'frequencies': [], 'site': 's', 'composition': {}, 'total': 1, 'type': 'site', 'interaction_threshold': 0, 'site_names': ['111']}, '*_s': {'n_sites': 1, 'formation_energy': 0, 'frequencies': [], 'site': 's', 'composition': {}, 'total': 1, 'type': 'site', 'interaction_threshold': 0, 'site_names': ['111']}, 'CO2_g': {'n_sites': 0, 'pressure': 0, 'formation_energy': 2.45, 'name': 'CO2', 'frequencies': [0.16527093860000003, 0.2912388858, 0.0826974614, 0.0826974614], 'formation_energy_source': '"Angew. Chem. Int. Ed., 47, 4835 (2008)"', 'type': 'gas', 'composition': {'C': 1, 'O': 2}, 'site': 'g'}}
+
+standard_coverage = 'min'
+
+surface_names = ('Pt', 'Ag', 'Cu', 'Rh', 'Pd', 'Au', 'Ru', 'Ni')
+
+temperature = 500
+
+thermodynamic_corrections = ['gas', 'adsorbate']
+
+thermodynamic_variables = ['temperature', 'gas_pressures', 'gas_thermo_mode', 'adsorbate_thermo_mode']
+
+tolerance = 1e-50
+
+transition_state_coefficient_matrix = array([[ 0.67384428,  0.67384428,  1.83304837],
+       [ 1.43185233,  0.        ,  3.1898893 ]])
+
+transition_state_names = ('O-CO_s', 'O-O_s')
+
+transition_state_scaling_coefficients = [[0.67384427822992532, 1.8330483706217668], [0.71592616659221087, 3.1898893021043024]]
+
+transition_state_scaling_matrix = array([[ 0.67384428,  0.67384428,  1.83304837],
+       [ 0.        ,  1.43185233,  3.1898893 ]])
+
+transition_state_scaling_mode = 'initial_state'
+
+transition_state_scaling_parameters = {}
+
+verbose = 1
+
+stdout = """initial_evaluation: success - initial guess at point [ 3.00, 4.00]
+initial_evaluation: success - initial guess at point [ 3.00, 3.68]
+initial_evaluation: success - initial guess at point [ 3.00, 3.36]
+initial_evaluation: success - initial guess at point [ 3.00, 3.04]
+initial_evaluation: success - initial guess at point [ 3.00, 2.71]
+initial_evaluation: success - initial guess at point [ 3.00, 2.39]
+initial_evaluation: success - initial guess at point [ 3.00, 2.07]
+initial_evaluation: success - initial guess at point [ 3.00, 1.75]
+initial_evaluation: success - initial guess at point [ 3.00, 1.43]
+initial_evaluation: success - initial guess at point [ 3.00, 1.11]
+initial_evaluation: success - initial guess at point [ 3.00, 0.79]
+initial_evaluation: success - initial guess at point [ 3.00, 0.46]
+initial_evaluation: success - initial guess at point [ 3.00, 0.14]
+initial_evaluation: success - initial guess at point [ 3.00,-0.18]
+initial_evaluation: success - initial guess at point [ 3.00,-0.50]
+initial_evaluation: success - initial guess at point [ 2.71, 4.00]
+initial_evaluation: success - initial guess at point [ 2.71, 3.68]
+initial_evaluation: success - initial guess at point [ 2.71, 3.36]
+initial_evaluation: success - initial guess at point [ 2.71, 3.04]
+initial_evaluation: success - initial guess at point [ 2.71, 2.71]
+initial_evaluation: success - initial guess at point [ 2.71, 2.39]
+initial_evaluation: success - initial guess at point [ 2.71, 2.07]
+initial_evaluation: success - initial guess at point [ 2.71, 1.75]
+initial_evaluation: success - initial guess at point [ 2.71, 1.43]
+initial_evaluation: success - initial guess at point [ 2.71, 1.11]
+initial_evaluation: success - initial guess at point [ 2.71, 0.79]
+initial_evaluation: success - initial guess at point [ 2.71, 0.46]
+initial_evaluation: success - initial guess at point [ 2.71, 0.14]
+initial_evaluation: success - initial guess at point [ 2.71,-0.18]
+initial_evaluation: success - initial guess at point [ 2.71,-0.50]
+initial_evaluation: success - initial guess at point [ 2.43, 4.00]
+initial_evaluation: success - initial guess at point [ 2.43, 3.68]
+initial_evaluation: success - initial guess at point [ 2.43, 3.36]
+initial_evaluation: success - initial guess at point [ 2.43, 3.04]
+initial_evaluation: success - initial guess at point [ 2.43, 2.71]
+initial_evaluation: success - initial guess at point [ 2.43, 2.39]
+initial_evaluation: success - initial guess at point [ 2.43, 2.07]
+initial_evaluation: success - initial guess at point [ 2.43, 1.75]
+initial_evaluation: success - initial guess at point [ 2.43, 1.43]
+initial_evaluation: success - initial guess at point [ 2.43, 1.11]
+initial_evaluation: success - initial guess at point [ 2.43, 0.79]
+initial_evaluation: success - initial guess at point [ 2.43, 0.46]
+initial_evaluation: success - initial guess at point [ 2.43, 0.14]
+initial_evaluation: success - initial guess at point [ 2.43,-0.18]
+initial_evaluation: success - initial guess at point [ 2.43,-0.50]
+initial_evaluation: success - initial guess at point [ 2.14, 4.00]
+initial_evaluation: success - initial guess at point [ 2.14, 3.68]
+initial_evaluation: success - initial guess at point [ 2.14, 3.36]
+initial_evaluation: success - initial guess at point [ 2.14, 3.04]
+initial_evaluation: success - initial guess at point [ 2.14, 2.71]
+initial_evaluation: success - initial guess at point [ 2.14, 2.39]
+initial_evaluation: success - initial guess at point [ 2.14, 2.07]
+initial_evaluation: success - initial guess at point [ 2.14, 1.75]
+initial_evaluation: success - initial guess at point [ 2.14, 1.43]
+initial_evaluation: success - initial guess at point [ 2.14, 1.11]
+initial_evaluation: success - initial guess at point [ 2.14, 0.79]
+initial_evaluation: success - initial guess at point [ 2.14, 0.46]
+initial_evaluation: success - initial guess at point [ 2.14, 0.14]
+initial_evaluation: success - initial guess at point [ 2.14,-0.18]
+initial_evaluation: success - initial guess at point [ 2.14,-0.50]
+initial_evaluation: success - initial guess at point [ 1.86, 4.00]
+initial_evaluation: success - initial guess at point [ 1.86, 3.68]
+initial_evaluation: success - initial guess at point [ 1.86, 3.36]
+initial_evaluation: success - initial guess at point [ 1.86, 3.04]
+initial_evaluation: success - initial guess at point [ 1.86, 2.71]
+initial_evaluation: success - initial guess at point [ 1.86, 2.39]
+initial_evaluation: success - initial guess at point [ 1.86, 2.07]
+initial_evaluation: success - initial guess at point [ 1.86, 1.75]
+initial_evaluation: success - initial guess at point [ 1.86, 1.43]
+initial_evaluation: success - initial guess at point [ 1.86, 1.11]
+initial_evaluation: success - initial guess at point [ 1.86, 0.79]
+initial_evaluation: success - initial guess at point [ 1.86, 0.46]
+initial_evaluation: success - initial guess at point [ 1.86, 0.14]
+initial_evaluation: success - initial guess at point [ 1.86,-0.18]
+initial_evaluation: success - initial guess at point [ 1.86,-0.50]
+initial_evaluation: success - initial guess at point [ 1.57, 4.00]
+initial_evaluation: success - initial guess at point [ 1.57, 3.68]
+initial_evaluation: success - initial guess at point [ 1.57, 3.36]
+initial_evaluation: success - initial guess at point [ 1.57, 3.04]
+initial_evaluation: success - initial guess at point [ 1.57, 2.71]
+initial_evaluation: success - initial guess at point [ 1.57, 2.39]
+initial_evaluation: success - initial guess at point [ 1.57, 2.07]
+initial_evaluation: success - initial guess at point [ 1.57, 1.75]
+initial_evaluation: success - initial guess at point [ 1.57, 1.43]
+initial_evaluation: success - initial guess at point [ 1.57, 1.11]
+initial_evaluation: success - initial guess at point [ 1.57, 0.79]
+initial_evaluation: success - initial guess at point [ 1.57, 0.46]
+initial_evaluation: success - initial guess at point [ 1.57, 0.14]
+initial_evaluation: success - initial guess at point [ 1.57,-0.18]
+initial_evaluation: success - initial guess at point [ 1.57,-0.50]
+initial_evaluation: success - initial guess at point [ 1.29, 4.00]
+initial_evaluation: success - initial guess at point [ 1.29, 3.68]
+initial_evaluation: success - initial guess at point [ 1.29, 3.36]
+initial_evaluation: success - initial guess at point [ 1.29, 3.04]
+initial_evaluation: success - initial guess at point [ 1.29, 2.71]
+initial_evaluation: success - initial guess at point [ 1.29, 2.39]
+initial_evaluation: success - initial guess at point [ 1.29, 2.07]
+initial_evaluation: success - initial guess at point [ 1.29, 1.75]
+initial_evaluation: success - initial guess at point [ 1.29, 1.43]
+initial_evaluation: success - initial guess at point [ 1.29, 1.11]
+initial_evaluation: success - initial guess at point [ 1.29, 0.79]
+initial_evaluation: success - initial guess at point [ 1.29, 0.46]
+initial_evaluation: success - initial guess at point [ 1.29, 0.14]
+initial_evaluation: success - initial guess at point [ 1.29,-0.18]
+initial_evaluation: success - initial guess at point [ 1.29,-0.50]
+initial_evaluation: success - initial guess at point [ 1.00, 4.00]
+initial_evaluation: success - initial guess at point [ 1.00, 3.68]
+initial_evaluation: success - initial guess at point [ 1.00, 3.36]
+initial_evaluation: success - initial guess at point [ 1.00, 3.04]
+initial_evaluation: success - initial guess at point [ 1.00, 2.71]
+initial_evaluation: success - initial guess at point [ 1.00, 2.39]
+initial_evaluation: success - initial guess at point [ 1.00, 2.07]
+initial_evaluation: success - initial guess at point [ 1.00, 1.75]
+initial_evaluation: success - initial guess at point [ 1.00, 1.43]
+initial_evaluation: success - initial guess at point [ 1.00, 1.11]
+initial_evaluation: success - initial guess at point [ 1.00, 0.79]
+initial_evaluation: success - initial guess at point [ 1.00, 0.46]
+initial_evaluation: success - initial guess at point [ 1.00, 0.14]
+initial_evaluation: success - initial guess at point [ 1.00,-0.18]
+initial_evaluation: success - initial guess at point [ 1.00,-0.50]
+initial_evaluation: success - initial guess at point [ 0.71, 4.00]
+initial_evaluation: success - initial guess at point [ 0.71, 3.68]
+initial_evaluation: success - initial guess at point [ 0.71, 3.36]
+initial_evaluation: success - initial guess at point [ 0.71, 3.04]
+initial_evaluation: success - initial guess at point [ 0.71, 2.71]
+initial_evaluation: success - initial guess at point [ 0.71, 2.39]
+initial_evaluation: success - initial guess at point [ 0.71, 2.07]
+initial_evaluation: success - initial guess at point [ 0.71, 1.75]
+initial_evaluation: success - initial guess at point [ 0.71, 1.43]
+initial_evaluation: success - initial guess at point [ 0.71, 1.11]
+initial_evaluation: success - initial guess at point [ 0.71, 0.79]
+initial_evaluation: success - initial guess at point [ 0.71, 0.46]
+initial_evaluation: success - initial guess at point [ 0.71, 0.14]
+initial_evaluation: success - initial guess at point [ 0.71,-0.18]
+initial_evaluation: success - initial guess at point [ 0.71,-0.50]
+initial_evaluation: success - initial guess at point [ 0.43, 4.00]
+initial_evaluation: success - initial guess at point [ 0.43, 3.68]
+initial_evaluation: success - initial guess at point [ 0.43, 3.36]
+initial_evaluation: success - initial guess at point [ 0.43, 3.04]
+initial_evaluation: success - initial guess at point [ 0.43, 2.71]
+initial_evaluation: success - initial guess at point [ 0.43, 2.39]
+initial_evaluation: success - initial guess at point [ 0.43, 2.07]
+initial_evaluation: success - initial guess at point [ 0.43, 1.75]
+initial_evaluation: success - initial guess at point [ 0.43, 1.43]
+initial_evaluation: success - initial guess at point [ 0.43, 1.11]
+initial_evaluation: success - initial guess at point [ 0.43, 0.79]
+initial_evaluation: success - initial guess at point [ 0.43, 0.46]
+initial_evaluation: success - initial guess at point [ 0.43, 0.14]
+initial_evaluation: success - initial guess at point [ 0.43,-0.18]
+initial_evaluation: success - initial guess at point [ 0.43,-0.50]
+initial_evaluation: success - initial guess at point [ 0.14, 4.00]
+initial_evaluation: success - initial guess at point [ 0.14, 3.68]
+initial_evaluation: success - initial guess at point [ 0.14, 3.36]
+initial_evaluation: success - initial guess at point [ 0.14, 3.04]
+initial_evaluation: success - initial guess at point [ 0.14, 2.71]
+initial_evaluation: success - initial guess at point [ 0.14, 2.39]
+initial_evaluation: success - initial guess at point [ 0.14, 2.07]
+initial_evaluation: success - initial guess at point [ 0.14, 1.75]
+initial_evaluation: success - initial guess at point [ 0.14, 1.43]
+initial_evaluation: success - initial guess at point [ 0.14, 1.11]
+initial_evaluation: success - initial guess at point [ 0.14, 0.79]
+initial_evaluation: success - initial guess at point [ 0.14, 0.46]
+initial_evaluation: success - initial guess at point [ 0.14, 0.14]
+initial_evaluation: success - initial guess at point [ 0.14,-0.18]
+initial_evaluation: success - initial guess at point [ 0.14,-0.50]
+initial_evaluation: success - initial guess at point [-0.14, 4.00]
+initial_evaluation: success - initial guess at point [-0.14, 3.68]
+initial_evaluation: success - initial guess at point [-0.14, 3.36]
+initial_evaluation: success - initial guess at point [-0.14, 3.04]
+initial_evaluation: success - initial guess at point [-0.14, 2.71]
+initial_evaluation: success - initial guess at point [-0.14, 2.39]
+initial_evaluation: success - initial guess at point [-0.14, 2.07]
+initial_evaluation: success - initial guess at point [-0.14, 1.75]
+initial_evaluation: success - initial guess at point [-0.14, 1.43]
+initial_evaluation: success - initial guess at point [-0.14, 1.11]
+initial_evaluation: success - initial guess at point [-0.14, 0.79]
+initial_evaluation: success - initial guess at point [-0.14, 0.46]
+initial_evaluation: success - initial guess at point [-0.14, 0.14]
+initial_evaluation: success - initial guess at point [-0.14,-0.18]
+initial_evaluation: success - initial guess at point [-0.14,-0.50]
+initial_evaluation: success - initial guess at point [-0.43, 4.00]
+initial_evaluation: success - initial guess at point [-0.43, 3.68]
+initial_evaluation: success - initial guess at point [-0.43, 3.36]
+initial_evaluation: success - initial guess at point [-0.43, 3.04]
+initial_evaluation: success - initial guess at point [-0.43, 2.71]
+initial_evaluation: success - initial guess at point [-0.43, 2.39]
+initial_evaluation: success - initial guess at point [-0.43, 2.07]
+initial_evaluation: success - initial guess at point [-0.43, 1.75]
+initial_evaluation: success - initial guess at point [-0.43, 1.43]
+initial_evaluation: success - initial guess at point [-0.43, 1.11]
+initial_evaluation: success - initial guess at point [-0.43, 0.79]
+initial_evaluation: success - initial guess at point [-0.43, 0.46]
+initial_evaluation: success - initial guess at point [-0.43, 0.14]
+initial_evaluation: success - initial guess at point [-0.43,-0.18]
+initial_evaluation: success - initial guess at point [-0.43,-0.50]
+initial_evaluation: success - initial guess at point [-0.71, 4.00]
+initial_evaluation: success - initial guess at point [-0.71, 3.68]
+initial_evaluation: success - initial guess at point [-0.71, 3.36]
+initial_evaluation: success - initial guess at point [-0.71, 3.04]
+initial_evaluation: success - initial guess at point [-0.71, 2.71]
+initial_evaluation: success - initial guess at point [-0.71, 2.39]
+initial_evaluation: success - initial guess at point [-0.71, 2.07]
+initial_evaluation: success - initial guess at point [-0.71, 1.75]
+initial_evaluation: success - initial guess at point [-0.71, 1.43]
+initial_evaluation: success - initial guess at point [-0.71, 1.11]
+initial_evaluation: success - initial guess at point [-0.71, 0.79]
+initial_evaluation: success - initial guess at point [-0.71, 0.46]
+initial_evaluation: success - initial guess at point [-0.71, 0.14]
+initial_evaluation: success - initial guess at point [-0.71,-0.18]
+initial_evaluation: success - initial guess at point [-0.71,-0.50]
+initial_evaluation: success - initial guess at point [-1.00, 4.00]
+initial_evaluation: success - initial guess at point [-1.00, 3.68]
+initial_evaluation: success - initial guess at point [-1.00, 3.36]
+initial_evaluation: success - initial guess at point [-1.00, 3.04]
+initial_evaluation: success - initial guess at point [-1.00, 2.71]
+initial_evaluation: success - initial guess at point [-1.00, 2.39]
+initial_evaluation: success - initial guess at point [-1.00, 2.07]
+initial_evaluation: success - initial guess at point [-1.00, 1.75]
+initial_evaluation: success - initial guess at point [-1.00, 1.43]
+initial_evaluation: success - initial guess at point [-1.00, 1.11]
+initial_evaluation: success - initial guess at point [-1.00, 0.79]
+initial_evaluation: success - initial guess at point [-1.00, 0.46]
+initial_evaluation: success - initial guess at point [-1.00, 0.14]
+initial_evaluation: success - initial guess at point [-1.00,-0.18]
+initial_evaluation: success - initial guess at point [-1.00,-0.50]
+mapper_iteration_0: status - 0 points do not have valid solution.
+initial_evaluation: success - initial guess at point [ 3.00, 4.00]
+initial_evaluation: success - initial guess at point [ 3.00, 3.68]
+initial_evaluation: success - initial guess at point [ 3.00, 3.36]
+initial_evaluation: success - initial guess at point [ 3.00, 3.04]
+initial_evaluation: success - initial guess at point [ 3.00, 2.71]
+initial_evaluation: success - initial guess at point [ 3.00, 2.39]
+initial_evaluation: success - initial guess at point [ 3.00, 2.07]
+initial_evaluation: success - initial guess at point [ 3.00, 1.75]
+initial_evaluation: success - initial guess at point [ 3.00, 1.43]
+initial_evaluation: success - initial guess at point [ 3.00, 1.11]
+initial_evaluation: success - initial guess at point [ 3.00, 0.79]
+initial_evaluation: success - initial guess at point [ 3.00, 0.46]
+initial_evaluation: success - initial guess at point [ 3.00, 0.14]
+initial_evaluation: success - initial guess at point [ 3.00,-0.18]
+initial_evaluation: success - initial guess at point [ 3.00,-0.50]
+initial_evaluation: success - initial guess at point [ 2.71, 4.00]
+initial_evaluation: success - initial guess at point [ 2.71, 3.68]
+initial_evaluation: success - initial guess at point [ 2.71, 3.36]
+initial_evaluation: success - initial guess at point [ 2.71, 3.04]
+initial_evaluation: success - initial guess at point [ 2.71, 2.71]
+initial_evaluation: success - initial guess at point [ 2.71, 2.39]
+initial_evaluation: success - initial guess at point [ 2.71, 2.07]
+initial_evaluation: success - initial guess at point [ 2.71, 1.75]
+initial_evaluation: success - initial guess at point [ 2.71, 1.43]
+initial_evaluation: success - initial guess at point [ 2.71, 1.11]
+initial_evaluation: success - initial guess at point [ 2.71, 0.79]
+initial_evaluation: success - initial guess at point [ 2.71, 0.46]
+initial_evaluation: success - initial guess at point [ 2.71, 0.14]
+initial_evaluation: success - initial guess at point [ 2.71,-0.18]
+initial_evaluation: success - initial guess at point [ 2.71,-0.50]
+initial_evaluation: success - initial guess at point [ 2.43, 4.00]
+initial_evaluation: success - initial guess at point [ 2.43, 3.68]
+initial_evaluation: success - initial guess at point [ 2.43, 3.36]
+initial_evaluation: success - initial guess at point [ 2.43, 3.04]
+initial_evaluation: success - initial guess at point [ 2.43, 2.71]
+initial_evaluation: success - initial guess at point [ 2.43, 2.39]
+initial_evaluation: success - initial guess at point [ 2.43, 2.07]
+initial_evaluation: success - initial guess at point [ 2.43, 1.75]
+initial_evaluation: success - initial guess at point [ 2.43, 1.43]
+initial_evaluation: success - initial guess at point [ 2.43, 1.11]
+initial_evaluation: success - initial guess at point [ 2.43, 0.79]
+initial_evaluation: success - initial guess at point [ 2.43, 0.46]
+initial_evaluation: success - initial guess at point [ 2.43, 0.14]
+initial_evaluation: success - initial guess at point [ 2.43,-0.18]
+initial_evaluation: success - initial guess at point [ 2.43,-0.50]
+initial_evaluation: success - initial guess at point [ 2.14, 4.00]
+initial_evaluation: success - initial guess at point [ 2.14, 3.68]
+initial_evaluation: success - initial guess at point [ 2.14, 3.36]
+initial_evaluation: success - initial guess at point [ 2.14, 3.04]
+initial_evaluation: success - initial guess at point [ 2.14, 2.71]
+initial_evaluation: success - initial guess at point [ 2.14, 2.39]
+initial_evaluation: success - initial guess at point [ 2.14, 2.07]
+initial_evaluation: success - initial guess at point [ 2.14, 1.75]
+initial_evaluation: success - initial guess at point [ 2.14, 1.43]
+initial_evaluation: success - initial guess at point [ 2.14, 1.11]
+initial_evaluation: success - initial guess at point [ 2.14, 0.79]
+initial_evaluation: success - initial guess at point [ 2.14, 0.46]
+initial_evaluation: success - initial guess at point [ 2.14, 0.14]
+initial_evaluation: success - initial guess at point [ 2.14,-0.18]
+initial_evaluation: success - initial guess at point [ 2.14,-0.50]
+initial_evaluation: success - initial guess at point [ 1.86, 4.00]
+initial_evaluation: success - initial guess at point [ 1.86, 3.68]
+initial_evaluation: success - initial guess at point [ 1.86, 3.36]
+initial_evaluation: success - initial guess at point [ 1.86, 3.04]
+initial_evaluation: success - initial guess at point [ 1.86, 2.71]
+initial_evaluation: success - initial guess at point [ 1.86, 2.39]
+initial_evaluation: success - initial guess at point [ 1.86, 2.07]
+initial_evaluation: success - initial guess at point [ 1.86, 1.75]
+initial_evaluation: success - initial guess at point [ 1.86, 1.43]
+initial_evaluation: success - initial guess at point [ 1.86, 1.11]
+initial_evaluation: success - initial guess at point [ 1.86, 0.79]
+initial_evaluation: success - initial guess at point [ 1.86, 0.46]
+initial_evaluation: success - initial guess at point [ 1.86, 0.14]
+initial_evaluation: success - initial guess at point [ 1.86,-0.18]
+initial_evaluation: success - initial guess at point [ 1.86,-0.50]
+initial_evaluation: success - initial guess at point [ 1.57, 4.00]
+initial_evaluation: success - initial guess at point [ 1.57, 3.68]
+initial_evaluation: success - initial guess at point [ 1.57, 3.36]
+initial_evaluation: success - initial guess at point [ 1.57, 3.04]
+initial_evaluation: success - initial guess at point [ 1.57, 2.71]
+initial_evaluation: success - initial guess at point [ 1.57, 2.39]
+initial_evaluation: success - initial guess at point [ 1.57, 2.07]
+initial_evaluation: success - initial guess at point [ 1.57, 1.75]
+initial_evaluation: success - initial guess at point [ 1.57, 1.43]
+initial_evaluation: success - initial guess at point [ 1.57, 1.11]
+initial_evaluation: success - initial guess at point [ 1.57, 0.79]
+initial_evaluation: success - initial guess at point [ 1.57, 0.46]
+initial_evaluation: success - initial guess at point [ 1.57, 0.14]
+initial_evaluation: success - initial guess at point [ 1.57,-0.18]
+initial_evaluation: success - initial guess at point [ 1.57,-0.50]
+initial_evaluation: success - initial guess at point [ 1.29, 4.00]
+initial_evaluation: success - initial guess at point [ 1.29, 3.68]
+initial_evaluation: success - initial guess at point [ 1.29, 3.36]
+initial_evaluation: success - initial guess at point [ 1.29, 3.04]
+initial_evaluation: success - initial guess at point [ 1.29, 2.71]
+initial_evaluation: success - initial guess at point [ 1.29, 2.39]
+initial_evaluation: success - initial guess at point [ 1.29, 2.07]
+initial_evaluation: success - initial guess at point [ 1.29, 1.75]
+initial_evaluation: success - initial guess at point [ 1.29, 1.43]
+initial_evaluation: success - initial guess at point [ 1.29, 1.11]
+initial_evaluation: success - initial guess at point [ 1.29, 0.79]
+initial_evaluation: success - initial guess at point [ 1.29, 0.46]
+initial_evaluation: success - initial guess at point [ 1.29, 0.14]
+initial_evaluation: success - initial guess at point [ 1.29,-0.18]
+initial_evaluation: success - initial guess at point [ 1.29,-0.50]
+initial_evaluation: success - initial guess at point [ 1.00, 4.00]
+initial_evaluation: success - initial guess at point [ 1.00, 3.68]
+initial_evaluation: success - initial guess at point [ 1.00, 3.36]
+initial_evaluation: success - initial guess at point [ 1.00, 3.04]
+initial_evaluation: success - initial guess at point [ 1.00, 2.71]
+initial_evaluation: success - initial guess at point [ 1.00, 2.39]
+initial_evaluation: success - initial guess at point [ 1.00, 2.07]
+initial_evaluation: success - initial guess at point [ 1.00, 1.75]
+initial_evaluation: success - initial guess at point [ 1.00, 1.43]
+initial_evaluation: success - initial guess at point [ 1.00, 1.11]
+initial_evaluation: success - initial guess at point [ 1.00, 0.79]
+initial_evaluation: success - initial guess at point [ 1.00, 0.46]
+initial_evaluation: success - initial guess at point [ 1.00, 0.14]
+initial_evaluation: success - initial guess at point [ 1.00,-0.18]
+initial_evaluation: success - initial guess at point [ 1.00,-0.50]
+initial_evaluation: success - initial guess at point [ 0.71, 4.00]
+initial_evaluation: success - initial guess at point [ 0.71, 3.68]
+initial_evaluation: success - initial guess at point [ 0.71, 3.36]
+initial_evaluation: success - initial guess at point [ 0.71, 3.04]
+initial_evaluation: success - initial guess at point [ 0.71, 2.71]
+initial_evaluation: success - initial guess at point [ 0.71, 2.39]
+initial_evaluation: success - initial guess at point [ 0.71, 2.07]
+initial_evaluation: success - initial guess at point [ 0.71, 1.75]
+initial_evaluation: success - initial guess at point [ 0.71, 1.43]
+initial_evaluation: success - initial guess at point [ 0.71, 1.11]
+initial_evaluation: success - initial guess at point [ 0.71, 0.79]
+initial_evaluation: success - initial guess at point [ 0.71, 0.46]
+initial_evaluation: success - initial guess at point [ 0.71, 0.14]
+initial_evaluation: success - initial guess at point [ 0.71,-0.18]
+initial_evaluation: success - initial guess at point [ 0.71,-0.50]
+initial_evaluation: success - initial guess at point [ 0.43, 4.00]
+initial_evaluation: success - initial guess at point [ 0.43, 3.68]
+initial_evaluation: success - initial guess at point [ 0.43, 3.36]
+initial_evaluation: success - initial guess at point [ 0.43, 3.04]
+initial_evaluation: success - initial guess at point [ 0.43, 2.71]
+initial_evaluation: success - initial guess at point [ 0.43, 2.39]
+initial_evaluation: success - initial guess at point [ 0.43, 2.07]
+initial_evaluation: success - initial guess at point [ 0.43, 1.75]
+initial_evaluation: success - initial guess at point [ 0.43, 1.43]
+initial_evaluation: success - initial guess at point [ 0.43, 1.11]
+initial_evaluation: success - initial guess at point [ 0.43, 0.79]
+initial_evaluation: success - initial guess at point [ 0.43, 0.46]
+initial_evaluation: success - initial guess at point [ 0.43, 0.14]
+initial_evaluation: success - initial guess at point [ 0.43,-0.18]
+initial_evaluation: success - initial guess at point [ 0.43,-0.50]
+initial_evaluation: success - initial guess at point [ 0.14, 4.00]
+initial_evaluation: success - initial guess at point [ 0.14, 3.68]
+initial_evaluation: success - initial guess at point [ 0.14, 3.36]
+initial_evaluation: success - initial guess at point [ 0.14, 3.04]
+initial_evaluation: success - initial guess at point [ 0.14, 2.71]
+initial_evaluation: success - initial guess at point [ 0.14, 2.39]
+initial_evaluation: success - initial guess at point [ 0.14, 2.07]
+initial_evaluation: success - initial guess at point [ 0.14, 1.75]
+initial_evaluation: success - initial guess at point [ 0.14, 1.43]
+initial_evaluation: success - initial guess at point [ 0.14, 1.11]
+initial_evaluation: success - initial guess at point [ 0.14, 0.79]
+initial_evaluation: success - initial guess at point [ 0.14, 0.46]
+initial_evaluation: success - initial guess at point [ 0.14, 0.14]
+initial_evaluation: success - initial guess at point [ 0.14,-0.18]
+initial_evaluation: success - initial guess at point [ 0.14,-0.50]
+initial_evaluation: success - initial guess at point [-0.14, 4.00]
+initial_evaluation: success - initial guess at point [-0.14, 3.68]
+initial_evaluation: success - initial guess at point [-0.14, 3.36]
+initial_evaluation: success - initial guess at point [-0.14, 3.04]
+initial_evaluation: success - initial guess at point [-0.14, 2.71]
+initial_evaluation: success - initial guess at point [-0.14, 2.39]
+initial_evaluation: success - initial guess at point [-0.14, 2.07]
+initial_evaluation: success - initial guess at point [-0.14, 1.75]
+initial_evaluation: success - initial guess at point [-0.14, 1.43]
+initial_evaluation: success - initial guess at point [-0.14, 1.11]
+initial_evaluation: success - initial guess at point [-0.14, 0.79]
+initial_evaluation: success - initial guess at point [-0.14, 0.46]
+initial_evaluation: success - initial guess at point [-0.14, 0.14]
+initial_evaluation: success - initial guess at point [-0.14,-0.18]
+initial_evaluation: success - initial guess at point [-0.14,-0.50]
+initial_evaluation: success - initial guess at point [-0.43, 4.00]
+initial_evaluation: success - initial guess at point [-0.43, 3.68]
+initial_evaluation: success - initial guess at point [-0.43, 3.36]
+initial_evaluation: success - initial guess at point [-0.43, 3.04]
+initial_evaluation: success - initial guess at point [-0.43, 2.71]
+initial_evaluation: success - initial guess at point [-0.43, 2.39]
+initial_evaluation: success - initial guess at point [-0.43, 2.07]
+initial_evaluation: success - initial guess at point [-0.43, 1.75]
+initial_evaluation: success - initial guess at point [-0.43, 1.43]
+initial_evaluation: success - initial guess at point [-0.43, 1.11]
+initial_evaluation: success - initial guess at point [-0.43, 0.79]
+initial_evaluation: success - initial guess at point [-0.43, 0.46]
+initial_evaluation: success - initial guess at point [-0.43, 0.14]
+initial_evaluation: success - initial guess at point [-0.43,-0.18]
+initial_evaluation: success - initial guess at point [-0.43,-0.50]
+initial_evaluation: success - initial guess at point [-0.71, 4.00]
+initial_evaluation: success - initial guess at point [-0.71, 3.68]
+initial_evaluation: success - initial guess at point [-0.71, 3.36]
+initial_evaluation: success - initial guess at point [-0.71, 3.04]
+initial_evaluation: success - initial guess at point [-0.71, 2.71]
+initial_evaluation: success - initial guess at point [-0.71, 2.39]
+initial_evaluation: success - initial guess at point [-0.71, 2.07]
+initial_evaluation: success - initial guess at point [-0.71, 1.75]
+initial_evaluation: success - initial guess at point [-0.71, 1.43]
+initial_evaluation: success - initial guess at point [-0.71, 1.11]
+initial_evaluation: success - initial guess at point [-0.71, 0.79]
+initial_evaluation: success - initial guess at point [-0.71, 0.46]
+initial_evaluation: success - initial guess at point [-0.71, 0.14]
+initial_evaluation: success - initial guess at point [-0.71,-0.18]
+initial_evaluation: success - initial guess at point [-0.71,-0.50]
+initial_evaluation: success - initial guess at point [-1.00, 4.00]
+initial_evaluation: success - initial guess at point [-1.00, 3.68]
+initial_evaluation: success - initial guess at point [-1.00, 3.36]
+initial_evaluation: success - initial guess at point [-1.00, 3.04]
+initial_evaluation: success - initial guess at point [-1.00, 2.71]
+initial_evaluation: success - initial guess at point [-1.00, 2.39]
+initial_evaluation: success - initial guess at point [-1.00, 2.07]
+initial_evaluation: success - initial guess at point [-1.00, 1.75]
+initial_evaluation: success - initial guess at point [-1.00, 1.43]
+initial_evaluation: success - initial guess at point [-1.00, 1.11]
+initial_evaluation: success - initial guess at point [-1.00, 0.79]
+initial_evaluation: success - initial guess at point [-1.00, 0.46]
+initial_evaluation: success - initial guess at point [-1.00, 0.14]
+initial_evaluation: success - initial guess at point [-1.00,-0.18]
+initial_evaluation: success - initial guess at point [-1.00,-0.50]
+mapper_iteration_0: status - 0 points do not have valid solution."""

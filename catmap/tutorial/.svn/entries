@@ -1,0 +1,37 @@
+10
+
+dir
+33
+svn+ssh://ajmedfor@suncatls1.slac.stanford.edu/kinetics/trunk/mkm/tutorial
+svn+ssh://ajmedfor@suncatls1.slac.stanford.edu/kinetics
+
+
+
+2013-07-25T21:15:00.332645Z
+30
+ajmedfor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+acd8d16b-6e52-4540-a096-c4059a92665c
+
+1-generating_input_file
+dir
+
+3-refining_microkinetic_model
+dir
+
+2-creating_microkinetic_model
+dir
+
