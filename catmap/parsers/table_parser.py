@@ -101,52 +101,59 @@ class TableParser(ParserBase):
                    if self.species_definitions[k].get('type',None) != 'site']
 
         for adsdef in all_ads:
-            ads = self.species_definitions[adsdef]['name']
-            site = self.species_definitions[adsdef]['site']
-            alternative_names = self.species_definitions[adsdef].get(
-                    'alternative_names',[])
-            adsnames = [ads]+alternative_names
+            ads = self.species_definitions[adsdef].get('name',None)
+            if ads is None:
+                del self.species_definitions[adsdef]
+                print('Warning: Species with undefined "name" was encountered ('+adsdef+'). '+\
+                     'Ensure that all species which are explicitly set in "species_definitions '+\
+                     'are also defined in the reaction network ("rxn_expressions"). This definition '+\
+                     'will be ignored.')
+            else:
+                site = self.species_definitions[adsdef]['site']
+                alternative_names = self.species_definitions[adsdef].get(
+                        'alternative_names',[])
+                adsnames = [ads]+alternative_names
 
-            sites = self.species_definitions[site]['site_names']
-            infodict = {}
-            for linedict in self._line_dicts:
-                if (
-                        linedict['species_name'] in adsnames and 
-                        linedict['site_name'] in sites and 
-                        linedict['surface_name'] in list(self.surface_names)+['None']
-                        ):
-                    if 'coverage' in linedict:
-                        surf = linedict['surface_name']
-                        if self.standard_coverage in ['min','minimum',None]:
-                            if surf in infodict:
-                                if linedict['coverage'] < infodict[surf]['coverage']:
+                sites = self.species_definitions[site]['site_names']
+                infodict = {}
+                for linedict in self._line_dicts:
+                    if (
+                            linedict['species_name'] in adsnames and 
+                            linedict['site_name'] in sites and 
+                            linedict['surface_name'] in list(self.surface_names)+['None']
+                            ):
+                        if 'coverage' in linedict:
+                            surf = linedict['surface_name']
+                            if self.standard_coverage in ['min','minimum',None]:
+                                if surf in infodict:
+                                    if linedict['coverage'] < infodict[surf]['coverage']:
+                                        infodict[surf] = linedict
+                                else:
                                     infodict[surf] = linedict
                             else:
-                                infodict[surf] = linedict
+                                if linedict['coverage'] == self.standard_coverage:
+                                    infodict[surf] = linedict
                         else:
-                            if linedict['coverage'] == self.standard_coverage:
-                                infodict[surf] = linedict
-                    else:
-                        infodict[linedict['surface_name']] = linedict
-            
-            paramlist = []
-            sources = []
-            if self.species_definitions[adsdef]['type'] not in ['gas']:
-                for surf in self.surface_names:
-                    if surf in infodict:
-                        E = float(infodict[surf]['formation_energy'])
-                        paramlist.append(E)
-                        sources.append(infodict[surf]['reference'].strip())
-                    else:
-                        paramlist.append(None)
-                self.species_definitions[adsdef]['formation_energy'] = paramlist
-                self.species_definitions[adsdef]['formation_energy_source'] = sources
+                            infodict[linedict['surface_name']] = linedict
+                
+                paramlist = []
+                sources = []
+                if self.species_definitions[adsdef]['type'] not in ['gas']:
+                    for surf in self.surface_names:
+                        if surf in infodict:
+                            E = float(infodict[surf]['formation_energy'])
+                            paramlist.append(E)
+                            sources.append(infodict[surf]['reference'].strip())
+                        else:
+                            paramlist.append(None)
+                    self.species_definitions[adsdef]['formation_energy'] = paramlist
+                    self.species_definitions[adsdef]['formation_energy_source'] = sources
 
-            else:
-                E = float(infodict['None']['formation_energy'])
-                self.species_definitions[adsdef]['formation_energy'] = E
-                self.species_definitions[adsdef]['formation_energy_source'] = \
-                        infodict['None']['reference'].strip()
+                else:
+                    E = float(infodict['None']['formation_energy'])
+                    self.species_definitions[adsdef]['formation_energy'] = E
+                    self.species_definitions[adsdef]['formation_energy_source'] = \
+                            infodict['None']['reference'].strip()
 
 
 
