@@ -95,7 +95,7 @@ class VectorMap(MapPlot,ReactionModelWrapper):
             else:
                 ax = None
             fig = self.plot_weighted(mapp,ax=ax,indices=idxs)
-   
+
         self.save(fig,save=save,
                 default_name = self.model_name+'_'+self.plot_variable+'.pdf')
 

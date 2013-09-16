@@ -107,8 +107,8 @@ file_name = 'energies.txt'
 make_input_file(file_name,formation_energies,frequency_dict)
 
 #Test that input is parsed correctly
-from mkm.model import ReactionModel
-from mkm.parsers import TableParser
+from catmap.model import ReactionModel
+from catmap.parsers import TableParser
 rxm = ReactionModel()
 #The following lines are normally assigned by the setup_file
 #and are thus not usually necessary.

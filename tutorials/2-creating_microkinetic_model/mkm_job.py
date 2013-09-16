@@ -1,10 +1,10 @@
-from mkm import ReactionModel
+from catmap import ReactionModel
 
 mkm_file = 'CO_oxidation.mkm'
 model = ReactionModel(setup_file=mkm_file)
 model.run()
 
-from mkm import analyze
+from catmap import analyze
 vm = analyze.VectorMap(model)
 vm.plot_variable = 'rate' #tell the model which output to plot
 vm.log_scale = True #rates should be plotted on a log-scale
@@ -18,6 +18,8 @@ vm.unique_only = True
 
 model.output_variables += ['production_rate']
 model.run()
+vm.production_rate_map = model.production_rate_map #attach map
+vm.threshold = 1e-30 #do not plot rates below this
 vm.plot_variable = 'production_rate'
 vm.plot(save='production_rate.pdf')
 
