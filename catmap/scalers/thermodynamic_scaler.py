@@ -24,12 +24,12 @@ class ThermodynamicScaler(ScalerBase):
         for var,val in zip(self.descriptor_names,descriptors):
             thermo_state[var] = val
             setattr(self,var,val)
-        if 'log(pressure)' in self.descriptor_names: ##HACK
-            raise AttributeError('log(pressure) is deprecated. Use logPressure instead.')
         if 'pressure' in self.descriptor_names:
             P = thermo_state['pressure']
+            self.pressure_mode = 'concentration'
         elif 'logPressure' in self.descriptor_names:
             P = 10**thermo_state['logPressure']
+            self.pressure_mode = 'concentration'
         else:
             P = 1
 
@@ -46,5 +46,6 @@ class ThermodynamicScaler(ScalerBase):
     def get_rxn_parameters(self,descriptors):
         self.parameter_names = self.adsorbate_names + self.transition_state_names
         free_energy_dict = self.get_free_energies(descriptors)
-        return [free_energy_dict[sp] for sp in self.adsorbate_names+self.transition_state_names]
+        params =  [free_energy_dict[sp] for sp in self.adsorbate_names+self.transition_state_names]
+        return params
 

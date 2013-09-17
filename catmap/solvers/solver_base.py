@@ -39,10 +39,15 @@ class SolverBase(ReactionModelWrapper):
             ##HACK - not sure why the hell cvgs=self._coverage doesnt work
             self._coverage = list(self.solver.get_coverage( 
                     rxn_parameters,c0=cvgs)) #verify coverage
+
             self._rate = list(self.solver.get_rate(rxn_parameters,
                     coverages=self._coverage))
 
             #need to add selectivity,turnover_frequency,rate_control,rate_constant,equilibrium_constant
+
+#            print self._rate[0] - self._rate[2]
+#            print self._rate[0] - 2*self._rate[2]
+
         if (
                 'turnover_frequency' in self.output_variables or
                 'production_rate' in self.output_variables or
@@ -51,7 +56,7 @@ class SolverBase(ReactionModelWrapper):
 
             self._turnover_frequency = self.get_turnover_frequency(
                     rxn_parameters)
-
+        
         if 'selectivity' in self.output_variables:
             self._selectivity = self.get_selectivity(rxn_parameters)
             self.output_labels['selectivity'] = self.gas_names

@@ -42,9 +42,9 @@ class SteadyStateSolver(MeanFieldSolver):
     
     def get_rate_constants(self,rxn_parameters,coverages):
         if self.adsorbate_interactions:
-            memo = tuple(rxn_parameters) + tuple(coverages) 
+            memo = tuple(rxn_parameters) + tuple(coverages) + tuple(self._gas_energies)
         else:
-            memo = tuple(rxn_parameters)
+            memo = tuple(rxn_parameters) + tuple(self._gas_energies)
         if memo in self._rate_constant_memoize:
             kf, kr = self._rate_constant_memoize[memo]
             self._kf = kf
@@ -250,6 +250,7 @@ class SteadyStateSolver(MeanFieldSolver):
             self._rxn_parameters = self.scaler.get_rxn_parameters(
                     self._descriptors)
             self.get_rate_constants(self._rxn_parameters,coverages)
+#        cvg_rates = self.steady_state_function(None)
         cvg_rates = self.steady_state_function(coverages)
         residual = max([abs(r) for r in cvg_rates])
         return residual
@@ -257,7 +258,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
     def interacting_steady_state_function(self,coverages):
         memo = tuple(self._rxn_parameters) + tuple(self._gas_energies) + \
-                tuple(self._site_energies) + tuple(coverages)
+                tuple(self._site_energies) + tuple(coverages) + tuple(self.gas_pressures+[self.temperature])
         if memo in self._steady_state_memoize:
             return self._steady_state_memoize[memo]
         else:
@@ -271,7 +272,7 @@ class SteadyStateSolver(MeanFieldSolver):
             return c
 
     def ideal_steady_state_function(self,coverages):
-        memo = tuple(self._kf) + tuple(self._kr) + tuple(coverages) 
+        memo = tuple(self._kf) + tuple(self._kr) + tuple(coverages) + tuple(self.gas_pressures+[self.temperature])
         if memo in self._steady_state_memoize:
             return self._steady_state_memoize[memo]
         else:
@@ -416,7 +417,6 @@ class SteadyStateSolver(MeanFieldSolver):
                     setattr(self,func,locs[func])
 
             self._compiled = True
-
 
             if self.adsorbate_interactions:
                 self.steady_state_function = self.interacting_steady_state_function

@@ -1,6 +1,7 @@
 #
 #Microkinetic model parameters
 #
+scaler = 'ThermodynamicScaler'
 
 rxn_expressions = [
 
@@ -11,20 +12,20 @@ rxn_expressions = [
                    ]
 
 
-surface_names = ['Pt', 'Ag', 'Cu','Rh','Pd','Au','Ru','Ni'] #surfaces to include in scaling (need to have descriptors defined for each)
+surface_names = ['Pt']
 
-descriptor_names= ['O_s','CO_s'] #descriptor names
+descriptor_names= ['temperature','logPressure'] #descriptor names
 
-descriptor_ranges = [[-1,3],[-0.5,4]]
+descriptor_ranges = [[400,1000],[-8,3]]
 
 resolution = 15
 
-temperature = 500 #Temperature of the reaction
+#pressure_mode = 'concentration'
 
 species_definitions = {}
-species_definitions['CO_g'] = {'pressure':1.} #define the gas pressures
-species_definitions['O2_g'] = {'pressure':1./3.}
-species_definitions['CO2_g'] = {'pressure':0}
+species_definitions['CO_g'] = {'concentration':2./3.} #define the gas pressures
+species_definitions['O2_g'] = {'concentration':1./3.}
+species_definitions['CO2_g'] = {'concentration':0}
 
 species_definitions['s'] = {'site_names': ['111'], 'total':1} #define the sites
 
@@ -57,7 +58,6 @@ scaling_constraint_dict = {
                            'O-O_s':'final_state',
                            }
 
-
 #
 #Solver parameters
 #
@@ -69,4 +69,3 @@ tolerance = 1e-50 #all d_theta/d_t's must be less than this at the solution
 max_rootfinding_iterations = 100
 
 max_bisections = 3
-

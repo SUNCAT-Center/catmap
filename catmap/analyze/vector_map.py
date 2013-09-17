@@ -5,6 +5,7 @@ class VectorMap(MapPlot,ReactionModelWrapper):
     def __init__(self,reaction_model):
         self._rxm = copy(reaction_model) #use copy to avoid changing model
         MapPlot.__init__(self)
+        self.descriptor_labels = None
         self.log_scale = False
         self.plot_variable = 'coverage'
         self.plot_mode = 'separate'
@@ -86,6 +87,8 @@ class VectorMap(MapPlot,ReactionModelWrapper):
         mapp = zip(pts,datas)
         if not self.labels:
             self.map_plot_labels = self.get_labels()
+        if not self.descriptor_labels:
+            self.descriptor_labels = self.descriptor_names
 
         if self.plot_mode == 'separate':
             fig = self.plot_separate(mapp,ax_list,indices=include_indices)

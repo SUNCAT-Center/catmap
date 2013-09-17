@@ -169,7 +169,7 @@ def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
     
     r = matrix(r)
     dtheta_dt = matrix(dtheta_dt)
-
+    
     return dtheta_dt
 """
 

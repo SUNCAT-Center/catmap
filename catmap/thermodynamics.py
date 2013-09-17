@@ -445,7 +445,8 @@ class ThermoCorrections(ReactionModelWrapper):
         self.gas_pressures = [self.species_definitions[g]['pressure'] for g in self.gas_names]
 
     def concentration_pressure(self):
-        self.thermodynamic_variables += ['pressure']
+        if 'pressure' not in self.thermodynamic_variables:
+            self.thermodynamic_variables += ['pressure']
         self.gas_pressures = [self.species_definitions[g]['concentration']*self.pressure for g in self.gas_names]
 
     def summary_text(self):

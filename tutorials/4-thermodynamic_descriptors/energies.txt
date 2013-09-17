@@ -1,0 +1,8 @@
+surface_name	site_name	species_name	formation_energy	bulk_structure	frequencies	other_parameters	reference
+None	gas	CO2	2.45	None	[1333,2349,667,667]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+None	gas	CO	2.74	None	[2170]	[]	"Energy Environ. Sci., 3, 1311-1315 (2010)"
+None	gas	O2	5.42	None	[1580]	[]	Falsig et al (2012)
+Pt	111	O	1.62	fcc	[]	[]	Falsig et al (2012)
+Pt	111	CO	1.7	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pt	111	O-CO	4.04	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pt	111	O-O	5.35	fcc	[]	[]	Falsig et al (2012)
