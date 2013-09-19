@@ -258,10 +258,10 @@ class MeanFieldSolver(SolverBase):
         site_totals={}
         for site in self.site_names:
             site_totals[site] = self._mpfloat(self.species_definitions[site]['total'])
-            site_idxs = [idx for idx,ads in enumerate(self.adsorbate_names)
+            site_idxs = [[idx,self.species_definitions[ads]['n_sites']] for idx,ads in enumerate(self.adsorbate_names)
                     if self.species_definitions[ads]['site'] == site]
             site_str = repr(site_totals[site])
-            for idx_i in site_idxs:
+            for idx_i,nsites in site_idxs:
                 site_str += ' - theta['+str(idx_i)+']'
             site_strings.append('('+site_str+')')
         return site_strings

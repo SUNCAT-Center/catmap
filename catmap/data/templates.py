@@ -166,7 +166,7 @@ def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
     dtheta_dt = [0]*len(theta)
     
     ${steady_state_expressions}
-    
+
     r = matrix(r)
     dtheta_dt = matrix(dtheta_dt)
     
@@ -228,7 +228,7 @@ def interaction_function(coverages,energies,interaction_vector,smearing,exp,log,
 #    where sum_j is summation over index j, epsilon_ij is the interaction parameter between 
 #    adsorbate i and adsorbat j, theta_tot is a sum on theta, delta_nj is the kronecker delta,
 #    theta_j is the coverage of adsorbate j, and L is the smoothed approximation of piecewise
-#    linearity obtained by integrateing the Fermi distribution.
+#    linearity.
 
 
     sigma_0 = 1./smearing
@@ -242,16 +242,6 @@ def interaction_function(coverages,energies,interaction_vector,smearing,exp,log,
 #    [indices_corresponding_to_site, max_coverage_of_site, piecewise_linearity_threshold]
     
     ${site_info_dict}
-
-#    def piecewise_linear(c_tot,sigma,cutoff,max_coverage):
-#        expC = exp(sigma*c_tot)
-#        expCutoff = exp(sigma*cutoff)
-#        c_0 = (1./(sigma*max_coverage))*(log(1+expC/expCutoff))
-#        if include_derivatives:
-#            dC = (1./max_coverage)*(expC)/(expC + expCutoff)
-#        else:
-#            dC = None
-#        return c_0, dC
 
     def piecewise_linear(c_tot,sigma,cutoff,max_coverage):
         sigma = 1./sigma
