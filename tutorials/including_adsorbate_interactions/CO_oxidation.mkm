@@ -34,6 +34,8 @@ data_file = 'CO_oxidation.pkl'
 
 input_file = 'energies.txt' #input data
 
+input_file = 'coverage_energies.txt' #3.3
+
 gas_thermo_mode = "shomate_gas"
 
 adsorbate_thermo_mode = "frozen_adsorbate"
@@ -75,10 +77,8 @@ species_definitions['O_s'] = {'self_interaction_parameter':[3.405, 5.252, 6.396,
 max_self_interaction = 'Pd' #self interaction parameters cannot be higher than the parameter for Pd
 transition_state_cross_interaction_mode = 'transition_state_scaling' #use TS scaling for TS interaction
 cross_interaction_mode = 'geometric_mean' #use geometric mean for cross parameters
-species_definitions['CO_s'] = {'self_interaction_parameter':[3.248, 0.965, 3.289, 3.209, 3.68, None, None, None],
-                    'cross_interaction_parameters':{'O_s':[0,0,0,0,0,0,0,0],'O-O_s':[0,0,0,0,0,0,0,0]}} #3.2
+#species_definitions['CO_s'] = {'self_interaction_parameter':[3.248, 0.965, 3.289, 3.209, 3.68, None, None, None],
+#                    'cross_interaction_parameters':{'O_s':[0,0,0,0,0,0,0,0],'O-O_s':[0,0,0,0,0,0,0,0]}} #3.2
 #make some arbitrary cross interactions 0 just to show syntax.
 
-#interaction_fitting_mode = 'average_self' #3.2 (fitting)
-
-
+interaction_fitting_mode = 'average_self' #3.3

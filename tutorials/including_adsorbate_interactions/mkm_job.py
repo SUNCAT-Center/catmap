@@ -6,9 +6,6 @@ model = ReactionModel(setup_file=mkm_file)
 model.output_variables += ['production_rate','interaction_matrix','free_energy']
 model.run()
 
-#for key, val in model.self_interaction_parameter_dict.items(): #3.3
-#    print key, [round(vi,3) for vi in val]                     #3.3
-
 from catmap import analyze
 vm = analyze.VectorMap(model)
 vm.plot_variable = 'production_rate' #tell the model which output to plot
