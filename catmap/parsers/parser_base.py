@@ -92,8 +92,6 @@ class ParserBase(ReactionModelWrapper):
                     ads_info['site_names'] = site_names
                 if self.site_totals: #Deprecate later...
                     ads_info['total'] = self.site_totals[site]
-                if not self.adsorbate_interactions:
-                    ads_info['interaction_threshold'] = 0
                 if site in self.species_definitions:
                     ads_info.update(self.species_definitions[site])
                 self.species_definitions[site] = self.species_definitions['*_'+site] \

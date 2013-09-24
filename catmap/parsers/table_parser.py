@@ -36,7 +36,7 @@ class TableParser(ParserBase):
                 #coverage to use as the "base" in coverage-dependent input file
                 #use "min" to take the minimum or specify explicitly
                 interaction_surface_names = None,
-                #use a different set of surfaces to form interaction matrix.
+                #use a different set of (more) surfaces to form interaction matrix.
                 #If none then only the surfaces in the model will be used.
                 )
 
@@ -87,7 +87,10 @@ class TableParser(ParserBase):
 
         for p in self.parse_headers:
             if callable(getattr(self,'parse_'+p)):
+#                try:
                 getattr(self,'parse_'+p)()
+#                except:
+#                    raise ValueError('Error parsing '+p+'. Ensure that the header is properly defined')
             else:
                 raise AttributeError('No parsing function defined for '+p)
 
@@ -274,10 +277,7 @@ class TableParser(ParserBase):
         self.__dict__.update(kwargs)
         
         n = len(self.adsorbate_names)
-        if self.interaction_surface_names:
-            surfaces = self.interaction_surface_names
-        else:
-            surfaces = self.surface_names
+        surfaces = self.surface_names
 
         info_dict = {}
         ads_names = [self.species_definitions[ads]['name'] 

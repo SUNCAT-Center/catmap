@@ -45,11 +45,6 @@ class MeanFieldSolver(SolverBase):
         self._coverage = coverages
         rate_constants = self.get_rate_constants(rxn_parameters,coverages)
         rates =  self.get_rxn_rates(coverages,rate_constants)
-        if abs(rates[0] - rates[2]) > self.tolerance:
-            print 'wrong!'
-            print self.get_residual(coverages,False,False)
-            print rates[0] - rates[2]
-            print rates[0] - 2*rates[1]
         return rates
 
     def get_turnover_frequency(self,rxn_parameters,rates=None,verify_coverages=True):
@@ -289,7 +284,14 @@ class MeanFieldSolver(SolverBase):
             idxs = [surf_species.index(a) for a in surf_species if
                     self.species_definitions[a]['site'] == s]
             if idxs:
-                idx_dict[s] = [idxs,self.species_definitions[s]['total'],self.species_definitions[s]['interaction_threshold']]
+                if self.adsorbate_interaction_model not in ['ideal',None]:
+                    default_params = getattr(
+                            self.thermodynamics.adsorbate_interactions,
+                            'interaction_response_parameters',{})
+                else:
+                    default_params = {}
+                F_params = self.species_definitions[s].get('interaction_response_parameters',default_params)
+                idx_dict[s] = [idxs,self.species_definitions[s]['total'],F_params]
         subdict['site_info_dict'] =  'site_info_dict = ' + repr(idx_dict)
         return subdict
 

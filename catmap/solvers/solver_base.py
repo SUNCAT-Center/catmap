@@ -43,11 +43,6 @@ class SolverBase(ReactionModelWrapper):
             self._rate = list(self.solver.get_rate(rxn_parameters,
                     coverages=self._coverage))
 
-            #need to add selectivity,turnover_frequency,rate_control,rate_constant,equilibrium_constant
-
-#            print self._rate[0] - self._rate[2]
-#            print self._rate[0] - 2*self._rate[2]
-
         if (
                 'turnover_frequency' in self.output_variables or
                 'production_rate' in self.output_variables or
@@ -109,10 +104,6 @@ class SolverBase(ReactionModelWrapper):
                 self.output_labels['equilibrium_constant'] = self.elementary_rxns
 
 
-
-
-#damping_iters = []
-
 class NewtonRoot:
     """
     Hacked from MDNewton in mpmath/calculus/optimization.py in order
@@ -154,6 +145,7 @@ class NewtonRoot:
         self.f = f
         self.x0 = x0
         if 'J' in kwargs:
+            self.J = kwargs['J']
 #            def J(x): #Use this to confirm the analytical jacobian is correct
 #                analytical = kwargs['J'](x)
 #                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-50)
@@ -171,7 +163,6 @@ class NewtonRoot:
 #                print 'max_error', max_error, max_pos
 #                return numerical
 #            self.J = J
-            self.J = kwargs['J']
 
         else:
             raise ValueError('No method for estimating Jacobian.')
@@ -221,10 +212,6 @@ class NewtonRoot:
                     # new x accepted
                     fxnorm = newnorm
                     x0 = x1
-#                    damping_iters.append(damp_iter)
-#                    print 'ITERATIONS:'
-#                    for di in sorted(list(set(damping_iters))):
-#                        print di,':',damping_iters.count(di)
                     break
                 l /= 2.0
                 x1 = x0 + l*s

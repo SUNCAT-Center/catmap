@@ -15,7 +15,6 @@ class SteadyStateSolver(MeanFieldSolver):
         defaults = dict(
                 max_rootfinding_iterations = 50,
                 internally_constrain_coverages = True,
-                interaction_smearing = 0.05,
                 residual_threshold = 0.9,
                 analytical_jacobian = True,
                 optimize_analytical_expressions = False,
@@ -27,7 +26,6 @@ class SteadyStateSolver(MeanFieldSolver):
                           'internally_constrain_coverages':None,
                           'residual_threshold':float,
                           'analytical_jacobian':bool,
-                          'interaction_smearing':float,
                           }
         self._log_strings = {'rootfinding_fail':
                             "stagnated or diverging (residual = ${resid})",
@@ -41,7 +39,7 @@ class SteadyStateSolver(MeanFieldSolver):
                             "converging (residual = ${resid})"}
     
     def get_rate_constants(self,rxn_parameters,coverages):
-        if self.adsorbate_interactions:
+        if self.adsorbate_interaction_model not in [None,'ideal']:
             memo = tuple(rxn_parameters) + tuple(coverages) + tuple(self._gas_energies)
         else:
             memo = tuple(rxn_parameters) + tuple(self._gas_energies)
@@ -52,16 +50,15 @@ class SteadyStateSolver(MeanFieldSolver):
             return kf+kr
         kfs, krs, dkfs, dkrs = self.rate_constants(rxn_parameters,coverages,
             self._gas_energies,self._site_energies,
-            self.temperature,
-            self.interaction_smearing,self._mpfloat,self._matrix,
-            self._math.exp,math.exp,math.log)
+            self.temperature,self.interaction_response_function,
+            self._mpfloat,self._matrix,self._math.exp)
         self._kf = kfs
         self._kr = krs
         self._rate_constant_memoize[memo] = [kfs,krs]
         return kfs + krs
 
     def get_coverage(self,rxn_parameters,c0=None,findrootArgs={}):
-        if not self.adsorbate_interactions or self.interaction_strength == 0:
+        if self.adsorbate_interaction_model in [None,'ideal'] or self.interaction_strength == 0:
             return self.get_ideal_coverages(rxn_parameters,c0,True,findrootArgs)
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
@@ -265,9 +262,8 @@ class SteadyStateSolver(MeanFieldSolver):
             c = self.interacting_mean_field_steady_state(
                     self._rxn_parameters,coverages,self.gas_pressures,
                     self._gas_energies, self._site_energies,
-                    self.temperature,
-                    self.interaction_smearing, self._mpfloat, self._matrix,
-                    self._math.exp, math.exp,math.log)
+                    self.temperature,self.interaction_response_function,
+                    self._mpfloat, self._matrix,self._math.exp)
             self._steady_state_memoize[memo] = c
             return c
 
@@ -286,9 +282,8 @@ class SteadyStateSolver(MeanFieldSolver):
         J = self.interacting_mean_field_jacobian(
                 self._rxn_parameters,coverages,self.gas_pressures,
                 self._gas_energies,self._site_energies,
-                self.temperature,
-                self.interaction_smearing, self._mpfloat, self._matrix,
-                self._math.exp, math.exp,math.log)
+                self.temperature,self.interaction_response_function,
+                self._mpfloat, self._matrix,self._math.exp)
         return J
 
     def ideal_steady_state_jacobian(self,coverages):
@@ -331,7 +326,7 @@ class SteadyStateSolver(MeanFieldSolver):
                 return indention.join(lines)
             
             #pre-substitute the interaction function into rate_constants (needed because its nested 2 levels)
-            indented = indent_string(templates['linear_interaction_function'],1)
+            indented = indent_string(templates[self.adsorbate_interaction_model+'_interaction_function'],1)
             indented = Template(indented).substitute(self._function_substitutions)
             self._function_substitutions['interaction_function'] = indented
 
@@ -350,7 +345,7 @@ class SteadyStateSolver(MeanFieldSolver):
                 self._function_substitutions[func] = indent_string(templates[tempname],1)
             compiled_funcs = [
                     ['rate_constants','rate_constants_with_derivatives'],
-                    ['interaction_function','linear_interaction_function'],
+                    ['interaction_function',self.adsorbate_interaction_model+'_interaction_function'],
                     ['interacting_mean_field_steady_state',''],
                     ['ideal_mean_field_steady_state',''],
                     ['interacting_mean_field_jacobian',''],
@@ -378,17 +373,15 @@ class SteadyStateSolver(MeanFieldSolver):
                 arg_dict = {
                         'interacting_mean_field_steady_state':[
                             test_params,test_theta,test_p,test_gas_E,test_site_E,
-                            test_T,test_smearing,
-                            self._mpfloat,self._matrix,self._math.exp,self._math.exp,
-                            self._math.log],
+                            test_T,self.interaction_response_function,
+                            self._mpfloat,self._matrix,self._math.exp],
                         'ideal_mean_field_steady_state':[
                             test_kfs, test_krs, test_theta, test_p,
                             self._mpfloat, self._matrix],
                         'interacting_mean_field_jacobian':[
                             test_params,test_theta,test_p,test_gas_E,test_site_E,
-                            test_T,test_smearing,
-                            self._mpfloat, self._matrix, self._math.exp, self._math.exp,
-                            self._math.log],
+                            test_T,self.interaction_response_function,
+                            self._mpfloat, self._matrix, self._math.exp],
                         'ideal_mean_field_jacobian':[
                             test_kfs, test_krs, test_theta, test_p,
                             self._mpfloat, self._matrix]
@@ -418,7 +411,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
             self._compiled = True
 
-            if self.adsorbate_interactions:
+            if self.adsorbate_interaction_model not in [None,'ideal']:
                 self.steady_state_function = self.interacting_steady_state_function
             else:
                 self.steady_state_function = self.ideal_steady_state_function

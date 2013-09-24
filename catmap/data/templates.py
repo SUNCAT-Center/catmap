@@ -62,7 +62,7 @@ def constrain_coverage_function(cvgs,mpf,c_min):
 """
 
 templates['rate_constants'] = """
-def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,smearing,mpf,matrix,mpexp,exp,log,include_derivatives=True):
+def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matrix,mpexp,include_derivatives=True):
     ${interaction_function}
 
     kfs = []
@@ -85,9 +85,8 @@ def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,smearing,mp
     else:
         raise ValueError('Length of reaction parameters is not correct. '+ str(rxn_parameters))
 
-    Gf,dGs =  interaction_function(theta,energies,interaction_vector,smearing,exp,log,include_derivatives=include_derivatives)
-#    if dGs is not None:
-#        dGs = matrix(dGs)
+    Gf,dGs =  interaction_function(theta,energies,interaction_vector,F,include_derivatives=include_derivatives)
+
     ${kB}
     ${h}
     ${prefactor_list}
@@ -141,12 +140,12 @@ def elementary_rates(rate_constants,theta,p,mpf,matrix):
 """
 
 templates['interacting_mean_field_steady_state'] = """
-def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site_energies,T,smearing,mpf,matrix,mpexp,exp,log):
+def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
 
     ${rate_constants_no_derivatives}
     
-    kf, kr, junk, junk= rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,smearing,
-            mpf,matrix,mpexp,exp,log,include_derivatives=False)
+    kf, kr, junk, junk= rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,
+            mpf,matrix,mpexp,include_derivatives=False)
    
     r = [0]*len(kf)
     dtheta_dt = [0]*len(theta)
@@ -174,7 +173,7 @@ def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
 """
 
 templates['interacting_mean_field_jacobian'] = """
-def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_energies,T,smearing,mpf,matrix,mpexp,exp,log):
+def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
 
     ${kB}
     ${n_adsorbates}
@@ -186,9 +185,8 @@ def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_ene
     ${rate_constants_with_derivatives}
 
     kf, kr, dEf, dEr = rate_constants(
-                          rxn_parameters,theta,gas_energies,site_energies,T,smearing,
-                          mpf,matrix,mpexp,exp,log,
-                          include_derivatives=True)
+                          rxn_parameters,theta,gas_energies,site_energies,T,F,
+                          mpf,matrix,mpexp,include_derivatives=True)
     ${jacobian_expressions}
     
     J = matrix(J)
@@ -206,130 +204,97 @@ def ideal_mean_field_jacobian(kf,kr,theta,p,mpf,matrix):
     return J
 """
 
-templates['linear_interaction_function'] = """
-def interaction_function(coverages,energies,interaction_vector,smearing,exp,log,include_derivatives=True): 
+templates['first_order_interaction_function'] = """
+def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
+#    print 'coverages',coverages
+#    print 'energies',energies
+#    print 'interaction_vector',interaction_vector
+
 #    Function for evaluating coverage-dependent intearction energies. 
 #
 #    -coverages is a vector of n_coverages coverages (thetas).
 #    -energies is a vector of energies (length n_coverages).
 #    -interaction_vector is a raveled matrix of self and cross interaction parameters
 #    (length n_coverages^2).
-#    -smearing is a constant for smoothing the piecewise linear function - corresponds
-#    to smearing of a fermi distribution which is integrated to get piecewise linear.
 #    -include_derivatives: True or False
 #
 #    Function evaluates:
 #
-#    E_i = E_0 + sum_j(epsilon_ij*theta_j*L(theta_tot)/theta_tot)
+#    E_i = E_0 + F(theta_tot)*sum_j(epsilon_ij*theta_j)
 #
-#    dE_i/dtheta_n = sum_j(epsilon_ij*((theta_tot*delta_nj - theta_j)/(theta_tot^2))*L(theta_tot)) +
-#                    sum_j(epsilon_ij*theta_j*(dL/dtheta_tot)/theta_tot)
+#    dE_i/dtheta_n = sum_j(dF/dtheta_tot*dtheta_tot/dtheta_n*epsilon_ij*theta_j + F*epsilon_ij*delta_jn)
 #
 #    where sum_j is summation over index j, epsilon_ij is the interaction parameter between 
 #    adsorbate i and adsorbat j, theta_tot is a sum on theta, delta_nj is the kronecker delta,
-#    theta_j is the coverage of adsorbate j, and L is the smoothed approximation of piecewise
-#    linearity.
+#    theta_j is the coverage of adsorbate j, and F is the "response function".
 
-
-    sigma_0 = 1./smearing
     Es = []
     dEs = []
     n_cvg = len(coverages)
 
-    if interaction_vector is None or sum([abs(pi) for pi in interaction_vector]) == 0:
-        return energies, [[0]*n_cvg]*n_cvg
 #    Dictionary with site names as keys and values a list of:
 #    [indices_corresponding_to_site, max_coverage_of_site, piecewise_linearity_threshold]
-    
+
     ${site_info_dict}
 
-    def piecewise_linear(c_tot,sigma,cutoff,max_coverage):
-        sigma = 1./sigma
-        x1 = cutoff + sigma
-        x0 = cutoff - sigma
-        slope = (1./max_coverage)
-        if c_tot <= x0:
-            c_0 = 0
-            dC = 0
-        elif c_tot <= x1:
-            alpha = slope/(2*(x1-x0))
-            c_0 = alpha*(c_tot-x0)**2
-            dC = 2*alpha*(c_tot-x0)
-        else:
-            c_0 = slope*(c_tot - cutoff)
-            dC = slope
-        return c_0, dC
-
-    L_vector = [0]*len(coverages)
-    dL_vector = [0]*len(coverages)
+    f_vector = [0]*len(coverages)
+    df_vector = [0]*len(coverages)
     sites = [0]*len(coverages)
-    normed_coverages = [0]*len(coverages)
     c_tots = [0]*len(coverages)
-
     for s in site_info_dict:
-        idxs, max_cvg, cutoff = site_info_dict[s]
+        idxs, max_cvg, F_params = site_info_dict[s]
+        F_params['max_coverage'] = max_cvg
         cvgs = [coverages[j] for j in idxs]
         c_tot_i = sum(cvgs)
-        if c_tot_i < 1e-10:
-            #function is numerically unstable below c_tot < 1e-10
-            if c_tot_i == 0:
-                for idx in idxs:
-                    coverages[idx] = 1e-10/float(len(idxs))
-            else:
-                cmax_idx = cvgs.index(max(cvgs))
-                coverages[idxs[cmax_idx]] = 1e-11
-            cvgs = [coverages[k] for k in idxs]
-            c_tot_i = sum(cvgs)
-        L, dL = piecewise_linear(c_tot_i,sigma_0,cutoff,max_cvg)
+        f, df = F(c_tot_i,**F_params)
         for idx in idxs:
-            L_vector[idx] = L
-            dL_vector[idx] = dL
+            f_vector[idx] = f
+            df_vector[idx] = df
             sites[idx] = s
             c_tots[idx] = c_tot_i
-            normed_coverages[idx] = coverages[idx]/c_tot_i
+    Es = []
+    dEs = []
 
     for i,theta_i in enumerate(coverages):
         E_0 = energies[i]
         epsilon_vector = interaction_vector[i*n_cvg:(i+1)*n_cvg]
-        L_epsilon_dot_theta = 0
-        for ep,nc,L in zip(epsilon_vector,normed_coverages,L_vector):
-            L_epsilon_dot_theta += L*ep*nc
+        f_epsilon_dot_theta = 0
+        for ep,nc,f in zip(epsilon_vector,coverages,f_vector):
+            f_epsilon_dot_theta += f*ep*nc
 
-        E_i = E_0 + L_epsilon_dot_theta
-        Es.append(E_i) #HACK
+        E_i = E_0 + f_epsilon_dot_theta
+        Es.append(E_i)
 
         if include_derivatives:
             diff_vector = []
-            for n, theta_n in enumerate(coverages):
-                quotient_rule = []
+            for n,theta_n in enumerate(coverages):
+                df_sum = 0
+                f_sum = 0
                 for j,theta_j in enumerate(coverages):
-                    c_tot = c_tots[j]
-                    if sites[n] == sites[j]:
-                        if j == n:
-                            quotient_rule.append((c_tot-theta_j)/(c_tot*c_tot))
-                        else:
-                            quotient_rule.append((-theta_j)/(c_tot*c_tot))
+                    df= df_vector[j]
+                    f = f_vector[j]
+                    ep = epsilon_vector[j]
+                    if j==n:
+                        delta = 1
                     else:
-                        if j == n:
-                            quotient_rule.append((1.)/(c_tot))
-                        else:
-                            quotient_rule.append(0)
-                            
-                L_epsilon_dot_dQ = 0
-                for ep,nc,L in zip(epsilon_vector,quotient_rule,L_vector):
-                    L_epsilon_dot_dQ += ep*nc*L
-
-                dL_epsilon_dot_theta = 0
-                for j,ep,nc,dL in zip(range(len(epsilon_vector)),epsilon_vector,normed_coverages,dL_vector):
+                        delta = 0
                     if sites[j] == sites[n]:
-                        dL_epsilon_dot_theta += dL*ep*nc
-
-                diff_vector.append(L_epsilon_dot_dQ+dL_epsilon_dot_theta)
+                        dsum = 1
+                    else:
+                        dsum = 0
+                    df_sum += df*dsum*ep*theta_j
+                    f_sum += f*ep*delta
+                diff_vector.append(df_sum+f_sum)
             dEs.append(diff_vector)
-    if include_derivatives:
-        pass
-#        dEs = [list(dE) for dE in zip(*dEs)]
-    else:
-        dEs = None
+        else:
+            dEs = None
     return Es, dEs
+    """
+
+templates['ideal_interaction_function'] = """
+def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
+    #Dummy function for non-interacting
+    derivs = [[0]*len(coverages)]
+    derivs = derivs*len(coverages)
+    return energies, derivs
     """

@@ -41,7 +41,7 @@ class ReactionModel:
                 'mapper':None,
                 } #These are requirements of any reaction model.
 
-        self._classes = ['parser','scaler','thermodynamics',
+        self._classes = ['parser','scaler', 'thermodynamics',
                 'solver','mapper']
         self._solved = None 
         #keeps track of whether or not the model was solved
@@ -139,18 +139,11 @@ class ReactionModel:
             self._math.infnorm = lambda x: np.linalg.norm(x,np.inf)
             self._mpfloat = float
             def matrixT(*args,**kwargs):
-                #need transposed matrix to be compatible with mpmath
-#                try:
-#                    return np.matrix(*args,**kwargs).T
-#                except ValueError,strerror:
-#                    if 'matrix must be 2-dimensional' in strerror:
                 array = np.array(args[0])
                 while 1 in array.shape:
                     sum_idx = array.shape.index(1)
                     array = array.sum(sum_idx)
                 return array.T
-#            else:
-#                raise ValueError(strerror)
 
             self._matrix = matrixT
             def Axb_solver(A,b):
@@ -166,6 +159,25 @@ class ReactionModel:
         else:
             raise AttributeError(
             'Numerical representation must be mpmath, numpy, or python.')
+
+        #set up interaction model
+        if self.adsorbate_interaction_model == 'first_order':
+            interaction_model = catmap.thermodynamics.FirstOrderInteractions(self)
+            response_func = interaction_model.interaction_response_function
+            if not callable(response_func):
+                int_function = getattr(interaction_model,
+                        response_func+'_response')
+                interaction_model.interaction_response_function = int_function
+            
+            self.thermodynamics.__dict__['adsorbate_interactions'] = interaction_model
+#            self.thermodynamics.adsorbate_interactions = interaction_model
+
+
+        elif self.adsorbate_interaction_model in ['ideal',None]:
+            self.thermodynamics.adsorbate_interactions = None
+        else:
+            raise AttributeError(
+                    'Invalid adsorbate_interaction_model specified.')
 
         self.compatibility_check()
 
@@ -189,8 +201,6 @@ class ReactionModel:
             self.log('input_success')
 
         else:
-
-
             #Make "volcano plot"
             if hasattr(self,'descriptor_ranges') and hasattr(self,'resolution'):
                 self.descriptor_space_analysis()
@@ -280,6 +290,8 @@ class ReactionModel:
                 solver='SteadyStateSolver',
                 thermodynamics='ThermoCorrections',
                 numerical_representation = 'mpmath',
+                adsorbate_interaction_model = 'ideal',
+                interaction_fitting_mode=None,
                 decimal_precision = 75,
                 data_file = 'data.pkl')
         globs = {}
@@ -288,6 +300,7 @@ class ReactionModel:
         execfile(setup_file,globs,locs)
         for var in locs.keys():
             if var in self._classes:
+                #black magic to auto-import classes
                 try:
                     if locs[var]:
                         if not var.endswith('s'):
@@ -316,6 +329,9 @@ class ReactionModel:
 
         if self.parser:
             if self.input_file:
+                if getattr(self,'interaction_fitting_mode',None):
+                    #automatically parse in "coverage" if fitting interaction params
+                    self.parse_headers += ['coverage']
                 self.parse() #Automatically parse in data.
 
 

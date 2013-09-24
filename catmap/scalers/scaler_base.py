@@ -1,5 +1,4 @@
 import catmap
-from catmap import thermodynamics as thermodynamic_energies
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 np = catmap.np
@@ -99,6 +98,13 @@ class ScalerBase(ReactionModelWrapper):
             self.output_labels['enthalpy'] = ads
             self.output_labels['entroy'] = ads
             self.output_labels['zero_point_energy'] = ads
+        if 'interaction_matrix' in self.output_variables:
+            self._interaction_matrix = getattr(
+                self.thermodynamics.adsorbate_interactions,
+                '_interaction_matrix',
+                None)
+            all_names = self.adsorbate_names + self.transition_state_names
+            self.output_labels['interaction_matrix'] = [all_names,all_names]
 
     def get_energetics(self,descriptors):
         raise AttributeError('Scaler class does not contain this method. \

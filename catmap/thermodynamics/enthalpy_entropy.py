@@ -8,7 +8,6 @@ molecule = catmap.molecule
 np = catmap.np
 copy = catmap.copy
 
-
 class ThermoCorrections(ReactionModelWrapper):
     """Class for including thermodynamic corrections.
 

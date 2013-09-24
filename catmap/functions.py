@@ -44,6 +44,32 @@ def convert_formation_energies(energy_dict,atomic_references,composition_dict):
         new_data[key] = round(E,5)
     return new_data
 
+def parse_constraint(minmaxlist,name):
+    minlist = []
+    maxlist = []
+    for mm in minmaxlist:
+        try:
+            if mm is None:
+                minv = -1e99
+                maxv = 1e99
+            elif str(mm).count(':') == 1:
+                minv,maxv = [float(v) for v in mm.split(':')]
+            elif mm == '+':
+                minv = 0
+                maxv = 1e99
+            elif mm == '-':
+                minv = -1e99
+                maxv = 0
+            else:
+                minv = float(mm)
+                maxv = float(mm)
+        except (ValueError,TypeError,AttributeError):
+            raise ValueError('Could not parse constraint for '+\
+                    name+': '+str(minmaxlist))
+        minlist.append(minv)
+        maxlist.append(maxv)
+    return minlist,maxlist
+
 def constrained_relaxation(
         A,b,x0,x_min,x_max,max_iter = 10000,tolerance = 1e-12):
     """Solve Ax=b subject to the constraints that 
@@ -281,3 +307,19 @@ def numerical_jacobian(f, x, matrix, h = 1e-10):
         for i in xrange(m):
             J[i,j] = Jj[i]
     return J
+
+def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05):
+    x1 = cutoff + smoothing
+    x0 = cutoff - smoothing
+    slope = (1./max_coverage)
+    if theta_tot <= x0:
+        c_0 = 0
+        dC = 0
+    elif theta_tot <= x1:
+        alpha = slope/(2*(x1-x0))
+        c_0 = (alpha*(theta_tot-x0)**2)/theta_tot
+        dC = alpha*(1-(x0**2/theta_tot**2))
+    else:
+        c_0 = slope*(theta_tot - cutoff)/theta_tot
+        dC = slope*(cutoff/(theta_tot**2))
+    return c_0, dC

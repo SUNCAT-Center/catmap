@@ -1,5 +1,6 @@
 from scaler_base import *
 from catmap.data import regular_expressions
+from catmap.functions import parse_constraint
 import pylab as plt
 
 class GeneralizedLinearScaler(ScalerBase):
@@ -10,7 +11,8 @@ class GeneralizedLinearScaler(ScalerBase):
                         parameter_mode = 'formation_energy',
                         transition_state_scaling_parameters={},
                         transition_state_scaling_mode = 'initial_state',
-                        interaction_cross_terms = 'geometric_positive',
+                        cross_interaction_mode = 'geometric_mean',
+                        transition_state_cross_interaction_mode = 'transition_state_scaling',
                         interaction_strength = 1,
                         #weight interaction parameters by this
                         avoid_scaling = False,
@@ -50,56 +52,6 @@ class GeneralizedLinearScaler(ScalerBase):
             self.parameter_dict = parameter_dict
             self.parameter_names = self.adsorbate_names + self.transition_state_names
 
-    def parameterize_interactions(self):
-        if self.adsorbate_interactions == 'linear':
-            self.interaction_parameter_dict = {}
-            if self.max_interaction_parameter:
-                if self.max_interaction_parameter in self.surface_names:
-                    max_idx = self.surface_names.index(self.max_interaction_parameter)
-                    max_dict = None
-                elif hasattr(self.max_interaction_parameter,'keys'):
-                    max_idx = None
-                    max_dict = self.max_interaction_parameter
-                else:
-                    raise TypeError('max_interaction_parameter must be the name of a '+\
-                        'surface or a dictionary with species names as keys and maxs as vals.')
-            else:
-                max_idx = None
-                max_dict = None
-
-            for sp in self.species_definitions:
-                site = self.species_definitions[sp]['site']
-                cov_dep_E = self.species_definitions[sp].get('coverage_dependent_energy',None)
-                if cov_dep_E:
-                    threshold = self.species_definitions[site]['interaction_threshold']
-                    int_params = []
-                    for theta_E in cov_dep_E:
-                        if theta_E and len(theta_E) >= 2:
-                            theta,E = zip(*theta_E)
-                            theta = [ti - threshold for ti in theta]
-                            m,b = plt.polyfit(theta,E,1)
-                            int_params.append(2*m)
-
-                        else:
-                            int_params.append(None)
-
-                    if max_idx:
-                        max_p = int_params[max_idx]
-                        if max_p is None:
-                            print 'Warning: No interaction parameter for '+sp+' on '+\
-                                    self.max_interaction_parameter+'. No maximum will be used'
-                        else:
-                            self.species_definitions[sp]['max_interaction_parameter'] = max_p
-                    elif max_dict and sp in max_dict:
-                        self.species_definitions[sp]['max_interaction_parameter'] = max_dict[sp]
-
-                    self.species_definitions[sp]['interaction_parameter'] = int_params
-                    self.interaction_parameter_dict[sp] = int_params
-                    all_ads = self.adsorbate_names + self.transition_state_names
-                    self.parameter_names = list(all_ads)
-                    for pi in all_ads:
-                        for pj in all_ads:
-                            self.parameter_names.append(pi + '+' + pj)
 
     def get_coefficient_matrix(self):
 
@@ -115,9 +67,10 @@ class GeneralizedLinearScaler(ScalerBase):
         all_coeffs = []
         all_coeffs += list(self.get_adsorbate_coefficient_matrix())
         all_coeffs += list(self.get_transition_state_coefficient_matrix())
-        if self.adsorbate_interactions in ['linear']:
-            self.parameterize_interactions()
-            all_coeffs += list(self.get_interaction_coefficient_matrix())
+        if self.adsorbate_interaction_model not in [None,'ideal']:
+            self.thermodynamics.adsorbate_interactions.parameterize_interactions()
+            all_coeffs += list(
+               self.thermodynamics.adsorbate_interactions.get_interaction_scaling_matrix())
         
         all_coeffs = np.array(all_coeffs)
         self.coefficient_matrix = all_coeffs
@@ -356,88 +309,11 @@ class GeneralizedLinearScaler(ScalerBase):
 
         return E_dict
 
-    def get_interaction_coefficient_matrix(self):
-        interaction_dict = {}
-        n_ads = len(self.adsorbate_names)
-        for a in self.adsorbate_names:
-            interaction_dict[a] = self.species_definitions[a]['interaction_parameter']
-        coeff_mins = []
-        coeff_maxs = []
-        for cmins,cmaxs in zip(self.coefficient_mins,self.coefficient_maxs):
-            new_mins = []
-            new_maxs = []
-            for vmin,vmax in zip(cmins,cmaxs):
-                if vmax != vmin and vmin == 0:
-                    new_mins.append(-1e99)
-                    new_maxs.append(vmax)
-                else:
-                    new_mins.append(vmin)
-                    new_maxs.append(vmax)
-            coeff_mins.append(new_mins)
-            coeff_maxs.append(new_maxs)
-
-        C = catmap.functions.scaling_coefficient_matrix(
-                interaction_dict, self.descriptor_dict, 
-                self.surface_names, 
-                self.adsorbate_names,
-                coeff_mins,coeff_maxs)
-        self.interaction_coefficient_matrix = C.T
-        return C.T
-
-
-    def get_interaction_matrix(self,descriptors):
-        full_descriptors = list(descriptors) + [1.]
-        param_vector = np.dot(self.coefficient_matrix,full_descriptors)
-
-        n_ads = len(self.adsorbate_names)
-        n_TS = len(self.transition_state_names)
-        n_tot = n_ads + n_TS
-        epsilon_matrix = np.zeros((n_tot,n_tot))
-        self_interactions = param_vector[n_tot:]
-        for ads,param in zip(self.adsorbate_names,self_interactions):
-            max_val = self.species_definitions[ads].get('max_interaction_parameter',None)
-
-            if max_val is not None:
-                param = min(param,max_val)
-                self_interactions[self.adsorbate_names.index(ads)] = param
-
-        for i,e_ii in enumerate(self_interactions):
-            epsilon_matrix[i,i] = e_ii
-
-        for i, e_i in enumerate(self_interactions):
-            for j, e_j in enumerate(self_interactions):
-                if self.interaction_cross_terms == 'geometric_positive':
-                    epsilon_matrix[i,j] = np.sqrt(abs(e_i)*abs(e_j))
-                elif self.interaction_cross_terms == 'arithmetic':
-                    epsilon_matrix[i,j] = (e_i+e_j)/2.
-                elif self.interaction_cross_terms == 'zero':
-                    epsilon_matrix[i,j] = 0
-
-
-        if self.non_interacting_site_pairs:
-            for site_1, site_2 in self.non_interacting_site_pairs:
-                idxs1 = [self.adsorbate_names.index(sp) for 
-                        sp in self.adsorbate_names if
-                        self.species_definitions[sp]['site']==site_1]
-                idxs2 = [self.adsorbate_names.index(sp) for 
-                        sp in self.adsorbate_names if
-                        self.species_definitions[sp]['site']==site_2]
-                for i in idxs1:
-                    for j in idxs2:
-                        epsilon_matrix[i,j] = epsilon_matrix[j,i] = 0
-
-        for i,TS_params in enumerate(list(self.transition_state_scaling_matrix)):
-            i += n_ads
-            TS_params = list(TS_params)[:-1]
-            for j, epsilon_params in enumerate(list(epsilon_matrix[0:n_ads,0:n_ads])):
-                e_TS = np.dot(TS_params,epsilon_params)
-                epsilon_matrix[i,j] = epsilon_matrix[j,i] = e_TS
-        epsilon_matrix *= self.interaction_strength
-        return epsilon_matrix
 
     def get_rxn_parameters(self,descriptors, *args, **kwargs):
-        if self.adsorbate_interactions in ['linear']:
-            return self.get_formation_energy_interaction_parameters(descriptors)
+        if self.adsorbate_interaction_model in ['first_order']:
+            params =  self.get_formation_energy_interaction_parameters(descriptors)
+            return params
         else:
             params = self.get_formation_energy_parameters(descriptors)
             return params
@@ -451,7 +327,7 @@ class GeneralizedLinearScaler(ScalerBase):
 
     def get_formation_energy_interaction_parameters(self,descriptors):
         E_f = self.get_formation_energy_parameters(descriptors)
-        epsilon = self.get_interaction_matrix(descriptors)
+        epsilon = self.thermodynamics.adsorbate_interactions.get_interaction_matrix(descriptors)
         epsilon = list(epsilon.ravel())
         return E_f + epsilon
 
@@ -460,32 +336,6 @@ class GeneralizedLinearScaler(ScalerBase):
         to lists compatible with the function to obtain scaling coefficients."""
         coefficient_mins = []
         coefficient_maxs = []
-
-        def parse_minmaxlist(minmaxlist,ads):
-            minlist = []
-            maxlist = []
-            for mm in minmaxlist:
-                try:
-                    if mm is None:
-                        minv = -1e99
-                        maxv = 1e99
-                    elif str(mm).count(':') == 1:
-                        minv,maxv = [float(v) for v in mm.split(':')]
-                    elif mm == '+':
-                        minv = 0
-                        maxv = 1e99
-                    elif mm == '-':
-                        minv = -1e99
-                        maxv = 0
-                    else:
-                        minv = float(mm)
-                        maxv = float(mm)
-                except (ValueError,TypeError,AttributeError):
-                    raise ValueError('Could not parse constraint for '+\
-                            ads+': '+str(minmaxlist))
-                minlist.append(minv)
-                maxlist.append(maxv)
-            return minlist,maxlist
 
         if constraint_dict:
             for key in constraint_dict.keys():
@@ -499,9 +349,10 @@ class GeneralizedLinearScaler(ScalerBase):
                     constr = self.default_constraints
                 else:
                     constr = constraint_dict[ads]
-                minvs,maxvs = parse_minmaxlist(constr,ads)
+                minvs,maxvs = parse_constraint(constr,ads)
                 coefficient_mins.append(minvs)
                 coefficient_maxs.append(maxvs)
+
             self.coefficient_mins = coefficient_mins
             self.coefficient_maxs = coefficient_maxs
             return coefficient_mins, coefficient_maxs
