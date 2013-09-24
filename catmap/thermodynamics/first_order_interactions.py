@@ -82,7 +82,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
                     for pi in all_ads:
                         for pj in all_ads:
                             self.parameter_names.append(pi + '&' + pj)
-            print self.self_interaction_parameter_dict
 
     def get_interaction_scaling_matrix(self):
         interaction_dict = {}
