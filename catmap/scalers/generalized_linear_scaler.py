@@ -107,7 +107,7 @@ class GeneralizedLinearScaler(ScalerBase):
 
         #This function is godawful and needs to be cleaned up considerably...
         #156 lines is unacceptable for something so simple.
-        #TEMP
+        #HACK
 
         def state_scaling(TS,params,mode):
             coeffs = [0]*len(self.adsorbate_names)
