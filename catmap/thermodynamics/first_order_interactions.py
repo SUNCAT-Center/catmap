@@ -146,6 +146,8 @@ class FirstOrderInteractions(ReactionModelWrapper):
         #get mins/maxs
         interaction_mins = []
         interaction_maxs = []
+        if self.default_interaction_constraints is None:
+            self.default_interaction_constraints = [None]*(len(self.descriptor_names)+1)
         for p in param_names:
             if p not in constraint_dict:
                 constr = self.default_interaction_constraints

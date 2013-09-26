@@ -13,7 +13,7 @@ class GeneralizedLinearScaler(ScalerBase):
                         transition_state_scaling_mode = 'initial_state',
                         transition_state_cross_interaction_mode = 'transition_state_scaling',
                         max_self_interaction = 'Pd',
-                        default_interaction_constraints = [None]*(len(self.descriptor_names)+1),
+                        default_interaction_constraints = None,
                         avoid_scaling = False,
                         #if the descriptors are equal to a metal, 
                         #use the real values for that metal rather
