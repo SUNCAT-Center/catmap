@@ -30,6 +30,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 }
 
     def parameterize_interactions(self):
+        self._parameterized = True
         self.get_interaction_transition_state_scaling_matrix()
         if self.interaction_fitting_mode:
             if self.interaction_fitting_mode == 'average_self':
@@ -75,14 +76,19 @@ class FirstOrderInteractions(ReactionModelWrapper):
                                     self.max_self_interaction+'. No maximum will be used'
                         else:
                             self.species_definitions[sp]['max_self_interaction'] = max_p
+                    
+                    if int_params != [None]*len(int_params):
+                        if self.species_definitions[sp].get('self_interaction_parameter',None) is None:
+                            self.species_definitions[sp]['self_interaction_parameter'] = int_params
+                            self.self_interaction_parameter_dict[sp] = int_params
+                        else:
+                            self.self_interaction_parameter_dict[sp] = self.species_definitions[sp]['self_interaction_parameter']
 
-                    self.species_definitions[sp]['self_interaction_parameter'] = int_params
-                    self.self_interaction_parameter_dict[sp] = int_params
-                    all_ads = self.adsorbate_names + self.transition_state_names
-                    self.parameter_names = list(all_ads)
-                    for pi in all_ads:
-                        for pj in all_ads:
-                            self.parameter_names.append(pi + '&' + pj)
+            all_ads = self.adsorbate_names + self.transition_state_names
+            self.parameter_names = list(all_ads)
+            for pi in all_ads:
+                for pj in all_ads:
+                    self.parameter_names.append(pi + '&' + pj)
 
     def get_interaction_info(self):
         interaction_dict = {}

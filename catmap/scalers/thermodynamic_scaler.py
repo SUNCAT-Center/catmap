@@ -13,7 +13,8 @@ class ThermodynamicScaler(ScalerBase):
                     single surface.')
 
         if self.adsorbate_interaction_model not in [None,'ideal']:
-            self.thermodynamics.adsorbate_interactions.parameterize_interactions()
+            if not getattr(self.thermodynamics.adsorbate_interactions,'_parameterized',None):
+                self.thermodynamics.adsorbate_interactions.parameterize_interactions() 
 
         energy_dict = {}
         for species in self.adsorbate_names+self.transition_state_names:
@@ -67,15 +68,18 @@ class ThermodynamicScaler(ScalerBase):
             param_names = self.adsorbate_names + self.interaction_cross_term_names
         else:
             param_names = self.adsorbate_names
-        info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
-        params = [info[pi][0] for pi in param_names]
-        params_valid = []
-        for p,pname in zip(params,param_names):
-            if p:
-                params_valid.append(p)
-            else:
-#                print 'Warning: No interaction parameter found for '+pname+'. Using 0'
-                params_valid.append(0)
-        epsilon = self.thermodynamics.adsorbate_interactions.params_to_matrix(E_f+params_valid)
+
+        if not self.interaction_parameters:
+            info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
+            params = [info[pi][0] for pi in param_names]
+            params_valid = []
+            for p,pname in zip(params,param_names):
+                if p is not None:
+                    params_valid.append(p)
+                else:
+                    raise ValueError('No interaction parameter specified for '+pname)
+            self.interaction_parameters = params_valid
+
+        epsilon = self.thermodynamics.adsorbate_interactions.params_to_matrix(E_f+self.interaction_parameters)
         epsilon = list(epsilon.ravel())
         return E_f + epsilon
