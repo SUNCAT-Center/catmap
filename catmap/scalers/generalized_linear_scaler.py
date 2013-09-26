@@ -11,10 +11,9 @@ class GeneralizedLinearScaler(ScalerBase):
                         parameter_mode = 'formation_energy',
                         transition_state_scaling_parameters={},
                         transition_state_scaling_mode = 'initial_state',
-                        cross_interaction_mode = 'geometric_mean',
                         transition_state_cross_interaction_mode = 'transition_state_scaling',
-                        interaction_strength = 1,
-                        #weight interaction parameters by this
+                        max_self_interaction = 'Pd',
+                        default_interaction_constraints = [None]*(len(self.descriptor_names)+1),
                         avoid_scaling = False,
                         #if the descriptors are equal to a metal, 
                         #use the real values for that metal rather

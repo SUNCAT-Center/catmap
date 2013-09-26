@@ -16,12 +16,12 @@ class FirstOrderInteractions(ReactionModelWrapper):
         defaults = dict(
                 cross_interaction_mode='geometric_mean',
                 transition_state_cross_interaction_mode='intermediate_state',
-                max_self_interaction = 'Pd',
                 interaction_response_function = 'linear',
                 interaction_response_parameters = {'max_coverage':1,'cutoff':0.25,
                     'smoothing':0.05},
                 interaction_fitting_mode=None,
-                default_interaction_constraints = [None]*(len(self.descriptor_names)+1),
+                interaction_strength = 1,
+                #weight interaction parameters by this
                 )
         self._rxm.update(defaults)
         self._required = {'cross_interaction_mode':str,
@@ -30,6 +30,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 }
 
     def parameterize_interactions(self):
+        self.get_interaction_transition_state_scaling_matrix()
         if self.interaction_fitting_mode:
             if self.interaction_fitting_mode == 'average_self':
                 def linearizer(theta,params):
@@ -83,7 +84,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                         for pj in all_ads:
                             self.parameter_names.append(pi + '&' + pj)
 
-    def get_interaction_scaling_matrix(self):
+    def get_interaction_info(self):
         interaction_dict = {}
         n_ads = len(self.adsorbate_names)
         cross_term_names = []
@@ -104,7 +105,21 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 if name not in cross_term_names:
                     cross_term_names.append(name)
                     interaction_dict[name] = params
-        
+
+        if cross_term_names:
+            cross_term_names = tuple(cross_term_names) 
+            self.interaction_cross_term_names = cross_term_names
+        return interaction_dict
+
+    def get_interaction_scaling_matrix(self):
+
+        cross_names = self.interaction_cross_term_names
+        if cross_names:
+            param_names = self.adsorbate_names + cross_names
+        else:
+            param_names = self.adsorbate_names
+
+        interaction_dict = self.get_interaction_info()
         constraint_dict = {}
         for ads in self.scaling_constraint_dict:
             if '-' not in ads:
@@ -127,11 +142,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
             else:
                 constraint_dict[ads] = self.scaling_constraint_dict[ads]
 
-        cross_term_names = tuple(cross_term_names) 
-        param_names = self.adsorbate_names + cross_term_names
-
-        if cross_term_names:
-            self.interaction_cross_term_names = cross_term_names
 
         #get mins/maxs
         interaction_mins = []
@@ -154,8 +164,14 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 interaction_maxs)
         self.interaction_coefficient_matrix = C.T
 
+        return self.interaction_coefficient_matrix
+
+    def get_interaction_transition_state_scaling_matrix(self):
         #get TS scaling matrix equivalent
         if self.transition_state_cross_interaction_mode == 'transition_state_scaling':
+            if self.transition_state_scaling_matrix is None:
+                raise AttributeError('Transition state scaling can only be used '+\
+                ' for interactions if the transition_state_scaling_matrix is defined.')
             TS_weight_matrix = []
             for params in list(self.transition_state_scaling_matrix):
                 TS_weight_matrix.append(params[:-1])
@@ -184,12 +200,13 @@ class FirstOrderInteractions(ReactionModelWrapper):
 
         self.interaction_transition_state_scaling_matrix = TS_weight_matrix
 
-        return self.interaction_coefficient_matrix
 
     def get_interaction_matrix(self,descriptors):
         full_descriptors = list(descriptors) + [1.]
         param_vector = np.dot(self.coefficient_matrix,full_descriptors)
+        return self.params_to_matrix(param_vector)
 
+    def params_to_matrix(self,param_vector):
         n_ads = len(self.adsorbate_names)
         n_TS = len(self.transition_state_names)
         all_names = self.adsorbate_names + self.transition_state_names
@@ -203,7 +220,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
             if max_val is not None:
                 param = min(param,max_val)
                 self_interactions[self.adsorbate_names.index(ads)] = param
-
         for i,e_ii in enumerate(self_interactions):
             epsilon_matrix[i,i] = e_ii
 
@@ -255,7 +271,8 @@ class FirstOrderInteractions(ReactionModelWrapper):
             for rxn in self.elementary_rxns:
                 if TS in rxn[1]:
                     if IS or FS:
-                        print('Warning: Ambiguous initial/final state for'+TS)
+                        pass
+#                        print('Warning: Ambiguous initial/final state for '+TS)
                     IS = rxn[0]
                     FS = rxn[-1]
             for ads in IS:
