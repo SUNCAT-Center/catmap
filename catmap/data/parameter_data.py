@@ -76,10 +76,16 @@ ideal_gas_params = {
         'H2O_g':[2,'nonlinear',0],
         'CO_g':[1,'linear',0],
         'CH4_g':[12,'nonlinear',0],
-        'CH3OH_g':[2,'nonlinear',0],
+	'NH3_g':[3,'nonlinear',0],
+        'CH3OH_g':[1,'nonlinear',0],
         'CO2_g':[2,'linear',0],
-        'CH2O_g':[4,'nonlinear',0],
-        'HCOOH_g':[2,'nonlinear',0]
+        'CH2O_g':[2,'nonlinear',0],
+        'HCOOH_g':[1,'nonlinear',0],
+	'CH2CH2_g':[4,'nonlinear',0],
+	'CH3CHCH2_g':[1,'nonlinear',0], #propene
+	'CH3CH2CHCH2_g':[1,'nonlinear',0], #1-butene
+        'CH3CHCHCH3_g':[2,'nonlinear',0], #2-butene, ok for both trans and cis
+        'CH3CH3CCH2_g':[2,'nonlinear',0], #isobutene
         }
 
 #Define default fixed entropy gas entropies
