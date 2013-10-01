@@ -238,7 +238,6 @@ def scaling_coefficient_matrix(
         #for such small matrices)
         D = np.array(D)
         A = np.array(A)
-
         Dinv = np.linalg.pinv(D)
         c0 = np.dot(Dinv,A)
 
