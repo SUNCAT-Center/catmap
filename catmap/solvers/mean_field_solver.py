@@ -123,6 +123,15 @@ class MeanFieldSolver(SolverBase):
             DRC.append([float(Jj/ti) for Jj in Ji])
         return DRC
 
+    def get_interacting_energies(self,rxn_parameters):
+        all_ads = self.adsorbate_names + self.transition_state_names
+        N_ads = len(all_ads)
+        energies = rxn_parameters[:N_ads]
+        eps_vector = rxn_parameters[N_ads:]
+        cvg = self._coverage + [0]*len(self.transition_state_names)
+        E_int = self.interaction_function(cvg,energies,eps_vector,self.thermodynamics.adsorbate_interactions.interaction_response_function,False)[0]
+        return E_int
+
     def get_selectivity_control(self,rxn_parameters):
         kT = self._kB*self.temperature
         eps = self._mpfloat(self.perturbation_size)

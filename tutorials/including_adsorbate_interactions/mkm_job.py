@@ -4,6 +4,7 @@ from catmap import ReactionModel
 mkm_file = 'CO_oxidation.mkm'
 model = ReactionModel(setup_file=mkm_file)
 model.output_variables += ['production_rate','interaction_matrix','free_energy']
+model.create_standalone = True
 model.run()
 
 from catmap import analyze

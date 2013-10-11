@@ -168,10 +168,16 @@ class ReactionModel:
                 int_function = getattr(interaction_model,
                         response_func+'_response')
                 interaction_model.interaction_response_function = int_function
-            
             self.thermodynamics.__dict__['adsorbate_interactions'] = interaction_model
-#            self.thermodynamics.adsorbate_interactions = interaction_model
 
+        elif self.adsorbate_interaction_model == 'second_order':
+            interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+            response_func = interaction_model.interaction_response_function
+            if not callable(response_func):
+                int_function = getattr(interaction_model,
+                        response_func+'_response')
+                interaction_model.interaction_response_function = int_function
+            self.thermodynamics.__dict__['adsorbate_interactions'] = interaction_model
 
         elif self.adsorbate_interaction_model in ['ideal',None]:
             self.thermodynamics.adsorbate_interactions = None

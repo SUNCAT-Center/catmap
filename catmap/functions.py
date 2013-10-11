@@ -314,11 +314,15 @@ def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05)
     if theta_tot <= x0:
         c_0 = 0
         dC = 0
+        d2C = 0
     elif theta_tot <= x1:
         alpha = slope/(2*(x1-x0))
         c_0 = (alpha*(theta_tot-x0)**2)/theta_tot
-        dC = alpha*(1-(x0**2/theta_tot**2))
+        dC = alpha*(1-(x0/theta_tot)**2)
+        d2C = (2*alpha*x0**2)/(theta_tot**3)
+
     else:
         c_0 = slope*(theta_tot - cutoff)/theta_tot
         dC = slope*(cutoff/(theta_tot**2))
-    return c_0, dC
+        d2C = (-2*slope*cutoff)/(theta_tot**3)
+    return c_0, dC, d2C

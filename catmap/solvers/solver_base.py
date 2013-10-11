@@ -68,6 +68,10 @@ class SolverBase(ReactionModelWrapper):
             self._rxn_order = self.get_rxn_order(rxn_parameters)
             self.output_labels['rxn_order'] = [self.gas_names,self.gas_names]
 
+        if 'interacting_energy' in self.output_variables:
+            self._interacting_energy = self.get_interacting_energies(rxn_parameters)
+            self.output_labels['interacting_energy'] = self.adsorbate_names+self.transition_state_names
+
         for out in self.output_variables:
             if out == 'production_rate':
                 self._production_rate = [max(0,r) 
@@ -146,9 +150,18 @@ class NewtonRoot:
         self.x0 = x0
         if 'J' in kwargs:
             self.J = kwargs['J']
+
+            #the following is useful for debugging/benchmarking
+            #analytical derivatives, and should be commented out
+            #for any production code.
+#            import time
 #            def J(x): #Use this to confirm the analytical jacobian is correct
+#                t0 = time.time()
 #                analytical = kwargs['J'](x)
-#                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-50)
+#                t_a = time.time() - t0
+#                t0 = time.time()
+#                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-300)
+#                t_n = time.time() - t0
 #                error = analytical - numerical
 #                error = error.tolist()
 #                max_error = -1
@@ -157,12 +170,20 @@ class NewtonRoot:
 #                    for j,ej in enumerate(ei):
 #                        if abs(ej) > 1e-10:
 #                            print 'big error', ej, [i,j]
+#                            pass
 #                        if abs(ej) > max_error:
-#                            max_error = ej
+#                            max_error = abs(ej)
 #                            max_pos = [i,j]
 #                print 'max_error', max_error, max_pos
+#                print 't_analytic/t_numerical', t_a/t_n
 #                return numerical
 #            self.J = J
+
+#            def J_numerical(x): #Use this to confirm the analytical jacobian is correct
+#                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-50)
+#                return numerical
+#            self.J = J_numerical
+
 
         else:
             raise ValueError('No method for estimating Jacobian.')

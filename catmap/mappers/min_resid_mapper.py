@@ -325,7 +325,7 @@ class MinResidMapper(MapperBase):
                         try:
                             resid_str = float(resid)
                         except ValueError:
-                            resid_str = 'unknown'
+                            resid_str = resid
 
                         self.log('minresid_fail',n_iter=i_poss,
                                 old_pt=self.print_point(

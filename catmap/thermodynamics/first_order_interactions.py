@@ -29,9 +29,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 'interaction_fitting_mode':None
                 }
 
-    def parameterize_interactions(self):
-        self._parameterized = True
-        self.get_interaction_transition_state_scaling_matrix()
+    def get_linearizer(self):
         if self.interaction_fitting_mode:
             if self.interaction_fitting_mode == 'average_self':
                 def linearizer(theta,params):
@@ -39,11 +37,20 @@ class FirstOrderInteractions(ReactionModelWrapper):
                     Fint = lambda x: self.interaction_response_function(x,**params)[0]*x
                     integrated =  integrate.quad(Fint,0,theta)
                     return integrated[0]/theta
+                self._linearizer = linearizer
             elif self.interaction_fitting_mode == 'differential_self':
                 def linearizer(theta,params):
                     return self.interaction_response_function(theta,**params)[0]*theta
+                self._linearizer = linearizer
             else:
                 raise AttributeError('Invalid interaction fitting mode.')
+
+    def parameterize_interactions(self):
+        self._parameterized = True
+        self.get_interaction_transition_state_scaling_matrix()
+        self.get_linearizer()
+
+        if self.interaction_fitting_mode:
             self.self_interaction_parameter_dict = {}
             if self.max_self_interaction:
                 if self.max_self_interaction in self.surface_names:
@@ -53,7 +60,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
                         'surface or a dictionary with species names as keys and maxs as vals.')
             else:
                 max_idx = None
-
             for sp in self.species_definitions:
                 site = self.species_definitions[sp]['site']
                 cov_dep_E = self.species_definitions[sp].get('coverage_dependent_energy',None)
@@ -64,7 +70,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                     for theta_E in cov_dep_E:
                         if theta_E and len(theta_E) >= 2:
                             theta,E = zip(*theta_E)
-                            theta_l = [linearizer(t_i,params) for t_i in theta]
+                            theta_l = [self._linearizer(t_i,params) for t_i in theta]
                             m,b = plt.polyfit(theta_l,E,1)
                             int_params.append(m)
                         else:
@@ -89,6 +95,10 @@ class FirstOrderInteractions(ReactionModelWrapper):
             for pi in all_ads:
                 for pj in all_ads:
                     self.parameter_names.append(pi + '&' + pj)
+
+#            print self.surface_names
+#            for key in self.self_interaction_parameter_dict:
+#                print key, self.self_interaction_parameter_dict[key]
 
     def get_interaction_info(self):
         interaction_dict = {}
@@ -118,7 +128,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
         return interaction_dict
 
     def get_interaction_scaling_matrix(self):
-
         cross_names = self.interaction_cross_term_names
         if cross_names:
             param_names = self.adsorbate_names + cross_names
@@ -127,9 +136,12 @@ class FirstOrderInteractions(ReactionModelWrapper):
 
         interaction_dict = self.get_interaction_info()
         constraint_dict = {}
-        for ads in self.scaling_constraint_dict:
+        if not self.interaction_scaling_constraint_dict:
+            self.interaction_scaling_constraint_dict = self.scaling_constraint_dict
+
+        for ads in self.interaction_scaling_constraint_dict:
             if '-' not in ads:
-                constr = self.scaling_constraint_dict[ads]
+                constr = self.interaction_scaling_constraint_dict[ads]
                 new_constr = []
                 #preserve only 0 constraints
                 for ci in constr:
@@ -139,14 +151,14 @@ class FirstOrderInteractions(ReactionModelWrapper):
                         new_constr.append(0)
                 constraint_dict[ads] = new_constr
 
-        for ads in self.scaling_constraint_dict:
+        for ads in self.interaction_scaling_constraint_dict:
             if '&' in ads:
                 a,b = ads.split('&')
                 a,b = sorted([a,b])
                 new_ads = '&'.join([a,b])
-                constraint_dict[new_ads] = self.scaling_constraint_dict[ads]
+                constraint_dict[new_ads] = self.interaction_scaling_constraint_dict[ads]
             else:
-                constraint_dict[ads] = self.scaling_constraint_dict[ads]
+                constraint_dict[ads] = self.interaction_scaling_constraint_dict[ads]
 
 
         #get mins/maxs
@@ -296,15 +308,15 @@ class FirstOrderInteractions(ReactionModelWrapper):
 
     @staticmethod
     def smooth_piecewise_linear_response(*args,**kwargs):
-        return smooth_piecewise_linear(*args,**kwargs)
+        return smooth_piecewise_linear(*args,**kwargs)[:2]
 
     @staticmethod
     def piecewise_linear_response(*args,**kwargs):
         kwargs['smoothing'] = 0
-        return smooth_piecewise_linear(*args,**kwargs)
+        return smooth_piecewise_linear(*args,**kwargs)[:2]
 
     @staticmethod
     def linear_response(*args,**kwargs):
         kwargs['smoothing'] = 0
         kwargs['cutoff'] = 0
-        return smooth_piecewise_linear(*args,**kwargs)
+        return smooth_piecewise_linear(*args,**kwargs)[:2]

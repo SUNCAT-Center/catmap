@@ -463,8 +463,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
         locs = {}
         exec func_string in globals(), locs
-#        for i,li in enumerate(func_string.split('\n')):
-#            print i, li
+
         optimized = locs[func_name]
         delta = np.array((optimized(*test_args) - unoptimized(*test_args)).tolist()).max()
 
