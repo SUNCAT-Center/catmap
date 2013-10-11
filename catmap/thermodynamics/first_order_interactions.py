@@ -224,7 +224,8 @@ class FirstOrderInteractions(ReactionModelWrapper):
     def get_interaction_matrix(self,descriptors):
         full_descriptors = list(descriptors) + [1.]
         param_vector = np.dot(self.coefficient_matrix,full_descriptors)
-        return self.params_to_matrix(param_vector)
+        eps_vector = self.params_to_matrix(param_vector)
+        return eps_vector
 
     def params_to_matrix(self,param_vector):
         n_ads = len(self.adsorbate_names)

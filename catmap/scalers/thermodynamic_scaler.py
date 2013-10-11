@@ -49,7 +49,7 @@ class ThermodynamicScaler(ScalerBase):
         return thermo_dict
 
     def get_rxn_parameters(self,descriptors, *args, **kwargs):
-        if self.adsorbate_interaction_model in ['first_order']:
+        if self.adsorbate_interaction_model in ['first_order','second_order']:
             params =  self.get_formation_energy_interaction_parameters(descriptors)
             return params
         else:
