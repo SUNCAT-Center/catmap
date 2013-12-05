@@ -663,14 +663,6 @@ class ReactionModel:
 
     def verify(self):
 
-        #Check that descriptors are in reaction network
-        all_ads = list(self.adsorbate_names) + list(self.transition_state_names)
-        for d in self.descriptor_names:
-            if d not in all_ads:
-                raise AttributeError('Descriptor '+d+' does not appear in reaction'+\
-                        ' network. Add descriptor to network via "dummy" site, or '+\
-                        'use an adsorbate from the network as a descriptor.')
-
         
         #Check gas_ratios
         if hasattr(self,'gas_ratios') and self.gas_ratios:

@@ -27,6 +27,15 @@ class GeneralizedLinearScaler(ScalerBase):
                           'avoid_scaling':None}
 
     def parameterize(self):
+
+        #Check that descriptors are in reaction network
+        all_ads = list(self.adsorbate_names) + list(self.transition_state_names)
+        for d in self.descriptor_names: #REMOVE THIS REQUIREMENT LATER
+            if d not in all_ads:
+                raise AttributeError('Descriptor '+d+' does not appear in reaction'+\
+                        ' network. Add descriptor to network via "dummy" site, or '+\
+                        'use an adsorbate from the network as a descriptor.')
+
         if not self.parameter_dict or not self.descriptor_dict:
             parameter_dict = {}
             descriptor_dict = {}
