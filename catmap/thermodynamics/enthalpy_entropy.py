@@ -338,7 +338,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
         for ads in adsorbate_names:
             if ads in freq_dict:
-                if '-' in ads and not freq_dict[ads]:
+                if '-' in ads and freq_dict[ads] in [None,[],()]:
                     avg_TS.append(ads)
                 therm = HarmonicThermo(freq_dict[ads])
                 free_energy = therm.get_free_energy(
@@ -419,7 +419,7 @@ class ThermoCorrections(ReactionModelWrapper):
             for sp in energy_dict.keys():
                 comp_dict[sp] = self.species_definitions[sp]['composition']
             energy_dict = self.convert_formation_energies(
-                    energy_dict,reservoirs,comp_dict)
+                    energy_dict,reservoirs,comp_dict)[0]
 
         #calculate coverages
         cvgs = [0]*len(self.adsorbate_names)

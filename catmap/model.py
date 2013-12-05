@@ -108,9 +108,6 @@ class ReactionModel:
             self.load(self.setup_file)
         
 
-        if not hasattr(self,'verbose'):
-            self.verbose = 1
-
     # Functions for executing the kinetic model
 
     def run(self,**kwargs):
@@ -299,6 +296,7 @@ class ReactionModel:
                 adsorbate_interaction_model = 'ideal',
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
+                verbose = 1,
                 data_file = 'data.pkl')
         globs = {}
         locs = defaults
@@ -664,6 +662,15 @@ class ReactionModel:
                         'attribute '+str(var))
 
     def verify(self):
+
+        #Check that descriptors are in reaction network
+        all_ads = list(self.adsorbate_names) + list(self.transition_state_names)
+        for d in self.descriptor_names:
+            if d not in all_ads:
+                raise AttributeError('Descriptor '+d+' does not appear in reaction'+\
+                        ' network. Add descriptor to network via "dummy" site, or '+\
+                        'use an adsorbate from the network as a descriptor.')
+
         
         #Check gas_ratios
         if hasattr(self,'gas_ratios') and self.gas_ratios:

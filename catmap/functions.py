@@ -42,7 +42,7 @@ def convert_formation_energies(energy_dict,atomic_references,composition_dict):
         for symb in composition:
             E -= ref_offsets[symb]*composition[symb]
         new_data[key] = round(E,5)
-    return new_data
+    return new_data,ref_offsets
 
 def parse_constraint(minmaxlist,name):
     minlist = []
@@ -71,7 +71,7 @@ def parse_constraint(minmaxlist,name):
     return minlist,maxlist
 
 def constrained_relaxation(
-        A,b,x0,x_min,x_max,max_iter = 10000,tolerance = 1e-12):
+        A,b,x0,x_min,x_max,max_iter = 100000,tolerance = 1e-10):
     """Solve Ax=b subject to the constraints that 
     x_i > x_min_i and x_i < x_max_i. Algorithm is from Axelson 1996.
     

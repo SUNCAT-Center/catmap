@@ -30,6 +30,18 @@ class ParserBase(ReactionModelWrapper):
         self._rxm = reaction_model
         self._required = {} #No user-defined attributes are required.
 
+    @staticmethod
+    def get_composition(species_string):
+        composition = {}
+        try:
+            symbs = string2symbols(species_string.replace('-',''))
+            for a in set(symbs):
+                composition[a] = symbs.count(a)
+        except ValueError:
+            composition = None
+        return composition
+
+
     def _baseparse(self):
         #Make dictionary of useful information about species in model
         if not self.species_definitions:
@@ -57,14 +69,9 @@ class ParserBase(ReactionModelWrapper):
             else:
                 ads_info['type'] = 'unknown'
 
-            composition = {}
-            try:
-                symbs = string2symbols(name.replace('-',''))
-                for a in set(symbs):
-                    composition[a] = symbs.count(a)
-            except ValueError:
-                pass
+            composition = self.get_composition(name)
             ads_info['composition'] = composition
+
             if species in self.species_definitions:
                 ads_info.update(self.species_definitions[species])
             if not ads_info['composition']:
@@ -133,4 +140,8 @@ class ParserBase(ReactionModelWrapper):
                             ref_sets.append(refdict)
                         except ValueError:
                             pass
-            self.atomic_reservoir_list = ref_sets
+            if ref_sets:
+                self.atomic_reservoir_list = ref_sets
+            else:
+                raise AttributeError('No valid reference sets from gas-phase species ' + \
+                        'in the system. Add gasses or specify atomic_reservoir_list')
