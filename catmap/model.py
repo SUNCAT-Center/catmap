@@ -465,8 +465,9 @@ class ReactionModel:
 
     def texify(self,ads): #
         sub_nums = [str(n) for n in range(2,15)]
+        ads_def = ads
         ads = ads.replace('-','\mathrm{-}')
-        if ads in self.site_totals.keys():
+        if self.species_definitions[ads_def]['type'] == 'site':
             return '*_'+ads
         elif '_' in ads:
             adsN,site = ads.split('_')
@@ -561,8 +562,9 @@ class ReactionModel:
 
         max_freqs = 3 
         #This could be cleaned up a lot using templates...
-        for spec,energy in zip(self.gas_names,self.gas_energies):
-            freqs = [str(round(v*1e3,1)) for v in self.frequency_dict[spec]]
+        for spec in self.gas_names:
+            energy = self.species_definitions[spec]['formation_energy']
+            freqs = [str(round(v*1e3,1)) for v in self.species_definitions[spec].get('frequencies',[])]
             frequencies = '\parbox[t]{3cm}{'
             while freqs:
                 freq_subset = [freqs.pop(0) for i in range(0,max_freqs) if freqs]
@@ -574,8 +576,7 @@ class ReactionModel:
             facet = 'gas'
             surf = 'None'
             ref_tag = '_'.join([surf,facet,ads])
-            reference = '\parbox[t]{4cm}{'+r';\\'.join(
-                    [cleanstring(ref) for ref in [self.reference_dict[ref_tag]]])+'}'
+            reference = '\parbox[t]{4cm}{'+self.species_definitions[spec]['formation_energy_source']+'}'
             spec_tex = '$'+self.texify(spec)+'$'
             tabrow = '&'.join(
                     [spec_tex,'gas',str(
@@ -587,9 +588,9 @@ class ReactionModel:
             for e,surf in zip(energy,self.surface_names):
                 if e != '-':
                     e = str(round(e,2))
-                    if surf in self.frequency_surfaces and spec in self.frequency_dict:
+                    if self.species_definitions[spec].get('frequencies',[]):
                         freqs = [str(round(v*1e3,1)) 
-                                for v in self.frequency_dict[spec]]
+                                for v in self.species_definitions[spec].get('frequencies',[])]
                         frequencies = '\parbox[t]{3cm}{'
                         while freqs:
                             freq_subset = [freqs.pop(0) 
@@ -603,33 +604,29 @@ class ReactionModel:
                     else:
                         ads = spec
                         site = 's'
-                    facet = self.site_definitions[site]
+                    facet = self.species_definitions[site]['site_names']
                     if str(facet) != facet:
-                        for fc in facet:
-                            ref_tag = '_'.join([surf,fc,ads])
-                            if ref_tag in self.reference_dict:
-                                use_facet = fc
-                        facet = use_facet
+                        facet = ' or '.join(facet)
                     ref_tag = '_'.join([surf,facet,ads])
-                    if ref_tag in self.reference_dict:
-                        reference = '\parbox[t]{4cm}{'+ \
-                               r';\\'.join(
-                               [ref.replace('\r','').replace('"','').replace("'",'')
-                               for ref in [self.reference_dict[ref_tag]]])+'}'
-                        spec_tex = '$'+self.texify(spec)+'$'
-                        tabrow = '& '.join(
-                                [spec_tex,surf,e,frequencies,reference]) + r'\\'
-                        longtable_txt += tabrow + '\n'
+#                    if ref_tag in self.reference_dict:
+#                        reference = '\parbox[t]{4cm}{'+ \
+#                               r';\\'.join(
+#                               [ref.replace('\r','').replace('"','').replace("'",'')
+#                               for ref in [self.reference_dict[ref_tag]]])+'}'
+#                        spec_tex = '$'+self.texify(spec)+'$'
+#                        tabrow = '& '.join(
+#                                [spec_tex,surf,e,frequencies,reference]) + r'\\'
+#                        longtable_txt += tabrow + '\n'
 
         subs_dict['longtable_txt'] = longtable_txt
 
-        longtable = longtable_template.substitute(subs_dict)
+        longtable = Template(longtable_template).substitute(subs_dict)
 
         out_txt += longtable
 
         subs_dict['summary_txt'] = out_txt
 
-        summary = latex_template.substitute(subs_dict)
+        summary = Template(latex_template).substitute(subs_dict)
 
         f = open(self.summary_file,'w')
         f.write(summary)

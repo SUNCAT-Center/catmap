@@ -467,10 +467,16 @@ class MechanismPlot:
             xf = energy_lines[i+1][0][0]
             yi = energy_lines[i][1][0]
             yf = energy_lines[i+1][1][0]
-            if barrier == 0 or barrier <= yf-yi:
+            if self.energy_mode == 'relative' and (barrier == 0 or barrier <= yf-yi):
+                line = [[xi,xf],[yi,yf]]
+            elif self.energy_mode == 'absolute' and (barrier <= yf or barrier <= yi):
                 line = [[xi,xf],[yi,yf]]
             else:
-                yts = yi+barrier
+                if self.energy_mode == 'relative':
+                    yts = yi+barrier
+                elif self.energy_mode == 'absolute':
+                    yts = barrier
+                    barrier = yts - yi
                 barrier_rev = barrier + (yi-yf)
                 ratio = np.sqrt(barrier)/(np.sqrt(barrier)+np.sqrt(barrier_rev))
                 xts = xi + ratio*(xf-xi)

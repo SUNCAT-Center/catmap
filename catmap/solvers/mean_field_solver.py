@@ -2,7 +2,7 @@ from solver_base import *
 from catmap.data import templates
 from copy import copy
 import mpmath as mp
-from functions import numerical_jacobian
+from catmap.functions import numerical_jacobian
 
 class MeanFieldSolver(SolverBase):
     """Class for handling mean-field type kinetic models. Can be sub-classed to

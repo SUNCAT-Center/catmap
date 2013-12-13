@@ -34,6 +34,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                     self.energies = [0]
                     self.barriers = []
+                    self.labels = ['']
                     if len(surfaces) > 1:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
@@ -52,9 +53,11 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         if reverse == True:
                             nrg = -1*p[0]
                             bar = p[1] + nrg
+                            self.labels.append('+'.join(self.elementary_rxns[step-1][0]))
                         else:
                             nrg = p[0]
                             bar = p[1]
+                            self.labels.append('+'.join(self.elementary_rxns[step-1][-1]))
                         correction = 0
                         if self.pressure_correction == True:
                             IS_gasses = [self.gas_pressures[self.gas_names.index(s)]
