@@ -195,8 +195,8 @@ class MapPlot:
             else:
                 levels = np.linspace(min_val,max_val,min(eff_res,25))
 
-            plot_in = [np.linspace(*x_range+[eff_res[0]]),
-                    np.linspace(*y_range+[eff_res[1]]),z,levels]
+            plot_in = [np.linspace(*x_range+[eff_res]),
+                    np.linspace(*y_range+[eff_res]),z,levels]
 
         plot = getattr(ax,self.plot_function)(*plot_in,**plot_args)
         pos = ax.get_position()

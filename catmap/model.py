@@ -802,11 +802,11 @@ class ReactionModel:
 
         elif len(pts[0]) == 2:
             xData,yData = zip(*pts)
-            maparray = np.zeros((resolution[1],resolution[0],len(datas[0])))
+            maparray = np.zeros((resolution,resolution,len(datas[0])))
             datas = zip(*datas)
             x_range,y_range = desc_rngs
-            xi = np.linspace(*x_range+[resolution[0]])
-            yi = np.linspace(*y_range+[resolution[1]])
+            xi = np.linspace(*x_range+[resolution])
+            yi = np.linspace(*y_range+[resolution])
             for i,Zdata in enumerate(datas):
                 if minval:
                     Zdata = np.array([max(zn,minval) for zn in Zdata])
