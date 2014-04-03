@@ -136,7 +136,6 @@ def elementary_rates(rate_constants,theta,p,mpf,matrix):
     ${steady_state_expressions}
     
     return r
-
 """
 
 templates['interacting_mean_field_steady_state'] = """
@@ -358,7 +357,6 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
         E_jacob = None
 
     return E_diff, E_jacob
-
 """
 
 templates['ideal_interaction_function'] = """
