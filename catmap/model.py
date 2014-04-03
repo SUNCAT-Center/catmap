@@ -117,6 +117,10 @@ class ReactionModel:
         
         for key in kwargs:
             setattr(self,key,kwargs[key])
+
+        #ensure resolution has the proper dimensions
+        if not hasattr(self.resolution,'__iter__'):
+            self.resolution = [self.resolution]*len(self.descriptor_names)
         
         #set numerical representation
         if self.numerical_representation == 'mpmath':
@@ -330,6 +334,7 @@ class ReactionModel:
                 setattr(self,var,locs[var])
             else:
                 setattr(self,var,locs[var])
+
 
         if self.parser:
             if self.input_file:
