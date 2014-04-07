@@ -2,6 +2,20 @@ import numpy as np
 import catmap
 import re
 from copy import copy
+from ase.atoms import string2symbols
+
+def get_composition(species_string):
+    composition = {}
+    # clean up transition states and electrochem
+    species_string = species_string.replace('-','')
+    species_string = species_string.replace('pe','H')
+    try:
+        symbs = string2symbols(species_string)
+        for a in set(symbs):
+            composition[a] = symbs.count(a)
+    except ValueError:
+        composition = None
+    return composition
 
 def cartesian_product(*args, **kwds):
         # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy

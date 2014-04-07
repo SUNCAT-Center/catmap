@@ -7,7 +7,7 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 
-from ase.atoms import string2symbols
+from catmap.functions import get_composition
 
 class ParserBase(ReactionModelWrapper):
     def __init__(self,reaction_model=ReactionModel()):
@@ -29,18 +29,6 @@ class ParserBase(ReactionModelWrapper):
         """
         self._rxm = reaction_model
         self._required = {} #No user-defined attributes are required.
-
-    @staticmethod
-    def get_composition(species_string):
-        composition = {}
-        try:
-            symbs = string2symbols(species_string.replace('-',''))
-            for a in set(symbs):
-                composition[a] = symbs.count(a)
-        except ValueError:
-            composition = None
-        return composition
-
 
     def _baseparse(self):
         #Make dictionary of useful information about species in model
@@ -69,7 +57,7 @@ class ParserBase(ReactionModelWrapper):
             else:
                 ads_info['type'] = 'unknown'
 
-            composition = self.get_composition(name)
+            composition = get_composition(name)
             ads_info['composition'] = composition
 
             if species in self.species_definitions:
