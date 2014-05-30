@@ -72,20 +72,28 @@ shomate_params['CH3CH2OH_g:273-1300'] = [6.372731,136.5066*2.,-54.3367*3,
 #Define default ideal gas parameters
 ideal_gas_params = {
         'H2_g':[2,'linear',0],
+        'N2_g':[2,'linear',0],
         'O2_g':[2,'linear',3],
         'H2O_g':[2,'nonlinear',0],
         'CO_g':[1,'linear',0],
         'CH4_g':[12,'nonlinear',0],
-	'NH3_g':[3,'nonlinear',0],
+        'NH3_g':[3,'nonlinear',0],
+        'NH3_g':[3,'nonlinear',0],
         'CH3OH_g':[1,'nonlinear',0],
+        'CH3CH2OH_g':[1,'nonlinear',0],
         'CO2_g':[2,'linear',0],
         'CH2O_g':[2,'nonlinear',0],
         'HCOOH_g':[1,'nonlinear',0],
-	'CH2CH2_g':[4,'nonlinear',0],
-	'CH3CHCH2_g':[1,'nonlinear',0], #propene
-	'CH3CH2CHCH2_g':[1,'nonlinear',0], #1-butene
+        'CH2CH2_g':[4,'nonlinear',0],
+        'CH3CHCH2_g':[1,'nonlinear',0], #propene
+        'CH3CH2CHCH2_g':[1,'nonlinear',0], #1-butene
         'CH3CHCHCH3_g':[2,'nonlinear',0], #2-butene, ok for both trans and cis
         'CH3CH3CCH2_g':[2,'nonlinear',0], #isobutene
+        'C2H4_g':[4,'nonlinear',0],
+        'C2H6_g':[6,'nonlinear',0],
+        'CH3COOH_g':[1,'nonlinear',0],
+        'CH3CHO_g':[1,'nonlinear',0],
+
         }
 
 #Define default fixed entropy gas entropies
@@ -93,7 +101,7 @@ fixed_entropy_dict = {'H2_g':0.00135,
         'other':0.002
         } 
 
-experimental_gas_frequencies = {'CO_g':[2170],
+experimental_gas_frequencies = {'CO_g':[2170], #from CCCBDB, NIST webbook, or CRC
         'H2_g':[4401],
         'N2_g':[2359],
         'NO_g':[1904],
@@ -109,6 +117,10 @@ experimental_gas_frequencies = {'CO_g':[2170],
         'CH2O_g':[2783,1746,1500,2843,1249,1167],
         'CH3CH2OH_g':[3653,2984,2939,2900,1490,1464,1412,1371,1256,1091,1028,
             888,417,2991,2910,1446,1275,1161,812],
+        'C2H4_g':[3026,1623,1342,1023,3103,1236,949,943,3106,826,2989,1444],
+        'C2H6_g':[2954,1388,995,289,2896,1379,2969,2969,1468,1468,1190,1190,2985,2985,1469,1469,822,822],
+        'CH3COOH_g':[3583,3051,2944,1788,1430,1382,1264,1182,989,847,657,581,2996,1430,1048,642,534,93],
+        'CH3CHO_g':[3005,2917,2822,1743,1441,1400,1352,1113,919,509,2967,1420,867,763,150],
         }
 
 #Define experimental gas formation energies (accessed via CCCBDB; corrected for 

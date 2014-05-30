@@ -101,13 +101,16 @@ class GeneralizedLinearScaler(ScalerBase):
     def get_transition_state_coefficient_matrix(self):
 
         self.get_transition_state_scaling_matrix()
-        if self.adsorbate_coefficient_matrix is None:
-            self.get_adsorbate_coefficient_matrix()
+        if self.transition_state_scaling_matrix is not None:
+            if self.adsorbate_coefficient_matrix is None:
+                self.get_adsorbate_coefficient_matrix()
 
-        coeffs =  np.dot(self.transition_state_scaling_matrix[:,:-1],
-                self.adsorbate_coefficient_matrix)
-        coeffs[:,-1] += self.transition_state_scaling_matrix[:,-1]
-        self.transition_state_coefficient_matrix = coeffs
+            coeffs =  np.dot(self.transition_state_scaling_matrix[:,:-1],
+                    self.adsorbate_coefficient_matrix)
+            coeffs[:,-1] += self.transition_state_scaling_matrix[:,-1]
+            self.transition_state_coefficient_matrix = coeffs
+        else:
+            coeffs = np.array([])
         return coeffs
 
 

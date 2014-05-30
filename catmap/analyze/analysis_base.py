@@ -456,6 +456,7 @@ class MechanismPlot:
                 [[i+self.initial_stepnumber,i+width+self.initial_stepnumber],
                     [energy_list[i]]*2] 
                 for i,width in enumerate(energy_line_widths)]
+        self.energy_lines = energy_lines
         for i,line in enumerate(energy_lines):
             ax.plot(*line,**energy_line_args[i])
 
@@ -469,8 +470,12 @@ class MechanismPlot:
             yf = energy_lines[i+1][1][0]
             if self.energy_mode == 'relative' and (barrier == 0 or barrier <= yf-yi):
                 line = [[xi,xf],[yi,yf]]
+                xts = (xi+xf)/2.
+                yts = max([yi,yf])
             elif self.energy_mode == 'absolute' and (barrier <= yf or barrier <= yi):
                 line = [[xi,xf],[yi,yf]]
+                xts = (xi+xf)/2.
+                yts = max([yi,yf])
             else:
                 if self.energy_mode == 'relative':
                     yts = yi+barrier
@@ -478,7 +483,11 @@ class MechanismPlot:
                     yts = barrier
                     barrier = yts - yi
                 barrier_rev = barrier + (yi-yf)
-                ratio = np.sqrt(barrier)/(np.sqrt(barrier)+np.sqrt(barrier_rev))
+                if barrier > 0 and barrier_rev > 0:
+                    ratio = np.sqrt(barrier)/(np.sqrt(barrier)+np.sqrt(barrier_rev))
+                else:
+                    print 'Warning: Encountered barrier less than 0'
+                    rato = 0
                 xts = xi + ratio*(xf-xi)
                 xs = [xi,xts,xf]
                 ys = [yi,yts,yf]
@@ -487,6 +496,7 @@ class MechanismPlot:
                 newys = f(newxs)
                 line = [newxs,newys]
             barrier_lines.append(line)
+        self.barrier_lines = barrier_lines
         #plot barrier lines
         for i,line in enumerate(barrier_lines):
             ax.plot(*line,**barrier_line_args[i])
@@ -517,9 +527,9 @@ class MechanismPlot:
                         pass
             else:
                 ypos = energy_lines[i][1][0]
-                if 'ha' not in args:
+                if 'ha' not in args:# and 'textcoords' not in args:
                     args['ha'] = 'left'
-                if 'va' not in args:
+                if 'va' not in args:# and 'textcoords' not in args:
                     args['va'] = 'bottom'
                 ax.annotate(label,[xpos,ypos],**args)
 

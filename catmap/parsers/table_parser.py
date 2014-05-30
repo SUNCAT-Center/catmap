@@ -81,6 +81,7 @@ class TableParser(ParserBase):
             linedict['species_keys'] = adskey
             linedicts.append(linedict)
 
+
         self._line_dicts = linedicts
         self._headers = headers
 
