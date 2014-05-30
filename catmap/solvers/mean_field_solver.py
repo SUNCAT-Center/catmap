@@ -120,8 +120,11 @@ class MeanFieldSolver(SolverBase):
         dRdG = dRdG.tolist()
         DRC = []
         for ti, Ji in zip(t0,dRdG):
-            DRC.append([float(Jj/ti) for Jj in Ji])
-        return DRC
+           if ti == 0:
+                DRC.append([0.0]*len(Ji))
+           else:
+                DRC.append([float(Jj/ti) for Jj in Ji])
+	return DRC
 
     def get_interacting_energies(self,rxn_parameters):
         all_ads = self.adsorbate_names + self.transition_state_names

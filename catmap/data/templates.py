@@ -2,7 +2,7 @@ templates = {}
 
 #LaTeX templates
 
-templates['latex_longtable'] = """
+templates['latex_longtable'] = r"""
 \centering
 \begin{longtable}{lllll}
 \toprule
@@ -24,7 +24,7 @@ ${longtable_txt}
 \end{longtable}
 """
 
-templates['latex_summary'] = """
+templates['latex_summary'] = r"""
 \documentclass[a4paper,8pt]{report}
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -38,7 +38,7 @@ ${summary_txt}
 
 #Dynamically compiled function templates
 
-templates['constrain_coverages'] = """
+templates['constrain_coverages'] = r"""
 def constrain_coverage_function(cvgs,mpf,c_min):
     cvgs = [max(ci,c_min) for ci in cvgs]
 
@@ -61,7 +61,7 @@ def constrain_coverage_function(cvgs,mpf,c_min):
     return cvgs
 """
 
-templates['rate_constants'] = """
+templates['rate_constants'] = r"""
 def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matrix,mpexp,include_derivatives=True):
     ${interaction_function}
 
@@ -124,7 +124,7 @@ def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matri
 """
 
 
-templates['elementary_rates'] = """
+templates['elementary_rates'] = r"""
 def elementary_rates(rate_constants,theta,p,mpf,matrix):
 
     kf = rate_constants[0:len(rate_constants)/2]
@@ -136,10 +136,9 @@ def elementary_rates(rate_constants,theta,p,mpf,matrix):
     ${steady_state_expressions}
     
     return r
-
 """
 
-templates['interacting_mean_field_steady_state'] = """
+templates['interacting_mean_field_steady_state'] = r"""
 def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
 
     ${rate_constants_no_derivatives}
@@ -158,7 +157,7 @@ def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site
     return dtheta_dt
 """
 
-templates['ideal_mean_field_steady_state'] = """
+templates['ideal_mean_field_steady_state'] = r"""
 def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
 
     r = [0]*len(kf)
@@ -172,7 +171,7 @@ def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
     return dtheta_dt
 """
 
-templates['interacting_mean_field_jacobian'] = """
+templates['interacting_mean_field_jacobian'] = r"""
 def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
 
 #    print 'rxn_parameters = ', rxn_parameters
@@ -199,7 +198,7 @@ def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_ene
     return J
 """
 
-templates['ideal_mean_field_jacobian'] = """
+templates['ideal_mean_field_jacobian'] = r"""
 def ideal_mean_field_jacobian(kf,kr,theta,p,mpf,matrix):
     ${n_adsorbates}
     J = [[0 for i in range(n_adsorbates)] for j in range(n_adsorbates)]
@@ -210,7 +209,7 @@ def ideal_mean_field_jacobian(kf,kr,theta,p,mpf,matrix):
     return J
 """
 
-templates['first_order_interaction_function'] = """
+templates['first_order_interaction_function'] = r"""
 def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
 
 #    Function for evaluating coverage-dependent intearction energies. 
@@ -294,7 +293,7 @@ def interaction_function(coverages,energies,interaction_vector,F,include_derivat
     return Es, dEs
     """
 
-templates['second_order_interaction_function'] = """
+templates['second_order_interaction_function'] = r"""
 def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
     ${site_info_dict}
 
@@ -358,10 +357,9 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
         E_jacob = None
 
     return E_diff, E_jacob
-
 """
 
-templates['ideal_interaction_function'] = """
+templates['ideal_interaction_function'] = r"""
 def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
     #Dummy function for non-interacting
     derivs = [[0]*len(coverages)]

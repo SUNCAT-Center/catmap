@@ -117,6 +117,10 @@ class ReactionModel:
         
         for key in kwargs:
             setattr(self,key,kwargs[key])
+
+        #ensure resolution has the proper dimensions
+        if not hasattr(self.resolution,'__iter__'):
+            self.resolution = [self.resolution]*len(self.descriptor_names)
         
         #set numerical representation
         if self.numerical_representation == 'mpmath':
@@ -330,6 +334,7 @@ class ReactionModel:
                 setattr(self,var,locs[var])
             else:
                 setattr(self,var,locs[var])
+
 
         if self.parser:
             if self.input_file:
@@ -802,11 +807,11 @@ class ReactionModel:
 
         elif len(pts[0]) == 2:
             xData,yData = zip(*pts)
-            maparray = np.zeros((resolution,resolution,len(datas[0])))
+            maparray = np.zeros((resolution[1],resolution[0],len(datas[0])))
             datas = zip(*datas)
             x_range,y_range = desc_rngs
-            xi = np.linspace(*x_range+[resolution])
-            yi = np.linspace(*y_range+[resolution])
+            xi = np.linspace(*x_range+[resolution[0]])
+            yi = np.linspace(*y_range+[resolution[1]])
             for i,Zdata in enumerate(datas):
                 if minval:
                     Zdata = np.array([max(zn,minval) for zn in Zdata])
