@@ -437,7 +437,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
         # correct TS energies with beta*voltage (and hbonding?)
         for TS in TS_names:
-            thermo_dict[TS] = voltage * beta
+            thermo_dict[TS] = -voltage * (1 - beta)
 
         return thermo_dict
 
