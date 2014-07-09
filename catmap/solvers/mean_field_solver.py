@@ -184,6 +184,37 @@ class MeanFieldSolver(SolverBase):
         self._rxn_order = DRC
         return DRC
 
+    def get_apparent_activation_energy(self,rxn_parameters,epsilon=1e-10):
+        #returns apparent Arrhenius activation energies (in units of R)
+        #for production/consumption of each gas phase species.
+        #Calculated as
+        #E_app = T^2(dlnr_+/dT)=(T^2/r_+)(dr_+/dT), where r+ is the TOF
+        current_tofs = self.get_turnover_frequency(rxn_parameters)
+        current_T = self.temperature
+        new_T = current_T*(1+epsilon)
+        dT = new_T-current_T
+        self.temperature = new_T
+        descriptors = list(self._rxm.mapper._descriptors) #don't overwrite them, if temperature is a descriptor
+        if 'temperature' in self._rxm.descriptor_names:
+                index = self._rxm.descriptor_names.index('temperature')
+                descriptors[index] = new_T
+        rxn_parameters_newT = self._rxm.scaler.get_rxn_parameters(descriptors)
+        new_tofs = self.get_turnover_frequency(rxn_parameters_newT)
+        E_apps = []
+        R = 8.31447e-3/96.485307#units of eV
+
+        for i,gas in enumerate(self.gas_names):
+            barriers_i = []
+            dlnTOF = mp.log(new_tofs[i])-mp.log(current_tofs[i]) #this will fail if any of the TOFs are 0.
+            E_app = R*float(dlnTOF.real)/dT*(current_T**2)
+            E_apps.append(E_app)
+
+        self.temperature = current_T
+        self._apparent_activation_energy = E_apps
+        #self.get_turnover_frequency(rxn_parameters)
+	print E_apps
+        return E_apps
+
     def summary_text(self):
         return ''
 

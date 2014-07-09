@@ -68,6 +68,10 @@ class SolverBase(ReactionModelWrapper):
             self._rxn_order = self.get_rxn_order(rxn_parameters)
             self.output_labels['rxn_order'] = [self.gas_names,self.gas_names]
 
+	if 'apparent_activation_energy' in self.output_variables:
+            self._apparent_activation_energy = self.get_apparent_activation_energy(rxn_parameters)
+            self.output_labels['apparent_activation_energy'] = self.gas_names
+
         if 'interacting_energy' in self.output_variables:
             self._interacting_energy = self.get_interacting_energies(rxn_parameters)
             self.output_labels['interacting_energy'] = self.adsorbate_names+self.transition_state_names

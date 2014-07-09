@@ -360,7 +360,7 @@ class ThermoCorrections(ReactionModelWrapper):
                     avg_TS.append(ads)
                 therm = HarmonicThermo(freq_dict[ads])
                 free_energy = therm.get_free_energy(
-                        int(temperature),verbose=False)
+                        temperature,verbose=False)
                 ZPE = sum(freq_dict[ads])/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
