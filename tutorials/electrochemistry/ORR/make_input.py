@@ -10,7 +10,7 @@ gases = ['H2O', 'O2', 'H2', 'H2O2']
 gas_energy_dict = {
     'H2O':0.0,
     'H2':0.0,
-    'O2':5.19,  # could be 1.59 + 0.9*4 or 4.92
+    'O2':1.59 + 0.9*4,  # could be 1.59 + 0.9*4 or 4.92 or 5.42
     'H2O2':1.86 + 0.9*2,
 }
 ads_energy_dict = {
@@ -35,8 +35,8 @@ ads_squiggly_dict = {
     'OH_b':1,
     'H_a':0.001,
 }
-OH_BEs = [-0.15
--0.1,
+OH_BEs = [-0.15,
+-0.10,
 -0.05,
 0.0,
 0.05,
@@ -64,39 +64,53 @@ step_to_TS_name = {
     '13':'HOOH-_a',
 }
 chemical_TS_energy_dict = {
-    '2':gas_energy_dict['O2'] + 0.4076,  # from the 8 * 10^5 prefactor of O2(aq) -> O2(dl)
-    '7':ads_energy_dict['O2_a'] + 0.48,
-    '10':ads_energy_dict['OOH_a'] + 0.37,
-    '12':ads_energy_dict['H2O2_a'] + 0.46,
-    '13':0.32 + 0.284,  # dG_Pt + 1 * 10^8 prefactor
+    '2':('prefactor', 'O2', 'O2_a' ,0.47),  # from the 8 * 10^5 prefactor of O2(aq) -> O2(dl)
+    '7':0.48,
+    '10':0.37,
+    '12':0.46,
+    '13':('prefactor', 'H2O2', 'H2O2_a', 0.284),  # dG_Pt + 1 * 10^8 prefactor
 }
 chemical_TS_gamma_dict = {
-    '2':0.,
+    # '2':0.,
     '7':0.69,
     '10':0.39,
     '12':0.19,
-    '13':0.,
+    # '13':0.,
 }
 
+dG_Pt = {
+    '7':1.7 + 2.33 - 4.99,
+    '10':0.75 + 2.33 - 3.91,
+    '12':0.75 + 1.1 - 3.33,
+}
+
+beta = 0.5
 echem_TS_effective_barrier = 0.26 + 0.22  # tripkovic barrier + water reorganization 'barrier'
-echem_TS_ISs = {  # assumes pe is also in the initial state
+echem_TSs = ['3', '4', '5', '6', '8', '9', '11']
+TS_ISs = {  # assumes pe is also in the initial state
     '3':'O2_a',
     '4':'OOH_a',
     '5':'O_a',
     '6':'OH_a',
+    '7':'O2_a',
     '8':'O_b',
     '9':'OH_b',
+    '10':'OOH_a',
     '11':'OOH_a',
+    '12':'H2O2_a',
 }
 
-echem_TS_FSs = {
+TS_FSs = {
     '3':'OOH_a',
     '4':'O_a',
     '5':'OH_a',
     '6':'*_a',
+    '7':('O_a','O_b'),
     '8':'OH_b',
     '9':'*_b',
+    '10':('OH_a', 'O_b'),
     '11':'H2O2_a',
+    '12':('OH_a', 'OH_b'),
 }
 
 tempdict = {}
@@ -118,7 +132,9 @@ for gas in gases:
 
 assert(len(labels) == len(OH_BEs))
 for i, label in enumerate(labels):
-    surface = 'Hansenite_' + label
+    surface = label
+    if surface == "d":
+        surface = "Pt"
     for ads in ads_energy_dict.keys():
         ads_species, facet = ads.split('_')
         if ads_species != '*':
@@ -129,17 +145,27 @@ for i, label in enumerate(labels):
         tempdict[ads] = ads_energy
 
     for chem_TS in chemical_TS_energy_dict.keys():
-        energy = chemical_TS_energy_dict[chem_TS] + chemical_TS_gamma_dict[chem_TS]*OH_BEs[i]
+        if isinstance(chemical_TS_energy_dict[chem_TS], tuple):
+            gas = chemical_TS_energy_dict[chem_TS][1]
+            adsorbed = chemical_TS_energy_dict[chem_TS][2]
+            higher = max(tempdict[gas + "_g"], tempdict[adsorbed])
+            energy = higher + chemical_TS_energy_dict[chem_TS][3]
+        else:
+            dG = (tempdict[TS_FSs[chem_TS][0]] + tempdict[TS_FSs[chem_TS][1]]) - tempdict[TS_ISs[chem_TS]]
+            e_TS_Pt = chemical_TS_energy_dict[chem_TS]
+            energy = tempdict[TS_ISs[chem_TS]] + e_TS_Pt + chemical_TS_gamma_dict[chem_TS] * (dG - dG_Pt[chem_TS])
+            if label == 'd':
+                assert(dG == dG_Pt[chem_TS])
         split_up_identity = step_to_TS_name[chem_TS].split('_')
         facet = split_up_identity[-1]
         species = split_up_identity[0]
         lines.append([surface, str(facet), species, str(energy), 'fcc', '[]', '[]', 'Hansen 2014'])
 
-    for echem_TS in echem_TS_ISs.keys():
-        IS_energy = tempdict[echem_TS_ISs[echem_TS]]
-        FS_energy = tempdict[echem_TS_FSs[echem_TS]]
+    for echem_TS in echem_TSs:
+        IS_energy = tempdict[TS_ISs[echem_TS]]
+        FS_energy = tempdict[TS_FSs[echem_TS]] + 0.9
         higher = max(IS_energy, FS_energy)
-        e_TS = higher + echem_TS_effective_barrier
+        e_TS = higher + echem_TS_effective_barrier - 0.9 * beta
         split_up_identity = step_to_TS_name[echem_TS].split('_')
         facet = split_up_identity[-1]
         species = split_up_identity[0]

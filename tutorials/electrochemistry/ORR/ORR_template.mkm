@@ -15,13 +15,13 @@ rxn_expressions = [
     'H_a + H_a -> H2_g + 2*_a',
 ]
 
-surface_names = ['Hansenite_a', 'Hansenite_b', 'Hansenite_c', 'Hansenite_d', 'Hansenite_e', 'Hansenite_f', 'Hansenite_g', 'Hansenite_h', 'Hansenite_i', 'Hansenite_j']
+surface_names = ['a', 'b', 'c', 'Pt', 'e', 'f', 'g', 'h', 'i', 'j']
 
-descriptor_names = ['H_a','OH_a']
+descriptor_names = ['OH_a','H_a']
 
-descriptor_ranges = [[-0.5,0.5],[0.6,1]]
+descriptor_ranges = [[0.5,1.2], [-0.5,0.5]]
 
-resolution = [5, 20]
+resolution = [20, 5]
 
 temperature = 300
 
@@ -31,9 +31,9 @@ beta = 0.5
 
 species_definitions = {}
 # assume heine's free energy numbers are already pressure-corrected
-species_definitions['H2O_g'] = {'pressure':1.0}
+species_definitions['H2O_g'] = {'pressure':0.035}
 species_definitions['H2_g'] = {'pressure':0.0}
-species_definitions['H2O2_g'] = {'pressure':1.0}
+species_definitions['H2O2_g'] = {'pressure':1e-12}
 species_definitions['O2_g'] = {'pressure':1.0}
 species_definitions['pe_g'] = {'pressure':1.0}
 
@@ -47,13 +47,13 @@ gas_thermo_mode = 'frozen_gas'
 adsorbate_thermo_mode = 'frozen_adsorbate'
 electrochemical_thermo_mode = 'simple_electrochemical'
 
-scaling_constraint_dict = {'O2_a':[0., None, None],
-                        'OOH_a':[0., None, None],
-                        'O_a':[0., None, None],
-                        'OH_a':[0., None, None],
-                        'H2O2_a':[0., None, None],
-                        'O_b':[0., None, None],
-                        'OH_b':[0., None, None],
+scaling_constraint_dict = {'O2_a':[None, 0., None],
+                        'OOH_a':[None, 0., None],
+                        'O_a':[None, 0., None],
+                        'OH_a':[None, 0., None],
+                        'H2O2_a':[None, 0., None],
+                        'O_b':[None, 0., None],
+                        'OH_b':[None, 0., None],
                         'O2-_a':'BEP',
                         'OO-pe_a':'BEP',
                         'OOH-pe_a':'BEP',

@@ -33,7 +33,7 @@ fig.savefig('rate' + voltage + '.png')
 vm.plot_variable = 'production_rate'
 vm.log_scale = True
 vm.min = 1e-5
-vm.max = 1e2
+vm.max = 1e5
 fig = vm.plot(save=False)
 fig.suptitle(str(voltage) + "V vs. RHE")
 fig.savefig('production_rate' + voltage + '.png')

@@ -19,14 +19,14 @@ binary_data = pickle.load(open("ORR.pkl"))
 
 locals().update(binary_data)
 
-adsorbate_coefficient_matrix = array([[  0.00000000e+00,   4.48000000e-03,   3.32660000e+00],
-       [  8.29500000e-02,   9.20000000e-04,  -2.75800000e-01],
-       [  0.00000000e+00,   1.20048000e+00,   4.08960000e+00],
-       [  0.00000000e+00,   9.99670000e-01,   2.70000000e-04],
-       [  0.00000000e+00,   1.00048000e+00,   3.15960000e+00],
-       [  0.00000000e+00,   2.00048000e+00,   1.99600000e-01],
-       [  0.00000000e+00,   1.00048000e+00,   3.49600000e-01],
-       [  0.00000000e+00,   2.00048000e+00,   8.29600000e-01]])
+adsorbate_coefficient_matrix = array([[  4.09000000e-03,   0.00000000e+00,   3.32693000e+00],
+       [  9.20000000e-04,   8.29500000e-02,  -2.75800000e-01],
+       [  1.20009000e+00,   0.00000000e+00,   4.08993000e+00],
+       [  1.00000000e+00,   0.00000000e+00,   0.00000000e+00],
+       [  1.00009000e+00,   0.00000000e+00,   3.15993000e+00],
+       [  2.00005000e+00,   0.00000000e+00,   1.99960000e-01],
+       [  1.00009000e+00,   0.00000000e+00,   3.49930000e-01],
+       [  2.00009000e+00,   0.00000000e+00,   8.29930000e-01]])
 
 adsorbate_interaction_model = 'ideal'
 
@@ -38,8 +38,6 @@ adsorbate_thermo_mode = 'frozen_adsorbate'
 
 analytical_jacobian = True
 
-atomic_reservoir_dict = {'H': 'pe_g', 'O': 'O2_g'}
-
 atomic_reservoir_list = [{'H': 'H2O2_g', 'O': 'H2O_g'}, {'H': 'H2O2_g', 'O': 'O2_g'}, {'H': 'H2O_g', 'O': 'O2_g'}, {'H': 'H2_g', 'O': 'H2O2_g'}, {'H': 'H2_g', 'O': 'H2O_g'}, {'H': 'H2_g', 'O': 'O2_g'}, {'H': 'pe_g', 'O': 'H2O2_g'}, {'H': 'pe_g', 'O': 'H2O_g'}, {'H': 'pe_g', 'O': 'O2_g'}]
 
 atoms_dict = {}
@@ -48,30 +46,30 @@ avoid_scaling = False
 
 beta = 0.5
 
-coefficient_matrix = array([[  0.00000000e+00,   4.48000000e-03,   3.32660000e+00],
-       [  8.29500000e-02,   9.20000000e-04,  -2.75800000e-01],
-       [  0.00000000e+00,   1.20048000e+00,   4.08960000e+00],
-       [  0.00000000e+00,   9.99670000e-01,   2.70000000e-04],
-       [  0.00000000e+00,   1.00048000e+00,   3.15960000e+00],
-       [  0.00000000e+00,   2.00048000e+00,   1.99600000e-01],
-       [  0.00000000e+00,   1.00048000e+00,   3.49600000e-01],
-       [  0.00000000e+00,   2.00048000e+00,   8.29600000e-01],
-       [  0.00000000e+00,  -1.42657385e-15,   6.04000000e-01],
-       [  0.00000000e+00,   6.90118286e-01,   4.95240143e+00],
-       [  0.00000000e+00,   1.00000000e+00,   3.64000000e+00],
-       [  0.00000000e+00,   2.00162000e+00,   6.78660000e-01],
-       [  0.00000000e+00,   1.45751019e-15,   5.59760000e+00],
-       [  0.00000000e+00,   1.89968587e-01,   3.64752570e+00],
-       [  0.00000000e+00,   3.89935650e-01,   3.98755265e+00],
-       [  0.00000000e+00,   9.99670000e-01,   4.80270000e-01],
-       [  0.00000000e+00,   1.20000000e+00,   4.57000000e+00],
-       [  0.00000000e+00,   1.00000000e+00,   3.64000000e+00],
-       [  0.00000000e+00,   2.00000000e+00,   1.31000000e+00],
-       [  0.00000000e+00,   1.00048000e+00,   8.29600000e-01]])
+coefficient_matrix = array([[  4.09000000e-03,   0.00000000e+00,   3.32693000e+00],
+       [  9.20000000e-04,   8.29500000e-02,  -2.75800000e-01],
+       [  1.20009000e+00,   0.00000000e+00,   4.08993000e+00],
+       [  1.00000000e+00,   0.00000000e+00,   0.00000000e+00],
+       [  1.00009000e+00,   0.00000000e+00,   3.15993000e+00],
+       [  2.00005000e+00,   0.00000000e+00,   1.99960000e-01],
+       [  1.00009000e+00,   0.00000000e+00,   3.49930000e-01],
+       [  2.00009000e+00,   0.00000000e+00,   8.29930000e-01],
+       [ -6.07089650e-17,   0.00000000e+00,   3.94400000e+00],
+       [  3.13205593e+00,   0.00000000e+00,   3.12095526e+00],
+       [  4.00000000e-03,   0.00000000e+00,   4.25700000e+00],
+       [  1.84857727e+00,   0.00000000e+00,   3.69926061e-01],
+       [  2.83657636e-01,   0.00000000e+00,   5.45598345e+00],
+       [  3.83240000e-01,   0.00000000e+00,   3.50257000e+00],
+       [  1.78000000e+00,   0.00000000e+00,   2.94500000e+00],
+       [  2.78787879e-01,   0.00000000e+00,   7.30000000e-01],
+       [  1.20000000e+00,   0.00000000e+00,   4.12000000e+00],
+       [  9.99960000e-01,   0.00000000e+00,   3.19003000e+00],
+       [  2.00000000e+00,   0.00000000e+00,   8.60000000e-01],
+       [  1.00009000e+00,   0.00000000e+00,   3.79930000e-01]])
 
-coefficient_maxs = [[0.0, 1e+99, 1e+99], [1e+99, 1e+99, 1e+99], [0.0, 1e+99, 1e+99], [0.0, 1e+99, 1e+99], [0.0, 1e+99, 1e+99], [0.0, 1e+99, 1e+99], [0.0, 1e+99, 1e+99], [0.0, 1e+99, 1e+99]]
+coefficient_maxs = [[1e+99, 0.0, 1e+99], [1e+99, 1e+99, 1e+99], [1e+99, 0.0, 1e+99], [1e+99, 0.0, 1e+99], [1e+99, 0.0, 1e+99], [1e+99, 0.0, 1e+99], [1e+99, 0.0, 1e+99], [1e+99, 0.0, 1e+99]]
 
-coefficient_mins = [[0.0, -1e+99, -1e+99], [0, 0, -1e+99], [0.0, -1e+99, -1e+99], [0.0, -1e+99, -1e+99], [0.0, -1e+99, -1e+99], [0.0, -1e+99, -1e+99], [0.0, -1e+99, -1e+99], [0.0, -1e+99, -1e+99]]
+coefficient_mins = [[-1e+99, 0.0, -1e+99], [0, 0, -1e+99], [-1e+99, 0.0, -1e+99], [-1e+99, 0.0, -1e+99], [-1e+99, 0.0, -1e+99], [-1e+99, 0.0, -1e+99], [-1e+99, 0.0, -1e+99], [-1e+99, 0.0, -1e+99]]
 
 data_file = 'ORR.pkl'
 
@@ -83,11 +81,11 @@ default_interaction_constraints = None
 
 descriptor_decimal_precision = 2
 
-descriptor_dict = {'Hansenite_i': [-0.299868065, 0.881935], 'Hansenite_h': [-0.299869496, 0.880504], 'Hansenite_j': [-0.299841237, 0.908763], 'Hansenite_e': [-0.299894181, 0.855819], 'Hansenite_d': [-0.2999360231, 0.8139769], 'Hansenite_g': [-0.299879068, 0.870932], 'Hansenite_f': [-0.299890068, 0.859932], 'Hansenite_a': [-0.30004995, 0.70005], 'Hansenite_c': [-0.2999490493, 0.8009507], 'Hansenite_b': [-0.299999148887, 0.750851113]}
+descriptor_dict = {'a': [0.6, -0.30015], 'c': [0.7, -0.30005], 'b': [0.65, -0.3001], 'e': [0.8, -0.29995], 'g': [0.9, -0.29985], 'Pt': [0.75, -0.3], 'f': [0.85, -0.2999], 'i': [1.0, -0.29975], 'h': [0.95, -0.2998], 'j': [1.05, -0.2997]}
 
-descriptor_names = ('H_a', 'OH_a')
+descriptor_names = ('OH_a', 'H_a')
 
-descriptor_ranges = [[-0.5, 0.5], [0.6, 1]]
+descriptor_ranges = [[0.5, 1.2], [-0.5, 0.5]]
 
 electrochemical_thermo_mode = 'simple_electrochemical'
 
@@ -109,7 +107,7 @@ frequency_unit_conversion = 0.0001239842
 
 gas_names = ('H2O2_g', 'H2O_g', 'H2_g', 'O2_g', 'pe_g')
 
-gas_pressures = [1.0, 1.0, 0.0, 1.0, 1.0]
+gas_pressures = [1e-12, 0.035, 0.0, 1.0, 1.0]
 
 gas_thermo_mode = 'frozen_gas'
 
@@ -143,7 +141,7 @@ output_labels = {'selectivity': ('H2O2_g', 'H2O_g', 'H2_g', 'O2_g', 'pe_g'), 'ra
 
 output_variables = ['coverage', 'rate', 'production_rate', 'free_energy', 'selectivity']
 
-parameter_dict = {'O2_a': [4.93006, 4.9910213356, 5.05114084, 5.06677228, 5.1169828, 5.1219184, 5.1351184, 5.1466048, 5.148322, 5.1805156], 'O-pe_b': [2.7101, 2.811702226, 2.9119014, 2.9379538, 3.021638, 3.029864, 3.051864, 3.071008, 3.07387, 3.127526], 'O-pe_a': [2.0801, 2.181702226, 2.2819014, 2.3079538, 2.391638, 2.399864, 2.421864, 2.441008, 2.44387, 2.497526], 'O2-_a': [5.5976, 5.5976, 5.5976, 5.5976, 5.5976, 5.5976, 5.5976, 5.5976, 5.5976, 5.5976], 'OOH-pe_a': [4.34005, 4.390851113, 4.4409507, 4.4539769, 4.495819, 4.499932, 4.510932, 4.520504, 4.521935, 4.548763], 'OH-O_a': [4.2605195, 4.28033193407, 4.299870773, 4.304950991, 4.32126941, 4.32287348, 4.32716348, 4.33089656, 4.33145465, 4.34191757], 'O-peOH_a': [4.34005, 4.390851113, 4.4409507, 4.4539769, 4.495819, 4.499932, 4.510932, 4.520504, 4.521935, 4.548763], 'OH-pe_b': [1.53005, 1.580851113, 1.6309507, 1.6439769, 1.685819, 1.689932, 1.700932, 1.710504, 1.711935, 1.738763], 'HOOH-_a': [0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604], 'OO-pe_a': [5.41006, 5.4710213356, 5.53114084, 5.54677228, 5.5969828, 5.6019184, 5.6151184, 5.6266048, 5.628322, 5.6605156], 'O-O_a': [5.4355345, 5.47058726797, 5.505155983, 5.514144061, 5.54301511, 5.54585308, 5.55344308, 5.56004776, 5.56103515, 5.57954647], 'H2O2_a': [3.3298002, 3.33000340445, 3.3302038028, 3.3302559076, 3.330423276, 3.330439728, 3.330483728, 3.330522016, 3.33052774, 3.330635052], 'OH-OH_a': [3.7805095, 3.79016171147, 3.799680633, 3.802155611, 3.81010561, 3.81088708, 3.81297708, 3.81479576, 3.81506765, 3.82016497], 'OH_a': [0.70005, 0.750851113, 0.8009507, 0.8139769, 0.855819, 0.859932, 0.870932, 0.880504, 0.881935, 0.908763], 'OH_b': [1.05005, 1.100851113, 1.1509507, 1.1639769, 1.205819, 1.209932, 1.220932, 1.230504, 1.231935, 1.258763], 'H_a': [-0.30004995, -0.299999148887, -0.2999490493, -0.2999360231, -0.299894181, -0.299890068, -0.299879068, -0.299869496, -0.299868065, -0.299841237], 'OH-pe_a': [1.18005, 1.230851113, 1.2809507, 1.2939769, 1.335819, 1.339932, 1.350932, 1.360504, 1.361935, 1.388763], 'O_a': [1.6001, 1.701702226, 1.8019014, 1.8279538, 1.911638, 1.919864, 1.941864, 1.961008, 1.96387, 2.017526], 'O_b': [2.2301, 2.331702226, 2.4319014, 2.4579538, 2.541638, 2.549864, 2.571864, 2.591008, 2.59387, 2.647526], 'OOH_a': [3.86005, 3.910851113, 3.9609507, 3.9739769, 4.015819, 4.019932, 4.030932, 4.040504, 4.041935, 4.068763]}
+parameter_dict = {'O2_a': [4.81, 4.87, 4.93, 4.99, 5.05, 5.11, 5.17, 5.23, 5.29, 5.35], 'O-pe_b': [2.06, 2.16, 2.26, 2.36, 2.46, 2.56, 2.66, 2.76, 2.86, 2.96], 'O-pe_a': [1.53, 1.58, 1.63, 1.73, 1.83, 1.93, 2.03, 2.13, 2.23, 2.33], 'O2-_a': [5.66, 5.66, 5.66, 5.66, 5.66, 5.66, 5.66, 5.7, 5.76, 5.82], 'OOH-pe_a': [3.79, 3.84, 3.89, 3.94, 3.99, 4.04, 4.09, 4.14, 4.19, 4.24], 'OH-O_a': [4.013, 4.102, 4.191, 4.28, 4.369, 4.458, 4.547, 4.636, 4.725, 4.814], 'O-peOH_a': [4.2594, 4.2596, 4.2598, 4.26, 4.2602, 4.2604, 4.2606, 4.2608, 4.261, 4.2612], 'OH-pe_b': [0.98, 1.03, 1.08, 1.13, 1.18, 1.23, 1.28, 1.33, 1.38, 1.43], 'HOOH-_a': [3.944, 3.944, 3.944, 3.944, 3.944, 3.944, 3.944, 3.944, 3.944, 3.944], 'OO-pe_a': [4.84, 4.9, 4.96, 5.02, 5.08, 5.14, 5.2, 5.26, 5.32, 5.38], 'O-O_a': [5.0002, 5.1568, 5.3134, 5.47, 5.6266, 5.7832, 5.9398, 6.0964, 6.253, 6.4096], 'H2O2_a': [3.3294, 3.3296, 3.3298, 3.33, 3.3302, 3.3304, 3.3306, 3.3308, 3.331, 3.3312], 'OH-OH_a': [3.732514, 3.751676, 3.770838, 3.79, 3.809162, 3.828324, 3.847486, 3.866648, 3.88581, 3.904972], 'OH_a': [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05], 'OH_b': [0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4], 'H_a': [-0.30015, -0.3001, -0.30005, -0.3, -0.29995, -0.2999, -0.29985, -0.2998, -0.29975, -0.2997], 'OH-pe_a': [0.93, 0.93, 0.93, 0.93, 0.93, 0.93, 0.93, 0.98, 1.03, 1.08], 'O_a': [1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3], 'O_b': [2.03, 2.13, 2.23, 2.33, 2.43, 2.53, 2.63, 2.73, 2.83, 2.93], 'OOH_a': [3.76, 3.81, 3.86, 3.91, 3.96, 4.01, 4.06, 4.11, 4.16, 4.21]}
 
 parameter_mode = 'formation_energy'
 
@@ -155,19 +153,19 @@ perturbation_size = 1e-14
 
 pressure_mode = 'static'
 
-products = ['H2O_g', 'H2_g', 'O2_g']
+products = ['H2O2_g', 'H2O_g', 'H2_g']
 
-reactants = ['H2O2_g', 'pe_g']
+reactants = ['O2_g', 'pe_g']
 
 required_headers = ['species_name', 'surface_name', 'site_name', 'formation_energy', 'frequencies', 'reference']
 
 residual_threshold = 0.9
 
-resolution = [5, 20]
+resolution = [20, 5]
 
 rxn_expressions = ['*_a + O2_g -> O2-_a -> O2_a', 'O2_a + pe_g -> OO-pe_a -> OOH_a', 'OOH_a + pe_g -> OOH-pe_a -> O_a + H2O_g', 'O_a + pe_g -> O-pe_a -> OH_a', 'OH_a + pe_g -> OH-pe_a -> *_a + H2O_g', 'O2_a + *_b -> O-O_a + *_b -> O_a + O_b', 'O_b + pe_g -> O-pe_b -> OH_b', 'OH_b + pe_g -> OH-pe_b -> *_b + H2O_g', 'OOH_a + *_b -> OH-O_a + *_b -> OH_a + O_b', 'OOH_a + pe_g -> O-peOH_a -> H2O2_a', 'H2O2_a + *_b -> OH-OH_a + *_b -> OH_a + OH_b', 'H2O2_a -> HOOH-_a -> H2O2_g + *_a', 'pe_g + *_a -> H_a', 'H_a + H_a -> H2_g + 2*_a']
 
-scaling_constraint_dict = {'O2_a': [0.0, None, None], 'O-pe_b': 'BEP', 'O-pe_a': 'BEP', 'O2-_a': 'BEP', 'OOH-pe_a': 'BEP', 'OH-O_a': 'BEP', 'O-peOH_a': 'BEP', 'OH-pe_b': 'BEP', 'HOOH-_a': 'BEP', 'OO-pe_a': 'BEP', 'O-O_a': 'BEP', 'H2O2_a': [0.0, None, None], 'O_a': [0.0, None, None], 'OH_a': [0.0, None, None], 'OH_b': [0.0, None, None], 'O_b': [0.0, None, None], 'OH-pe_a': 'BEP', 'OH-OH_a': 'BEP', 'OOH_a': [0.0, None, None]}
+scaling_constraint_dict = {'O2_a': [None, 0.0, None], 'O-pe_b': 'BEP', 'O-pe_a': 'BEP', 'O2-_a': 'BEP', 'OOH-pe_a': 'BEP', 'OH-O_a': 'BEP', 'O-peOH_a': 'BEP', 'OH-pe_b': 'BEP', 'HOOH-_a': 'BEP', 'OO-pe_a': 'BEP', 'O-O_a': 'BEP', 'H2O2_a': [None, 0.0, None], 'O_a': [None, 0.0, None], 'OH_a': [None, 0.0, None], 'OH_b': [None, 0.0, None], 'O_b': [None, 0.0, None], 'OH-pe_a': 'BEP', 'OH-OH_a': 'BEP', 'OOH_a': [None, 0.0, None]}
 
 search_directions = [[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0], [-1, 1], [1, 1], [1, -1], [-1, -1]]
 
@@ -179,7 +177,7 @@ site_names = ('a', 'b', 'g')
 
 standard_coverage = 'min'
 
-surface_names = ('Hansenite_a', 'Hansenite_b', 'Hansenite_c', 'Hansenite_d', 'Hansenite_e', 'Hansenite_f', 'Hansenite_g', 'Hansenite_h', 'Hansenite_i', 'Hansenite_j')
+surface_names = ('a', 'b', 'c', 'Pt', 'e', 'f', 'g', 'h', 'i', 'j')
 
 temperature = 300
 
@@ -189,61 +187,61 @@ thermodynamic_variables = ['temperature', 'gas_pressures', 'voltage', 'beta', 'g
 
 tolerance = 1e-50
 
-transition_state_coefficient_matrix = array([[  0.00000000e+00,  -1.42657385e-15,   6.04000000e-01],
-       [  0.00000000e+00,   6.90118286e-01,   4.95240143e+00],
-       [  0.00000000e+00,   1.00000000e+00,   3.64000000e+00],
-       [  0.00000000e+00,   2.00162000e+00,   6.78660000e-01],
-       [  0.00000000e+00,   1.45751019e-15,   5.59760000e+00],
-       [  0.00000000e+00,   1.89968587e-01,   3.64752570e+00],
-       [  0.00000000e+00,   3.89935650e-01,   3.98755265e+00],
-       [  0.00000000e+00,   9.99670000e-01,   4.80270000e-01],
-       [  0.00000000e+00,   1.20000000e+00,   4.57000000e+00],
-       [  0.00000000e+00,   1.00000000e+00,   3.64000000e+00],
-       [  0.00000000e+00,   2.00000000e+00,   1.31000000e+00],
-       [  0.00000000e+00,   1.00048000e+00,   8.29600000e-01]])
+transition_state_coefficient_matrix = array([[ -6.07089650e-17,   0.00000000e+00,   3.94400000e+00],
+       [  3.13205593e+00,   0.00000000e+00,   3.12095526e+00],
+       [  4.00000000e-03,   0.00000000e+00,   4.25700000e+00],
+       [  1.84857727e+00,   0.00000000e+00,   3.69926061e-01],
+       [  2.83657636e-01,   0.00000000e+00,   5.45598345e+00],
+       [  3.83240000e-01,   0.00000000e+00,   3.50257000e+00],
+       [  1.78000000e+00,   0.00000000e+00,   2.94500000e+00],
+       [  2.78787879e-01,   0.00000000e+00,   7.30000000e-01],
+       [  1.20000000e+00,   0.00000000e+00,   4.12000000e+00],
+       [  9.99960000e-01,   0.00000000e+00,   3.19003000e+00],
+       [  2.00000000e+00,   0.00000000e+00,   8.60000000e-01],
+       [  1.00009000e+00,   0.00000000e+00,   3.79930000e-01]])
 
 transition_state_cross_interaction_mode = 'transition_state_scaling'
 
 transition_state_names = ('HOOH-_a', 'O-O_a', 'O-peOH_a', 'O-pe_a', 'O2-_a', 'OH-OH_a', 'OH-O_a', 'OH-pe_a', 'OO-pe_a', 'OOH-pe_a', 'O-pe_b', 'OH-pe_b')
 
-transition_state_scaling_coefficients = [[3.1843166244237139e-13, 0.60400000000106047], [0.24642857142857294, 5.7065714285714284], [-1.0040160642612581, 3.8076706827279208], [-2.0000000000000009, 0.2799999999999972], [1.2141061847642827e-15, 5.597599999999991], [0.095190380761725271, 3.9308817635273003], [0.19499999999999776, 4.4418499999999979], [-0.99999999999999845, 0.4800000000000007], [-6.0000000000000355, -1.0100000000000398], [0.99999999999999589, 6.5999999999999934], [-2.0000000000000022, 0.34999999999999581], [-1.0000000000000038, 0.4799999999999951]]
+transition_state_scaling_coefficients = [[1.4843267724273785e-14, 3.9440000000000501], [1.1185714285714228, 6.5438285714285671], [-0.0040160642570302042, 4.2576706827309252], [-1.8484848484848502, 0.00030303030302806974], [0.23636363636363431, 4.4892727272727377], [0.19200400801603162, 4.0741659318637273], [0.88999999999999813, 5.0186999999999964], [-0.27878787878787947, 0.72999999999999921], [-5.9999999999999991, -1.4599999999999986], [0.99999999999999734, 6.149999999999995], [-1.9999999999999996, -0.099999999999999187], [-1.0000000000000002, 0.03000000000000037]]
 
-transition_state_scaling_matrix = array([[ -3.18431662e-13,   0.00000000e+00,   0.00000000e+00,
+transition_state_scaling_matrix = array([[ -1.48432677e-14,   0.00000000e+00,   0.00000000e+00,
           0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-          0.00000000e+00,   0.00000000e+00,   6.04000000e-01],
-       [  0.00000000e+00,   0.00000000e+00,  -2.46428571e-01,
-          0.00000000e+00,   0.00000000e+00,   2.46428571e-01,
-          0.00000000e+00,   2.46428571e-01,   5.70657143e+00],
-       [ -1.00401606e+00,  -0.00000000e+00,  -0.00000000e+00,
-         -0.00000000e+00,   1.00401606e+00,  -0.00000000e+00,
-         -0.00000000e+00,  -0.00000000e+00,   3.80767068e+00],
+          0.00000000e+00,   0.00000000e+00,   3.94400000e+00],
+       [  0.00000000e+00,   0.00000000e+00,  -1.11857143e+00,
+          0.00000000e+00,   0.00000000e+00,   1.11857143e+00,
+          0.00000000e+00,   1.11857143e+00,   6.54382857e+00],
+       [ -4.01606426e-03,  -0.00000000e+00,  -0.00000000e+00,
+         -0.00000000e+00,   4.01606426e-03,  -0.00000000e+00,
+         -0.00000000e+00,  -0.00000000e+00,   4.25767068e+00],
        [ -0.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
-         -2.00000000e+00,  -0.00000000e+00,   2.00000000e+00,
-         -0.00000000e+00,  -0.00000000e+00,   2.80000000e-01],
-       [  0.00000000e+00,   0.00000000e+00,   1.21410618e-15,
+         -1.84848485e+00,  -0.00000000e+00,   1.84848485e+00,
+         -0.00000000e+00,  -0.00000000e+00,   3.03030303e-04],
+       [  0.00000000e+00,   0.00000000e+00,   2.36363636e-01,
           0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-          0.00000000e+00,   0.00000000e+00,   5.59760000e+00],
-       [ -9.51903808e-02,   0.00000000e+00,   0.00000000e+00,
-          9.51903808e-02,   0.00000000e+00,   0.00000000e+00,
-          9.51903808e-02,   0.00000000e+00,   3.93088176e+00],
+          0.00000000e+00,   0.00000000e+00,   4.48927273e+00],
+       [ -1.92004008e-01,   0.00000000e+00,   0.00000000e+00,
+          1.92004008e-01,   0.00000000e+00,   0.00000000e+00,
+          1.92004008e-01,   0.00000000e+00,   4.07416593e+00],
        [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-          1.95000000e-01,  -1.95000000e-01,   0.00000000e+00,
-          0.00000000e+00,   1.95000000e-01,   4.44185000e+00],
+          8.90000000e-01,  -8.90000000e-01,   0.00000000e+00,
+          0.00000000e+00,   8.90000000e-01,   5.01870000e+00],
        [ -0.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
-          1.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
-         -0.00000000e+00,  -0.00000000e+00,   4.80000000e-01],
+          2.78787879e-01,  -0.00000000e+00,  -0.00000000e+00,
+         -0.00000000e+00,  -0.00000000e+00,   7.30000000e-01],
        [ -0.00000000e+00,  -0.00000000e+00,   6.00000000e+00,
          -0.00000000e+00,  -6.00000000e+00,  -0.00000000e+00,
-         -0.00000000e+00,  -0.00000000e+00,  -1.01000000e+00],
+         -0.00000000e+00,  -0.00000000e+00,  -1.46000000e+00],
        [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
           0.00000000e+00,  -1.00000000e+00,   1.00000000e+00,
-          0.00000000e+00,   0.00000000e+00,   6.60000000e+00],
+          0.00000000e+00,   0.00000000e+00,   6.15000000e+00],
        [ -0.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
          -0.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
-         -2.00000000e+00,   2.00000000e+00,   3.50000000e-01],
+         -2.00000000e+00,   2.00000000e+00,  -1.00000000e-01],
        [ -0.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
          -0.00000000e+00,  -0.00000000e+00,  -0.00000000e+00,
-          1.00000000e+00,  -0.00000000e+00,   4.80000000e-01]])
+          1.00000000e+00,  -0.00000000e+00,   3.00000000e-02]])
 
 transition_state_scaling_mode = 'initial_state'
 
@@ -253,397 +251,104 @@ verbose = 1
 
 voltage = 0.9
 
-stdout = """initial_evaluation: success - initial guess at point [ 0.50, 1.00]
-initial_evaluation: success - initial guess at point [ 0.50, 0.98]
-initial_evaluation: success - initial guess at point [ 0.50, 0.96]
-initial_evaluation: success - initial guess at point [ 0.50, 0.94]
-initial_evaluation: success - initial guess at point [ 0.50, 0.92]
-initial_evaluation: success - initial guess at point [ 0.50, 0.89]
-initial_evaluation: success - initial guess at point [ 0.50, 0.87]
-initial_evaluation: success - initial guess at point [ 0.50, 0.85]
-initial_evaluation: success - initial guess at point [ 0.50, 0.83]
-initial_evaluation: success - initial guess at point [ 0.50, 0.81]
-initial_evaluation: success - initial guess at point [ 0.50, 0.79]
-initial_evaluation: success - initial guess at point [ 0.50, 0.77]
-initial_evaluation: success - initial guess at point [ 0.50, 0.75]
-initial_evaluation: success - initial guess at point [ 0.50, 0.73]
-initial_evaluation: success - initial guess at point [ 0.50, 0.71]
-initial_evaluation: success - initial guess at point [ 0.50, 0.68]
-initial_evaluation: success - initial guess at point [ 0.50, 0.66]
-initial_evaluation: success - initial guess at point [ 0.50, 0.64]
-initial_evaluation: success - initial guess at point [ 0.50, 0.62]
-initial_evaluation: success - initial guess at point [ 0.50, 0.60]
-initial_evaluation: invalid - initial guess at point [ 0.39, 1.00]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.98]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.96]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.94]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.92]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.89]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.87]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.85]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.83]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.81]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.79]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.77]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.75]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.73]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.71]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.68]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.66]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.64]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.62]
-initial_evaluation: invalid - initial guess at point [ 0.39, 0.60]
-initial_evaluation: invalid - initial guess at point [ 0.28, 1.00]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.98]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.96]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.94]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.92]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.89]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.87]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.85]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.83]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.81]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.79]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.77]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.75]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.73]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.71]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.68]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.66]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.64]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.62]
-initial_evaluation: invalid - initial guess at point [ 0.28, 0.60]
-initial_evaluation: invalid - initial guess at point [ 0.17, 1.00]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.98]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.96]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.94]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.92]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.89]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.87]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.85]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.83]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.81]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.79]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.77]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.75]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.73]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.71]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.68]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.66]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.64]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.62]
-initial_evaluation: invalid - initial guess at point [ 0.17, 0.60]
-initial_evaluation: invalid - initial guess at point [ 0.06, 1.00]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.98]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.96]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.94]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.92]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.89]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.87]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.85]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.83]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.81]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.79]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.77]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.75]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.73]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.71]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.68]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.66]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.64]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.62]
-initial_evaluation: invalid - initial guess at point [ 0.06, 0.60]
-initial_evaluation: invalid - initial guess at point [-0.06, 1.00]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.98]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.96]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.94]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.92]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.89]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.87]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.85]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.83]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.81]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.79]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.77]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.75]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.73]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.71]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.68]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.66]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.64]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.62]
-initial_evaluation: invalid - initial guess at point [-0.06, 0.60]
-initial_evaluation: invalid - initial guess at point [-0.17, 1.00]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.98]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.96]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.94]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.92]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.89]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.87]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.85]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.83]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.81]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.79]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.77]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.75]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.73]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.71]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.68]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.66]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.64]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.62]
-initial_evaluation: invalid - initial guess at point [-0.17, 0.60]
-initial_evaluation: invalid - initial guess at point [-0.28, 1.00]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.98]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.96]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.94]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.92]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.89]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.87]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.85]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.83]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.81]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.79]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.77]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.75]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.73]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.71]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.68]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.66]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.64]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.62]
-initial_evaluation: invalid - initial guess at point [-0.28, 0.60]
-initial_evaluation: invalid - initial guess at point [-0.39, 1.00]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.98]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.96]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.94]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.92]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.89]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.87]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.85]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.83]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.81]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.79]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.77]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.75]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.73]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.71]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.68]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.66]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.64]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.62]
-initial_evaluation: invalid - initial guess at point [-0.39, 0.60]
-initial_evaluation: success - initial guess at point [-0.50, 1.00]
-initial_evaluation: success - initial guess at point [-0.50, 0.98]
-initial_evaluation: success - initial guess at point [-0.50, 0.96]
-initial_evaluation: success - initial guess at point [-0.50, 0.94]
-initial_evaluation: success - initial guess at point [-0.50, 0.92]
-initial_evaluation: success - initial guess at point [-0.50, 0.89]
-initial_evaluation: success - initial guess at point [-0.50, 0.87]
-initial_evaluation: success - initial guess at point [-0.50, 0.85]
-initial_evaluation: success - initial guess at point [-0.50, 0.83]
-initial_evaluation: success - initial guess at point [-0.50, 0.81]
-initial_evaluation: success - initial guess at point [-0.50, 0.79]
-initial_evaluation: success - initial guess at point [-0.50, 0.77]
-initial_evaluation: success - initial guess at point [-0.50, 0.75]
-initial_evaluation: success - initial guess at point [-0.50, 0.73]
-initial_evaluation: success - initial guess at point [-0.50, 0.71]
-initial_evaluation: success - initial guess at point [-0.50, 0.68]
-initial_evaluation: success - initial guess at point [-0.50, 0.66]
-initial_evaluation: success - initial guess at point [-0.50, 0.64]
-initial_evaluation: success - initial guess at point [-0.50, 0.62]
-initial_evaluation: success - initial guess at point [-0.50, 0.60]
-mapper_iteration_0: status - 60 points do not have valid solution.
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 0.0249321877338)
-minresid_iteration_0: fail - [ 0.25, 1.00] using coverages from [ 0.25, 1.00]; initial residual was 3.12549272082e+12 (residual = 0.0249321877338)
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 39.9549644842)
-minresid_iteration_1: fail - [ 0.25, 1.00] using coverages from [ 0.25, 1.00]; initial residual was 21321089.6509 (residual = 39.9549644842)
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.0710481675943)
-minresid_iteration_2: fail - [ 0.25, 1.00] using coverages from [ 0.25, 1.00]; initial residual was 0.0710481675943 (residual = 0.0710481675943)
-minresid_iteration_3: success - [ 0.25, 1.00] using coverages from [ 0.50, 1.00]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744105333705)
-minresid_iteration_0: fail - [ 0.25, 0.98] using coverages from [ 0.25, 0.98]; initial residual was 0.000744105333705 (residual = 0.000744105333705)
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 0.000744069562971)
-minresid_iteration_1: fail - [ 0.25, 0.98] using coverages from [ 0.25, 1.00]; initial residual was 625.514123431 (residual = 0.000744069562971)
-minresid_iteration_2: success - [ 0.25, 0.98] using coverages from [ 0.50, 0.98]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054408795)
-minresid_iteration_0: fail - [ 0.25, 0.96] using coverages from [ 0.25, 0.96]; initial residual was 0.000744054408795 (residual = 0.000744054408795)
-minresid_iteration_1: success - [ 0.25, 0.96] using coverages from [ 0.25, 0.98]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054406203)
-minresid_iteration_0: fail - [ 0.25, 0.94] using coverages from [ 0.25, 0.94]; initial residual was 0.000744054406203 (residual = 0.000744054406203)
-minresid_iteration_1: success - [ 0.25, 0.94] using coverages from [ 0.25, 0.96]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054400369)
-minresid_iteration_0: fail - [ 0.25, 0.92] using coverages from [ 0.25, 0.92]; initial residual was 0.000744054400369 (residual = 0.000744054400369)
-minresid_iteration_1: success - [ 0.25, 0.92] using coverages from [ 0.25, 0.94]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054387192)
-minresid_iteration_0: fail - [ 0.25, 0.89] using coverages from [ 0.25, 0.89]; initial residual was 0.000744054387192 (residual = 0.000744054387192)
-minresid_iteration_1: success - [ 0.25, 0.89] using coverages from [ 0.25, 0.92]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.00074405435749)
-minresid_iteration_0: fail - [ 0.25, 0.87] using coverages from [ 0.25, 0.87]; initial residual was 0.00074405435749 (residual = 0.00074405435749)
-minresid_iteration_1: success - [ 0.25, 0.87] using coverages from [ 0.25, 0.89]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054290359)
-minresid_iteration_0: fail - [ 0.25, 0.85] using coverages from [ 0.25, 0.85]; initial residual was 0.000744054290359 (residual = 0.000744054290359)
-minresid_iteration_1: success - [ 0.25, 0.85] using coverages from [ 0.25, 0.87]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.0007440541389)
-minresid_iteration_0: fail - [ 0.25, 0.83] using coverages from [ 0.25, 0.83]; initial residual was 0.0007440541389 (residual = 0.0007440541389)
-minresid_iteration_1: success - [ 0.25, 0.83] using coverages from [ 0.25, 0.85]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744053796723)
-minresid_iteration_0: fail - [ 0.25, 0.81] using coverages from [ 0.25, 0.81]; initial residual was 0.000744053796723 (residual = 0.000744053796723)
-minresid_iteration_1: success - [ 0.25, 0.81] using coverages from [ 0.25, 0.83]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744053025424)
-minresid_iteration_0: fail - [ 0.25, 0.79] using coverages from [ 0.25, 0.79]; initial residual was 0.000744053025424 (residual = 0.000744053025424)
-minresid_iteration_1: success - [ 0.25, 0.79] using coverages from [ 0.25, 0.81]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744051282195)
-minresid_iteration_0: fail - [ 0.25, 0.77] using coverages from [ 0.25, 0.77]; initial residual was 0.000744051282195 (residual = 0.000744051282195)
-minresid_iteration_1: success - [ 0.25, 0.77] using coverages from [ 0.25, 0.79]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744047349175)
-minresid_iteration_0: fail - [ 0.25, 0.75] using coverages from [ 0.25, 0.75]; initial residual was 0.000744047349175 (residual = 0.000744047349175)
-minresid_iteration_1: success - [ 0.25, 0.75] using coverages from [ 0.25, 0.77]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744038472078)
-minresid_iteration_0: fail - [ 0.25, 0.73] using coverages from [ 0.25, 0.73]; initial residual was 0.000744038472078 (residual = 0.000744038472078)
-minresid_iteration_1: success - [ 0.25, 0.73] using coverages from [ 0.25, 0.75]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744018417782)
-minresid_iteration_0: fail - [ 0.25, 0.71] using coverages from [ 0.25, 0.71]; initial residual was 0.000744018417782 (residual = 0.000744018417782)
-minresid_iteration_1: success - [ 0.25, 0.71] using coverages from [ 0.25, 0.73]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743973175939)
-minresid_iteration_0: fail - [ 0.25, 0.68] using coverages from [ 0.25, 0.68]; initial residual was 0.000743973175939 (residual = 0.000743973175939)
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 0.0104837845959)
-minresid_iteration_1: fail - [ 0.25, 0.68] using coverages from [ 0.25, 0.71]; initial residual was 0.012780232537 (residual = 0.0104837845959)
-minresid_iteration_2: success - [ 0.25, 0.68] using coverages from [ 0.50, 0.68]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743870987975)
-minresid_iteration_0: fail - [ 0.25, 0.66] using coverages from [ 0.25, 0.66]; initial residual was 0.000743870987975 (residual = 0.000743870987975)
-minresid_iteration_1: success - [ 0.25, 0.66] using coverages from [ 0.25, 0.68]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743640760551)
-minresid_iteration_0: fail - [ 0.25, 0.64] using coverages from [ 0.25, 0.64]; initial residual was 0.000743640760551 (residual = 0.000743640760551)
-minresid_iteration_1: success - [ 0.25, 0.64] using coverages from [ 0.25, 0.66]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.00074312100033)
-minresid_iteration_0: fail - [ 0.25, 0.62] using coverages from [ 0.25, 0.62]; initial residual was 0.00074312100033 (residual = 0.00074312100033)
-minresid_iteration_1: success - [ 0.25, 0.62] using coverages from [ 0.25, 0.64]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000741951289256)
-minresid_iteration_0: fail - [ 0.25, 0.60] using coverages from [ 0.25, 0.60]; initial residual was 0.000741951289256 (residual = 0.000741951289256)
-minresid_iteration_1: success - [ 0.25, 0.60] using coverages from [ 0.25, 0.62]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744392527944)
-minresid_iteration_0: fail - [ 0.00, 1.00] using coverages from [ 0.00, 1.00]; initial residual was 0.000744392527944 (residual = 0.000744392527944)
-minresid_iteration_1: success - [ 0.00, 1.00] using coverages from [ 0.25, 1.00]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744105333705)
-minresid_iteration_0: fail - [ 0.00, 0.98] using coverages from [ 0.00, 0.98]; initial residual was 0.000744105333705 (residual = 0.000744105333705)
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 0.000744069562971)
-minresid_iteration_1: fail - [ 0.00, 0.98] using coverages from [ 0.00, 1.00]; initial residual was 625.514123431 (residual = 0.000744069562971)
-minresid_iteration_2: success - [ 0.00, 0.98] using coverages from [ 0.25, 0.98]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054408795)
-minresid_iteration_0: fail - [ 0.00, 0.96] using coverages from [ 0.00, 0.96]; initial residual was 0.000744054408795 (residual = 0.000744054408795)
-minresid_iteration_1: success - [ 0.00, 0.96] using coverages from [ 0.00, 0.98]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054406203)
-minresid_iteration_0: fail - [ 0.00, 0.94] using coverages from [ 0.00, 0.94]; initial residual was 0.000744054406203 (residual = 0.000744054406203)
-minresid_iteration_1: success - [ 0.00, 0.94] using coverages from [ 0.00, 0.96]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054400369)
-minresid_iteration_0: fail - [ 0.00, 0.92] using coverages from [ 0.00, 0.92]; initial residual was 0.000744054400369 (residual = 0.000744054400369)
-minresid_iteration_1: success - [ 0.00, 0.92] using coverages from [ 0.00, 0.94]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054387192)
-minresid_iteration_0: fail - [ 0.00, 0.89] using coverages from [ 0.00, 0.89]; initial residual was 0.000744054387192 (residual = 0.000744054387192)
-minresid_iteration_1: success - [ 0.00, 0.89] using coverages from [ 0.00, 0.92]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.00074405435749)
-minresid_iteration_0: fail - [ 0.00, 0.87] using coverages from [ 0.00, 0.87]; initial residual was 0.00074405435749 (residual = 0.00074405435749)
-minresid_iteration_1: success - [ 0.00, 0.87] using coverages from [ 0.00, 0.89]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054290359)
-minresid_iteration_0: fail - [ 0.00, 0.85] using coverages from [ 0.00, 0.85]; initial residual was 0.000744054290359 (residual = 0.000744054290359)
-minresid_iteration_1: success - [ 0.00, 0.85] using coverages from [ 0.00, 0.87]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.0007440541389)
-minresid_iteration_0: fail - [ 0.00, 0.83] using coverages from [ 0.00, 0.83]; initial residual was 0.0007440541389 (residual = 0.0007440541389)
-minresid_iteration_1: success - [ 0.00, 0.83] using coverages from [ 0.00, 0.85]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744053796723)
-minresid_iteration_0: fail - [ 0.00, 0.81] using coverages from [ 0.00, 0.81]; initial residual was 0.000744053796723 (residual = 0.000744053796723)
-minresid_iteration_1: success - [ 0.00, 0.81] using coverages from [ 0.00, 0.83]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744053025424)
-minresid_iteration_0: fail - [ 0.00, 0.79] using coverages from [ 0.00, 0.79]; initial residual was 0.000744053025424 (residual = 0.000744053025424)
-minresid_iteration_1: success - [ 0.00, 0.79] using coverages from [ 0.00, 0.81]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744051282195)
-minresid_iteration_0: fail - [ 0.00, 0.77] using coverages from [ 0.00, 0.77]; initial residual was 0.000744051282195 (residual = 0.000744051282195)
-minresid_iteration_1: success - [ 0.00, 0.77] using coverages from [ 0.00, 0.79]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744047349175)
-minresid_iteration_0: fail - [ 0.00, 0.75] using coverages from [ 0.00, 0.75]; initial residual was 0.000744047349175 (residual = 0.000744047349175)
-minresid_iteration_1: success - [ 0.00, 0.75] using coverages from [ 0.00, 0.77]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744038472078)
-minresid_iteration_0: fail - [ 0.00, 0.73] using coverages from [ 0.00, 0.73]; initial residual was 0.000744038472078 (residual = 0.000744038472078)
-minresid_iteration_1: success - [ 0.00, 0.73] using coverages from [ 0.00, 0.75]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744018417782)
-minresid_iteration_0: fail - [ 0.00, 0.71] using coverages from [ 0.00, 0.71]; initial residual was 0.000744018417782 (residual = 0.000744018417782)
-minresid_iteration_1: success - [ 0.00, 0.71] using coverages from [ 0.00, 0.73]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743973175939)
-minresid_iteration_0: fail - [ 0.00, 0.68] using coverages from [ 0.00, 0.68]; initial residual was 0.000743973175939 (residual = 0.000743973175939)
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 0.0104837845959)
-minresid_iteration_1: fail - [ 0.00, 0.68] using coverages from [ 0.00, 0.71]; initial residual was 0.012780232537 (residual = 0.0104837845959)
-minresid_iteration_2: success - [ 0.00, 0.68] using coverages from [ 0.25, 0.68]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743870987975)
-minresid_iteration_0: fail - [ 0.00, 0.66] using coverages from [ 0.00, 0.66]; initial residual was 0.000743870987975 (residual = 0.000743870987975)
-minresid_iteration_1: success - [ 0.00, 0.66] using coverages from [ 0.00, 0.68]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743640760551)
-minresid_iteration_0: fail - [ 0.00, 0.64] using coverages from [ 0.00, 0.64]; initial residual was 0.000743640760551 (residual = 0.000743640760551)
-minresid_iteration_1: success - [ 0.00, 0.64] using coverages from [ 0.00, 0.66]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.00074312100033)
-minresid_iteration_0: fail - [ 0.00, 0.62] using coverages from [ 0.00, 0.62]; initial residual was 0.00074312100033 (residual = 0.00074312100033)
-minresid_iteration_1: success - [ 0.00, 0.62] using coverages from [ 0.00, 0.64]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000741951289256)
-minresid_iteration_0: fail - [ 0.00, 0.60] using coverages from [ 0.00, 0.60]; initial residual was 0.000741951289256 (residual = 0.000741951289256)
-minresid_iteration_1: success - [ 0.00, 0.60] using coverages from [ 0.00, 0.62]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744392527944)
-minresid_iteration_0: fail - [-0.25, 1.00] using coverages from [-0.25, 1.00]; initial residual was 0.000744392527944 (residual = 0.000744392527944)
-minresid_iteration_1: success - [-0.25, 1.00] using coverages from [-0.50, 1.00]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744105333705)
-minresid_iteration_0: fail - [-0.25, 0.98] using coverages from [-0.25, 0.98]; initial residual was 0.000744105333705 (residual = 0.000744105333705)
-minresid_iteration_1: success - [-0.25, 0.98] using coverages from [-0.50, 0.98]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054408795)
-minresid_iteration_0: fail - [-0.25, 0.96] using coverages from [-0.25, 0.96]; initial residual was 0.000744054408795 (residual = 0.000744054408795)
-minresid_iteration_1: success - [-0.25, 0.96] using coverages from [-0.50, 0.96]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054406203)
-minresid_iteration_0: fail - [-0.25, 0.94] using coverages from [-0.25, 0.94]; initial residual was 0.000744054406203 (residual = 0.000744054406203)
-minresid_iteration_1: success - [-0.25, 0.94] using coverages from [-0.50, 0.94]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054400369)
-minresid_iteration_0: fail - [-0.25, 0.92] using coverages from [-0.25, 0.92]; initial residual was 0.000744054400369 (residual = 0.000744054400369)
-minresid_iteration_1: success - [-0.25, 0.92] using coverages from [-0.50, 0.92]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054387192)
-minresid_iteration_0: fail - [-0.25, 0.89] using coverages from [-0.25, 0.89]; initial residual was 0.000744054387192 (residual = 0.000744054387192)
-minresid_iteration_1: success - [-0.25, 0.89] using coverages from [-0.50, 0.89]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.00074405435749)
-minresid_iteration_0: fail - [-0.25, 0.87] using coverages from [-0.25, 0.87]; initial residual was 0.00074405435749 (residual = 0.00074405435749)
-minresid_iteration_1: success - [-0.25, 0.87] using coverages from [-0.50, 0.87]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744054290359)
-minresid_iteration_0: fail - [-0.25, 0.85] using coverages from [-0.25, 0.85]; initial residual was 0.000744054290359 (residual = 0.000744054290359)
-minresid_iteration_1: success - [-0.25, 0.85] using coverages from [-0.50, 0.85]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.0007440541389)
-minresid_iteration_0: fail - [-0.25, 0.83] using coverages from [-0.25, 0.83]; initial residual was 0.0007440541389 (residual = 0.0007440541389)
-minresid_iteration_1: success - [-0.25, 0.83] using coverages from [-0.50, 0.83]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744053796723)
-minresid_iteration_0: fail - [-0.25, 0.81] using coverages from [-0.25, 0.81]; initial residual was 0.000744053796723 (residual = 0.000744053796723)
-minresid_iteration_1: success - [-0.25, 0.81] using coverages from [-0.50, 0.81]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744053025424)
-minresid_iteration_0: fail - [-0.25, 0.79] using coverages from [-0.25, 0.79]; initial residual was 0.000744053025424 (residual = 0.000744053025424)
-minresid_iteration_1: success - [-0.25, 0.79] using coverages from [-0.50, 0.79]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744051282195)
-minresid_iteration_0: fail - [-0.25, 0.77] using coverages from [-0.25, 0.77]; initial residual was 0.000744051282195 (residual = 0.000744051282195)
-minresid_iteration_1: success - [-0.25, 0.77] using coverages from [-0.50, 0.77]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744047349175)
-minresid_iteration_0: fail - [-0.25, 0.75] using coverages from [-0.25, 0.75]; initial residual was 0.000744047349175 (residual = 0.000744047349175)
-minresid_iteration_1: success - [-0.25, 0.75] using coverages from [-0.50, 0.75]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744038472078)
-minresid_iteration_0: fail - [-0.25, 0.73] using coverages from [-0.25, 0.73]; initial residual was 0.000744038472078 (residual = 0.000744038472078)
-minresid_iteration_1: success - [-0.25, 0.73] using coverages from [-0.50, 0.73]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000744018417782)
-minresid_iteration_0: fail - [-0.25, 0.71] using coverages from [-0.25, 0.71]; initial residual was 0.000744018417782 (residual = 0.000744018417782)
-minresid_iteration_1: success - [-0.25, 0.71] using coverages from [-0.50, 0.71]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743973175939)
-minresid_iteration_0: fail - [-0.25, 0.68] using coverages from [-0.25, 0.68]; initial residual was 0.000743973175939 (residual = 0.000743973175939)
-minresid_iteration_1: success - [-0.25, 0.68] using coverages from [-0.50, 0.68]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743870987975)
-minresid_iteration_0: fail - [-0.25, 0.66] using coverages from [-0.25, 0.66]; initial residual was 0.000743870987975 (residual = 0.000743870987975)
-minresid_iteration_1: success - [-0.25, 0.66] using coverages from [-0.50, 0.66]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000743640760551)
-minresid_iteration_0: fail - [-0.25, 0.64] using coverages from [-0.25, 0.64]; initial residual was 0.000743640760551 (residual = 0.000743640760551)
-minresid_iteration_1: success - [-0.25, 0.64] using coverages from [-0.50, 0.64]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.00074312100033)
-minresid_iteration_0: fail - [-0.25, 0.62] using coverages from [-0.25, 0.62]; initial residual was 0.00074312100033 (residual = 0.00074312100033)
-minresid_iteration_1: success - [-0.25, 0.62] using coverages from [-0.50, 0.62]
-rootfinding_iteration_1: cancel - stationary point or singular jacobian (residual = 0.000741951289256)
-minresid_iteration_0: fail - [-0.25, 0.60] using coverages from [-0.25, 0.60]; initial residual was 0.000741951289256 (residual = 0.000741951289256)
-minresid_iteration_1: success - [-0.25, 0.60] using coverages from [-0.50, 0.60]
-mapper_iteration_1: status - 0 points do not have valid solution."""
+stdout = """initial_evaluation: success - initial guess at point [ 1.20, 0.50]
+initial_evaluation: success - initial guess at point [ 1.20, 0.25]
+initial_evaluation: success - initial guess at point [ 1.20, 0.00]
+initial_evaluation: success - initial guess at point [ 1.20,-0.25]
+initial_evaluation: success - initial guess at point [ 1.20,-0.50]
+initial_evaluation: success - initial guess at point [ 1.16, 0.50]
+initial_evaluation: success - initial guess at point [ 1.16, 0.25]
+initial_evaluation: success - initial guess at point [ 1.16, 0.00]
+initial_evaluation: success - initial guess at point [ 1.16,-0.25]
+initial_evaluation: success - initial guess at point [ 1.16,-0.50]
+initial_evaluation: success - initial guess at point [ 1.13, 0.50]
+initial_evaluation: success - initial guess at point [ 1.13, 0.25]
+initial_evaluation: success - initial guess at point [ 1.13, 0.00]
+initial_evaluation: success - initial guess at point [ 1.13,-0.25]
+initial_evaluation: success - initial guess at point [ 1.13,-0.50]
+initial_evaluation: success - initial guess at point [ 1.09, 0.50]
+initial_evaluation: success - initial guess at point [ 1.09, 0.25]
+initial_evaluation: success - initial guess at point [ 1.09, 0.00]
+initial_evaluation: success - initial guess at point [ 1.09,-0.25]
+initial_evaluation: success - initial guess at point [ 1.09,-0.50]
+initial_evaluation: success - initial guess at point [ 1.05, 0.50]
+initial_evaluation: success - initial guess at point [ 1.05, 0.25]
+initial_evaluation: success - initial guess at point [ 1.05, 0.00]
+initial_evaluation: success - initial guess at point [ 1.05,-0.25]
+initial_evaluation: success - initial guess at point [ 1.05,-0.50]
+initial_evaluation: success - initial guess at point [ 1.02, 0.50]
+initial_evaluation: success - initial guess at point [ 1.02, 0.25]
+initial_evaluation: success - initial guess at point [ 1.02, 0.00]
+initial_evaluation: success - initial guess at point [ 1.02,-0.25]
+initial_evaluation: success - initial guess at point [ 1.02,-0.50]
+initial_evaluation: success - initial guess at point [ 0.98, 0.50]
+initial_evaluation: success - initial guess at point [ 0.98, 0.25]
+initial_evaluation: success - initial guess at point [ 0.98, 0.00]
+initial_evaluation: success - initial guess at point [ 0.98,-0.25]
+initial_evaluation: success - initial guess at point [ 0.98,-0.50]
+initial_evaluation: success - initial guess at point [ 0.94, 0.50]
+initial_evaluation: success - initial guess at point [ 0.94, 0.25]
+initial_evaluation: success - initial guess at point [ 0.94, 0.00]
+initial_evaluation: success - initial guess at point [ 0.94,-0.25]
+initial_evaluation: success - initial guess at point [ 0.94,-0.50]
+initial_evaluation: success - initial guess at point [ 0.91, 0.50]
+initial_evaluation: success - initial guess at point [ 0.91, 0.25]
+initial_evaluation: success - initial guess at point [ 0.91, 0.00]
+initial_evaluation: success - initial guess at point [ 0.91,-0.25]
+initial_evaluation: success - initial guess at point [ 0.91,-0.50]
+initial_evaluation: success - initial guess at point [ 0.87, 0.50]
+initial_evaluation: success - initial guess at point [ 0.87, 0.25]
+initial_evaluation: success - initial guess at point [ 0.87, 0.00]
+initial_evaluation: success - initial guess at point [ 0.87,-0.25]
+initial_evaluation: success - initial guess at point [ 0.87,-0.50]
+initial_evaluation: success - initial guess at point [ 0.83, 0.50]
+initial_evaluation: success - initial guess at point [ 0.83, 0.25]
+initial_evaluation: success - initial guess at point [ 0.83, 0.00]
+initial_evaluation: success - initial guess at point [ 0.83,-0.25]
+initial_evaluation: success - initial guess at point [ 0.83,-0.50]
+initial_evaluation: success - initial guess at point [ 0.79, 0.50]
+initial_evaluation: success - initial guess at point [ 0.79, 0.25]
+initial_evaluation: success - initial guess at point [ 0.79, 0.00]
+initial_evaluation: success - initial guess at point [ 0.79,-0.25]
+initial_evaluation: success - initial guess at point [ 0.79,-0.50]
+initial_evaluation: success - initial guess at point [ 0.76, 0.50]
+initial_evaluation: success - initial guess at point [ 0.76, 0.25]
+initial_evaluation: success - initial guess at point [ 0.76, 0.00]
+initial_evaluation: success - initial guess at point [ 0.76,-0.25]
+initial_evaluation: success - initial guess at point [ 0.76,-0.50]
+initial_evaluation: success - initial guess at point [ 0.72, 0.50]
+initial_evaluation: success - initial guess at point [ 0.72, 0.25]
+initial_evaluation: success - initial guess at point [ 0.72, 0.00]
+initial_evaluation: success - initial guess at point [ 0.72,-0.25]
+initial_evaluation: success - initial guess at point [ 0.72,-0.50]
+initial_evaluation: success - initial guess at point [ 0.68, 0.50]
+initial_evaluation: success - initial guess at point [ 0.68, 0.25]
+initial_evaluation: success - initial guess at point [ 0.68, 0.00]
+initial_evaluation: success - initial guess at point [ 0.68,-0.25]
+initial_evaluation: success - initial guess at point [ 0.68,-0.50]
+initial_evaluation: success - initial guess at point [ 0.65, 0.50]
+initial_evaluation: success - initial guess at point [ 0.65, 0.25]
+initial_evaluation: success - initial guess at point [ 0.65, 0.00]
+initial_evaluation: success - initial guess at point [ 0.65,-0.25]
+initial_evaluation: success - initial guess at point [ 0.65,-0.50]
+initial_evaluation: success - initial guess at point [ 0.61, 0.50]
+initial_evaluation: success - initial guess at point [ 0.61, 0.25]
+initial_evaluation: success - initial guess at point [ 0.61, 0.00]
+initial_evaluation: success - initial guess at point [ 0.61,-0.25]
+initial_evaluation: success - initial guess at point [ 0.61,-0.50]
+initial_evaluation: success - initial guess at point [ 0.57, 0.50]
+initial_evaluation: success - initial guess at point [ 0.57, 0.25]
+initial_evaluation: success - initial guess at point [ 0.57, 0.00]
+initial_evaluation: success - initial guess at point [ 0.57,-0.25]
+initial_evaluation: success - initial guess at point [ 0.57,-0.50]
+initial_evaluation: success - initial guess at point [ 0.54, 0.50]
+initial_evaluation: success - initial guess at point [ 0.54, 0.25]
+initial_evaluation: success - initial guess at point [ 0.54, 0.00]
+initial_evaluation: success - initial guess at point [ 0.54,-0.25]
+initial_evaluation: success - initial guess at point [ 0.54,-0.50]
+initial_evaluation: success - initial guess at point [ 0.50, 0.50]
+initial_evaluation: success - initial guess at point [ 0.50, 0.25]
+initial_evaluation: success - initial guess at point [ 0.50, 0.00]
+initial_evaluation: success - initial guess at point [ 0.50,-0.25]
+initial_evaluation: success - initial guess at point [ 0.50,-0.50]
+mapper_iteration_0: status - 0 points do not have valid solution."""
