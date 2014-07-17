@@ -279,7 +279,7 @@ class MeanFieldSolver(SolverBase):
         subdict['temperature'] = 'T = '+repr(self.temperature)
         subdict['kB'] = 'kB = '+repr(self._kB)
         subdict['h'] = 'h = '+repr(self._h)
-        subdict['prefactor_list'] =  'prefactor_list = [kB*T/h]*'+str(len(self.elementary_rxns))
+        subdict['prefactor_list'] =  'prefactor_list = ' + self.prefactor_list
         subdict['n_adsorbates'] = 'n_adsorbates = '+str(len(self.adsorbate_names))
         subdict['n_transition_states'] = 'n_transition_states = '+str(len(self.transition_state_names))
         

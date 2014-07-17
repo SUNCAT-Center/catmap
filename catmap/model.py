@@ -298,6 +298,7 @@ class ReactionModel:
                 thermodynamics='ThermoCorrections',
                 numerical_representation = 'mpmath',
                 adsorbate_interaction_model = 'ideal',
+                prefactor_list=None,
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
@@ -715,6 +716,26 @@ class ReactionModel:
                         'set n_sites in species_definitions for species '+\
                         'occupying more than 1 site')
         #Check that frequencies are defined if necessary
+
+        #Check prefactor_list is in the right format
+        default_prefactor = 'kB*T/h'
+        default_prefactor_list = '[kB*T/h]*'+str(len(self.elementary_rxns))
+
+        if not self.prefactor_list:
+            self.prefactor_list = default_prefactor_list
+        elif isinstance(self.prefactor_list, list) and len(self.prefactor_list) == len(self.elementary_rxns):
+            prefactor_list = []
+            for prefactor in self.prefactor_list:
+                if prefactor == None:
+                    prefactor_list.append(default_prefactor)
+                else:
+                    prefactor_list.append(str(prefactor))
+            self.prefactor_list = '[' + ','.join(prefactor_list) +']'
+        else:
+            raise Valueerror('prefactor_list must be None or a list ' + \
+                'containing a prefactor for each elementary rxn.  The ' + \
+                'elements of this list may contain None if you wish to use ' + \
+                'the default prefactor of kB*T/h for that rxn')
 
     #Data manipulation and conversion
 

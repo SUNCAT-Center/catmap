@@ -1,16 +1,18 @@
 rxn_expressions = [
-    '*_a + O2_g -> O2-_a -> O2_a',                  # rxn 2  - O2 adsorption to a
+    'O2_g <-> O2dlTS_g',                            # rxn 1 - O2 to O2 in double layer
+    'O2dlTS_g <-> O2dl_g',                          # rxn 1.5 - O2 to O2 in double layer
+    '*_a + O2_g -> O2-_a -> O2_a',                  # rxn 2  - O2 double layer adsorption to a
     'O2_a + pe_g -> OO-pe_a -> OOH_a',              # rxn 3  - O2 -> OOH on a
     'OOH_a + pe_g -> OOH-pe_a -> O_a + H2O_g',      # rxn 4  - OOH -> O + H2O on a
     'O_a + pe_g -> O-pe_a -> OH_a',                 # rxn 5  - O -> OH on a
-    'OH_a + pe_g -> OH-pe_a -> *_a + H2O_g',       # rxn 6  - OH -> H2O on a
-    'O2_a + *_b -> O-O_a + *_b -> O_a + O_b',            # rxn 7  - O2 dissociation
-    'O_b + pe_g -> O-pe_b -> OH_b',                  # rxn 8  - O -> OH on b
-    'OH_b + pe_g -> OH-pe_b -> *_b + H2O_g',         # rxn 9  - OH -> H2O on b
-    'OOH_a + *_b -> OH-O_a + *_b -> OH_a + O_b',         # rxn 10 - OOH dissociation
-    'OOH_a + pe_g -> O-peOH_a -> H2O2_a',             # rxn 11 - OOH -> H2O2 on a
-    'H2O2_a + *_b -> OH-OH_a + *_b -> OH_a + OH_b',      # rxn 12 - H2O2 dissociation
-    'H2O2_a -> HOOH-_a -> H2O2_g + *_a',           # rxn 13 - H2O2 desorption
+    'OH_a + pe_g -> OH-pe_a -> *_a + H2O_g',        # rxn 6  - OH -> H2O on a
+    'O2_a + *_b -> O-O_a + *_b -> O_a + O_b',       # rxn 7  - O2 dissociation
+    'O_b + pe_g -> O-pe_b -> OH_b',                 # rxn 8  - O -> OH on b
+    'OH_b + pe_g -> OH-pe_b -> *_b + H2O_g',        # rxn 9  - OH -> H2O on b
+    'OOH_a + *_b -> OH-O_a + *_b -> OH_a + O_b',    # rxn 10 - OOH dissociation
+    'OOH_a + pe_g -> O-peOH_a -> H2O2_a',           # rxn 11 - OOH -> H2O2 on a
+    'H2O2_a + *_b -> OH-OH_a + *_b -> OH_a + OH_b', # rxn 12 - H2O2 dissociation
+    'H2O2_a -> HOOH-_a -> H2O2_g + *_a',            # rxn 13 - H2O2 desorption
     'pe_g + *_a -> H_a',
     'H_a + H_a -> H2_g + 2*_a',
 ]
@@ -36,6 +38,8 @@ species_definitions['H2_g'] = {'pressure':0.0}
 species_definitions['H2O2_g'] = {'pressure':1e-12}
 species_definitions['O2_g'] = {'pressure':1.0}
 species_definitions['pe_g'] = {'pressure':1.0}
+species_definitions['O2dl_g'] = {'pressure':1.0, 'composition':{'O':2}, 'n_sites':0, 'type':'gas'}
+species_definitions['O2dlTS_g'] = {'pressure':1e-12, 'composition':{'O':2}, 'n_sites':0, 'type':'gas'}
 
 species_definitions['a'] = {'site_names': ['a'], 'total':0.5}
 species_definitions['b'] = {'site_names': ['b'], 'total':0.5}

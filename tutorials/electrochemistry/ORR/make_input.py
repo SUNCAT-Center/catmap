@@ -6,16 +6,19 @@ import string
 
 freqconv = 1.239842e-4 # Frequency conversion factor eV/wavenumber
 
-gases = ['H2O', 'O2', 'H2', 'H2O2']
 gas_energy_dict = {
     'H2O':0.0,
     'H2':0.0,
     'O2':1.59 + 0.9*4,  # could be 1.59 + 0.9*4 or 4.92 or 5.42
     'H2O2':1.86 + 0.9*2,
 }
+gas_energy_dict['O2dl'] = gas_energy_dict['O2']
+gas_energy_dict['O2dlTS'] = gas_energy_dict['O2'] + 0.47
+gases = gas_energy_dict.keys()
+
 ads_energy_dict = {
-    'O2_a':1.39 + 0.9*4,
-    'OOH_a':1.21 + 0.9*3,
+    'O2_a':1.39 + 0.9*4 + 0.05,  # 1.39 + 0.9*4,
+    'OOH_a':1.25 + 0.9*3,
     'O_a':-0.10 + 0.9*2,
     'OH_a':-0.15 + 0.9,
     'H2O2_a':1.53 + 2*0.9,
@@ -64,7 +67,7 @@ step_to_TS_name = {
     '13':'HOOH-_a',
 }
 chemical_TS_energy_dict = {
-    '2':('prefactor', 'O2', 'O2_a' ,0.47),  # from the 8 * 10^5 prefactor of O2(aq) -> O2(dl)
+    '2':('prefactor', 'O2dl', 'O2_a' ,0.285),  # from the 1 * 10^8 prefactor of O2(dl) -> O2*
     '7':0.48,
     '10':0.37,
     '12':0.46,
@@ -79,9 +82,9 @@ chemical_TS_gamma_dict = {
 }
 
 dG_Pt = {
-    '7':1.7 + 2.33 - 4.99,
-    '10':0.75 + 2.33 - 3.91,
-    '12':0.75 + 1.1 - 3.33,
+    '7':ads_energy_dict['O_b'] + ads_energy_dict['O_a'] - ads_energy_dict['O2_a'],  # 1.7 + 2.33 - 4.99,
+    '10':ads_energy_dict['O_b'] + ads_energy_dict['OH_a'] - ads_energy_dict['OOH_a'],  # 0.75 + 2.33 - 3.91,
+    '12':ads_energy_dict['OH_b'] + ads_energy_dict['OH_a'] - ads_energy_dict['H2O2_a'],  # 0.75 + 1.1 - 3.33,
 }
 
 beta = 0.5
