@@ -732,7 +732,7 @@ class ReactionModel:
                     prefactor_list.append(str(prefactor))
             self.prefactor_list = '[' + ','.join(prefactor_list) +']'
         else:
-            raise Valueerror('prefactor_list must be None or a list ' + \
+            raise ValueError('prefactor_list must be None or a list ' + \
                 'containing a prefactor for each elementary rxn.  The ' + \
                 'elements of this list may contain None if you wish to use ' + \
                 'the default prefactor of kB*T/h for that rxn')
@@ -816,14 +816,17 @@ class ReactionModel:
             log_interpolate=False,minval=None,maxval=None):
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
+        cols = zip(*datas)
         if len(pts[0]) == 1:
-            xData = zip(*pts)
-            maparray = np.zeros((resolution,len(datas[0])))
+            xData = np.array(zip(*pts)[0])
+            sorted_order = xData.argsort()
+            maparray = np.zeros((resolution[0],len(datas[0])))  # resolution assumed to be [x, 1]
             x_range = desc_rngs[0]
-            xi = np.linspace(x_range[0],x_range[1],resolution)
+            xi = np.linspace(x_range[0],x_range[1],resolution[0])
             datas = zip(*datas)
             for i,yData in enumerate(datas):
-                y_sp = kinetics.spline(xData,yData,1)
+                yData = np.array(yData)
+                y_sp = catmap.spline(xData[sorted_order],yData[sorted_order],k=1)
                 yi = y_sp(xi)
                 maparray[:,i] = yi
 

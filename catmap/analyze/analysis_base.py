@@ -80,22 +80,32 @@ class MapPlot:
                     self.descriptor_label_args[pt] = copy(
                             self.default_descriptor_label_args)
 
-    def plot_descriptor_pts(self,ax,idx=None):
+    def plot_descriptor_pts(self, mapp, idx, ax, plot_in=None):
         if getattr(self,'descriptor_dict',None):
             self.update_descriptor_args()
+            xy,rates = zip(*mapp)
+            dim = len(xy[0])
             for key in self.descriptor_dict:
                 pt_kwargs = self.descriptor_pt_args.get(key,
                         self.default_descriptor_pt_args)
                 lab_kwargs = self.descriptor_label_args.get(key,
                         self.default_descriptor_label_args)
-                x,y = self.descriptor_dict[key]
+                if dim == 1:
+                    x,y = self.descriptor_dict[key]
+                    y_sp = catmap.spline(plot_in[0], plot_in[1], k=1)
+                    y = y_sp(x)
+                elif dim == 2:
+                    x,y = self.descriptor_dict[key]
                 if None not in [x,y]:
                     if pt_kwargs is not None:
                         ax.errorbar(x,y,**pt_kwargs)
                     if lab_kwargs is not None:
                         ax.annotate(key,[x,y],**lab_kwargs)
-            ax.set_xlim(self.descriptor_ranges[0])
-            ax.set_ylim(self.descriptor_ranges[1])
+            if dim == 1:
+                ax.set_xlim(self.descriptor_ranges[0])
+            elif dim == 2:
+                ax.set_xlim(self.descriptor_ranges[0])
+                ax.set_ylim(self.descriptor_ranges[1])
 
     def plot_single(self, mapp, rxn_index, ax=None,
             overlay_map = None, alpha_range=None,
@@ -107,11 +117,11 @@ class MapPlot:
         xy,rates = zip(*mapp)
         dim = len(xy[0])
         if dim == 1:
-            x = zip(*xy)
+            x = zip(*xy)[0]
             descriptor_ranges = [[min(x),max(x)]]
             if not self.plot_function:
                 if self.log_scale == True:
-                    self.plot_function = 'semilogx'
+                    self.plot_function = 'semilogy'
                 else:
                     self.plot_function = 'plot'
         elif dim == 2:
@@ -134,14 +144,15 @@ class MapPlot:
         if self.min is None:
             self.min = maparray.T[rxn_index].min()
 
-        if maparray.min() <= self.min:
-            plot_args['extend'] = 'min'
-        if maparray.max() >= self.max:
-            plot_args['extend'] = 'max'
-        if maparray.max() >= self.max and maparray.min() <= self.min:
-            plot_args['extend'] = 'both'
-        if 'extend' not in plot_args:
-            plot_args['extend'] = 'neither'
+        if dim == 2:
+            if maparray.min() <= self.min:
+                plot_args['extend'] = 'min'
+            if maparray.max() >= self.max:
+                plot_args['extend'] = 'max'
+            if maparray.max() >= self.max and maparray.min() <= self.min:
+                plot_args['extend'] = 'both'
+            if 'extend' not in plot_args:
+                plot_args['extend'] = 'neither'
 
         if self.log_scale and dim == 2:
             maparray = np.log10(maparray)
@@ -183,7 +194,8 @@ class MapPlot:
 
         if dim == 1:
             x_range = descriptor_ranges[0]
-            plot_in = [np.linspace(*x_range+[eff_res]),maparray[:,rxn_index]]
+            plot_in = [np.linspace(*x_range+eff_res),maparray[:,rxn_index]]
+            plot = getattr(ax,self.plot_function)(*plot_in)
         elif dim == 2:
             x_range,y_range = descriptor_ranges
             z = maparray[:,:,rxn_index]
@@ -197,14 +209,17 @@ class MapPlot:
 
             plot_in = [np.linspace(*x_range+[eff_res[0]]),
                     np.linspace(*y_range+[eff_res[1]]),z,levels]
+            plot = getattr(ax,self.plot_function)(*plot_in,**plot_args)
 
-        plot = getattr(ax,self.plot_function)(*plot_in,**plot_args)
         pos = ax.get_position()
         if self.aspect:
             ax.set_aspect(self.aspect)
             ax.apply_aspect()
 
-        if dim == 2:
+        if dim == 1:
+            ax.set_xlim(descriptor_ranges[0])
+            ax.set_xlabel(self.descriptor_labels[0])
+        elif dim == 2:
             if self.colorbar:
                 if log_scale: #take only integer tick labels
                     cbar_nums = range(int(min_val),int(max_val)+1)
@@ -229,6 +244,9 @@ class MapPlot:
                 cbar = fig.colorbar(mappable=plot,ticks=cbar_nums,
                         cax=cbar_ax,extend=plot_args['extend'])
                 cbar.ax.set_yticklabels(cbar_labels)
+            if self.descriptor_labels:
+                ax.set_xlabel(self.descriptor_labels[0])
+                ax.set_ylabel(self.descriptor_labels[1])
             ax.set_xlim(descriptor_ranges[0])
             ax.set_ylim(descriptor_ranges[1])
 
@@ -239,13 +257,14 @@ class MapPlot:
             else:
                 font_size = plot_args['title_size']
             ax.set_title(plot_args['title'],size=font_size)
-        if self.descriptor_labels:
-            ax.set_xlabel(self.descriptor_labels[0])
-            ax.set_ylabel(self.descriptor_labels[1])
+
         if self.n_xticks:
             ax.xaxis.set_major_locator(MaxNLocator(self.n_xticks))
         if self.n_yticks:
             ax.yaxis.set_major_locator(MaxNLocator(self.n_yticks))
+
+        # plot the descriptor points
+        self.plot_descriptor_pts(mapp,rxn_index,ax=ax,plot_in=plot_in)
         return ax
 
     def plot_separate(self,mapp,ax_list=None,indices=None,
@@ -313,7 +332,6 @@ class MapPlot:
             kwargs['overlay_map'] = overlay_map
             self.__dict__.update(old_dict)
             self.plot_single(mapp,i,ax=ax_list[plotnum],**kwargs)
-            self.plot_descriptor_pts(ax_list[plotnum],i)
             plotnum+=1
 
         return fig
@@ -382,7 +400,7 @@ class MapPlot:
         xmin,xmax = xminmax
         ymin,ymax = yminmax
         ax.imshow(rgb_array,extent=[xmin,xmax,ymin,ymax],origin='lower')
-        self.plot_descriptor_pts(ax)
+        self.plot_descriptor_pts(mapp, i, ax)
         if self.n_xticks:
             ax.xaxis.set_major_locator(MaxNLocator(self.n_xticks))
         if self.n_yticks:
