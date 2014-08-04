@@ -63,6 +63,7 @@ class ScalerBase(ReactionModelWrapper):
             params = self.get_rxn_parameters(descriptors)
             self._rxn_parameter = params
             self.output_labels['rxn_parameter'] = self.parameter_names
+
         if 'frequency' in self.output_variables:
             self._frequency = [self.frequency_dict.get(a,[]) for a in ads]
             max_len = 0
@@ -82,13 +83,17 @@ class ScalerBase(ReactionModelWrapper):
             free_energy_dict = self.get_free_energies(descriptors)
             self._free_energy = [free_energy_dict[a] for a in ads]
             self.output_labels['free_energy'] = ads
+
         if 'gas_pressure' in self.output_variables:
             self._gas_pressure = [p for p in self.gas_pressures]
             self.output_labels['gas_pressure'] = self.gas_names
+
         if 'boltzmann_coverage' in self.output_variables:
-            cvgs = self.thermodynamics.boltzmann_coverages(descriptors)
+            cvgs = self.thermodynamics.boltzmann_coverages(
+                    self.get_free_energies(descriptors))
             self._boltzmann_coverage = cvgs
             self.output_labels['boltzmann_coverage'] = self.adsorbate_names
+
         if set(['enthalpy','entropy','zero_point_energy']).issubset(
                 set(self.output_variables)):
             self.thermodynamics.get_thermodynamic_corrections()
@@ -98,6 +103,7 @@ class ScalerBase(ReactionModelWrapper):
             self.output_labels['enthalpy'] = ads
             self.output_labels['entroy'] = ads
             self.output_labels['zero_point_energy'] = ads
+
         if 'interaction_matrix' in self.output_variables:
             self._interaction_matrix = getattr(
                 self.thermodynamics.adsorbate_interactions,
@@ -135,9 +141,9 @@ class ScalerBase(ReactionModelWrapper):
             if key in thermodynamic_energy_dict:
                 E_DFT = electronic_energy_dict[key]
                 G = thermodynamic_energy_dict[key]
-                if G == '-':
+                if G is None:
                     raise ValueError('No free energy for '+key)
-                elif E_DFT == '-':
+                elif E_DFT is None:
                     raise ValueError('No formation energy for '+key)
                 free_energy_dict[key] =  E_DFT + G
         self._gas_energies = [free_energy_dict[g] for g in self.gas_names] 

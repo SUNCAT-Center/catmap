@@ -81,6 +81,7 @@ class TableParser(ParserBase):
             linedict['species_keys'] = adskey
             linedicts.append(linedict)
 
+
         self._line_dicts = linedicts
         self._headers = headers
 
@@ -151,10 +152,13 @@ class TableParser(ParserBase):
                     self.species_definitions[adsdef]['formation_energy_source'] = sources
 
                 else:
-                    E = float(infodict['None']['formation_energy'])
-                    self.species_definitions[adsdef]['formation_energy'] = E
-                    self.species_definitions[adsdef]['formation_energy_source'] = \
-                            infodict['None']['reference'].strip()
+                    if 'None' in infodict:
+                        E = float(infodict['None']['formation_energy'])
+                        self.species_definitions[adsdef]['formation_energy'] = E
+                        self.species_definitions[adsdef]['formation_energy_source'] = \
+                                infodict['None']['reference'].strip()
+                    else:
+                        raise ValueError('No formation energy found for '+str(adsdef)+'. Check input file.')
 
 
 

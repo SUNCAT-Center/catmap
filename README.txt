@@ -22,3 +22,6 @@ import numpy
 import mpmath
 import matplotlib
 import catmap
+
+See the wiki at www.github.com/ajmedford/catmap/wiki for more details and 
+tutorials.

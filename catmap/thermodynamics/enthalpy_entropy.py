@@ -195,7 +195,6 @@ class ThermoCorrections(ReactionModelWrapper):
                     temperature, fugacity, verbose=False)
 
             free_energy = H-temperature*S
-
             thermo_dict[gas] = free_energy #use thermodynamic state 
                     #from ase.thermochemistry to calculate thermal corrections.
             self._zpe_dict[gas] = ZPE
@@ -273,6 +272,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 not_there.append(key)
             if not_there:
                 raise ValueError('No Shomate parameters specified for '+' '.join(not_there))
+
         return thermo_dict
 
     def fixed_entropy_gas(self,include_ZPE=True):
@@ -291,10 +291,9 @@ class ThermoCorrections(ReactionModelWrapper):
                 ZPE = 0
             if gas in entropy_dict.keys():
                 S = entropy_dict[gas]
-                free_energy = ZPE-temperature*S
             else:
                 S = entropy_dict['other']
-                free_energy = ZPE-temperature*S
+            free_energy = ZPE-temperature*S
             thermo_dict[gas] = free_energy
             self._zpe_dict[gas] = ZPE
             self._enthalpy_dict[gas] = 0
@@ -326,6 +325,25 @@ class ThermoCorrections(ReactionModelWrapper):
             thermo_dict[gas] = 0
         return thermo_dict
 
+    def fixed_enthalpy_entropy_gas(self,gas_names=None):
+        thermo_dict = {}
+        if not gas_names:
+            gas_names = self.gas_names
+        for gas in gas_names:
+            G = 0
+            species_def = self.species_definitions[gas]
+            for key in ['zero_point_energy','enthalpy','entropy']:
+                if key not in species_def:
+                    print('Warning: No '+key+' found for '+gas+'. Using 0')
+            ZPE = species_def.get('zero_point_energy',0)
+            enthalpy = species_def.get('enthalpy',0)
+            entropy = species_def.get('entropy',0)
+            self._zpe_dict[gas] = ZPE
+            self._enthalpy_dict[gas] = enthalpy
+            self._entropy_dict[gas] = entropy
+            thermo_dict[gas] = ZPE + enthalpy - self.temperature*entropy
+        return thermo_dict
+
     def harmonic_adsorbate(self):
         """Function to calculate the thermal correction to the free energy of 
         an adsorbate in the harmonic approximation using the HarmonicThermo 
@@ -352,7 +370,7 @@ class ThermoCorrections(ReactionModelWrapper):
                     avg_TS.append(ads)
                 therm = HarmonicThermo(freq_dict[ads])
                 free_energy = therm.get_free_energy(
-                        int(temperature),verbose=False)
+                        temperature,verbose=False)
                 ZPE = sum(freq_dict[ads])/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
@@ -401,6 +419,9 @@ class ThermoCorrections(ReactionModelWrapper):
             self._entropy_dict[ads] = 0
             thermo_dict[ads] = 0
         return thermo_dict
+
+    def fixed_enthalpy_entropy_adsorbate(self):
+        return self.fixed_enthalpy_entropy_gas(self.adsorbate_names+self.transition_state_names)
 
     def average_transition_state(self,thermo_dict,transition_state_list = []):
         if transition_state_list is None:

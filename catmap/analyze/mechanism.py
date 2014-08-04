@@ -19,7 +19,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             fig = None
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
-            labels = self.rxn_mechanisms.keys()
+            if not labels:
+                labels = self.rxn_mechanisms.keys()
         if not surfaces:
             surfaces = self.surface_names
         if not self.surface_colors:
@@ -80,6 +81,10 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 correction = -correction
                         self.energies.append(nrg+correction)
                         self.barriers.append(bar)
+
+                    if labels:
+                        self.labels = labels
+
                     for e, e_a,rxn in zip(self.energies[1:],self.barriers,mech):
                         if rxn < 0:
                             reverse = True
