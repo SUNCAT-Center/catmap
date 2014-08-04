@@ -592,8 +592,7 @@ class ReactionModel:
         for spec in self.adsorbate_names + self.transition_state_names:
             energy = self.parameter_dict[spec]
             for e,surf in zip(energy,self.surface_names):
-                if not e: continue
-                if e != '-':
+                if e and e != '-':
                     e = str(round(e,2))
                     if self.species_definitions[spec].get('frequencies',[]):
                         freqs = [str(round(v*1e3,1)) 

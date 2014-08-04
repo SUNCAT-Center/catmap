@@ -1,11 +1,15 @@
 from catmap import ReactionModel
 import sys
+from string import Template
+
 voltage = sys.argv[1]
 
-mkm_file = 'CO2_reduction.mkm'
-model = ReactionModel(setup_file = mkm_file)
+mkm_template = Template(open('HER_template.mkm').read())
+mkm_text = mkm_template.substitute(voltage=voltage)
+with open('HER.mkm','w') as f:
+	f.write(mkm_text)
+model = ReactionModel(setup_file = 'HER.mkm')
 model.output_variables+=['production_rate', 'free_energy', 'selectivity']
-print model.species_definitions.keys()
 model.run()
 
 from catmap import analyze
@@ -34,6 +38,3 @@ vm.log_scale = False
 fig = vm.plot(save=False)
 fig.suptitle(str(voltage) + "V vs. RHE")
 fig.savefig('coverage' + voltage + '.png')
-
-
-vm.model_summary()
