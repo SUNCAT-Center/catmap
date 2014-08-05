@@ -23,7 +23,8 @@ class VectorMap(MapPlot,ReactionModelWrapper):
             raise AttributeError('No output found for ' + self.plot_variable)
         pts,datas = zip(*mapp)
         # stupid hack for 1d plotting: if resolution in the y-direction is 1, make pts
-        # an array of 1d vectors instead of 2d vectors
+        # an array of 1d vectors instead of 2d vectors.  Currently, 1d plotting can
+        # only be done if resolution is set to [x_res, 1]
         if hasattr(self._rxm.resolution, '__iter__') and self._rxm.resolution[1] == 1:
             pts = [[first] for first, second in pts]
         cols = zip(*datas)

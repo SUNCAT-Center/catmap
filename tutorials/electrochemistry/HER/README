@@ -2,10 +2,18 @@ to run this tutorial, run:
 
 python mkm_job.py -0.1
 
-where you can replace -0.1 with any desired voltage (vs RHE) to generate rate/coverage plots at that potential.
+where you can replace -0.1 with any desired voltage (vs RHE) to generate rate/coverage plots 
+at that potential.
 
-The script mkm_job.py acts like a standard catmap job script except that it modifies a .mkm file template with the desired voltage parameter and saves it as "HER.mkm".  This resulting file is what is used as an input into the model.  If you wish to modify other model parameters, please modify "HER_template.mkm".
+The script mkm_job.py acts like a standard catmap job script except that it modifies a .mkm 
+file template with the desired voltage parameter and saves it as "HER.mkm".  This resulting 
+file is what is used as an input into the model.  If you wish to modify other model 
+parameters, please modify "HER_template.mkm".
 
-Data contained in HER_input.txt was generated calculations performed by Andrew A. Peterson and Joseph H. Montoya.  The ORR tutorial goes into more detail about how one might generate such a file.
+Data contained in HER_input.txt was generated calculations performed by Andrew A. Peterson 
+and Joseph H. Montoya.  The ORR tutorial goes into more detail about how one might 
+generate such a file.
 
-Notice that because adsorbate-adsorbate interactions are not in place, the peak of the volcano appears to be near Cu rather than the expected Pt.  This is a necessary aspect of HER to predict the correct peak.  See Skulason et al. (2010)  DOI: 10.1021/jp1048887
+Notice that because adsorbate-adsorbate interactions are not in place, the peak of the 
+volcano appears to be near Cu rather than the expected Pt.  This is a necessary aspect 
+of HER to predict the correct peak.  See Skulason et al. (2010)  DOI: 10.1021/jp1048887

@@ -88,7 +88,6 @@ ideal_gas_params = {
         'CH3CH2CHCH2_g':[1,'nonlinear',0], #1-butene
         'CH3CHCHCH3_g':[2,'nonlinear',0], #2-butene, ok for both trans and cis
         'CH3CH3CCH2_g':[2,'nonlinear',0], #isobutene
-        'C2H4_g':[2,'linear',0],
         'pe_g':[2,'linear',0], # fictitious gas molecule corresponding to proton electron pair
         'C2H4_g':[4,'nonlinear',0],
         'C2H6_g':[6,'nonlinear',0],

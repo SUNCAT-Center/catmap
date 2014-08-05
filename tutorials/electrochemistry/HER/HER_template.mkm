@@ -1,13 +1,12 @@
 rxn_expressions = [
     'O* + pe_g <-> O-pe* -> OH*',
     'OH* + pe_g <-> pe-OH* <-> H2O_g+*',
-    'pe_g + *_s <-> H*',
-    'pe_g + H* <-> pe-H* <-> H2_g + *_s',
-    'H* + H* <-> H-H* + *_s <-> H2_g + 2*_s',
+    'pe_g + *_s <-> H*',                          # Volmer
+    'pe_g + H* <-> pe-H* <-> H2_g + *_s',         # Heyrovsky
+    'H* + H* <-> H-H* + *_s <-> H2_g + 2*_s',     # Tafel
 ]
 
 surface_names = ['Au', 'Ag', 'Cu','Rh','Ni','Pt','Pd']
-
 
 descriptor_names = ['H_s','OH_s']
 

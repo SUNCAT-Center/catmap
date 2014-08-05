@@ -10,7 +10,7 @@ or corrections need to be specified.  For adsorbate and transition state energie
 surfaces are generated near the *OH binding energy of Pt(111) from the scaling provided in 
 the paper.  Point "d", which has been relabeled to "Pt" is the relevant point for Pt(111)
 
-ORR_template.mkm:  the template for the .mkm input for this model.  The only missing piece
+ORR_template.mkm:  the template for the .mkm input for this model.  The only missing input
 is the voltage.  This file contains the same reaction expressions and prefactors used in 
 the paper.  As well as the same activity/fugacities which are fed into the rate equations.  
 O2_dl is described as being on a fictitious "dl" site on every surface with the same energy.  

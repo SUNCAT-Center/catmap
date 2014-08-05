@@ -483,6 +483,8 @@ class ThermoCorrections(ReactionModelWrapper):
         """
         function to generate hydrogen bonding corrections given a formula and estimations
         for various functional groups used in Peterson(2010) - valid mostly for Pt(111)
+        This is a very simplistic function.  If you need more advanced descriptions of
+        hydrogen bonding, consider setting your own hbond_dict
         """
         num_OH = formula.count('OH')
         num_O = get_composition(formula.split('_s')[0]).setdefault('O',0)

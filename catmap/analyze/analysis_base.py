@@ -90,7 +90,7 @@ class MapPlot:
                         self.default_descriptor_pt_args)
                 lab_kwargs = self.descriptor_label_args.get(key,
                         self.default_descriptor_label_args)
-                if dim == 1:
+                if dim == 1:  # x will be descriptor values. y will be rate/coverage/etc.
                     x,y = self.descriptor_dict[key]
                     y_sp = catmap.spline(plot_in[0], plot_in[1], k=1)
                     y = y_sp(x)
@@ -263,7 +263,6 @@ class MapPlot:
         if self.n_yticks:
             ax.yaxis.set_major_locator(MaxNLocator(self.n_yticks))
 
-        # plot the descriptor points
         self.plot_descriptor_pts(mapp,rxn_index,ax=ax,plot_in=plot_in)
         return ax
 
