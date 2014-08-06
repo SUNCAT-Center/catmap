@@ -60,6 +60,8 @@ if 1:
 	ax = fig.add_subplot(111)
 	ax.plot(voltages, H2O_rates)
 	ax.invert_yaxis()
+	ax.set_xlabel('Potential (V vs RHE)')
+	ax.set_ylabel(r'Production rate of H2O_g (s$^{-1}$)')
 	fig.savefig('H2O_production.png')
 
 # Coverage plots
@@ -76,4 +78,6 @@ if 1:
 	labels = ['OH*', 'O*', '1-OH*-O*']
 	ax.set_ylim([-0.02, 1.02])
 	ax.legend([ax1, ax2, ax3], labels, loc='best')
+	ax.set_xlabel('Potential (V vs RHE)')
+	ax.set_ylabel(r'Coverage')
 	fig.savefig('coverage.png')
