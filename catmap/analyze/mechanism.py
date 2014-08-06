@@ -5,7 +5,9 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
     def __init__(self,reaction_model=None):
         self._rxm = reaction_model
         defaults = {'pressure_correction':True,
-                    'min_pressure':1e-12}
+                    'min_pressure':1e-12,
+                    'energy_type':'free_energy',
+                    'include_labels':False}
         self._rxm.update(defaults)
         self.data_dict = {}
         MechanismPlot.__init__(self,[0])
@@ -19,8 +21,6 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             fig = None
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
-            if not labels:
-                labels = self.rxn_mechanisms.keys()
         if not surfaces:
             surfaces = self.surface_names
         if not self.surface_colors:
@@ -30,7 +30,12 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                 xy = self.descriptor_dict[surf]
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
-                    energy_dict = self.scaler.get_free_energies(xy)
+                    if self.energy_type == 'free_energy':
+                        energy_dict = self.scaler.get_free_energies(xy)
+                    elif self.energy_type == 'potential_energy':
+                        energy_dict = self.scaler.get_free_energies(xy)
+                        energy_dict.update(self.scaler.get_electronic_energies(xy))
+
                     params = self.adsorption_to_reaction_energies(energy_dict)
 
                     self.energies = [0]
@@ -82,7 +87,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         self.energies.append(nrg+correction)
                         self.barriers.append(bar)
 
-                    if labels:
+                    if labels and self.include_labels:
                         self.labels = labels
 
                     for e, e_a,rxn in zip(self.energies[1:],self.barriers,mech):

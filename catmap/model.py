@@ -930,11 +930,13 @@ class ReactionModel:
         E_a = max(0,(E_TS - E_IS),(E_FS - E_IS))
         return dE, E_a
 
-    @staticmethod
-    def get_state_energy(rxn_state,energy_dict):
+    def get_state_energy(self,rxn_state,energy_dict):
         energy = 0
         for species in rxn_state:
-            energy += energy_dict[species]
+            if species in energy_dict:
+                energy += energy_dict[species]
+            elif self.species_definitions[species]['type'] == 'site':
+                energy += self._site_energies[self.site_names.index(species)]
         return energy
 
     def adsorption_to_reaction_energies(self,free_energy_dict):

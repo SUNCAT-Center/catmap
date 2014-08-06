@@ -55,7 +55,6 @@ class ScalerBase(ReactionModelWrapper):
 
         self._rxm.update(defaults,override=False)
 
-
     def set_output_attrs(self,descriptors):
         "Function to set output information."
         ads = self.gas_names+self.adsorbate_names+self.transition_state_names
