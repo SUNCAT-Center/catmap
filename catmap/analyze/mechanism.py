@@ -89,6 +89,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                     if labels and self.include_labels:
                         self.labels = labels
+                    else:
+                        self.labels = []
 
                     for e, e_a,rxn in zip(self.energies[1:],self.barriers,mech):
                         if rxn < 0:
