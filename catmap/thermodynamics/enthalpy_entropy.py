@@ -476,6 +476,11 @@ class ThermoCorrections(ReactionModelWrapper):
                     thermo_dict[ads] += hbond_dict[ads]
                 else:
                     thermo_dict[ads] = hbond_dict[ads]
+            elif ads.split('_')[0] in hbond_dict:
+                if ads in thermo_dict:
+                    thermo_dict[ads] += hbond_dict[ads.split('_')[0]]
+                else:
+                    thermo_dict[ads] = hbond_dict[ads.split('_')[0]]
 
         return thermo_dict
 
