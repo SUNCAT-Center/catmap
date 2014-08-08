@@ -298,6 +298,7 @@ class ReactionModel:
                 thermodynamics='ThermoCorrections',
                 numerical_representation = 'mpmath',
                 adsorbate_interaction_model = 'ideal',
+                prefactor_list=None,
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
@@ -591,7 +592,7 @@ class ReactionModel:
         for spec in self.adsorbate_names + self.transition_state_names:
             energy = self.parameter_dict[spec]
             for e,surf in zip(energy,self.surface_names):
-                if e != '-':
+                if e and e != '-':
                     e = str(round(e,2))
                     if self.species_definitions[spec].get('frequencies',[]):
                         freqs = [str(round(v*1e3,1)) 
@@ -715,6 +716,26 @@ class ReactionModel:
                         'occupying more than 1 site')
         #Check that frequencies are defined if necessary
 
+        #Check prefactor_list is in the right format
+        default_prefactor = 'kB*T/h'
+        default_prefactor_list = '[kB*T/h]*'+str(len(self.elementary_rxns))
+
+        if not self.prefactor_list:
+            self.prefactor_list = default_prefactor_list
+        elif isinstance(self.prefactor_list, list) and len(self.prefactor_list) == len(self.elementary_rxns):
+            prefactor_list = []
+            for prefactor in self.prefactor_list:
+                if prefactor == None:
+                    prefactor_list.append(default_prefactor)
+                else:
+                    prefactor_list.append(str(prefactor))
+            self.prefactor_list = '[' + ','.join(prefactor_list) +']'
+        else:
+            raise ValueError('prefactor_list must be None or a list ' + \
+                'containing a prefactor for each elementary rxn.  The ' + \
+                'elements of this list may contain None if you wish to use ' + \
+                'the default prefactor of kB*T/h for that rxn')
+
     #Data manipulation and conversion
 
     def _header(self,exclude_outputs=[],re_parse=False):
@@ -794,14 +815,17 @@ class ReactionModel:
             log_interpolate=False,minval=None,maxval=None):
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
+        cols = zip(*datas)
         if len(pts[0]) == 1:
-            xData = zip(*pts)
-            maparray = np.zeros((resolution,len(datas[0])))
+            xData = np.array(zip(*pts)[0])
+            sorted_order = xData.argsort()
+            maparray = np.zeros((resolution[0],len(datas[0])))  # resolution assumed to be [x, 1]
             x_range = desc_rngs[0]
-            xi = np.linspace(x_range[0],x_range[1],resolution)
+            xi = np.linspace(x_range[0],x_range[1],resolution[0])
             datas = zip(*datas)
             for i,yData in enumerate(datas):
-                y_sp = kinetics.spline(xData,yData,1)
+                yData = np.array(yData)
+                y_sp = catmap.spline(xData[sorted_order],yData[sorted_order],k=1)
                 yi = y_sp(xi)
                 maparray[:,i] = yi
 

@@ -1,7 +1,7 @@
 import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
-from catmap import string2symbols
+from catmap.functions import get_composition
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -54,12 +54,14 @@ class ThermoCorrections(ReactionModelWrapper):
         defaults = dict(
                 gas_thermo_mode = 'ideal_gas',
                 adsorbate_thermo_mode = 'harmonic_adsorbate',
+                electrochemical_thermo_mode = 'simple_electrochemical',
                 pressure_mode = 'static',
-                thermodynamic_corrections = ['gas','adsorbate'],
-                thermodynamic_variables = ['temperature','gas_pressures'],
+                thermodynamic_corrections = ['gas','adsorbate','electrochemical'],
+                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta'],
                 ideal_gas_params = catmap.data.ideal_gas_params,
                 fixed_entropy_dict = catmap.data.fixed_entropy_dict,
                 shomate_params = catmap.data.shomate_params,
+                hbond_dict = catmap.data.hbond_dict,
                 atoms_dict = {},
                 frequency_dict = {},
                 force_recalculation = False,
@@ -100,6 +102,7 @@ class ThermoCorrections(ReactionModelWrapper):
             #has not changed then don't bother re-calculating the corrections.
             return self._correction_dict
 
+        # apply corrections in self.thermodynamic_corrections on top of each other
         for correction in self.thermodynamic_corrections:
             mode = getattr(self,correction+'_thermo_mode')
             thermo_dict = getattr(self,mode)()
@@ -165,6 +168,13 @@ class ThermoCorrections(ReactionModelWrapper):
         atoms_dict = self.atoms_dict
 
         for gas in gas_names:
+            # Hard coding corrections for fictitious gas molecule that's used in electrochemistry
+            if gas in ['pe_g']:
+                thermo_dict[gas] = 0.
+                self._zpe_dict[gas] = 0.
+                self._enthalpy_dict[gas] = 0.
+                self._entropy_dict[gas] = 0.
+                continue
             gpars = gas_param_dict[gas]
             symmetry,geometry,spin = gpars[:3]
             fugacity = self._bar2Pa
@@ -430,6 +440,82 @@ class ThermoCorrections(ReactionModelWrapper):
                 IS = state_thermo(therm_dict,rx,self.site_names,0)
                 FS = state_thermo(therm_dict,rx,self.site_names,-1)
                 therm_dict[ads] = (IS+FS)/2.0
+        return thermo_dict
+
+    def simple_electrochemical(self):
+        thermo_dict = {}
+        gas_names = [gas for gas in self.gas_names if 'pe' in gas]
+        adsorbate_names = self.adsorbate_names
+        TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
+        voltage = self.voltage
+        beta = self.beta
+
+        # scale pe thermo correction by voltage (vs RHE)
+        for gas in gas_names:
+            thermo_dict[gas] = -voltage
+
+        # no hbond correction for simple_electrochemical
+
+        # correct TS energies with beta*voltage (and hbonding?)
+        for TS in TS_names:
+            thermo_dict[TS] = -voltage * (1 - beta)
+
+        return thermo_dict
+
+    def hbond_electrochemical(self):
+        thermo_dict = self.simple_electrochemical()
+        adsorbate_names = self.adsorbate_names
+        TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
+
+        hbond_dict = self.hbond_dict
+
+        # updates simple_electrochemical with hbonding corrections as if they were on Pt(111)
+        for ads in list(adsorbate_names) + TS_names:
+            if ads in hbond_dict:
+                if ads in thermo_dict:
+                    thermo_dict[ads] += hbond_dict[ads]
+                else:
+                    thermo_dict[ads] = hbond_dict[ads]
+            elif ads.split('_')[0] in hbond_dict:
+                if ads in thermo_dict:
+                    thermo_dict[ads] += hbond_dict[ads.split('_')[0]]
+                else:
+                    thermo_dict[ads] = hbond_dict[ads.split('_')[0]]
+
+        return thermo_dict
+
+    def estimate_hbond_corr(formula):
+        """
+        function to generate hydrogen bonding corrections given a formula and estimations
+        for various functional groups used in Peterson(2010) - valid mostly for Pt(111)
+        This is a very simplistic function.  If you need more advanced descriptions of
+        hydrogen bonding, consider setting your own hbond_dict
+        """
+        num_OH = formula.count('OH')
+        num_O = get_composition(formula.split('_s')[0]).setdefault('O',0)
+        num_ketone = num_O - num_OH
+        if num_ketone < 0:
+            print "(number of O) - (number of OH) is negative??"
+            assert(False)
+        if formula in ["OH_s", "OH"]:
+            corr = -0.50
+        else:
+            corr = -0.25 * num_OH + -0.10 * num_ketone
+        print "estimated hbond correction for", formula, "is", corr
+        return corr
+
+    def hbond_with_estimates_electrochemical(self):
+        thermo_dict = self.hbond_electrochemical()
+        adsorbate_names = self.adsorbate_names
+        TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
+
+        for ads in list(adsorbate_names) + TS_names:
+            if ads not in hbond_dict:
+                if ads in thermo_dict:
+                    thermo_dict[ads] += estimate_hbond_corr(ads)
+                else:
+                    thermo_dict[ads] = estimate_hbond_corr(ads)
+
         return thermo_dict
 
     def boltzmann_coverages(self,energy_dict):
