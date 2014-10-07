@@ -170,7 +170,7 @@ for i, label in enumerate(labels):
         IS_energy = tempdict[TS_ISs[echem_TS]]
         FS_energy = tempdict[TS_FSs[echem_TS]]
         dG = FS_energy - IS_energy
-        e_TS = IS_energy + echem_TS_effective_barrier + beta * dG  # converts barrier at U = U_L to barrier at 0V
+        e_TS = IS_energy + echem_TS_effective_barrier + (1 - beta) * dG  # converts barrier at U = U_L to barrier at 0V
         split_up_identity = step_to_TS_name[echem_TS].split('_')
         facet = split_up_identity[-1]
         species = split_up_identity[0]

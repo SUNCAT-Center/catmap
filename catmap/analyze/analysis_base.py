@@ -223,7 +223,7 @@ class MapPlot:
             if self.colorbar:
                 if log_scale: #take only integer tick labels
                     cbar_nums = range(int(min_val),int(max_val)+1)
-                    mod = int(len(cbar_nums)/self.n_ticks)
+                    mod = max(int(len(cbar_nums)/self.n_ticks), 1)
                     cbar_nums = [n for i,n in enumerate(cbar_nums) if not i%mod]
                     cbar_nums = np.array(cbar_nums)
                 else:

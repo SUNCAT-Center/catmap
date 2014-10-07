@@ -718,7 +718,7 @@ class ReactionModel:
 
         #Check prefactor_list is in the right format
         default_prefactor = 'kB*T/h'
-        default_prefactor_list = '[kB*T/h]*'+str(len(self.elementary_rxns))
+        default_prefactor_list = [default_prefactor] * len(self.elementary_rxns)
 
         if not self.prefactor_list:
             self.prefactor_list = default_prefactor_list
@@ -729,7 +729,7 @@ class ReactionModel:
                     prefactor_list.append(default_prefactor)
                 else:
                     prefactor_list.append(str(prefactor))
-            self.prefactor_list = '[' + ','.join(prefactor_list) +']'
+            self.prefactor_list = prefactor_list
         else:
             raise ValueError('prefactor_list must be None or a list ' + \
                 'containing a prefactor for each elementary rxn.  The ' + \
