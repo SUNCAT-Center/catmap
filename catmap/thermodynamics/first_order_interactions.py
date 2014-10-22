@@ -96,10 +96,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 for pj in all_ads:
                     self.parameter_names.append(pi + '&' + pj)
 
-#            print self.surface_names
-#            for key in self.self_interaction_parameter_dict:
-#                print key, self.self_interaction_parameter_dict[key]
-
     def get_interaction_info(self):
         interaction_dict = {}
         n_ads = len(self.adsorbate_names)
@@ -128,13 +124,13 @@ class FirstOrderInteractions(ReactionModelWrapper):
         return interaction_dict
 
     def get_interaction_scaling_matrix(self):
+        interaction_dict = self.get_interaction_info()
+
         cross_names = self.interaction_cross_term_names
         if cross_names:
             param_names = self.adsorbate_names + cross_names
         else:
             param_names = self.adsorbate_names
-
-        interaction_dict = self.get_interaction_info()
         constraint_dict = {}
         if not self.interaction_scaling_constraint_dict:
             self.interaction_scaling_constraint_dict = self.scaling_constraint_dict
@@ -219,7 +215,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
             TS_weight_matrix = self.get_TS_weight_matrix(weight)
 
         self.interaction_transition_state_scaling_matrix = TS_weight_matrix
-
 
     def get_interaction_matrix(self,descriptors):
         full_descriptors = list(descriptors) + [1.]
