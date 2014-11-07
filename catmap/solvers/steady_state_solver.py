@@ -68,8 +68,8 @@ class SteadyStateSolver(MeanFieldSolver):
 
         n_tot = len(self.adsorbate_names) + len(self.transition_state_names)
         if c0 is None:
-            c0 = self.get_initial_coverage(rxn_parameters)
-
+            raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
+        
         c0 = self.constrain_coverages(c0)
         self.steady_state_function = steady_state_fn
         self.steady_state_jacobian = jacobian_fn

@@ -113,13 +113,11 @@ class GeneralizedLinearScaler(ScalerBase):
             coeffs = np.array([])
         return coeffs
 
-
     def get_transition_state_scaling_matrix(self):
 
         #This function is godawful and needs to be cleaned up considerably...
         #156 lines is unacceptable for something so simple.
         #HACK
-
         def state_scaling(TS,params,mode):
             coeffs = [0]*len(self.adsorbate_names)
             rxn_def = None
@@ -212,7 +210,6 @@ class GeneralizedLinearScaler(ScalerBase):
 
         def explicit_state_scaling(TS,params):
             return state_scaling(TS,params,'explicit')
-
 
         TS_scaling_functions = {
                 'initial_state':initial_state_scaling,
@@ -310,15 +307,18 @@ class GeneralizedLinearScaler(ScalerBase):
                     if ([round(di,n) for di in self.descriptor_dict[surf]] 
                             == [round(di,n) for di in descriptors]):
                         surf_id = self.surface_names.index(surf)
-                for ads in self.adsorbate_names:
+                for ads in self.adsorbate_names+self.transition_state_names:
                     E = self.parameter_dict[ads][surf_id]
-                    if E != '-':
+                    if E != None:
                         E_dict[ads] = E
             else:
                 pass #do nothing if the descriptors do not correspond to a surf
 
-        return E_dict
+        for dname in self.descriptor_names:
+            if dname in E_dict:
+                E_dict[dname] = descriptors[self.descriptor_names.index(dname)]
 
+        return E_dict
 
     def get_rxn_parameters(self,descriptors, *args, **kwargs):
         if self.adsorbate_interaction_model in ['first_order','second_order']:

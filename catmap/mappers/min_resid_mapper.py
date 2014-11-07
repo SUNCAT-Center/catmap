@@ -25,6 +25,10 @@ class MinResidMapper(MapperBase):
                 "moved from ${old_pt} to ${new_pt}",
                 'bisection_fail':
                 "move from ${old_pt} to ${new_pt}",
+                'single_point_fail':
+                "failed to find solution with initial guess ${i} at ${new_pt}; trying next guess.",
+                'single_point_success':
+                "successfully found solution with initial guess ${i} at ${new_pt}",
                 'bisection_maxiter':
                 "maximum iterations bisecting from ${old_pt} to ${new_pt}",
                 'minresid_success':
@@ -53,9 +57,22 @@ class MinResidMapper(MapperBase):
                         }
 
     def get_initial_coverage(self,descriptors,*args,**kwargs):
-        "Shortcut to solver.get_initial_coverage"
         params = self.scaler.get_rxn_parameters(descriptors)
-        return self.solver.get_initial_coverage(params,*args,**kwargs)
+        solver_cvgs = self.solver.get_initial_coverage(params,*args,**kwargs)
+        return solver_cvgs
+
+    def get_initial_coverage_from_map(self,descriptors,*args,**kwargs):
+        resid_cvg = []
+        for pt,cvgs in self.coverage_map:
+            resid = self.solver.get_residual(cvgs)
+            resid_cvg.append([resid,cvgs])
+        resid_cvg.sort()
+        if self.max_initial_guesses:
+            max_len = max(self.max_initial_guesses,len(resid_cvg))
+        else:
+            max_len = len(resid_cvg)
+        resids,cvgs = zip(*resid_cvg)
+        return cvgs[:max_len]
 
     def get_point_coverage(self,descriptors,*args,**kwargs):
         "Shortcut to get coverages at a point."
@@ -68,7 +85,19 @@ class MinResidMapper(MapperBase):
         self._descriptors = descriptors
         params = self.scaler.get_rxn_parameters(descriptors)
         self._rxn_parameters = params
-        cvgs = self.solver.get_coverage(params,*args,**kwargs)
+        if not args and 'c0' not in kwargs:
+            initial_guesses = self.get_initial_coverage_from_map(descriptors)
+            for i,ci in enumerate(initial_guesses):
+                kwargs['c0'] = ci
+                cvgs = None
+                try:
+                    cvgs = self.solver.get_coverage(params,*args,**kwargs)
+                    self.log('single_point_success',new_pt=descriptors,i=i)
+                    break
+                except ValueError,strerror:
+                    self.log('single_point_fail',new_pt=descriptors,i=i)
+        else:
+            cvgs = self.solver.get_coverage(params,*args,**kwargs)
         self._coverage = cvgs
         return cvgs
 

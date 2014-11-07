@@ -56,6 +56,7 @@ class MapPlot:
                 default_descriptor_label_args = {},
                 descriptor_pt_args = {},
                 descriptor_label_args = {},
+                include_descriptors = False,
                 plot_size = 4,
                 aspect = None,
                 subplots_adjust_kwargs = {'hspace':0.35,'wspace':0.35,
@@ -603,8 +604,9 @@ class ScalingPlot:
             self.scaling_line_args = [self.scaling_line_args]*len(
                     self.adsorbate_names)
         for d in self.descriptor_names:
-            if d in ads_names:
-                ads_names.remove(d)
+            if not self.include_descriptors:
+                if d in ads_names:
+                    ads_names.remove(d)
         if self.include_error_histogram:
             extra = 1
         else:

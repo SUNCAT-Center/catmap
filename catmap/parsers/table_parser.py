@@ -150,7 +150,6 @@ class TableParser(ParserBase):
                             paramlist.append(None)
                     self.species_definitions[adsdef]['formation_energy'] = paramlist
                     self.species_definitions[adsdef]['formation_energy_source'] = sources
-
                 else:
                     if 'None' in infodict:
                         E = float(infodict['None']['formation_energy'])

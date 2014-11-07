@@ -208,15 +208,25 @@ class ReactionModel:
             self.log('input_success')
 
         else:
-            #Make "volcano plot"
-            if hasattr(self,'descriptor_ranges') and hasattr(self,'resolution'):
-                self.descriptor_space_analysis()
+            ran_dsa = False #When no map exists, run descriptor space analysis first
+            if not hasattr(self,'coverage_map') or not self.coverage_map:
+                #Make "volcano plot"
+                if hasattr(self,'descriptor_ranges') and hasattr(self,'resolution'):
+                    self.descriptor_space_analysis()
+                    ran_dsa = True
+
             #Get rates at single points
             if hasattr(self,'descriptors'):
                 self.single_point_analysis(self.descriptors)
             #Get rates at multiple points
             if hasattr(self,'descriptor_values'):
                 self.multi_point_analysis()
+
+            #If a map exists, run descriptor space analysis last (so that single-point guesses are
+            #not discarded)
+            if not ran_dsa and hasattr(self,'descriptor_ranges') and hasattr(self,'resolution'):
+                    self.descriptor_space_analysis()
+
 
             #Save long attrs in data_file
             for attr in dir(self):
@@ -256,8 +266,7 @@ class ReactionModel:
 
             if getattr(self,'create_standalone',None):
                 self.make_standalone() 
-            
-
+        
     def descriptor_space_analysis(self):
         #Use mapper to create map/volcano-plot of rates/coverages
         self.mapper.get_output_map(self.descriptor_ranges,self.resolution)
@@ -344,15 +353,20 @@ class ReactionModel:
                     self.parse_headers += ['coverage']
                 self.parse() #Automatically parse in data.
 
+        self.load_data_file()
 
+        self.verify()
+
+    def load_data_file(self,overwrite=False):
         #load in output data from external files
         if os.path.exists(self.data_file):
             pickled_data = pickle.load(open(self.data_file,'r'))
             for attr in pickled_data:
-                if not getattr(self,attr,None): #don't over-write
+                if not overwrite:
+                    if not getattr(self,attr,None): #don't over-write
+                        setattr(self,attr,pickled_data[attr])
+                else:
                     setattr(self,attr,pickled_data[attr])
-
-        self.verify()
 
     def parse(self,*args, **kwargs): #
         self.parser.parse(*args, **kwargs)
@@ -979,4 +993,3 @@ class ReactionModel:
         f = open('stand_alone.py','w')
         f.write(txt)
         f.close()
-
