@@ -37,7 +37,13 @@ long_description = file('README.txt').read()
 name='python-catmap'
 packages = [
            'catmap',
-           'catmap.data'
+           'catmap.analyze',
+           'catmap.data',
+           'catmap.mappers',
+           'catmap.parsers',
+           'catmap.scalers',
+           'catmap.solvers',
+           'catmap.thermodynamics',
            ]
 package_dir = {'catmap':'catmap'}
 package_data = {'catmap':[]}
