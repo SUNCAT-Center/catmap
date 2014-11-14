@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="CatMAP : Catalyst Micro-kinetic Analysis Package for automated creation of micro-kinetic models used in catalyst screening">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>CatMAP</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ajmedford/catmap">View on GitHub</a>
+
+          <h1 id="project_title">CatMAP</h1>
+          <h2 id="project_tagline">Catalyst Micro-kinetic Analysis Package for automated creation of micro-kinetic models used in catalyst screening</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ajmedford/catmap/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ajmedford/catmap/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>Welcome to the webpage for the "Catalysis Microkinetic Analysis Package", or CatMAP. This code is designed to automate and standardize "descriptor-based" microkinetic modeling, where catalytic activity is mapped as a function of 1-2 key descriptors. A brief overview of the purpose of this tool is provided below.</p>
+
+<h2>
+<a id="code-overview" class="anchor" href="#code-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Code Overview</h2>
+
+<p>Descriptor based analysis is a powerful tool for understanding the trends across various catalysts. In general, the rate of a reaction over a given catalyst is a function of many parameters - reaction energies, activation barriers, thermodynamic conditions, etc. The high dimensionality of this problem makes it very difficult and expensive to solve completely and even a full solution would not give much insight into the rational design of new catalysts. The descriptor based approach seeks to determine a few "descriptors" upon which the other parameters are dependent. By doing this it is possible to reduce the dimensionality of the problem - preferably to 1 or 2 descriptors - thus greatly reducing computational efforts and simultaneously increasing the understanding of trends in catalysis.</p>
+
+<p>The "catmap" Python module seeks to standardize and automate many of the mathematical routines necessary to move from "descriptor space" to reaction rates. The module is designed to be both flexible and powerful. A "reaction model" can be fully defined by a configuration file, thus no new programming is necessary to change the complexity or assumptions of a model. Furthermore, various steps in the process of moving from descriptors to reaction rates have been abstracted into separate Python classes, making it easy to change the methods used or add new functionality. The downside of this approach is that it makes the code more complex. The purpose of this guide is to explain the general structure of the code, as well as its specific functions and how to begin using it.</p>
+
+<p><strong>Useful Definitions: (Note symbols may not appear in Safari/IE)</strong></p>
+
+<ul>
+<li>descriptor - variable used to describe reaction kinetics at a high level. Most commonly these are the binding energies of atomic constituents in the adsorbates (e.g. carbon/nitrogen/oxygen adsorption energies) or other intermediates. However, in the general sense other variables such as electronic structure parameters (e.g. d-band center) or thermodynamic parameters (e.g. temperature/pressure) could also be descriptors.</li>
+<li>descriptor space ( <em>D</em> ) - the space spanned by the descriptors. Usually ℝ<sup>2</sup>.</li>
+<li>parameter space ( <em>P</em> ) - the space spanned by the full reaction parameters for the reaction model. Usually ℝ<sup>2n</sup> where n is the number of elementary steps (one reaction energy and one reaction barrier per elementary step).</li>
+<li>reaction rates ( <em>r</em> ) - an n-vector of rates corresponding to each of the n elementary reactions.</li>
+<li>descriptor map - a map of some variable (rates,coverages,etc.) as a function of descriptor space.</li>
+<li>reaction model - a set of elementary steps and conditions which define the physics of the kinetic system, along with the mathematical methods and assumptions used to move from "descriptor space" to reaction rates.</li>
+<li>setup file - a file used to define the reaction model</li>
+<li>input file - a file used to store other data which is likely common to many reaction models (e.g. energetics data)</li>
+</ul>
+
+<p><strong>Code Structure:</strong></p>
+
+<ul>
+<li>The interface to the code is handled through the <em>ReactionModel</em> class. This class acts as a messenger class which broadcasts all its attributes to the other classes used in the kinetics module. The class also handles common functions such as printing reactions/adsorbates or comparing/reversing elementary steps. The attributes of <em>ReactionModel</em> are automatically synchronized with the parser, scaler, solver, and mapper so it is useful to think of <em>ReactionModel</em> as a "toolbox" where all the necessary information and common functions are stored. </li>
+</ul>
+
+<p>The <em>Parser</em> class serves to extend the "setup file" by reading in various quantities from an "input file". Technically the use of a parser is optional, but in practice it is extremely helpful for reading in common data such as adsorption energies or vibrational frequencies rather than re-typing them for every reaction model. </p>
+
+<p>The process of creating a "descriptor map" is abstracted into three general processes, which are handled by the following classes within the kinetics module: </p>
+
+<p><em>Scaler:</em> Projects descriptor space into parameter space: <em>D</em> → <em>P</em> </p>
+
+<p><em>Solver:</em> Maps parameter space into reaction rates: <em>P</em> → <em>r</em> </p>
+
+<p><em>Mapper:</em> Moves through descriptor space. This becomes important for practical reasons since it is often necessary to use a solution at one point in descriptor space as an initial guess for a nearby point. </p>
+
+<p>The <em>ThermoCorrections</em> class is responsible for applying thermodynamic corrections to the electronic energies which are used as direct inputs. This includes the contributions of entropy/enthalpy and zero-point energy due to temperature, pressure, or other thermodynamic variables. </p>
+
+<p>There are also a variety of analysis classes which allow for automated analysis and visualization of the reaction model. These include the <em>VectorMap</em> and <em>MatrixMap</em> classes which create plots of outputs as a function of descriptor space. The <em>VectorMap</em> class is designed for outputs in the form of vectors (rates, coverages, etc.) while the <em>MatrixMap</em> is designed for outputs in the form of matrices (rate control, sensitivity analyses, etc.). The analysis folder also contains <em>MechanismAnalysis</em> which creates free energy diagrams, and <em>ScalingAnalysis</em> which can give a visual representation of how well the scaler projects descriptor space to parameter space.</p>
+
+<p><strong>Using the code:</strong></p>
+
+<p>Some examples can be found in the <a href="wiki/Tutorials">Tutorials</a>, and these should explain the syntax necessary and serve as a good starting point. The currently implemented features are also briefly described below in order to allow a better understanding of the demos and creating original reaction setup files. </p>
+
+<p>Using the kinetics module to conduct a descriptor analysis requires (at least) 2 files: the "setup file" which defines the reaction model, as well as another script to initialize the ReactionModel class and conduct analyses. The "setup file" is generally a static file (i.e. it is not a program) while the submission script will be an actual python program. Setup files typically end in ".mkm" for micro-kinetic model (although this is not required) while submission scripts end in .py since they are just python scripts. In addition it is very useful to also have an "input file" which contains the raw data about the energetics of the reaction model. An example of how to create an input file based on a table-like format is given in the <a href="wiki/1%20Generating%20an%20Input%20File">1 - Generating an Input File</a> tutorial.</p>
+
+<p>Each class described in the <strong>Code Structure</strong> section will require some specialized parameters. Some of these parameters are common to all variants of these classes, while others are specific to certain implementations. The possible inputs for the currently implemented variants of each class are listed below. Required attributes are +underlined+. </p>
+
+<ul>
+<li>
+<p><em>ReactionModel:</em></p>
+
+<ul>
+<li>
+<p>rxn_expressions - These expressions determine the elementary reaction, and are the most important part of the model. They must be defined unless the elementary_rxns, adsorbate_names, transition_state_names, and gas_names are all explicitly defined since the rxn_expressions are parsed into these 3 attributes. It is much easier to just define rxn_expressions, although it is important to note the syntax. There must be spaces between all elements of each expression (i.e. C*+O* is not okay, but C* + O* is), and species ending with _g are gasses by default. Adsorbed species may end with * or _x where * designates adsorption at the "s" site (by default), while _x designates adsorption at the "x" site (note that "x" may be any letter except "g", and that X* and X_s are equivalent). Transition-states should include a -, and reactions with a transition-state are specified by 'IS &lt;-&gt; TS -&gt; FS' while reactions without a transition-state are defined as 'IS -&gt; FS' (where IS,TS,FS are expressions for the Initial/Transition/Final State). When the model initializes it checks the expressions for mass/site balances, and if it finds that they are not balanced it will raise an exception. [list of strings]. Instead of specifying rxn_expressions the following attributes may instead be defined:</p>
+
+<ul>
+<li><p>elementary_rxns - list version of rxn_expressions. These will be automatically populated if rxn_expressions are defined. [list of lists of lists]</p></li>
+<li><p>adsorbate_names - list of adsorbate names included in the analysis. Automatically populated if rxn_expressions are defined. [list of strings]</p></li>
+<li><p>transition_state_names\ - list of transition-state names included in the analysis. Automatically populated if rxn_expressions are defined. [list of strings]</p></li>
+<li><p>gas_names - list of gas names included in the analysis. [list of strings]</p></li>
+</ul>
+</li>
+<li><p>surface_names - list of surface names to be included in the analysis. [list of strings]</p></li>
+<li>
+<p>species_definitions - This is a dictionary where all species-specific information is stored. The required information will vary depending on the scaler/thermo corrections/solver/mapper used, and the "parser" generally fills in most information. However, there are a few things which generally need to be supplied explicitly:</p>
+
+<ul>
+<li><p>species_definitions[<em>site</em>]['site_names'] (where *site* is each site name in the model) - A list of "site names" which correspond to *site*. If the TableParser (default) is being used then the "site names" must also match the designations in the "site_name" column. For example, if you want the "s" site to correspond to the energetics of an adsorbate at a (211) site, and (211) sites are designated by '211' in the site_name column of the input_file, then this would be specified by: species_definitions['s'] = {'site_names':['211']}. Similarly, if you wanted the 't' site to correspond to 'fcc' or 'bridge' sites then you could specify: species_definitions['t'] = {'site_names':['fcc','bridge']}.</p></li>
+<li><p>species_definitions[<em>site</em>]['total'] (where *site* is each site name in the model) - A number to which the total coverage of *site* must sum. For example, if you wanted to have a total coverage of 1 with 10\% 's' sites and 90\% 't' sites (with the same site definitions as above) you would specify: species_definitions['s'] = {'site_names':['211'],'total':0.1} and species_definitions['t'] = {'site_names':['fcc','bridge'],'total:0.9}.</p></li>
+<li><p>species_definitions[<em>gas</em>]['pressure'] (where *gas* is each gas name in the model including the trailing _g) - The pressure of each gas species in bar. For example, if you wanted a carbon monoxide pressure of 10 bar and hydrogen pressure of 20 bar you would specify: species_definitions['CO_g']['pressure'] = 10 and species_definitions['H2_g']['pressure'] = 20. Note that for some situations you may instead need to specify a 'concentration','approach_to_equilibrium', or some other key, but in almost every situation some method for obtaining the gas pressures must be specified for each gas in the model.</p></li>
+</ul>
+</li>
+<li><p>temperature - temperature used for the analysis. May not be defined if ThermodynamicScaler is being used with temperature as a descriptor. [number in Kelvin]</p></li>
+<li>descriptor_names - names of variables to be used as descriptors. [list of strings]</li>
+<li>descriptor_ranges - Used for mapping through descriptors space. Specify the limits of the descriptor values. Should be a list equal in length to the number of descriptors where each entry is a list of 2 floats (min and max for that descriptor). [list of lists of floats].</li>
+<li>resolution - Used for mapping through descriptor space. Resolution used when discretizing over descriptor_range. [int]</li>
+<li>parser - name of class to use for solver. Defaults to TableParser. [string]</li>
+<li>mapper - name of class to use as a mapper. Defaults to MinResidMapper. [string]</li>
+<li>scaler - name of class to use for scaler. Defaults to GeneralizedLinearScaler. [string]</li>
+<li>solver - name of class to use for solver. Defaults to SteadyStateSolver. [string]</li>
+<li>thermodynamics - name of class to use for thermodynamic corrections. Defaults to ThermoCorrections. [string]</li>
+<li>data_file - file where large outputs will be saved as binary pickle files. Defaults to 'data.pkl' [filepath string]</li>
+<li>numerical_representation - determines how to store numbers as binary. Can be 'mpmath' for multiple precision or 'numpy' for normal floats. Note that 'numpy' rarely works. Defaults to 'mpmath'. [string]</li>
+</ul>
+</li>
+<li>
+<p><em>Parser:</em></p>
+
+<ul>
+<li>input_file - file where input data is stored. File must be in the correct format for the parser used.
+See <a href="wiki/1%20Generating%20an%20Input%20File">1 - Generating an Input File</a> for more information.</li>
+</ul>
+</li>
+<li>
+<p><em>Scaler:</em></p>
+
+<ul>
+<li>gas_thermo_mode - Approximation used for obtaining gas-phase free energy corrections. Defaults to ideal_gas. Other possibilities are: shomate_gas (use Shomate equation), zero_point_gas (zero-point corrections only), fixed_entropy_gas (include zero-point and assume entropy is 0.002 eV/K) , frozen_gas (no corrections), frozen_zero_point_gas (no zero-point and entropy is 0.002 eV/K). [string]</li>
+<li>adsorbate_thermo_mode - Approximation used for obtaining adsorbate free energy corrections. Defaults to harmonic_adsorbate (use statistical mechanics+vibrational frequencies). Other possibilities are: zero_point_adsorbate (zero-point corrections only), frozen_gas (no corrections). [string]</li>
+</ul>
+</li>
+<li><p><em>Solver:</em></p></li>
+<li>
+<p><em>SteadyStateSolver:</em></p>
+
+<ul>
+<li>decimal_precision - number of decimals to explicitly store. Calculation will be slightly slower with larger numbers, but will become completely unstable below some threshhold. Defaults to 50. [integer]</li>
+<li>tolerance - all rates must be below this number before the system is considered to be at "steady state". Defaults to 1e-50. [number]</li>
+<li>max_rootfinding_iterations - maximum number of times to iterate the rootfinding algorithm (multi-dimensional Newtons method). Defaults to 50. [integer]</li>
+<li>internally_constrain_coverages - ensure that coverages are greater than 0 and sum to less than the site total within the rootfinding algorithm. Slightly slower, but more stable. Defaults to True. [boolean]</li>
+<li>residual_threshold - the residual must decrease by this proportion in order for the calculation to be considered "converging". Must be less than 1. Defaults to 0.5. [number]</li>
+</ul>
+</li>
+<li><p><em>Mapper:</em></p></li>
+<li>
+<p><em>MinResidMapper:</em></p>
+
+<ul>
+<li>search_directions - list of "directions" to search for existing solutions. Defaults to [ [0,0],[0,1],[1,0],[0,-1],[-1,0],[-1,1],[1,1],[1,-1],[-1,-1] ] which are the nearest points on the orthogonals and diagonals plus the current point. More directions increase the chances of findinga good solution, but slow the mapper down considerably. Note that the current point corresponds to an initial guess coverage provided by the solver (i.e. Boltzmann coverages) and should always be included unless some solutions are already known. [list of lists of integers]</li>
+<li>max_bisections - maximum number of time to bisect descriptor space when moving from one point to the next. Note that this is actually the number of iterations per bisection so that a total of 2<sup>max_bisections&lt;\sup&gt; points could be sampled between two points in descriptor space. Defaults to 3. [integer]</sup>
+</li>
+<li>descriptor_decimal_precision - number of decimals to include when comparing two points in descriptor space. Defaults to 2. [integer]</li>
+</ul>
+</li>
+<li>
+<p><em>ThermoCorrections:</em></p>
+
+<ul>
+<li>thermodynamic_corrections - corrections to apply. Defaults to ['gas','adsorbate']. [list of strings]</li>
+<li>thermodynamic_variables - variables/attributes upon which thermo corrections depend. If these variables do not change the corrections will not be updated. Defaults to ['temperatures','gas_pressures']. [list of strings]</li>
+<li>frequency_dict - used for specifying vibrational frequencies of gasses/adsorbates. Usually populated by the parser. Defaults to {}. [dictionary of string:list of numbers in eV]</li>
+<li>ideal_gas_params - parameters used for ase.thermochemistry.IdealGasThermo. Defaults to catmap.data.ideal_gas_params. [dictionary of string:string/int]</li>
+<li>fixed_entropy_dict - entropies to use in the static entropy approximation. Defaults to catmap.data.fixed_entropy_dict. [dictionary of string:float]</li>
+<li>atoms_dict - dictionary of ASE atoms objects to use for ase.thermochemistry.IdealGasThermo. Defaults to ase.structure.molecule(gas_name). [dictionary of string:ase.atoms.Atoms]</li>
+<li>force_recalculation - re-calculate thermodynamic corrections even if thermodynamic_variables do not change. Slows the code down considerably, but is useful for sensitivity analyses where thermodynamic variables might be perturbed by very small amounts. Defaults to False. [boolean]</li>
+</ul>
+</li>
+<li><p><em>Analysis:</em></p></li>
+<li>
+<em>MechanismAnalysis:</em>
+
+<ul>
+<li>rxn_mechanisms - dictionary of lists of integers. Each integer corresponds to an elementary step. Elementary steps are indexed in the order that they are input with 1 being the first index. Negative integers are used to designate reverse reactions. [dictionary of string:list of integers]</li>
+</ul>
+</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">CatMAP maintained by <a href="https://github.com/ajmedford">ajmedford</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
