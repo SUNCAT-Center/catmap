@@ -51,7 +51,9 @@ platforms = ['linux', 'windows']
 if os.name == 'nt':
     scripts = []
 else:
-    scripts = []
+    scripts = [
+        'tools/catmap'
+              ]
 
 url = 'https://github.com/ajmedford/catmap'
 
