@@ -245,6 +245,9 @@ class MapPlot:
                 cbar = fig.colorbar(mappable=plot,ticks=cbar_nums,
                         cax=cbar_ax,extend=plot_args['extend'])
                 cbar.ax.set_yticklabels(cbar_labels)
+                if getattr(self,'colorbar_label',None):
+                    cbar_kwargs = getattr(self,'colorbar_label_kwargs',{'rotation':-90})
+                    cbar_ax.set_ylabel(self.colorbar_label,**cbar_kwargs)
             if self.descriptor_labels:
                 ax.set_xlabel(self.descriptor_labels[0])
                 ax.set_ylabel(self.descriptor_labels[1])
@@ -259,9 +262,9 @@ class MapPlot:
                 font_size = plot_args['title_size']
             ax.set_title(plot_args['title'],size=font_size)
 
-        if self.n_xticks:
+        if getattr(self,'n_xticks',None):
             ax.xaxis.set_major_locator(MaxNLocator(self.n_xticks))
-        if self.n_yticks:
+        if getattr(self,'n_yticks',None):
             ax.yaxis.set_major_locator(MaxNLocator(self.n_yticks))
 
         self.plot_descriptor_pts(mapp,rxn_index,ax=ax,plot_in=plot_in)
@@ -399,11 +402,11 @@ class MapPlot:
         xminmax,yminmax = self.descriptor_ranges
         xmin,xmax = xminmax
         ymin,ymax = yminmax
-        ax.imshow(rgb_array,extent=[xmin,xmax,ymin,ymax],origin='lower')
+        ax.imshow(rgb_array,extent=[xmin,xmax,ymin,ymax],origin='lower',interpolation='nearest')
         self.plot_descriptor_pts(mapp, i, ax)
-        if self.n_xticks:
+        if getattr(self,'n_xticks',None):
             ax.xaxis.set_major_locator(MaxNLocator(self.n_xticks))
-        if self.n_yticks:
+        if getattr(self,'n_yticks',None):
             ax.yaxis.set_major_locator(MaxNLocator(self.n_yticks))
         ax.set_xlabel(self.descriptor_labels[0])
         ax.set_ylabel(self.descriptor_labels[1])
@@ -505,7 +508,8 @@ class MechanismPlot:
                     ratio = np.sqrt(barrier)/(np.sqrt(barrier)+np.sqrt(barrier_rev))
                 else:
                     print 'Warning: Encountered barrier less than 0'
-                    rato = 0
+                    ratio = 0.0001
+                    yts = max(yi,yf)
                 xts = xi + ratio*(xf-xi)
                 xs = [xi,xts,xf]
                 ys = [yi,yts,yf]
@@ -687,9 +691,9 @@ class ScalingPlot:
             ax_list.append(err_ax)
 
         for ax in ax_list:
-            if self.n_xticks:
+            if getattr(self,'n_xticks',None):
                 ax.xaxis.set_major_locator(MaxNLocator(self.n_xticks))
-            if self.n_yticks:
+            if getattr(self,'n_yticks',None):
                 ax.yaxis.set_major_locator(MaxNLocator(self.n_yticks))
 
         if save is None:

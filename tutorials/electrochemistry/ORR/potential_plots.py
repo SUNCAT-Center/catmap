@@ -58,6 +58,9 @@ if 1:
 
 	fig = plt.figure()
 	ax = fig.add_subplot(111)
+	xy = zip(voltages,H2O_rates)
+	xy.sort()
+	voltages,H2O_rates = zip(*xy)
 	ax.plot(voltages, H2O_rates)
 	ax.invert_yaxis()
 	ax.set_xlabel('Potential (V vs RHE)')

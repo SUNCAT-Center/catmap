@@ -13,7 +13,7 @@ for i in 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.76 0.77 0.78 0.
  cp ../../mkm_job.py .
  cp ../../ORR_template.mkm .
  cp ../../make_input.py .
- python make_input.py
- python mkm_job.py $i
+ python276 make_input.py
+ python276 mkm_job.py $i
  cd ../..
 done
