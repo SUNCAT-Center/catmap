@@ -9,6 +9,7 @@ def get_composition(species_string):
     # clean up transition states and electrochem
     species_string = species_string.replace('-','')
     species_string = species_string.replace('pe','H')
+    species_string = species_string.replace('&','')
     try:
         symbs = string2symbols(species_string)
         for a in set(symbs):

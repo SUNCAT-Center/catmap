@@ -14,4 +14,6 @@ class NullScaler(ScalerBase):
         return E_dict
 
     def get_rxn_parameters(self,descriptors):
-        return descriptors
+        Gs = self.get_free_energies(descriptors)
+        return [Gs[d] for d in self.descriptor_names]
+#        return descriptors

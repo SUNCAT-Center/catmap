@@ -329,6 +329,9 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
             for j in idx_lists[q]:
                 term_1_sum[n][q] += epsilon[j*N_ads+n]*coverages[j]
 
+    #Double-check:
+        #Should be possible to pull fk out of term_1
+        #Make sure s,q index trick takes care of 1/2 term of sum2 properly
     for s in range(N_sites):
         for q in range(N_sites):
             for n in idx_lists[s]:
