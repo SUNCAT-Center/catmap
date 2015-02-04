@@ -297,22 +297,29 @@ templates['second_order_interaction_function'] = r"""
 def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
     ${site_info_dict}
 
+    #This should have been checked, but appears to be wrong
+    #Need to re-check implementation of model.
     N_ads = len(coverages)
     N_sites = len(site_info_dict)
+
     idx_lists = []
     f = []
     df = []
     d2f = []
     for s in site_info_dict:
         idxs,max_cvg,F_params = site_info_dict[s]
-        F_params['max_coverage'] = max_cvg
+        #Things might get strange when max_coverage != 1...
+        if 'max_coverage' not in F_params:
+            F_params['max_coverage'] = max_cvg
+        else:
+            F_params['max_coverage'] *= max_cvg
         idx_lists.append(site_info_dict[s][0])
         theta_tot = sum([coverages[i] for i in idxs])
         fs,dfs,d2fs = F(theta_tot,**F_params)
         f.append(fs)
         df.append(dfs)
         d2f.append(d2fs)
-
+    
     term_1 = [0]*N_ads
     term_1_sum = [[0]*N_ads for i in range(N_ads)]
     term_2 = [0]*N_ads

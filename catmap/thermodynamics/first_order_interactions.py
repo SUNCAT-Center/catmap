@@ -101,7 +101,10 @@ class FirstOrderInteractions(ReactionModelWrapper):
         n_ads = len(self.adsorbate_names)
         cross_term_names = []
         for a in self.adsorbate_names:
-            interaction_dict[a] = self.species_definitions[a]['self_interaction_parameter']
+            interaction_dict[a] = self.species_definitions[a].get('self_interaction_parameter',None)
+            if not interaction_dict[a]:
+                print('Warning: No self-interaction parameter specified for '+a+'. Assuming 0')
+                interaction_dict[a] = [0]
             cross_params = self.species_definitions[a].get('cross_interaction_parameters',{})
             for cp in cross_params:
                 if cp not in self.adsorbate_names+self.transition_state_names:
@@ -155,7 +158,6 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 constraint_dict[new_ads] = self.interaction_scaling_constraint_dict[ads]
             else:
                 constraint_dict[ads] = self.interaction_scaling_constraint_dict[ads]
-
 
         #get mins/maxs
         interaction_mins = []

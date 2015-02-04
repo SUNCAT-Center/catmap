@@ -68,7 +68,7 @@ class ThermodynamicScaler(ScalerBase):
             param_names = self.adsorbate_names + self.interaction_cross_term_names
         else:
             param_names = self.adsorbate_names
-
+        
         if not self.interaction_parameters:
             info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
             params = [info[pi][0] for pi in param_names]

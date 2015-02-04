@@ -522,6 +522,7 @@ class MechanismPlot:
         #plot barrier lines
         for i,line in enumerate(barrier_lines):
             ax.plot(*line,**barrier_line_args[i])
+
         #add labels
         trans = ax.get_xaxis_transform()
         for i,label in enumerate(self.labels):

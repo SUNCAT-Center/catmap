@@ -164,6 +164,7 @@ class ReactionModel:
         #set up interaction model
         if self.adsorbate_interaction_model == 'first_order':
             interaction_model = catmap.thermodynamics.FirstOrderInteractions(self)
+            interaction_model.get_interaction_info()
             response_func = interaction_model.interaction_response_function
             if not callable(response_func):
                 int_function = getattr(interaction_model,
@@ -173,6 +174,7 @@ class ReactionModel:
 
         elif self.adsorbate_interaction_model == 'second_order':
             interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+            interaction_model.get_interaction_info()
             response_func = interaction_model.interaction_response_function
             if not callable(response_func):
                 int_function = getattr(interaction_model,
@@ -276,6 +278,8 @@ class ReactionModel:
         self.mapper.get_point_output(pt)
         for out in self.output_variables:
             mapp = getattr(self,out+'_map',[])
+            if mapp is None:
+                mapp = []
             mapp.append([pt,getattr(self,'_'+out)])
             setattr(self,out+'_map',mapp)
 

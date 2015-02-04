@@ -195,8 +195,8 @@ class MinResidMapper(MapperBase):
         if PCconverged == True:
             return current_cvgs
         else:
-            raise ValueError(str(self.max_bisections) + ' bisections were not \
-                    sufficient to move from ' + \
+            raise ValueError(str(self.max_bisections) + ' bisections were not '+\
+                    'sufficient to move from ' + \
                     self.print_point(old_descriptors) + ' to ' + \
                     self.print_point(new_descriptors))
 

@@ -2,6 +2,7 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import smooth_piecewise_linear
+from catmap.functions import offset_smooth_piecewise_linear
 from catmap.functions import parse_constraint
 from catmap.thermodynamics import FirstOrderInteractions
 import pylab as plt
@@ -64,12 +65,13 @@ class SecondOrderInteractions(FirstOrderInteractions,ReactionModelWrapper):
 
         for i, e_i in enumerate(self_interactions):
             for j, e_j in enumerate(self_interactions):
-                if self.cross_interaction_mode == 'geometric_mean':
-                    epsilon_matrix[i,j] = np.sqrt(abs(e_i)*abs(e_j))
-                elif self.cross_interaction_mode == 'arithmetic_mean':
-                    epsilon_matrix[i,j] = (e_i+e_j)/2.
-                elif self.cross_interaction_mode == 'neglect':
-                    epsilon_matrix[i,j] = 0
+                if not epsilon_matrix[i,j]:
+                    if self.cross_interaction_mode == 'geometric_mean':
+                        epsilon_matrix[i,j] = np.sqrt(abs(e_i)*abs(e_j))
+                    elif self.cross_interaction_mode == 'arithmetic_mean':
+                        epsilon_matrix[i,j] = (e_i+e_j)/2.
+                    elif self.cross_interaction_mode == 'neglect':
+                        epsilon_matrix[i,j] = 0
 
         if self.non_interacting_site_pairs:
             for site_1, site_2 in self.non_interacting_site_pairs:
@@ -110,6 +112,10 @@ class SecondOrderInteractions(FirstOrderInteractions,ReactionModelWrapper):
     @staticmethod
     def smooth_piecewise_linear_response(*args,**kwargs):
         return smooth_piecewise_linear(*args,**kwargs)
+
+    @staticmethod
+    def offset_smooth_piecewise_linear_response(*args,**kwargs):
+        return offset_smooth_piecewise_linear(*args,**kwargs)
 
     @staticmethod
     def piecewise_linear_response(*args,**kwargs):
