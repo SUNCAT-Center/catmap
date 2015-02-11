@@ -770,6 +770,10 @@ class ReactionModel:
                 'elements of this list may contain None if you wish to use ' + \
                 'the default prefactor of kB*T/h for that rxn')
 
+        if not hasattr(self, 'resolution') or self.resolution is None:
+            self.resolution = 15
+            print("Info: set resolution to {self.resolution} as default.".format(**locals()))
+
     #Data manipulation and conversion
 
     def _header(self,exclude_outputs=[],re_parse=False):
