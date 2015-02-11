@@ -297,22 +297,29 @@ templates['second_order_interaction_function'] = r"""
 def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
     ${site_info_dict}
 
+    #This should have been checked, but appears to be wrong
+    #Need to re-check implementation of model.
     N_ads = len(coverages)
     N_sites = len(site_info_dict)
+
     idx_lists = []
     f = []
     df = []
     d2f = []
     for s in site_info_dict:
         idxs,max_cvg,F_params = site_info_dict[s]
-        F_params['max_coverage'] = max_cvg
+        #Things might get strange when max_coverage != 1...
+        if 'max_coverage' not in F_params:
+            F_params['max_coverage'] = max_cvg
+        else:
+            F_params['max_coverage'] *= max_cvg
         idx_lists.append(site_info_dict[s][0])
         theta_tot = sum([coverages[i] for i in idxs])
         fs,dfs,d2fs = F(theta_tot,**F_params)
         f.append(fs)
         df.append(dfs)
         d2f.append(d2fs)
-
+    
     term_1 = [0]*N_ads
     term_1_sum = [[0]*N_ads for i in range(N_ads)]
     term_2 = [0]*N_ads
@@ -329,6 +336,9 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
             for j in idx_lists[q]:
                 term_1_sum[n][q] += epsilon[j*N_ads+n]*coverages[j]
 
+    #Double-check:
+        #Should be possible to pull fk out of term_1
+        #Make sure s,q index trick takes care of 1/2 term of sum2 properly
     for s in range(N_sites):
         for q in range(N_sites):
             for n in idx_lists[s]:

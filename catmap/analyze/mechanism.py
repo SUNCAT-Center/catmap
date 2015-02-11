@@ -7,7 +7,9 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         defaults = {'pressure_correction':True,
                     'min_pressure':1e-12,
                     'energy_type':'free_energy',
-                    'include_labels':False}
+                    'include_labels':False,
+                    'subplots_adjust_kwargs':{},
+                    'kwarg_dict':{}}
         self._rxm.update(defaults)
         self.data_dict = {}
         MechanismPlot.__init__(self,[0])
@@ -25,16 +27,39 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             surfaces = self.surface_names
         if not self.surface_colors:
             self.surface_colors = get_colors(max(len(surfaces),len(mechanisms)))
+       
+        self.kwarg_list = []
+        for key in self.rxn_mechanisms.keys():
+            self.kwarg_list.append(self.kwarg_dict.get(key,{}))
+
         for n,mech in enumerate(mechanisms):
             for i, surf in enumerate(surfaces):
                 xy = self.descriptor_dict[surf]
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
+
                     if self.energy_type == 'free_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
+
                     elif self.energy_type == 'potential_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
                         energy_dict.update(self.scaler.get_electronic_energies(xy))
+
+                    elif self.energy_type == 'interacting_energy':
+                        if not self.interacting_energy_map:
+                            raise ValueError('No interacting energy map found.')
+                        G_dict = {}
+                        G_labels = self.output_labels['interacting_energy']
+                        for pt, energies in self.interacting_energy_map:
+                            if pt == xy:
+                                for ads,E in zip(G_labels, energies):
+                                    G_dict[ads] = E
+
+                        if not G_dict:
+                            raise ValueError('No energies found for point: ', xy)
+
+                        energy_dict = self.scaler.get_free_energies(xy) #get gas G's
+                        energy_dict.update(G_dict)
 
                     params = self.adsorption_to_reaction_energies(energy_dict)
 
@@ -59,11 +84,19 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         if reverse == True:
                             nrg = -1*p[0]
                             bar = p[1] + nrg
-                            self.labels.append('+'.join(self.elementary_rxns[step-1][0]))
+
+                            species = self.elementary_rxns[step-1][0]
+                            L = self.label_maker(species)
+                            self.labels.append(L)
+
                         else:
                             nrg = p[0]
                             bar = p[1]
-                            self.labels.append('+'.join(self.elementary_rxns[step-1][-1]))
+
+                            species = self.elementary_rxns[step-1][-1]
+                            L = self.label_maker(species)
+                            self.labels.append(L)
+
                         correction = 0
                         if self.pressure_correction == True:
                             IS_gasses = [self.gas_pressures[self.gas_names.index(s)]
@@ -86,9 +119,11 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 correction = -correction
                         self.energies.append(nrg+correction)
                         self.barriers.append(bar)
-
+                    
                     if labels and self.include_labels:
                         self.labels = labels
+                    elif self.labels and self.include_labels:
+                        pass
                     else:
                         self.labels = []
 
@@ -100,9 +135,42 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             reverse = False
                     self.data_dict[self.rxn_mechanisms.keys()[n]] = [self.energies,
                             self.barriers]
+                    
+                    kwargs = self.kwarg_list[n]
+                    for key in kwargs:
+                        setattr(self,key,kwargs[key])
+
                     self.draw(ax)
+        
+        if self.energy_type == 'free_energy':
+            ax.set_ylabel('$\Delta G$ [eV]')
+        elif self.energy_type == 'potential_energy':
+            ax.set_ylabel('$\Delta E$ [eV]')
+        if self.energy_type == 'interacting_energy':
+            ax.set_ylabel('$\Delta G_{interacting}$ [eV]')
+        fig.subplots_adjust(**self.subplots_adjust_kwargs)
         MapPlot.save(self,fig,
                 save=save,default_name=self.model_name+'_pathway.pdf')
         self._fig = fig
         self._ax = ax
         return fig
+
+    def label_maker(self,species):
+        species = [s for s in species if self.species_definitions[s].get('type',None) not in 'site']
+        new_species = []
+        for sp in species:
+            name,site = sp.split('_')
+            for kj in range(0,9):
+                name = name.replace(str(kj), '$_{'+str(kj)+'}$')
+            if site == 'g':
+                new_species.append(name+'(g)')
+            else:
+                new_species.append(name+'*')
+        species_set = list(set(new_species))
+        if species_set != new_species:
+            species = [str(new_species.count(sp))+sp for sp in species_set]
+        else:
+            species = new_species
+
+        L = '+'.join(species)
+        return ' '+L

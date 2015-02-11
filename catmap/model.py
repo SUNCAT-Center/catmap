@@ -184,6 +184,7 @@ class ReactionModel:
         #set up interaction model
         if self.adsorbate_interaction_model == 'first_order':
             interaction_model = catmap.thermodynamics.FirstOrderInteractions(self)
+            interaction_model.get_interaction_info()
             response_func = interaction_model.interaction_response_function
             if not callable(response_func):
                 int_function = getattr(interaction_model,
@@ -193,6 +194,7 @@ class ReactionModel:
 
         elif self.adsorbate_interaction_model == 'second_order':
             interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+            interaction_model.get_interaction_info()
             response_func = interaction_model.interaction_response_function
             if not callable(response_func):
                 int_function = getattr(interaction_model,
@@ -218,33 +220,33 @@ class ReactionModel:
             #any re-loaded model will have stdout
             has_all = False
 
-        if self._solved == self._token():
+        if self._solved == self._token() and not getattr(self,'recalculate',None):
             #Do not solve the same model twice
             has_all = True
 
-        elif has_all and not self.recalculate:
+        elif has_all and not getattr(self,'recalculate',None):
             #All data has been loaded and no verification => solved.
             self._solved = self._token()
             self.log('input_success')
 
         else:
             ran_dsa = False #When no map exists, run descriptor space analysis first
-            if not hasattr(self,'coverage_map') or not self.coverage_map:
+            if not getattr(self,'coverage_map',None):
                 #Make "volcano plot"
-                if hasattr(self,'descriptor_ranges') and hasattr(self,'resolution'):
+                if getattr(self,'descriptor_ranges',None) and getattr(self,'resolution',None):
                     self.descriptor_space_analysis()
                     ran_dsa = True
 
             #Get rates at single points
-            if hasattr(self,'descriptors'):
+            if getattr(self,'descriptors',None):
                 self.single_point_analysis(self.descriptors)
             #Get rates at multiple points
-            if hasattr(self,'descriptor_values'):
+            if getattr(self,'descriptor_values',None):
                 self.multi_point_analysis()
 
             #If a map exists, run descriptor space analysis last (so that single-point guesses are
             #not discarded)
-            if not ran_dsa and hasattr(self,'descriptor_ranges') and hasattr(self,'resolution'):
+            if not ran_dsa and getattr(self,'descriptor_ranges',None) and getattr(self,'resolution',None):
                     self.descriptor_space_analysis()
 
 
@@ -296,6 +298,8 @@ class ReactionModel:
         self.mapper.get_point_output(pt)
         for out in self.output_variables:
             mapp = getattr(self,out+'_map',[])
+            if mapp is None:
+                mapp = []
             mapp.append([pt,getattr(self,'_'+out)])
             setattr(self,out+'_map',mapp)
 
@@ -727,6 +731,9 @@ class ReactionModel:
                             total_comp[site] = n_sites
                         else:
                             total_comp[site] += n_sites
+            for key in total_comp.keys():
+                if total_comp[key] == 0:
+                    del total_comp[key]
             return total_comp
 
         for rxn in self.elementary_rxns:

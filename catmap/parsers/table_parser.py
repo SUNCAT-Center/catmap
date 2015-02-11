@@ -205,8 +205,9 @@ class TableParser(ParserBase):
                 if False not in masked:
                     perfect_matches.append(masked[-1])
                 elif masked[0] and site not in self._gas_sites: #Surface matches but site might not...
-                    partial_matches.append(masked[-1])
-
+                    if entry[1] != 'gas': #HACK... this whole function needs to be cleaned up.
+                        partial_matches.append(masked[-1])
+            
             def match_handler(perfect_matches):
                 if len(perfect_matches) == 1:
                     return perfect_matches[0]
@@ -233,9 +234,10 @@ class TableParser(ParserBase):
         for adsdef in all_ads+allfreqdict.keys(): #format all freqs
             if '_' in adsdef:
                 adsname,site = adsdef.split('_')
-            else:
+            elif adsdef in allfreqdict.keys():
                 adsname = adsdef
-                site = 's'
+                site = self._default_site
+
             if adsname in allfreqdict:
                 frequency_dict[adsdef] = freq_handler(allfreqdict[adsname],site
                         ,adsname)

@@ -9,6 +9,7 @@ def get_composition(species_string):
     # clean up transition states and electrochem
     species_string = species_string.replace('-','')
     species_string = species_string.replace('pe','H')
+    species_string = species_string.replace('&','')
     try:
         symbs = string2symbols(species_string)
         for a in set(symbs):
@@ -334,9 +335,15 @@ def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05)
         c_0 = (alpha*(theta_tot-x0)**2)/theta_tot
         dC = alpha*(1-(x0/theta_tot)**2)
         d2C = (2*alpha*x0**2)/(theta_tot**3)
-
     else:
         c_0 = slope*(theta_tot - cutoff)/theta_tot
         dC = slope*(cutoff/(theta_tot**2))
         d2C = (-2*slope*cutoff)/(theta_tot**3)
+    return c_0, dC, d2C
+
+def offset_smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25, smoothing=0.05, offset=0.1):
+    #piecewise linear function with an offset. Not equivalent to piecewise linear
+    #for second-order interactions
+    c_0, dC, d2C = smooth_piecewise_linear(theta_tot,max_coverage,cutoff,smoothing)
+    c_0 += offset
     return c_0, dC, d2C

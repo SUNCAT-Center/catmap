@@ -54,9 +54,19 @@ shomate_params['CH2CH2_g:298-1200'] = [-6.387880,184.4019,-112.9718,
         28.49593,0.315540,48.17332,163.1568,52.46694] #NIST
 shomate_params['CH2O_g:298-1500'] = [5.193767,93.23249,-44.85457,7.882279,
         0.551175,-119.3591,202.4663,-115.8972] #NIST
-shomate_params['CH3OH_g:298-1500'] = [-0.54480506209266066, 
-        151.88669435629552, -78.31823594271188, 16.106518370880025, 
-        0.49380897934744739, -5.008, 200.05003685507603, 0] 
+shomate_params['CH3OH_g:298-1500'] = [-1.0845814245433651, 153.2463565199489, 
+        -79.530503596182541, 16.471302393160109, 0.52203346015332153, 
+        -4.897417024069, 199.18937455061121, 0.0]
+#Fitted to values from CRC Handbook of Chemistry and Physics 91st Ed.
+#H constrained to 0
+shomate_params['CH3CH2OH_g:298-1500'] = [-4.7367880805894265, 271.96181550301463, 
+        -169.34946529216657, 43.738601536085334, 0.24643430702178773, 
+        -9.8282808291878609, 203.33256226170749, 0.0]
+#Fitted to values from CRC Handbook of Chemistry and Physics 91st Ed.
+#H constrained to 0
+shomate_params['CH3CHO_g:298-1500'] = [4.8037386340099095, 185.92002366990326, 
+        -99.108461090201203, 20.614739190690159, 0.27708025485586463, 
+        -8.5666000407909451, 220.00244674443837, 0.0]
 #Fitted to values from CRC Handbook of Chemistry and Physics 91st Ed.
 #H constrained to 0
 shomate_params['HCOOH_g:298-1500'] = [3.8027523042252258, 
@@ -64,9 +74,6 @@ shomate_params['HCOOH_g:298-1500'] = [3.8027523042252258,
         0.27720649972633382, -6.16527, 212.9698972559699, 0] 
 #Fitted to values from Chao et. al. as referenced in NIST.
 #H constrained to 0
-shomate_params['CH3CH2OH_g:273-1300'] = [6.372731,136.5066*2.,-54.3367*3,
-        9.6942975*4,0.334329,-7.25,201,0] 
-#Taken from http://www.vscht.cz/fch/cz/pomucky/fchab/D.html
 
 
 #Define default ideal gas parameters
