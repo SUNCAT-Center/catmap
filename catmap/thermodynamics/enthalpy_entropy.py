@@ -369,7 +369,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 if '-' in ads and freq_dict[ads] in [None,[],()]:
                     avg_TS.append(ads)
                 therm = HarmonicThermo(freq_dict[ads])
-                free_energy = therm.get_free_energy(
+                free_energy = therm.get_gibbs_energy(
                         temperature,verbose=False)
                 ZPE = sum(freq_dict[ads])/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
