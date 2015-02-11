@@ -14,8 +14,23 @@ plt = catmap.plt
 griddata = catmap.griddata
 
 class ReactionModel:
+    """
+    The central object that defines a microkinetic model consisting of:
+    - active sites
+    - species
+    - possible reaction steps
+    - rate constant expressions
+    - descriptors and descriptor ranges
+    - data files for energies
+    - external parameters (temperature, pressures)
+    - other more technical settings related to the solver and mapper
+
+    """
     def __init__(self,**kwargs): #
         """Class for managing microkinetic models.
+
+           :param setup_file: Specify <mkm-file> from which to load model.
+           :type setup_file: str
             """
 
         #Set static utility functions
@@ -113,7 +128,12 @@ class ReactionModel:
     def run(self,**kwargs):
         """Run the microkinetic model. If recalculate is True then
         data which is re-loaded will be used as an initial guess; otherwise it
-        will be assumed to be correct."""
+        will be assumed to be correct.
+
+        :param recalculate: If True solve model again using previous results as initial guess
+        :type recalculate: bool
+
+        """
         
         for key in kwargs:
             setattr(self,key,kwargs[key])
