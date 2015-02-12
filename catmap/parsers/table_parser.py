@@ -87,10 +87,7 @@ class TableParser(ParserBase):
 
         for p in self.parse_headers:
             if callable(getattr(self,'parse_'+p)):
-#                try:
                 getattr(self,'parse_'+p)()
-#                except:
-#                    raise ValueError('Error parsing '+p+'. Ensure that the header is properly defined')
             else:
                 raise AttributeError('No parsing function defined for '+p)
 
@@ -159,10 +156,7 @@ class TableParser(ParserBase):
                     else:
                         raise ValueError('No formation energy found for '+str(adsdef)+'. Check input file.')
 
-
-
     def parse_frequencies(self,**kwargs):
-
         self.__dict__.update(kwargs)
         allfreqdict = {}
         frequency_dict = {}
@@ -276,6 +270,7 @@ class TableParser(ParserBase):
             self.species_definitions[key]['frequencies'] = frequency_dict.get(key,[])
 
     def parse_coverage(self,**kwargs):
+        print 'PARSE_CVG'
 
         self.__dict__.update(kwargs)
         
