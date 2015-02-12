@@ -15,15 +15,16 @@ griddata = catmap.griddata
 
 class ReactionModel:
     """
-    The central object that defines a microkinetic model consisting of:
-    - active sites
-    - species
-    - possible reaction steps
-    - rate constant expressions
-    - descriptors and descriptor ranges
-    - data files for energies
-    - external parameters (temperature, pressures)
-    - other more technical settings related to the solver and mapper
+The central object that defines a microkinetic model consisting of:
+
+- active sites
+- species
+- possible reaction steps
+- rate constant expressions
+- descriptors and descriptor ranges
+- data files for energies
+- external parameters (temperature, pressures)
+- other more technical settings related to the solver and mapper
 
     """
     def __init__(self,**kwargs): #
@@ -58,7 +59,7 @@ class ReactionModel:
 
         self._classes = ['parser','scaler', 'thermodynamics',
                 'solver','mapper']
-        self._solved = None 
+        self._solved = None
         #keeps track of whether or not the model was solved
 
         #attributes for logging
@@ -116,12 +117,12 @@ class ReactionModel:
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
-        if hasattr(self,'setup_file'): #parse in setup file. 
-            #Note that the syntax is simply python variable definitions. 
+        if hasattr(self,'setup_file'): #parse in setup file.
+            #Note that the syntax is simply python variable definitions.
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
-        
+
 
     # Functions for executing the kinetic model
 
@@ -134,14 +135,14 @@ class ReactionModel:
         :type recalculate: bool
 
         """
-        
+
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
         #ensure resolution has the proper dimensions
         if not hasattr(self.resolution,'__iter__'):
             self.resolution = [self.resolution]*len(self.descriptor_names)
-        
+
         #set numerical representation
         if self.numerical_representation == 'mpmath':
             import mpmath as mp
@@ -255,7 +256,7 @@ class ReactionModel:
                 if (not attr.startswith('_') and
                         not callable(getattr(self,attr)) and
                         attr not in self._classes):
-                    if (len(repr(getattr(self,attr))) > 
+                    if (len(repr(getattr(self,attr))) >
                             self._max_log_line_length):
                         #line is too long for logfile -> put into pickle
                         self._pickle_attrs.append(attr)
@@ -287,14 +288,20 @@ class ReactionModel:
             f.close()
 
             if getattr(self,'create_standalone',None):
-                self.make_standalone() 
-        
+                self.make_standalone()
+
     def descriptor_space_analysis(self):
-        #Use mapper to create map/volcano-plot of rates/coverages
+        """
+        Use mapper to create map/volcano-plot of rates/coverages.
+        """
         self.mapper.get_output_map(self.descriptor_ranges,self.resolution)
 
     def single_point_analysis(self,pt):
-        #Find rates/coverages at a single point
+        """
+        Find rates/coverages at a single point.
+
+        .. todo:: Explain pt argument
+        """
         self.mapper.get_point_output(pt)
         for out in self.output_variables:
             mapp = getattr(self,out+'_map',[])
@@ -304,6 +311,9 @@ class ReactionModel:
             setattr(self,out+'_map',mapp)
 
     def multi_point_analysis(self):
+        """
+        .. todo:: __doc__
+        """
         for pt in self.descriptor_values:
             self.single_point_analysis(pt)
 
@@ -320,9 +330,9 @@ class ReactionModel:
 
    #File IO functions
     def load(self,setup_file): #
-        """Load a 'setup file' by importing it and assigning all local 
-        variables as attributes of the kinetic model. Special attributes 
-        mapper, parser, scaler, solver will attempt to convert strings 
+        """Load a 'setup file' by importing it and assigning all local
+        variables as attributes of the kinetic model. Special attributes
+        mapper, parser, scaler, solver will attempt to convert strings
         to modules."""
         defaults = dict(mapper='MinResidMapper',
                 parser='TableParser',
@@ -351,7 +361,7 @@ class ReactionModel:
                             pyfile = var
                         basepath=os.path.dirname(
                                 inspect.getfile(inspect.currentframe()))
-                        if basepath not in sys.path: 
+                        if basepath not in sys.path:
                             sys.path.append(basepath)
                         sublocs = {}
                         _temp = __import__(pyfile,globals(),sublocs, [locs[var]])
@@ -382,7 +392,9 @@ class ReactionModel:
         self.verify()
 
     def load_data_file(self,overwrite=False):
-        #load in output data from external files
+        """
+        Load in output data from external files.
+        """
         if os.path.exists(self.data_file):
             pickled_data = pickle.load(open(self.data_file,'r'))
             for attr in pickled_data:
@@ -393,9 +405,15 @@ class ReactionModel:
                     setattr(self,attr,pickled_data[attr])
 
     def parse(self,*args, **kwargs): #
+        """
+        .. todo:: __doc__
+        """
         self.parser.parse(*args, **kwargs)
 
     def log(self,event,**kwargs):
+        """
+        .. todo:: __doc__
+        """
         message = self._log_strings[event]
         loop, status = event.rsplit('_',1)
         kwargs['loop'] = loop
@@ -429,6 +447,9 @@ class ReactionModel:
     #Parsing and formatting functions
 
     def parse_elementary_rxns(self, equations): #
+        """
+        .. todo:: __doc__
+        """
         elementary_rxns = []
         gas_names = []
         adsorbate_names = []
@@ -489,6 +510,9 @@ class ReactionModel:
             if ts in gas_names + adsorbate_names:
                 transition_state_names.remove(ts)
         def sort_list(species_list):
+            """
+            .. todo:: __doc__
+            """
             if not species_list:
                 return ()
             new_list = []
@@ -508,6 +532,12 @@ class ReactionModel:
         self.site_names = site_names
 
     def texify(self,ads): #
+        """Generate LaTeX representation of an adsorbate.
+
+        :param ads: Adsorbate short-hand.
+        :type ads: str
+
+        """
         sub_nums = [str(n) for n in range(2,15)]
         ads_def = ads
         ads = ads.replace('-','\mathrm{-}')
@@ -520,16 +550,19 @@ class ReactionModel:
             site = 's'
         for num in sub_nums:
             adsN = adsN.replace(num,'_{'+num+'}')
-        if site == 'g': 
+        if site == 'g':
             site = '(g)'
             tex_ads = adsN + '_{'+site+'}'
-        else: 
+        else:
             site = '*_'+site
             tex_ads = adsN + '^{'+site+'}'
         tex_ads = tex_ads.replace('}_{','')
         return tex_ads
 
     def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): #
+        """
+        .. todo:: __doc__
+        """
         if mode == 'latex':
             def texify(ads):
                 return self.texify(ads)
@@ -562,6 +595,9 @@ class ReactionModel:
 
     @staticmethod
     def print_point(descriptors,n = 2):
+        """
+        .. todo:: __doc__
+        """
         string = '['
         for d in descriptors:
             d = float(d)
@@ -572,6 +608,13 @@ class ReactionModel:
         return string
 
     def model_summary(self,summary_file='summary.tex'):
+        """
+            Write summary of model into TeX file.
+
+            :param summary_file: Filename where TeX summary of model is written.
+            :type summary_file: str
+
+        """
         if not hasattr(self,'summary_file'):
             self.summary_file = summary_file
 
@@ -604,7 +647,7 @@ class ReactionModel:
         out_txt += r'\section{Input Summary}' + '\n'
         longtable_txt = ''
 
-        max_freqs = 3 
+        max_freqs = 3
         #This could be cleaned up a lot using templates...
         for spec in self.gas_names:
             energy = self.species_definitions[spec]['formation_energy']
@@ -633,11 +676,11 @@ class ReactionModel:
                 if e and e != '-':
                     e = str(round(e,2))
                     if self.species_definitions[spec].get('frequencies',[]):
-                        freqs = [str(round(v*1e3,1)) 
+                        freqs = [str(round(v*1e3,1))
                                 for v in self.species_definitions[spec].get('frequencies',[])]
                         frequencies = '\parbox[t]{3cm}{'
                         while freqs:
-                            freq_subset = [freqs.pop(0) 
+                            freq_subset = [freqs.pop(0)
                                     for i in range(0,max_freqs) if freqs]
                             frequencies += ', '.join(freq_subset)+r'\\'
                         frequencies = frequencies[:-2] + '}'
@@ -679,6 +722,9 @@ class ReactionModel:
     #Self checks, debugging, and code-structure related functions.
 
     def update(self,dict,override = False):
+        """
+        .. todo:: __doc__
+        """
         if override == False:
             dict.update(self.__dict__)
             self.__dict__ = dict
@@ -686,7 +732,9 @@ class ReactionModel:
             self.__dict__.update(dict)
 
     def compatibility_check(self):
-        #Check that the reaction model has all required attributes
+        """
+        Check that the reaction model has all required attributes.
+        """
         total_dict = self._required
         for var in total_dict:
             val = getattr(self,var,None)
@@ -696,15 +744,24 @@ class ReactionModel:
                     setattr(self,var,right_type)
                 except:
                     raise TypeError('The attribute '+str(var)+' must be '+
-                            'compatible with the function ' + 
+                            'compatible with the function ' +
                             str(total_dict[var]))
             if not hasattr(self,var):
                 raise AttributeError('Reaction model must contain the '+
                         'attribute '+str(var))
 
     def verify(self):
+        """
+Run several consistency check on the model, such as :
 
-        
+- all gas ratios add to 1.
+- all mass and site balances are fulfilled.
+- prefactors are set in the correct format.
+- a mapping resolution is set (the default 15 data points per descriptor axis).
+
+        """
+
+
         #Check gas_ratios
         if hasattr(self,'gas_ratios') and self.gas_ratios:
             if sum(self.gas_ratios) != 1.0:
@@ -714,6 +771,9 @@ class ReactionModel:
 
         #Check for mass/site balances on elementary equations
         def composition(state_list,type='atoms'):
+            """
+            .. todo:: __doc__
+            """
             total_comp = {}
             for sp in state_list:
                 if type == 'atoms':
@@ -827,7 +887,7 @@ class ReactionModel:
 
     def _token(self):
         """Create a 'token' which uniquely identifies the model
-        based on the user-input parameters. Two models with 
+        based on the user-input parameters. Two models with
         identical tokens should have identical solutions, although
         this is not guaranteed if an expert user changes some private
         attributes."""
@@ -836,6 +896,9 @@ class ReactionModel:
         return token
 
     def retrieve_data(self,mapp,point,precision=2):
+        """
+        .. todo:: __doc__
+        """
         if not mapp:
             return None
         n = precision
@@ -858,6 +921,9 @@ class ReactionModel:
     @staticmethod
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):
+        """
+        .. todo:: __doc__
+        """
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
         cols = zip(*datas)
@@ -899,10 +965,13 @@ class ReactionModel:
 
     @staticmethod
     def array_to_map(array,descriptor_ranges,resolution):
+        """
+        .. todoc:: __doc__
+        """
         dim = len(array.shape)
         xy = []
         ij = []
-            
+
         def make_ptlist(descriptor_ranges,resolution,pt_list=[],ij_list=[]):
             if descriptor_ranges:
                 rng = descriptor_ranges.pop(0)
@@ -947,6 +1016,9 @@ class ReactionModel:
 
     @staticmethod
     def same_rxn(rxn1,rxn2):
+        """Determine if two reactions *rxn1* and *rxn2* are identical.
+
+        """
 
         def same_state(state1, state2):
             state1 = [s.replace('_s','') for s in state1]
@@ -969,8 +1041,8 @@ class ReactionModel:
         IS1, TS1, FS1 = get_IS_TS_FS(rxn1)
         IS2, TS2, FS2 = get_IS_TS_FS(rxn2)
         if (
-                same_state(IS1,IS2) and 
-                same_state(TS1, TS2) and 
+                same_state(IS1,IS2) and
+                same_state(TS1, TS2) and
                 same_state(FS1, FS2)
                     ):
             return True
@@ -979,9 +1051,16 @@ class ReactionModel:
 
     @staticmethod
     def reverse_rxn(rxn):
+        """
+        .. todoc:: __doc__
+        """
         return [rxn[-1],rxn[1],rxn[0]]
 
     def get_rxn_energy(self,rxn,energy_dict):
+        """
+        .. todoc:: __doc__
+        """
+
         IS = rxn[0]
         FS = rxn[-1]
         if len(rxn) <= 2:
@@ -1000,6 +1079,9 @@ class ReactionModel:
         return dE, E_a
 
     def get_state_energy(self,rxn_state,energy_dict):
+        """
+        .. todoc:: __doc__
+        """
         energy = 0
         for species in rxn_state:
             if species in energy_dict:
@@ -1016,11 +1098,18 @@ class ReactionModel:
             Grxn_Ga.append([dG,G_a])
         return Grxn_Ga
 
-    def make_standalone(self):
+    def make_standalone(self, standalone_script='stand_alone.py'):
+        """Create a stand alone script containing the current model.
+
+           :param standalone_script: The name of the file where the standalone script is created [stand_alone.py].
+           :type standalone_script: str
+
+
+        """
         txt = ''
         for func in self._function_strings:
             txt+= self._function_strings[func]
             txt += '\n'*3
-        f = open('stand_alone.py','w')
+        f = open(standalone_script, 'w')
         f.write(txt)
         f.close()
