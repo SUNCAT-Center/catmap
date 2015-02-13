@@ -966,7 +966,7 @@ Run several consistency check on the model, such as :
     @staticmethod
     def array_to_map(array,descriptor_ranges,resolution):
         """
-        .. todoc:: __doc__
+        .. todo:: __doc__
         """
         dim = len(array.shape)
         xy = []
@@ -1052,13 +1052,13 @@ Run several consistency check on the model, such as :
     @staticmethod
     def reverse_rxn(rxn):
         """
-        .. todoc:: __doc__
+        .. todo:: __doc__
         """
         return [rxn[-1],rxn[1],rxn[0]]
 
     def get_rxn_energy(self,rxn,energy_dict):
         """
-        .. todoc:: __doc__
+        .. todo:: __doc__
         """
 
         IS = rxn[0]
@@ -1080,7 +1080,7 @@ Run several consistency check on the model, such as :
 
     def get_state_energy(self,rxn_state,energy_dict):
         """
-        .. todoc:: __doc__
+        .. todo:: __doc__
         """
         energy = 0
         for species in rxn_state:
