@@ -6,6 +6,7 @@ from catmap.functions import parse_constraint
 import pylab as plt
 import numpy as np
 from scipy import integrate
+from scipy.optimize import fmin
 
 class FirstOrderInteractions(ReactionModelWrapper):
     """Class for implementing 'first-order adsorbate interaction model. 
@@ -16,10 +17,12 @@ class FirstOrderInteractions(ReactionModelWrapper):
         defaults = dict(
                 cross_interaction_mode='geometric_mean',
                 transition_state_cross_interaction_mode='intermediate_state',
+                default_self_interaction_parameter = 0,
                 interaction_response_function = 'linear',
                 interaction_response_parameters = {'max_coverage':1,'cutoff':0.25,
                     'smoothing':0.05},
                 interaction_fitting_mode=None,
+                input_overrides_fit = True, #user inputs override fitted values
                 interaction_strength = 1,
                 #weight interaction parameters by this
                 )
@@ -29,72 +32,326 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 'interaction_fitting_mode':None
                 }
 
-    def get_linearizer(self):
-        if self.interaction_fitting_mode:
-            if self.interaction_fitting_mode == 'average_self':
-                def linearizer(theta,params):
-                    theta += 1e-10 # avoid zero-division errors
-                    Fint = lambda x: self.interaction_response_function(x,**params)[0]*x
-                    integrated =  integrate.quad(Fint,0,theta)
-                    return integrated[0]/theta
-                self._linearizer = linearizer
-            elif self.interaction_fitting_mode == 'differential_self':
-                def linearizer(theta,params):
-                    return self.interaction_response_function(theta,**params)[0]*theta
-                self._linearizer = linearizer
-            else:
-                raise AttributeError('Invalid interaction fitting mode.')
-
     def parameterize_interactions(self):
         self._parameterized = True
         self.get_interaction_transition_state_scaling_matrix()
-        self.get_linearizer()
+        
+        if self.interaction_fitting_mode is not None:
+            self.fit()
 
-        if self.interaction_fitting_mode:
-            self.self_interaction_parameter_dict = {}
-            if self.max_self_interaction:
-                if self.max_self_interaction in self.surface_names:
-                    max_idx = self.surface_names.index(self.max_self_interaction)
-                else:
-                    raise TypeError('max_self_interaction must be the name of a '+\
-                        'surface or a dictionary with species names as keys and maxs as vals.')
+    def get_energy_error(self, epsilon_ij, theta, Ediff, Eint, 
+            parameter_name, surface_name):
+        i_surf = self.surface_names.index(surface_name)
+        all_ads = self.adsorbate_names + self.transition_state_names
+        E0_list = [self.species_definitions[sp]['formation_energy'][i_surf] 
+                    for sp in all_ads]
+
+        if parameter_name in self.interaction_response_parameters:
+
+            if self.interaction_cross_term_names:
+                param_names = self.adsorbate_names + self.interaction_cross_term_names
             else:
-                max_idx = None
-            for sp in self.species_definitions:
-                site = self.species_definitions[sp]['site']
-                cov_dep_E = self.species_definitions[sp].get('coverage_dependent_energy',None)
-                if cov_dep_E:
-                    params = self.species_definitions[site].get('interaction_response_parameters',
-                            self.interaction_response_parameters)
-                    int_params = []
-                    for theta_E in cov_dep_E:
-                        if theta_E and len(theta_E) >= 2:
-                            theta,E = zip(*theta_E)
-                            theta_l = [self._linearizer(t_i,params) for t_i in theta]
-                            m,b = plt.polyfit(theta_l,E,1)
-                            int_params.append(m)
-                        else:
-                            int_params.append(None)
-                    if max_idx:
-                        max_p = int_params[max_idx]
-                        if max_p is None:
-                            print 'Warning: No interaction parameter for '+sp+' on '+\
-                                    self.max_self_interaction+'. No maximum will be used'
-                        else:
-                            self.species_definitions[sp]['max_self_interaction'] = max_p
-                    
-                    if int_params != [None]*len(int_params):
-                        if self.species_definitions[sp].get('self_interaction_parameter',None) is None:
-                            self.species_definitions[sp]['self_interaction_parameter'] = int_params
-                            self.self_interaction_parameter_dict[sp] = int_params
-                        else:
-                            self.self_interaction_parameter_dict[sp] = self.species_definitions[sp]['self_interaction_parameter']
+                param_names = self.adsorbate_names
 
-            all_ads = self.adsorbate_names + self.transition_state_names
-            self.parameter_names = list(all_ads)
-            for pi in all_ads:
-                for pj in all_ads:
-                    self.parameter_names.append(pi + '&' + pj)
+            info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
+            params = [info[pi][i_surf] for pi in param_names]
+            int_strength = self.interaction_strength
+            self.interaction_strength = 1.0
+            eps_matrix = self.params_to_matrix(E0_list+params)
+            self.interaction_strength = int_strength
+            eps_list = list(eps_matrix.ravel())
+
+            old_params = self.interaction_response_parameters.copy()
+            self.interaction_response_parameters[parameter_name] = epsilon_ij
+            self.solver._compiled = False
+            self.solver.compile()
+
+            if 'differential' in self.interaction_fitting_mode:
+                diff_idx = theta.index(min([t for t in theta if t != 0]))
+                Ediff_model = self.interaction_function(theta,E0_list,eps_list,
+                        self.interaction_response_function,False)[0][diff_idx]
+                diff_err = (Ediff-Ediff_model)
+            else:
+                diff_err = None
+
+            if 'integral' in self.interaction_fitting_mode:
+                Eint_model = self.integral_interaction_function(theta,E0_list,
+                        eps_list,self.interaction_response_function,False)
+                int_err = (Eint-Eint_model)
+            else:
+                int_err = None
+
+            self.interaction_response_parameters = old_params
+            self.solver._compiled = False
+            self.solver.compile()
+
+
+        else:
+            if '&' not in parameter_name:
+                i = j = all_ads.index(parameter_name)
+            else:
+                ads_a, ads_b = parameter_name.split('&')
+                i = all_ads.index(ads_a)
+                j = all_ads.index(ads_b)
+
+            if self.interaction_cross_term_names:
+                param_names = self.adsorbate_names + self.interaction_cross_term_names
+            else:
+                param_names = self.adsorbate_names
+
+            info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
+            params = [info[pi][i_surf] for pi in param_names]
+            int_strength = self.interaction_strength
+            self.interaction_strength = 1.0
+            eps_matrix = self.params_to_matrix(E0_list+params)
+            self.interaction_strength = int_strength
+            eps_matrix[i,j] = eps_matrix[j,i] = epsilon_ij
+            eps_list = list(eps_matrix.ravel())
+
+            if 'differential' in self.interaction_fitting_mode:
+                Ediff_model = self.interaction_function(theta,E0_list,eps_list,
+                        self.interaction_response_function,False)[0][i]
+                diff_err = (Ediff-Ediff_model)
+            else:
+                diff_err = None
+
+            if 'integral' in self.interaction_fitting_mode:
+                Eint_model = self.integral_interaction_function(theta,E0_list,
+                        eps_list,self.interaction_response_function,False)
+                int_err = (Eint-Eint_model)
+            else:
+                int_err = None
+
+        return diff_err, int_err
+
+    def error_norm(self,diff_err, int_err):
+        if diff_err is None:
+            return abs(int_err)
+        elif int_err is None:
+            return abs(diff_err)
+        elif self.integral_error_fitting_weight:
+            w = self.integral_error_fitting_weight
+            return np.sqrt(sum([diff_err**2 + w*int_err**2])) 
+        else:
+            return abs(diff_err) + abs(int_err)
+#            return np.sqrt(sum([diff_err**2 + int_err**2])) 
+
+    def fit_interaction_parameter(self,theta_list,E_diffs,E_ints,param_name,surf_name):
+
+       def target_function(eps_ij, theta_list, E_diffs,E_ints,param_name,surf_name):
+           error = 0
+           for theta,Ed,Ei in zip(theta_list,E_diffs,E_ints):
+               d_err, i_err = self.get_energy_error(eps_ij, theta,Ed,Ei,param_name,surf_name)
+               err_norm = self.error_norm(d_err, i_err)
+               error += err_norm
+#           print param_name, eps_ij, error/len(theta_list), len(theta_list)
+           return error/len(theta_list)
+        
+       minimize = lambda x: target_function(x,theta_list,E_diffs,E_ints,param_name,surf_name)
+
+       if param_name in self.interaction_response_parameters:
+           x0 = self.interaction_response_parameters[param_name]
+       else:
+           x0 = 0
+
+       print param_name
+       eps_ij = fmin(minimize,[x0],disp=True)[0]
+       print eps_ij
+       return eps_ij
+
+
+    def fit(self):
+        all_adsnames = self.adsorbate_names+self.transition_state_names
+        f_list = []
+        E0_list = []
+
+        #Remove
+        for ads in all_adsnames:
+            site = ads.split('_')[-1]
+            total_cvg = self.species_definitions[site].get('total',1)
+            F_params = self.species_definitions[site].get('interaction_response_parameters',
+                    self.interaction_response_parameters)
+            if 'max_coverage' not in F_params:
+                F_params['max_coverage'] = total_cvg
+            else:
+                F_params['max_coverage'] *= total_cvg
+            fi = lambda x: self.interaction_response_function(x,**F_params)
+            f_list.append(fi)
+
+        for i, surf in enumerate(self.surface_names):
+            fitting_info = {}
+            for sp in self.species_definitions:
+                cvg_dep = self.species_definitions[sp].get('coverage_dependent_energy',
+                        [None]*len(self.surface_names))[i]
+                if cvg_dep:
+                    for theta_E in cvg_dep:
+                        theta,Ed,Ei = theta_E
+                        n_theta = sum(ti != 0 for ti in theta)
+                        ads_idx = all_adsnames.index(sp)
+                        if n_theta == 1:
+                            if sp in fitting_info:
+                                if theta_E not in fitting_info[sp]:
+                                    fitting_info[sp].append(theta_E)
+                            else:
+                                fitting_info[sp] = [theta_E]
+                        elif n_theta == 2:
+                            coads_idx = [j for j,cvg in enumerate(theta) if cvg and j != ads_idx][0]
+                            coads = all_adsnames[coads_idx]
+                            ads_a, ads_b = sorted([sp,coads])
+                            name = '&'.join([ads_a,ads_b])
+                            if name in fitting_info:
+                                if theta_E not in fitting_info[name]:
+                                    fitting_info[name].append(theta_E)
+                            else:
+                                fitting_info[name] = [theta_E]
+                        else:
+                            print('Warning: Ignoring coverage dependent entry for '+sp)
+            
+            for key in fitting_info.keys():
+                if '&' not in key and len(fitting_info[key]) == 1:
+                    #move into cross-parameter info if possible
+                    cross_keys = [k for k in fitting_info.keys() if ('&' in k and key in k.split('&'))]
+                    for k in cross_keys:
+                        fitting_info[k] = fitting_info[key] + fitting_info[k]
+
+                    del fitting_info[key] #a single entry is the same one used for Ef
+                    
+                elif self.input_overrides_fit: #check to make sure the user didn't input 
+                    if '&' not in key:
+                        if self.species_definitions[key].get('self_interaction_parameter',
+                                [None]*len(self.surface_names))[i] is not None:
+                            del fitting_info[key]
+                    else:
+                        ads_a, ads_b = key.split('&')
+                        #have to check for cross interaction specified either way
+                        ab_crossint = self.species_definitions[ads_a].get(
+                               'cross_interaction_parameters',{})
+                        if ads_b in ab_crossint:
+                            del fitting_info[key]
+                        ba_crossint = self.species_definitions[ads_b].get(
+                               'cross_interaction_parameters',{})
+                        if ads_a in ba_crossint:
+                            del fitting_info[key]
+
+            self_params = [k for k in fitting_info if '&' not in k]
+            cross_params = [k for k in fitting_info if '&' in k]
+            E0_list = [self.species_definitions[sp]['formation_energy'][i] for sp in all_adsnames]
+            fitted_params = {}
+            for key in self_params:
+                thetas,Ediffs,Eints = zip(*fitting_info[key])
+                eps_ii = self.fit_interaction_parameter(thetas,Ediffs,Eints,key,surf)
+                eps = self.species_definitions[key].get('self_interaction_parameter',
+                        [None]*len(self.surface_names))
+                eps[i] = eps_ii
+                fitted_params[key] = [eps_ii, thetas,Ediffs,Eints]
+                self.species_definitions[key]['self_interaction_parameter'] = eps
+            
+            all_thetas = []
+            all_Ediffs = []
+            all_Eints = []
+            for key in cross_params:
+                thetas,Ediffs,Eints = zip(*fitting_info[key])
+                all_thetas +=thetas
+                all_Ediffs +=Ediffs
+                all_Eints +=Eints
+
+                ads_a, ads_b = key.split('&')
+                
+                ##MUST BE MORE GENERAL##
+                if ads_a == 'CO_s':
+                    ads_a, ads_b = ads_b, ads_a
+
+                fit_param = '&'.join([ads_a,ads_b])
+                eps_ij = self.fit_interaction_parameter(thetas,Ediffs,Eints,
+                        fit_param,surf)
+                eps_dict_b = self.species_definitions[ads_b].get(
+                        'cross_interaction_parameters',
+                        {})
+                if ads_a not in eps_dict_b:
+                    eps_dict_b[ads_a] = [None]*len(self.surface_names)
+                eps_dict_b[ads_a][i] = eps_ij
+                fitted_params[key] = [eps_ij, thetas,Ediffs,Eints]
+                self.species_definitions[ads_b]['cross_interaction_parameters'] = eps_dict_b
+            
+#            for key in ['offset']:#,'smoothing','cutoff']:
+            for key in []:#,'smoothing','cutoff']:
+                param = self.fit_interaction_parameter(all_thetas,all_Ediffs,all_Eints,key,surf)
+                print key, param
+                self.interaction_response_parameters[key] = param
+
+            self.solver._compiled=False
+            self.solver.compile()
+
+            ###TEMPORARY FITTING CHECK## 
+            n = len(fitting_info)
+            fig_diff = plt.figure()
+            fig_int = plt.figure()
+            n_x = int(np.sqrt(n))
+            n_y = n_x+1
+            info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
+            cross_names = self.interaction_cross_term_names
+            if cross_names:
+                param_names = self.adsorbate_names + cross_names
+            else:
+                param_names = self.adsorbate_names
+            params = [info[pi][0] for pi in param_names]
+            int_strength = self.interaction_strength
+            self.interaction_strength = 1.0
+            eps_matrix = self.params_to_matrix(E0_list+params)
+            self.interaction_strength = int_strength
+            eps_list = list(eps_matrix.ravel())
+            all_ads = self.adsorbate_names+self.transition_state_names
+            CO_idx = all_ads.index('CO_s')
+            
+            ##add in third point for cross-interaction fitting 
+            for k,sp in enumerate(fitting_info):
+                eps, thetas, Ediffs, Eints = fitted_params[sp]
+                
+                if '&' in sp:
+                    species = sp.split('&')                
+                else:
+                    species = [sp]
+                if 'CO_s' in species:
+                    species.remove('CO_s')
+                
+                E_diff_model = []
+                E_int_model = []
+                theta_tots = []
+                for theta_CO in np.linspace(0,0.7,20):
+                    theta_i = [0]*len(all_ads)
+                    theta_i[CO_idx] = theta_CO
+                    if species:
+                        if len(species) > 1:
+                            raise ValueError(species)
+                        else:
+                            sp_idx = all_ads.index(species[0])
+                            theta_i[sp_idx] = 0.11 #very not general
+                    else:
+                        sp_idx = CO_idx
+                    
+                    theta_tot = sum(theta_i)
+                    Ediff_i = self.interaction_function(theta_i,E0_list,eps_list,
+                            self.interaction_response_function,False)[0][sp_idx]
+                    Eint_i = self.integral_interaction_function(theta_i,E0_list,
+                            eps_list,self.interaction_response_function,False)
+
+                    E_diff_model.append(Ediff_i)
+                    E_int_model.append(Eint_i)
+                    theta_tots.append(theta_tot)
+
+                ax_d = fig_diff.add_subplot(n_x,n_y,k)
+                ax_i = fig_int.add_subplot(n_x,n_y,k)
+                ax_d.set_title(sp)
+                ax_i.set_title(sp)
+                ax_d.plot(theta_tots,E_diff_model,'-k')
+                ax_i.plot(theta_tots,E_int_model,'-k')
+                for theta_j, Edi, Eii in zip(thetas,Ediffs,Eints):
+                    ax_i.plot(sum(theta_j),Eii,'or')
+                    ax_d.plot(sum(theta_j),Edi,'or')
+                
+            plt.show()    
+
+
 
     def get_interaction_info(self):
         interaction_dict = {}
@@ -103,8 +360,13 @@ class FirstOrderInteractions(ReactionModelWrapper):
         for a in self.adsorbate_names:
             interaction_dict[a] = self.species_definitions[a].get('self_interaction_parameter',None)
             if not interaction_dict[a]:
-                print('Warning: No self-interaction parameter specified for '+a+'. Assuming 0')
-                interaction_dict[a] = [0]
+                eps_ii0 = self.default_self_interaction_parameter
+                if not getattr(self,'_self_interaction_warned',None):
+                    print('Warning: No self-interaction parameter specified for '+a+'. ' + \
+                            'Assuming default ('+str(eps_ii0)+')')
+                    self._self_interaction_warned = True
+                interaction_dict[a] = [eps_ii0]*len(self.surface_names)
+#                self.species_definitions[a]['self_interaction_parameter'] = interaction_dict[a]
             cross_params = self.species_definitions[a].get('cross_interaction_parameters',{})
             for cp in cross_params:
                 if cp not in self.adsorbate_names+self.transition_state_names:
@@ -115,7 +377,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                     raise ValueError('Cross parameters must be specified for each surface. '+\
                             str(len(params)) + ' parameters were specified, but there are '+\
                             str(len(self.surface_names)) + 'surfaces for '+ a +','+cp+'.' )
-                ads_a, ads_b = sorted([a,cp])
+                ads_a, ads_b = sorted([a,cp]) #sort to avoid duplicates 
                 name = '&'.join([ads_a,ads_b])
                 if name not in cross_term_names:
                     cross_term_names.append(name)
@@ -124,6 +386,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
         if cross_term_names:
             cross_term_names = tuple(cross_term_names) 
             self.interaction_cross_term_names = cross_term_names
+    
         return interaction_dict
 
     def get_interaction_scaling_matrix(self):
@@ -234,21 +497,22 @@ class FirstOrderInteractions(ReactionModelWrapper):
         cross_interactions = param_vector[n_tot+n_ads:]
         for ads,param in zip(self.adsorbate_names,self_interactions):
             max_val = self.species_definitions[ads].get('max_self_interaction',None)
-
             if max_val is not None:
                 param = min(param,max_val)
                 self_interactions[self.adsorbate_names.index(ads)] = param
+
         for i,e_ii in enumerate(self_interactions):
             epsilon_matrix[i,i] = e_ii
 
         for i, e_i in enumerate(self_interactions):
             for j, e_j in enumerate(self_interactions):
-                if self.cross_interaction_mode == 'geometric_mean':
-                    epsilon_matrix[i,j] = np.sqrt(abs(e_i)*abs(e_j))
-                elif self.cross_interaction_mode == 'arithmetic_mean':
-                    epsilon_matrix[i,j] = (e_i+e_j)/2.
-                elif self.cross_interaction_mode == 'neglect':
-                    epsilon_matrix[i,j] = 0
+                if not epsilon_matrix[i,j]:
+                    if self.cross_interaction_mode == 'geometric_mean':
+                        epsilon_matrix[i,j] = np.sqrt(abs(e_i)*abs(e_j))
+                    elif self.cross_interaction_mode == 'arithmetic_mean':
+                        epsilon_matrix[i,j] = (e_i+e_j)/2.
+                    elif self.cross_interaction_mode == 'neglect':
+                        epsilon_matrix[i,j] = 0
 
         if self.non_interacting_site_pairs:
             for site_1, site_2 in self.non_interacting_site_pairs:
@@ -281,6 +545,10 @@ class FirstOrderInteractions(ReactionModelWrapper):
         return epsilon_matrix
 
     def get_TS_weight_matrix(self,weight):
+        """Helper function to get `weights' of how
+        to distribute TS-cross interactions between IS/FS.
+        Should not be called externally."""
+
         weight_matrix = []
         for TS in self.transition_state_names:
             weight_TS = [0]*len(self.adsorbate_names)
@@ -289,8 +557,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
             for rxn in self.elementary_rxns:
                 if TS in rxn[1]:
                     if IS or FS:
-                        pass
-#                        print('Warning: Ambiguous initial/final state for '+TS)
+                        print('Warning: Ambiguous initial/final state for '+TS)
                     IS = rxn[0]
                     FS = rxn[-1]
             for ads in IS:

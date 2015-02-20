@@ -30,8 +30,10 @@ class TableParser(ParserBase):
                                     'reference'],
                 parse_headers = ['formation_energy','frequencies'],
                 frequency_unit_conversion = 1.239842e-4, # conversion factor to 
+                coverage_headers = ['coverage','coadsorbate_coverage'],
                 #go from input units to eV
                 standard_coverage = 'min',
+                standard_coadsorbate_coverage = 'min',
                 #coverage to use as the "base" in coverage-dependent input file
                 #use "min" to take the minimum or specify explicitly
                 interaction_surface_names = None,
@@ -121,19 +123,26 @@ class TableParser(ParserBase):
                             linedict['site_name'] in sites and 
                             linedict['surface_name'] in list(self.surface_names)+['None']
                             ):
-                        if 'coverage' in linedict:
-                            surf = linedict['surface_name']
-                            if self.standard_coverage in ['min','minimum',None]:
-                                if surf in infodict:
-                                    if linedict['coverage'] < infodict[surf]['coverage']:
-                                        infodict[surf] = linedict
+                        
+                        #The following clause ensures that the low-coverage limit
+                        #is used unless otherwise specified. 
+                        #It should probably be abstracted out into something cleaner.
+                        pass_dict = {}
+                        surf = linedict['surface_name']
+                        for cvg_key in ['coverage','coadsorbate_coverage']:
+                            pass_dict[cvg_key] = True
+                            if cvg_key in linedict:
+                                standard_cvg = getattr(self,'standard_'+cvg_key, None)
+                                if standard_cvg in ['min','minimum',None]:
+                                    if surf in infodict:
+                                        if linedict[cvg_key] > infodict[surf][cvg_key]:
+                                            pass_dict[cvg_key] = False
                                 else:
-                                    infodict[surf] = linedict
-                            else:
-                                if linedict['coverage'] == self.standard_coverage:
-                                    infodict[surf] = linedict
-                        else:
-                            infodict[linedict['surface_name']] = linedict
+                                    if linedict[cvg_key] != standard_cvg:
+                                        pass_dict[cvg_key] = False
+
+                        if False not in pass_dict.values():
+                            infodict[surf] = linedict
                 
                 paramlist = []
                 sources = []
@@ -270,32 +279,61 @@ class TableParser(ParserBase):
             self.species_definitions[key]['frequencies'] = frequency_dict.get(key,[])
 
     def parse_coverage(self,**kwargs):
-        print 'PARSE_CVG'
-
         self.__dict__.update(kwargs)
         
         n = len(self.adsorbate_names)
         surfaces = self.surface_names
 
         info_dict = {}
-        ads_names = [self.species_definitions[ads]['name'] 
-                for ads in self.adsorbate_names]
+        ads_names = self.adsorbate_names+self.transition_state_names
+
         for surf in surfaces:
             cvg_dict = {}
             for linedict in self._line_dicts:
                 for skey in linedict['species_keys']:
-                    if (skey in self.adsorbate_names
+                    if (skey in self.adsorbate_names+self.transition_state_names
                             and linedict['surface_name'] == surf):
                         ads = skey
-                        theta_E = [float(linedict['coverage']),
-                                float(linedict['formation_energy'])]
+                        theta_vec = [0]*len(ads_names)
+                        idx_i = ads_names.index(ads)
+                        theta_i = float(linedict['coverage'])
+                        theta_vec[idx_i] += theta_i
+                        if 'coadsorbate_name' in linedict:
+                            if linedict['coadsorbate_name'] != 'None':
+                                coads = linedict['coadsorbate_name']
+                                site = ads.split('_')[-1]
+                                coads += '_'+site #assume coads on same site as ads
+                                theta_j = float(linedict['coadsorbate_coverage'])
+                                if coads in ads_names:
+                                    idx_j = ads_names.index(coads)
+                                    theta_vec[idx_j] += theta_j
+                                else:
+                                    names_only = [n.split('_')[0] for n in ads_names]
+                                    coads_name = coads.split('_')[0]
+                                    if coads_name not in names_only:
+                                        print 'Warning: Could not find co-adsorbed species '\
+                                        +coads+' (adsorbate '+ads+'). Ignoring this entry.'
+                                    else:
+                                        idx_j = names_only.index(coads_name)
+                                        actual_ads = ads_names[idx_j]
+                                        print 'Warning: Could not find co-adsorbed species '\
+                                        +coads+' (adsorbate '+ads+'). Using '+actual_ads+'.'
+                                        theta_vec[idx_j] += theta_j
+                        
+                        E_diff = float(linedict['formation_energy'])
+                        E_int = linedict.get('integral_formation_energy',None)
+                        if E_int:
+                            E_int = float(E_int)
+                        theta_E = [theta_vec,
+                                E_diff,E_int]
+
                         if ads in cvg_dict:
                             cvg_dict[ads].append(theta_E)
                         else:
                             cvg_dict[ads] = [theta_E]
             info_dict[surf] = cvg_dict
         
-        for i_ads,ads in enumerate(self.adsorbate_names):
+        for i_ads,ads in enumerate(self.adsorbate_names+self.transition_state_names):
             cvg_dep_E = [None]*len(surfaces)
             for surf in surfaces:
                 cvgs = info_dict[surf].get(ads,None)

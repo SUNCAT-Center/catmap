@@ -297,8 +297,6 @@ templates['second_order_interaction_function'] = r"""
 def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
     ${site_info_dict}
 
-    #This should have been checked, but appears to be wrong
-    #Need to re-check implementation of model.
     N_ads = len(coverages)
     N_sites = len(site_info_dict)
 
