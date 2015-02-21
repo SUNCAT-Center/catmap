@@ -390,9 +390,9 @@ class MapPlot:
         x,y = zip(*pts) 
         xi = np.linspace(min(x),max(x),eff_res)
         yi = np.linspace(min(y),max(y),eff_res)
-        ri = griddata(x,y,r,xi,yi)
-        gi = griddata(x,y,g,xi,yi)
-        bi = griddata(x,y,b,xi,yi)
+        ri = griddata(x,y,r,xi,yi,interp='linear')
+        gi = griddata(x,y,g,xi,yi,interp='linear')
+        bi = griddata(x,y,b,xi,yi,interp='linear')
         rgb_array = np.zeros((eff_res,eff_res,3))
         for i in range(0,eff_res):
             for j in range(0,eff_res):
@@ -593,7 +593,8 @@ class ScalingPlot:
 
     def plot(self,ax_list=None,plot_size=4.0,save=None):
         all_ads = self.adsorbate_names + self.transition_state_names
-        all_ads = [a for a in all_ads if a in self.parameter_dict.keys()]
+        all_ads = [a for a in all_ads if a in self.parameter_dict.keys() and
+            a not in self.echem_transition_state_names]
         if self.include_empty:
             ads_names = all_ads
         else:
