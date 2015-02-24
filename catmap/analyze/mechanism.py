@@ -2,7 +2,19 @@ from analysis_base import *
 import math as np
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
+    """
+      .. todo:: Explain purpose
+
+      rxn\_mechanisms - dictionary of lists of integers. Each integer
+      corresponds to an elementary step. Elementary steps are indexed in
+      the order that they are input with 1 being the first index.
+      Negative integers are used to designate reverse reactions.
+      [dictionary of string:list of integers]
+    """
     def __init__(self,reaction_model=None):
+        """
+        .. todo:: __doc__
+        """
         self._rxm = reaction_model
         defaults = {'pressure_correction':True,
                     'min_pressure':1e-12,
@@ -16,6 +28,9 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
     def plot(self,ax=None,surfaces=None,mechanisms=None,
             labels=None,save=True):
+        """
+        .. todo:: __doc__
+        """
         if not ax:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -27,7 +42,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             surfaces = self.surface_names
         if not self.surface_colors:
             self.surface_colors = get_colors(max(len(surfaces),len(mechanisms)))
-       
+
         self.kwarg_list = []
         for key in self.rxn_mechanisms.keys():
             self.kwarg_list.append(self.kwarg_dict.get(key,{}))
@@ -75,10 +90,10 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 self.barrier_line_args['color'] = \
                                 self.surface_colors[n]
                     for step in mech:
-                        if step < 0: 
+                        if step < 0:
                             reverse = True
                             step = step*-1
-                        else: 
+                        else:
                             reverse = False
                         p = params[step-1]
                         if reverse == True:
@@ -100,10 +115,10 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         correction = 0
                         if self.pressure_correction == True:
                             IS_gasses = [self.gas_pressures[self.gas_names.index(s)]
-                                    for s in self.elementary_rxns[step-1][0] 
+                                    for s in self.elementary_rxns[step-1][0]
                                     if s in self.gas_names]
                             FS_gasses = [self.gas_pressures[self.gas_names.index(s)]
-                                    for s in self.elementary_rxns[step-1][-1] 
+                                    for s in self.elementary_rxns[step-1][-1]
                                     if s in self.gas_names]
                             P_IS = max(sum(IS_gasses),self.min_pressure)
                             P_FS = max(sum(FS_gasses),self.min_pressure)
@@ -119,7 +134,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 correction = -correction
                         self.energies.append(nrg+correction)
                         self.barriers.append(bar)
-                    
+
                     if labels and self.include_labels:
                         self.labels = labels
                     elif self.labels and self.include_labels:
@@ -135,13 +150,13 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             reverse = False
                     self.data_dict[self.rxn_mechanisms.keys()[n]] = [self.energies,
                             self.barriers]
-                    
+
                     kwargs = self.kwarg_list[n]
                     for key in kwargs:
                         setattr(self,key,kwargs[key])
 
                     self.draw(ax)
-        
+
         if self.energy_type == 'free_energy':
             ax.set_ylabel('$\Delta G$ [eV]')
         elif self.energy_type == 'potential_energy':
@@ -156,6 +171,9 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         return fig
 
     def label_maker(self,species):
+        """
+        .. todo:: __doc__
+        """
         species = [s for s in species if self.species_definitions[s].get('type',None) not in 'site']
         new_species = []
         for sp in species:

@@ -9,32 +9,38 @@ from catmap import ReactionModelWrapper
 from catmap import plt
 
 class MapperBase(ReactionModelWrapper):
+    # XXX : Having an instantiated object as default parameter
+    # may have side-effects since every instance of MapperBase will have
+    # the identical instance of ReactionModel as its attribute
+    # Unless this is deliberately so, one should better use e.g. None
+    # as the default value and then instantiate ReactionModel in the
+    # function body of __init__ .
     def __init__(self,reaction_model=ReactionModel()):
-        """Class for `mapping' equilibrium coverages and rates through 
-        descriptor space. This class acts as a base class to be inherited 
-        by other mapper classes, but is not functional on its own. 
+        """Class for `mapping' equilibrium coverages and rates through
+        descriptor space. This class acts as a base class to be inherited
+        by other mapper classes, but is not functional on its own.
 
-        get_rxn_parameter_map(descriptor_ranges,resolution): Uses a 
-            scaler object to determine the reaction parameters as a function of 
-            descriptor space. May be useful for debugging or providing 
-            intuition about rate determining steps. Should return a list of 
-            the form 
+        get_rxn_parameter_map(descriptor_ranges,resolution): Uses a
+            scaler object to determine the reaction parameters as a function of
+            descriptor space. May be useful for debugging or providing
+            intuition about rate determining steps. Should return a list of
+            the form
         [[descriptor_1,descriptor_2,...],[rxn_parameter1, rxn_parameter2, ...]]
 
-        save_map(map,map_file): creates a pickle of the "map" list and dumps it 
+        save_map(map,map_file): creates a pickle of the "map" list and dumps it
             to the map_file
 
-        load_map(map_file):  loads a "map" list by loading a pickle from 
+        load_map(map_file):  loads a "map" list by loading a pickle from
             the map_file
 
         A functional derived mapper class must also contain the methods:
 
-        get_coverage_map(descriptor_ranges,resolution): a function which 
-            returns a list of the form 
+        get_coverage_map(descriptor_ranges,resolution): a function which
+            returns a list of the form
             [[descriptor_1,descriptor_2,...], [cvg_ads1,cvg_ads2,...]]
 
-        get_rates_map(descriptor_ranges,resolution): a function which returns 
-            a list of the form 
+        get_rates_map(descriptor_ranges,resolution): a function which returns
+            a list of the form
             [[descriptor_1,descriptor_2,...], [rate_rxn1,rate_rxn2,...]]
 
         """
@@ -85,7 +91,7 @@ class MapperBase(ReactionModelWrapper):
             elif self._output_variables[0] != 'coverage':
                 self._output_variables.remove('coverage')
                 self._output_variables = ['coverage'] + self._output_variables
-        
+
         # Need coverages for solver vars
         ismapped = False
         for out in self._output_variables:
@@ -106,7 +112,7 @@ class MapperBase(ReactionModelWrapper):
                 resy = resolution[1]
             else:
                 raise ValueError('Resolution is not the correct shape')
-            
+
             d1min,d1max = descriptor_ranges[0]
             d2min,d2max = descriptor_ranges[1]
             d1Vals = np.linspace(d1min,d1max,resx)

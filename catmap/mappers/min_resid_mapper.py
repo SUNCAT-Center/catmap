@@ -1,8 +1,8 @@
 from mapper_base import *
 
 class MinResidMapper(MapperBase):
+    """Mapper which uses initial guesses with minimum residual."""
     def __init__(self,reaction_model = ReactionModel()):
-        """Mapper which uses initial guesses with minimum residual."""
         MapperBase.__init__(self,reaction_model)
         defaults = dict(
                 search_directions = [[0,0],[0,1],[1,0],[0,-1],
@@ -56,12 +56,18 @@ class MinResidMapper(MapperBase):
                 "no coverages at ${pt}"
                         }
 
-    def get_initial_coverage(self,descriptors,*args,**kwargs):
+    def get_initial_coverage(self, descriptors, *args,**kwargs):
+        """
+            .. todo:: __doc__
+        """
         params = self.scaler.get_rxn_parameters(descriptors)
         solver_cvgs = self.solver.get_initial_coverage(params,*args,**kwargs)
         return solver_cvgs
 
-    def get_initial_coverage_from_map(self,descriptors,*args,**kwargs):
+    def get_initial_coverage_from_map(self, descriptors, *args,**kwargs):
+        """
+            .. todo:: __doc__
+        """
         resid_cvg = []
         for pt,cvgs in self.coverage_map:
             resid = self.solver.get_residual(cvgs)
@@ -74,7 +80,7 @@ class MinResidMapper(MapperBase):
         resids,cvgs = zip(*resid_cvg)
         return cvgs[:max_len]
 
-    def get_point_coverage(self,descriptors,*args,**kwargs):
+    def get_point_coverage(self, descriptors, *args, **kwargs):
         "Shortcut to get coverages at a point."
         #Check to see if point has already been solved
         current= self.retrieve_data(self._coverage_map,
@@ -103,13 +109,13 @@ class MinResidMapper(MapperBase):
 
     def bisect_descriptor_line(self, new_descriptors, old_descriptors,
             initial_guess_coverages):
-        """Find coverages at point new_descriptors given that coverages are 
-        initial_guess_coverages at old_descriptors by incrementally halving 
+        """Find coverages at point new_descriptors given that coverages are
+        initial_guess_coverages at old_descriptors by incrementally halving
         the distance between points upon failure to converge."""
 
-        #Helper function to linearly extrapolate guess from two points.
         def extrapolate_coverages(
-                descriptors0,coverages0,descriptors1,coverages1,descriptors2):
+                descriptors0, coverages0, descriptors1, coverages1, descriptors2):
+            """Helper function to linearly extrapolate guess from two points."""
             dx = mp.matrix(coverages1) - mp.matrix(coverages0)
             dY = mp.matrix(descriptors1) - mp.matrix(descriptors0)
             dy = mp.sqrt(mp.fsum([mp.power(y,2) for y in dY]))
@@ -119,9 +125,11 @@ class MinResidMapper(MapperBase):
             coverages2 = mp.matrix(coverages0) + m*dy2
             return coverages2
 
-        #Helper function to get the closest point where the old guesses converge
         def get_next_valid_coverages(
                 new_descriptors, old_descriptors, old_coverages):
+            """
+            Helper function to get the closest point where the old guesses converge.
+            """
             current_descriptors = new_descriptors
             VCiter = 0
             VCconverged = False
@@ -148,8 +156,8 @@ class MinResidMapper(MapperBase):
                             resid = resid)
 
                 if VCconverged == False:
-                    current_descriptors = [(float(d1)+float(d2))/float(2.0) 
-                            for d1,d2 
+                    current_descriptors = [(float(d1)+float(d2))/float(2.0)
+                            for d1,d2
                             in zip(old_descriptors,current_descriptors)]
             if VCconverged == False:
                 raise ValueError('Could not find a valid solution at ' + \
@@ -159,7 +167,7 @@ class MinResidMapper(MapperBase):
                         ' after '+str(self.max_bisections)+' bisections.' + \
                         ' (resid=' + str(float(resid)) +'))')
             return current_descriptors, coverages
-        
+
         #Iterate to next point via bisections
         PCiter =0
         solved_descriptors = old_descriptors
@@ -189,7 +197,7 @@ class MinResidMapper(MapperBase):
                         coverages0,
                         descriptors1,
                         coverages1,
-                        current_descriptors) 
+                        current_descriptors)
                 #extrapolate coverages as initial guess
 
         if PCconverged == True:
@@ -200,9 +208,9 @@ class MinResidMapper(MapperBase):
                     self.print_point(old_descriptors) + ' to ' + \
                     self.print_point(new_descriptors))
 
-    def get_coverage_map(self,descriptor_ranges=None,resolution = None,
+    def get_coverage_map(self, descriptor_ranges=None, resolution = None,
             initial_guess_adsorbate_names=None):
-        """Creates coverage map by computing residuals from nearby points 
+        """Creates coverage map by computing residuals from nearby points
         and trying points with lowest residuals first"""
         if not descriptor_ranges:
             descriptor_ranges = self.descriptor_ranges
@@ -228,13 +236,13 @@ class MinResidMapper(MapperBase):
             return np.array(nparray)
         d1Vals = rev_nparray(d1Vals)
         d2Vals = rev_nparray(d2Vals)
- 
-        isMapped = np.zeros((resx,resy)) #matrix to track which 
+
+        isMapped = np.zeros((resx,resy)) #matrix to track which
         #values have been checked/which directions have been searched
-        maxNum = int('1'*len(self.search_directions),2) #if number is higher 
-        #than this then the point should not be checked 
-        #(use binary representation to determine which directions have 
-        #been checked). Number can't be higher than having a 
+        maxNum = int('1'*len(self.search_directions),2) #if number is higher
+        #than this then the point should not be checked
+        #(use binary representation to determine which directions have
+        #been checked). Number can't be higher than having a
         #1 in every direction.
 
         if self.coverage_map is None:
@@ -249,8 +257,8 @@ class MinResidMapper(MapperBase):
             initial_guess_coverage_map = sorted(initial_guess_coverage_map)
             initial_guess_coverage_map.reverse()
             for point,guess_coverage in initial_guess_coverage_map:
-                #Re-organize the values of guess coverages to match the 
-                #adsorbates for this system (if they came from the results 
+                #Re-organize the values of guess coverages to match the
+                #adsorbates for this system (if they came from the results
                 #of another simulation)
                 if initial_guess_adsorbate_names:
                     new_guess_coverage = mp.matrix(1,len(self.adsorbate_names))
@@ -281,17 +289,17 @@ class MinResidMapper(MapperBase):
                         new_guess_coverage[n] = cvg
                     guess_coverage = new_guess_coverage
 
-                #If the point is of interest (in the d1/d2 vals) then use the 
-                #coverages from the initial guess map to try to find 
+                #If the point is of interest (in the d1/d2 vals) then use the
+                #coverages from the initial guess map to try to find
                 #the coverages.
                 n = self.descriptor_decimal_precision
-                if (np.round(point[0],n) in [np.round(d1V,n) 
-                        for d1V in d1Vals] 
-                        and np.round(point[1],n) in [np.round(d2V,n) 
+                if (np.round(point[0],n) in [np.round(d1V,n)
+                        for d1V in d1Vals]
+                        and np.round(point[1],n) in [np.round(d2V,n)
                             for d2V in d2Vals]):
-                    i = [np.round(d1V,n) 
+                    i = [np.round(d1V,n)
                             for d1V in d1Vals].index(np.round(point[0],n))
-                    j = [np.round(d2V,n) 
+                    j = [np.round(d2V,n)
                             for d2V in d2Vals].index(np.round(point[1],n))
                     try:
                         self._coverage = guess_coverage
@@ -299,7 +307,7 @@ class MinResidMapper(MapperBase):
                                 point,guess_coverage)
                         point_coverages = self._coverage
                         self._coverage_map.append([point,point_coverages])
-                        isMapped[i,j] = int('1'+str(np.binary_repr(maxNum)),2) 
+                        isMapped[i,j] = int('1'+str(np.binary_repr(maxNum)),2)
                         #Set this value above the max number
                         self.log('initial_success')
                     except ValueError:
@@ -307,14 +315,16 @@ class MinResidMapper(MapperBase):
                 else:
                     self._descriptors = point
                     self.log('initial_invalid')
-        
-        #Helper function to iterate through "possibilities" and try them in 
-        #order of minimum residual. Returns a list of "new possibilities" 
-        #based on the best residual from each point.
-        def check_by_minresid(possibilities,this_pt,bisect=False):
+
+        def check_by_minresid(possibilities, this_pt, bisect=False):
+            """
+                Helper function to iterate through "possibilities" and try them in
+                order of minimum residual. Returns a list of "new possibilities"
+                based on the best residual from each point.
+            """
             new_possibilities = []
             tried = []
-            for i_poss,poss in enumerate(possibilities): #sort by residual to 
+            for i_poss,poss in enumerate(possibilities): #sort by residual to
                 r,sol_pt,c = poss
                                                     #use best guesses first
                 self.log('minresid_status',
@@ -326,7 +336,7 @@ class MinResidMapper(MapperBase):
 
                 if sol_pt not in tried:
                     try:
-                        if bisect == False or this_pt == sol_pt: #don't 
+                        if bisect == False or this_pt == sol_pt: #don't
                                                 #bisect if the point is itself
                             self.get_point_output(
                                     this_pt,c)
@@ -365,8 +375,8 @@ class MinResidMapper(MapperBase):
                             resid = float(resid)
                             if this_pt != sol_pt:
                                 new_possibilities.append([resid,sol_pt,c]) #make
-                                #a new list of possibilities (used for 
-                                #bisections thus the boltzmann guess is 
+                                #a new list of possibilities (used for
+                                #bisections thus the boltzmann guess is
                                 #omitted so that it is not tried twice)
                         except ValueError:
                             pass
@@ -375,11 +385,11 @@ class MinResidMapper(MapperBase):
                     tried.append(sol_pt)
 
             return new_possibilities
-    
-    #Function to iterate through all points and use current 
+
+    #Function to iterate through all points and use current
     #information to make the best guess
         def minresid_iteration(isMapped):
-            """Go through all points and check the local solutions in 
+            """Go through all points and check the local solutions in
             order of minimum to maximum residual"""
             m,n = isMapped.shape
             for i in range(0,m):
@@ -388,13 +398,13 @@ class MinResidMapper(MapperBase):
                     this_pt = [d1Vals[i],d2Vals[j]]
                     self._descriptors = this_pt
                     if isMapped[i,j] < maxNum: #the point has not been foind yet
-                        #Get the list of possible guess coverages based 
+                        #Get the list of possible guess coverages based
                         #on the search directions
-                        checked_dirs = [int(bi) 
-                                for bi in np.binary_repr(isMapped[i,j])] 
-                        #Use binary representation to keep track of which 
+                        checked_dirs = [int(bi)
+                                for bi in np.binary_repr(isMapped[i,j])]
+                        #Use binary representation to keep track of which
                         #directions have been checked
-                        if len(checked_dirs) < len(self.search_directions): 
+                        if len(checked_dirs) < len(self.search_directions):
                             #Add leading zeros if list is too small
                             checked_dirs = [0]*(len(self.search_directions) -
                                     len(checked_dirs))+checked_dirs
@@ -403,17 +413,17 @@ class MinResidMapper(MapperBase):
                             solx = i + dirx
                             soly = j + diry
                             if (
-                                    solx < m and 
-                                    solx >=0 and 
-                                    soly < n and 
-                                    soly>=0 and 
+                                    solx < m and
+                                    solx >=0 and
+                                    soly < n and
+                                    soly>=0 and
                                     checked_dirs[k] == 0
                                     ): # point is in map and hasn't been checked
                                 sol_pt = [d1Vals[solx],d2Vals[soly]]
                                 if sol_pt != this_pt:
                                     sol_cvgs = self.retrieve_data(
-                                            self._coverage_map, 
-                                            sol_pt, 
+                                            self._coverage_map,
+                                            sol_pt,
                                             self.descriptor_decimal_precision)
                                 else:
                                     boltz_cvgs = self.get_initial_coverage(
@@ -441,12 +451,12 @@ class MinResidMapper(MapperBase):
                                     checked_dirs[k] = 1
                             else: #point is not in map. make it "checked"
                                 checked_dirs[k] = 1
-                           #Now we have the "possibilities" for guess coverages 
+                           #Now we have the "possibilities" for guess coverages
                            #and their residuals
                         possibilities = check_by_minresid(
-                                possibilities,this_pt,bisect=False) 
+                                possibilities,this_pt,bisect=False)
                         #Try without bisection since it is much faster
-                        if possibilities and self.max_bisections>0: 
+                        if possibilities and self.max_bisections>0:
                             #This implies the non-bisecting attempts failed.
                            if self.verbose > 0:
                                print('Unable to find solution at ' + \
@@ -456,9 +466,9 @@ class MinResidMapper(MapperBase):
                            possibilities = check_by_minresid(
                                    possibilities,
                                    this_pt,
-                                   bisect=True) 
+                                   bisect=True)
                         elif (
-                                possibilities is not None and 
+                                possibilities is not None and
                                 self.max_bisections>0
                                 ):
                            if self.verbose > 0:
@@ -469,14 +479,14 @@ class MinResidMapper(MapperBase):
 
                         if possibilities is None:
                             isMapped[i,j] = int(
-                                    '1'+str(np.binary_repr(maxNum)),2) 
+                                    '1'+str(np.binary_repr(maxNum)),2)
                             #Set this value above the max number
 
-                        if isMapped[i,j] < maxNum: 
-                            #could not find solution. Add number to indicate 
-                            #how many directions have been checked. If new 
-                            #information becomes available later in this 
-                            #minresid iteration it will be utilized in the 
+                        if isMapped[i,j] < maxNum:
+                            #could not find solution. Add number to indicate
+                            #how many directions have been checked. If new
+                            #information becomes available later in this
+                            #minresid iteration it will be utilized in the
                             #next minresid iteration
                             binstring = ''.join(
                                     [str(bi) for bi in checked_dirs])
@@ -524,4 +534,3 @@ class MinResidMapper(MapperBase):
                 nodups.append([pt,cvgs])
         self._coverage_map = nodups #remove duplicate points
         return self._coverage_map
-
