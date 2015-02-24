@@ -389,6 +389,8 @@ The central object that defines a microkinetic model consisting of:
 
         self.load_data_file()
 
+        self.generate_echem_TS()
+
         self.verify()
 
     def load_data_file(self,overwrite=False):
@@ -455,7 +457,8 @@ The central object that defines a microkinetic model consisting of:
         adsorbate_names = []
         transition_state_names = []
         site_names = []
-        for eq in equations:
+        echem_transition_state_names = []
+        for rxn_index, eq in enumerate(equations):
             #Replace separators with ' '
             regex = re.compile(regular_expressions['species_separator'][0])
             eq = regex.sub(' ',eq)
@@ -467,6 +470,31 @@ The central object that defines a microkinetic model consisting of:
                 state_str = state_dict[key]
                 if state_str:
                     state_strings = [si for si in state_str.split() if si]
+                    # echem transition state syntax parsing. generate echem transition state from TS like "^0.6eV_a"
+                    if key == 'transition_state' and len(state_strings) == 1 and state_strings[0].startswith('^'):
+                        try:
+                            preamble, site = state_strings[0].split('_')
+                            barrier = preamble.lstrip('^').rstrip('eV')
+                            echem_TS_name = '-'.join(["echemTS", str(rxn_index), barrier]) + "_" + site
+                            rxn_list.append([echem_TS_name])
+                            echem_transition_state_names.append(echem_TS_name)
+                            continue
+                        except:
+                            raise ValueError('improper specification of electrochemical transition state.  should be\
+                                of the form "^0.6eV_a" for an 0.6 eV barrier on site a')
+                    elif key == 'transition_state' and len(state_strings) == 1 and state_strings[0].startswith('echemTS'):
+                        try:
+                            echem_TS = state_strings[0]
+                            preamble, site = echem_TS.split('_')
+                            echem, i, barrier = preamble.split('-')
+                            i = int(i)
+                            assert(rxn_index == i)
+                            barrier = float(barrier)
+                            echem_transition_state_names.append(echem_TS)
+                            continue
+                        except:
+                            raise ValueError('improper specification of electrochemical transition state.  should be\
+                                of the form "echemTS-10-0.6_a" for an 0.6 eV barrier on site a for rxn 10')
                     for st in state_strings:
                         species_dict = functions.match_regex(st,
                                 *regular_expressions['species_definition'])
@@ -530,6 +558,7 @@ The central object that defines a microkinetic model consisting of:
         self.transition_state_names = sort_list(transition_state_names)
         self.elementary_rxns = elementary_rxns
         self.site_names = site_names
+        self.echem_transition_state_names = echem_transition_state_names
 
     def texify(self,ads): #
         """Generate LaTeX representation of an adsorbate.
@@ -802,6 +831,9 @@ Run several consistency check on the model, such as :
                 TS = IS
             else:
                 IS,TS,FS = rxn
+            # ignore composition checking for echemTS stuff
+            if 'echemTS' in TS[0]:
+                TS = IS
             if composition(IS) == composition(TS) == composition(FS):
                 pass
             else:
@@ -955,11 +987,11 @@ Run several consistency check on the model, such as :
                 if log_interpolate == True:
                     Zdata_log = np.array(
                             [np.log(abs(float(zn))) for zn in Zdata])
-                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi))
-                    z_num = griddata(xData,yData,Zdata_log,xi,yi)
+                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi,interp='linear'))
+                    z_num = griddata(xData,yData,Zdata_log,xi,yi,interp='linear')
                     zi = np.exp(z_num)*z_sign
                 else:
-                    zi = griddata(xData,yData,Zdata,xi,yi)
+                    zi = griddata(xData,yData,Zdata,xi,yi,interp='linear')
                 maparray[:,:,i] = zi
         return maparray
 
@@ -1113,3 +1145,37 @@ Run several consistency check on the model, such as :
         f = open(standalone_script, 'w')
         f.write(txt)
         f.close()
+
+    def generate_echem_TS(self):
+        """generates fake transition state species from self.echem_transition_state_names
+        and populates self.species_definitions with them.
+        """
+        for echem_TS in self.echem_transition_state_names:
+            preamble, site = echem_TS.split('_')
+            echem, rxn_index, barrier = preamble.split('-')
+            rxn_index = int(rxn_index)
+            barrier = float(barrier)
+            self.species_definitions[echem_TS] = {}
+            self.species_definitions[echem_TS]['type'] = 'transition_state'
+            self.species_definitions[echem_TS]['site'] = site
+            self.species_definitions[echem_TS]['formation_energy_source'] = ["Generated by CatMAP"] * len(self.surface_names)
+            self.species_definitions[echem_TS]['formation_energy'] = [0.] * len(self.surface_names)
+            self.species_definitions[echem_TS]['frequencies'] = []
+            self.species_definitions[echem_TS]['name'] = preamble
+            self.species_definitions[echem_TS]['n_sites'] = 1  # Someone may want to change this to be user-specified at some point
+
+            # look up what IS and FS of rxn_index are
+            regex = re.compile(regular_expressions['species_separator'][0])
+            eq = regex.sub(' ',self.rxn_expressions[rxn_index])
+            state_dict = functions.match_regex(eq,
+                *regular_expressions['initial_transition_final_states'])
+            IS_species = [si for si in state_dict['initial_state'].split(' ') if si]
+            FS_species = [si for si in state_dict['final_state'].split(' ') if si]
+            # assume composition is already balanced - set TS composition to IS composition
+            total_composition = {}
+            for species in IS_species:
+                total_composition = functions.add_dicts(total_composition, self.species_definitions[species]['composition'])
+            self.species_definitions[echem_TS]['composition'] = total_composition
+
+        # add echem TSs to regular TSes - this might be more trouble than it's worth
+        self.transition_state_names += tuple(self.echem_transition_state_names)

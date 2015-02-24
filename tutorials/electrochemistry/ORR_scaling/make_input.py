@@ -59,15 +59,8 @@ labels = string.ascii_lowercase[:len(OH_BEs)]
 
 step_to_TS_name = {
     '2':'O2-_a',
-    '3':'OO-pe_a',
-    '4':'OOH-pe_a',
-    '5':'O-pe_a',
-    '6':'OH-pe_a',
     '7':'O-O_a',
-    '8':'O-pe_b',
-    '9':'OH-pe_b',
     '10':'OH-O_a',
-    '11':'O-peOH_a',
     '12':'OH-OH_a',
     '13':'HOOH-_a',
 }
@@ -88,10 +81,7 @@ dG_Pt = {
     '12':ads_energy_dict['OH_b'] + ads_energy_dict['OH_a'] - ads_energy_dict['H2O2_a'],  # 0.75 + 1.1 - 3.33,
 }
 
-beta = 0.5
-echem_TS_effective_barrier = 0.26  # tripkovic barrier for *OH + pe -> H2O
-echem_TSs = ['3', '4', '5', '6', '8', '9', '11']
-TS_ISs = {  # for a reduction: assumes pe is also in the initial state
+TS_ISs = {
     '3':'O2_a',
     '4':'OOH_a',
     '5':'O_a',
@@ -116,7 +106,6 @@ TS_FSs = {
     '11':'H2O2_a',
     '12':('OH_a', 'OH_b'),
 }
-
 tempdict = {}
 
 f = open('ORR_input.txt','w')
@@ -164,17 +153,6 @@ for i, label in enumerate(labels):
         facet = split_up_identity[-1]
         species = split_up_identity[0]
         lines.append([surface, str(facet), species, str(energy), 'fcc', '[]', '[]', 'Hansen 2014'])
-
-    # electrochemical TS energies at 0V vs RHE
-    for echem_TS in echem_TSs:
-        IS_energy = tempdict[TS_ISs[echem_TS]]
-        FS_energy = tempdict[TS_FSs[echem_TS]]
-        dG = FS_energy - IS_energy
-        e_TS = IS_energy + echem_TS_effective_barrier + (1 - beta) * dG  # converts barrier at U = U_L to barrier at 0V
-        split_up_identity = step_to_TS_name[echem_TS].split('_')
-        facet = split_up_identity[-1]
-        species = split_up_identity[0]
-        lines.append([surface, str(facet), species, str(e_TS), 'fcc', '[]', '[]', 'Hansen 2014'])
 
 
 for line in lines:
