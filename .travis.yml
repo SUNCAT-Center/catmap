@@ -24,6 +24,7 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose
   - pip install mpmath
   - pip install python-ase
+  - python setup.py install #install catmap
  
 # Run tests; this is a very crude way of testing things
 # We should move to a more elegant strategy in the future
