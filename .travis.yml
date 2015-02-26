@@ -2,6 +2,9 @@ language: python
 python:
   - 2.6
   - 2.7
+  
+notifications:
+  email: false
  
 # Setup anaconda
 before_install:
@@ -22,6 +25,15 @@ install:
   - pip install mpmath
   - pip install python-ase
  
-# Run test
+# Run tests; this is a very crude way of testing things
+# We should move to a more elegant strategy in the future
 script:
   - python test_dependencies.py
+  - cd tutorials/1-generating_input_file
+  - python generate_input.py
+  - cd ../2-creating_microkinetic_model
+  - python mkm_job.py
+  - cd ../3-refining_microkinetic_model
+  - python mkm_job.py
+  - cd ../thermodynamic_descriptors
+  - python mkm_job.py
