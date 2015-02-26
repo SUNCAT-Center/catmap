@@ -19,6 +19,9 @@ before_install:
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose
+  - pip install mpmath
+  - pip install python-ase
+  - pip install gmpy
  
 # Run test
 script:
