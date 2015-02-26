@@ -1,7 +1,7 @@
 import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
-from catmap.functions import get_composition, add_dicts
+from catmap.functions import get_composition, add_dict_in_place
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -96,7 +96,6 @@ class ThermoCorrections(ReactionModelWrapper):
             self.frequency_dict[sp] = \
                     self.species_definitions[sp].get('frequencies',[])
         frequency_dict = self.frequency_dict.copy()
-        correction_dict = {}
 
         if (
                 getattr(self,'_current_state',None) == current_state and 
@@ -105,21 +104,22 @@ class ThermoCorrections(ReactionModelWrapper):
                 ): #if the thermodynamic state (and frequencies) 
             #has not changed then don't bother re-calculating the corrections.
             return self._correction_dict
+
+        correction_dict = {}
         self._correction_dict = correction_dict
         self._current_state = current_state
         self._frequency_dict = frequency_dict
-
 
         # apply corrections in self.thermodynamic_corrections on top of each other
         for correction in self.thermodynamic_corrections:
             mode = getattr(self,correction+'_thermo_mode')
             thermo_dict = getattr(self,mode)()
-            correction_dict = add_dicts(correction_dict, thermo_dict)
+            add_dict_in_place(correction_dict, thermo_dict)
 
         # apply electrochemical transition state "corrections" last
         if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
             echem_thermo_dict = self.generate_echem_TS_energies()
-            correction_dict = add_dicts(correction_dict, echem_thermo_dict)
+            add_dict_in_place(correction_dict, echem_thermo_dict)
 
         getattr(self,self.pressure_mode+'_pressure')()
 

@@ -1174,7 +1174,7 @@ Run several consistency check on the model, such as :
             # assume composition is already balanced - set TS composition to IS composition
             total_composition = {}
             for species in IS_species:
-                total_composition = functions.add_dicts(total_composition, self.species_definitions[species]['composition'])
+                functions.add_dict_in_place(total_composition, self.species_definitions[species]['composition'])
             self.species_definitions[echem_TS]['composition'] = total_composition
 
         # add echem TSs to regular TSes - this might be more trouble than it's worth

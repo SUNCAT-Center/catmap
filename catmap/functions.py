@@ -348,16 +348,12 @@ def offset_smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25, smoothi
     c_0 += offset
     return c_0, dC, d2C
 
-def add_dicts(*args):
-    """takes in any number of dictionaries as arguments (or a list of dictionaries)
-    and returns the "sum" of them"""
-    if len(args) == 1 and isinstance(args[0], list):
-        args = args[0]
-    out_dict = {}
-    for dictionary in args:
-        for key, value in dictionary.iteritems():
-            if key in out_dict:
-                out_dict[key] += value
-            else:
-                out_dict[key] = value
-    return out_dict
+def add_dict_in_place(dict1, dict2):
+    """updates dict1 with elements in dict2 if they do not exist.  otherwise,
+    add the value for key in dict2 to the value for that key in dict1
+    """
+    for k, v in dict2.iteritems():
+        if k in dict1:
+            dict1[k] += dict2[k]
+        else:
+            dict1[k] = dict2[k]
