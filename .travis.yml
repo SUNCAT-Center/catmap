@@ -19,4 +19,4 @@ install:
  
 # Run test
 script:
-  - test_dependencies.py
+  - python test_dependencies.py
