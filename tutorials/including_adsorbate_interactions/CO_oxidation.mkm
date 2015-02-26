@@ -77,8 +77,6 @@ species_definitions['s']['interaction_response_parameters'] = {'cutoff':0.25,'sm
 max_self_interaction = 'Pd' #self interaction parameters cannot be higher than the parameter for Pd
 transition_state_cross_interaction_mode = 'transition_state_scaling' #use TS scaling for TS interaction
 cross_interaction_mode = 'geometric_mean' #use geometric mean for cross parameters
-#species_definitions['CO_s'] = {'self_interaction_parameter':[3.248, 0.965, 3.289, 3.209, 3.68, None, None, None],
+species_definitions['CO_s'] = {'self_interaction_parameter':[3.248, 0.965, 3.289, 3.209, 3.68, None, None, None],}
 #                    'cross_interaction_parameters':{'O_s':[0,0,0,0,0,0,0,0],'O-O_s':[0,0,0,0,0,0,0,0]}} #3.2
 #make some arbitrary cross interactions 0 just to show syntax.
-
-interaction_fitting_mode = 'average_self' #3.3

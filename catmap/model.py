@@ -367,7 +367,7 @@ class ReactionModel:
             pickled_data = pickle.load(open(self.data_file,'r'))
             for attr in pickled_data:
                 if not overwrite:
-                    if not getattr(self,attr,None): #don't over-write
+                    if getattr(self,attr,None) is None: #don't over-write
                         setattr(self,attr,pickled_data[attr])
                 else:
                     setattr(self,attr,pickled_data[attr])
