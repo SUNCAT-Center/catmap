@@ -2,3 +2,9 @@ language: python
 python:
   - "2.7"
   - "2.6"
+# command to install dependencies
+install:
+  - "pip install numpy"
+  - "pip install mpmath"
+# command to run tests
+script: test_dependencies.py
