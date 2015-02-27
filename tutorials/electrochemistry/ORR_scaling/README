@@ -1,0 +1,34 @@
+The scripts in this directory should replicate the results found in Hansen et al. (2014) 
+DOI: 10.1021/jp4100608, which studied the oxygen reduction reaction on Pt(111) and similar 
+surfaces using a made-from-scratch steady state microkinetics model.  
+An explanation of the provided files are as follows roughly in order of when they should be used:
+
+make_input.py:  this python script generates ORR_input.txt, the input file for this model.  
+The input file contains gas, adsorbate, and transition state free energies as described in
+Hansen et al. (2014).  Since all species are already free energy corrected, no further vibrations
+or corrections need to be specified.  For adsorbate and transition state energies, fictitious
+surfaces are generated near the *OH binding energy of Pt(111) from the scaling provided in 
+the paper.  Point "d", which has been relabeled to "Pt" is the relevant point for Pt(111)
+
+ORR.mkm:  the template for the .mkm input for this model.  The voltage is set to 0.9V vs RHE,
+but you can change this.  This file contains the same reaction expressions and prefactors used in 
+the paper as well as the same activity/fugacities which are fed into the rate equations.  
+Electrochemical transition states are defined in the form "^0.26eV_a", which is shorthand
+for expressing a free energy barrier of 0.26 eV at thermal neutral.  Electrochemical transition
+state energies may also be expressed explicitly, but it is not recommended.
+O2_dl is described as being on a fictitious "dl" site on every surface with the same energy.  
+Note there is a second descriptor of *H binding energy despite that reaction having no real
+importance in ORR.  This is currently a necessary constraint of CatMAP, but simply having it there
+and giving it a resolution of 1 in the y-direction should cleanly allow a 1D volcano and other
+plots to be generated.  Frozen gas, Frozen adsorbate and simple (as opposed to hbond)
+electrochemical modes are chosen because the input file already contains all necessary corrections.
+The more typical way to do electrochemistry with catmap would be to use ideal gas, harmonic
+adsorbate, and hbond_electrochemical (or hbond_with_estimates_electrochemical) as the corrections
+to be applied to raw electronic energies in the input file.  
+
+mkm_job.py: the main python script to run the model.  After completing 
+the calculation, plots for coverage, rate, and production rate will be generated.
+
+Quick version of tutorial:
+# python make_input.py
+# python mkm_job.py

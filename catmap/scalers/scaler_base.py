@@ -133,6 +133,7 @@ class ScalerBase(ReactionModelWrapper):
 
     def get_free_energies(self,descriptors,**kwargs):
         electronic_energy_dict = self.get_electronic_energies(descriptors)
+        self._electronic_energy_dict = electronic_energy_dict
         thermodynamic_energy_dict = self.get_thermodynamic_energies(
                 descriptors=descriptors,**kwargs)
         free_energy_dict = {}

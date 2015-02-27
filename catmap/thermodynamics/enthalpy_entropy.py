@@ -1,7 +1,7 @@
 import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
-from catmap.functions import get_composition
+from catmap.functions import get_composition, add_dict_in_place
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -79,6 +79,10 @@ class ThermoCorrections(ReactionModelWrapper):
             self.thermodynamic_variables.append(corr+'_thermo_mode')
 
     def get_thermodynamic_corrections(self,**kwargs):
+        # echem in generalized linear scaling needs recalculation
+        l = self.thermodynamic_corrections
+        if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
+            self.force_recalculation = True
         state_dict = {}
         for v in self.thermodynamic_variables:
             state_dict[v] = getattr(self,v)
@@ -92,7 +96,6 @@ class ThermoCorrections(ReactionModelWrapper):
             self.frequency_dict[sp] = \
                     self.species_definitions[sp].get('frequencies',[])
         frequency_dict = self.frequency_dict.copy()
-        correction_dict = {}
 
         if (
                 getattr(self,'_current_state',None) == current_state and 
@@ -102,21 +105,25 @@ class ThermoCorrections(ReactionModelWrapper):
             #has not changed then don't bother re-calculating the corrections.
             return self._correction_dict
 
+        correction_dict = {}
+        self._correction_dict = correction_dict
+        self._current_state = current_state
+        self._frequency_dict = frequency_dict
+
         # apply corrections in self.thermodynamic_corrections on top of each other
         for correction in self.thermodynamic_corrections:
             mode = getattr(self,correction+'_thermo_mode')
             thermo_dict = getattr(self,mode)()
-            for key in thermo_dict:
-                if key in correction_dict:
-                    correction_dict[key] += thermo_dict[key]
-                else:
-                    correction_dict[key] = thermo_dict[key]
+            add_dict_in_place(correction_dict, thermo_dict)
+
+        # apply electrochemical transition state "corrections" last
+        if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
+            echem_thermo_dict = self.generate_echem_TS_energies()
+            add_dict_in_place(correction_dict, echem_thermo_dict)
 
         getattr(self,self.pressure_mode+'_pressure')()
 
-        self._correction_dict = correction_dict
-        self._current_state = current_state
-        self._frequency_dict = frequency_dict
+
         return correction_dict
 
     def ideal_gas(self):
@@ -442,10 +449,41 @@ class ThermoCorrections(ReactionModelWrapper):
                 therm_dict[ads] = (IS+FS)/2.0
         return thermo_dict
 
+    def generate_echem_TS_energies(self):
+        # give real energies to the fake echem transition states
+        echem_TS_names = self.echem_transition_state_names
+        voltage = self.voltage
+        beta = self.beta
+        thermo_dict = {}
+
+        def get_E_to_G(state, E_to_G_dict):
+            E_to_G = 0.
+            for ads in state:
+                if ads in E_to_G_dict:
+                    E_to_G += E_to_G_dict[ads]
+            return E_to_G
+
+        for echem_TS in echem_TS_names:
+            preamble, site = echem_TS.split('_')
+            echem, rxn_index, barrier = preamble.split('-')
+            rxn = self.elementary_rxns[int(rxn_index)]
+            IS = rxn[0]
+            FS = rxn[-1]
+            E_IS = self.get_state_energy(IS, self._electronic_energy_dict)
+            E_FS = self.get_state_energy(FS, self._electronic_energy_dict)
+            G_IS = E_IS + get_E_to_G(IS, self._correction_dict)
+            G_FS = E_FS + get_E_to_G(FS, self._correction_dict)            
+            dG = G_FS - G_IS
+            G_TS = G_IS + float(barrier) + (1 - beta) * dG  # G_TS @ 0V vs RHE
+            G_TS += -voltage * (1 - beta)  #  same scaling for fake TS as real ones
+            assert(self._electronic_energy_dict[echem_TS]) == 0.  # make sure we're "correcting" the right value
+            thermo_dict[echem_TS] = G_TS
+
+        return thermo_dict
+
     def simple_electrochemical(self):
         thermo_dict = {}
         gas_names = [gas for gas in self.gas_names if 'pe' in gas]
-        adsorbate_names = self.adsorbate_names
         TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
         voltage = self.voltage
         beta = self.beta
@@ -464,13 +502,11 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def hbond_electrochemical(self):
         thermo_dict = self.simple_electrochemical()
-        adsorbate_names = self.adsorbate_names
         TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
-
         hbond_dict = self.hbond_dict
 
         # updates simple_electrochemical with hbonding corrections as if they were on Pt(111)
-        for ads in list(adsorbate_names) + TS_names:
+        for ads in list(self.adsorbate_names) + TS_names:
             if ads in hbond_dict:
                 if ads in thermo_dict:
                     thermo_dict[ads] += hbond_dict[ads]
@@ -506,10 +542,9 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def hbond_with_estimates_electrochemical(self):
         thermo_dict = self.hbond_electrochemical()
-        adsorbate_names = self.adsorbate_names
         TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
 
-        for ads in list(adsorbate_names) + TS_names:
+        for ads in list(self.adsorbate_names) + TS_names:
             if ads not in hbond_dict:
                 if ads in thermo_dict:
                     thermo_dict[ads] += estimate_hbond_corr(ads)

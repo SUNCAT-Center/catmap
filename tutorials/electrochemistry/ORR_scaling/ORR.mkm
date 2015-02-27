@@ -1,0 +1,70 @@
+rxn_expressions = [
+    'O2_g  + *_dl <-> O2_dl',                       # rxn 1 - O2 to O2 in double layer
+    '*_a + O2_dl -> O2_a + *_dl',                   # rxn 2  - O2 double layer adsorption to a
+    'O2_a + pe_g -> ^0.26eV_a -> OOH_a',              # rxn 3  - O2 -> OOH on a
+    'OOH_a + pe_g -> ^0.26eV_a -> O_a + H2O_g',      # rxn 4  - OOH -> O + H2O on a
+    'O_a + pe_g -> ^0.26eV_a -> OH_a',                 # rxn 5  - O -> OH on a
+    'OH_a + pe_g -> ^0.26eV_a -> *_a + H2O_g',        # rxn 6  - OH -> H2O on a
+    'O2_a + *_b -> O-O_a + *_b -> O_a + O_b',       # rxn 7  - O2 dissociation
+    'O_b + pe_g -> ^0.26eV_b -> OH_b',                 # rxn 8  - O -> OH on b
+    'OH_b + pe_g -> ^0.26eV_b -> *_b + H2O_g',        # rxn 9  - OH -> H2O on b
+    'OOH_a + *_b -> OH-O_a + *_b -> OH_a + O_b',    # rxn 10 - OOH dissociation
+    'OOH_a + pe_g -> ^0.26eV_a -> H2O2_a',           # rxn 11 - OOH -> H2O2 on a
+    'H2O2_a + *_b -> OH-OH_a + *_b -> OH_a + OH_b', # rxn 12 - H2O2 dissociation
+    'H2O2_a -> H2O2_g + *_a',                       # rxn 13 - H2O2 desorption
+    'pe_g + *_a -> H_a',
+]
+
+prefactor_list = [8e5, 1e8, 1e9, 1e9, 1e9, 1e9, None, 1e9, 1e9, None, 1e9, None, 1e8, 1e9]
+
+surface_names = ['a', 'b', 'c', 'Pt', 'e', 'f', 'g', 'h', 'i', 'j']
+
+descriptor_names = ['OH_a','H_a']
+
+descriptor_ranges = [[0.5,1.2], [-0.5,0.5]]
+
+resolution = [25, 1]
+
+temperature = 298.15
+
+voltage = 0.9
+
+beta = 0.5
+
+species_definitions = {}
+# assume heine's free energy numbers are already pressure-corrected
+species_definitions['H2O_g'] = {'pressure':1.0}
+species_definitions['H2O2_g'] = {'pressure':1e-26}
+species_definitions['O2_g'] = {'pressure':2.34e-5}
+species_definitions['pe_g'] = {'pressure':1.0}
+
+species_definitions['a'] = {'site_names': ['a'], 'total':1.0}
+species_definitions['b'] = {'site_names': ['b'], 'total':1.0}
+species_definitions['dl'] = {'site_names': ['dl'], 'total':1.0}
+
+data_file = 'ORR.pkl'
+input_file = 'ORR_input.txt'
+
+gas_thermo_mode = 'frozen_gas'
+adsorbate_thermo_mode = 'frozen_adsorbate'
+electrochemical_thermo_mode = 'simple_electrochemical'
+
+scaling_constraint_dict = {'O2_a':[None, 0., None],
+                        'OOH_a':[None, 0., None],
+                        'O_a':[None, 0., None],
+                        'OH_a':[None, 0., None],
+                        'H2O2_a':[None, 0., None],
+                        'O_b':[None, 0., None],
+                        'OH_b':[None, 0., None],
+                        'O2_dl':[None, 0., None],
+                        'O2-_a':'BEP',
+                        'O-O_a':'BEP',
+                        'OH-O_a':'BEP',
+                        'OH-OH_a':'BEP',
+                        'HOOH-_a':'BEP',
+                        }
+
+decimal_precision = 200
+tolerance = 1e-50
+max_rootfinding_iterations = 1000
+max_bisections = 5
