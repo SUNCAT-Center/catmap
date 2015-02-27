@@ -304,7 +304,9 @@ The central object that defines a microkinetic model consisting of:
                 self.make_standalone()
 
             if self.data_file.strip() == 'return':
-                return pickled_data, log_txt
+                import re
+                log_txt = re.sub('locals\(\).update\(.*', '', log_txt)
+                return pickled_data, re.sub('binary_data.*', '', log_txt)
 
     def descriptor_space_analysis(self):
         """
