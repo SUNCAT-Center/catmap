@@ -7,6 +7,8 @@ import catmap
 from string import Template
 import functions
 import re
+import cStringIO
+
 from data import regular_expressions
 string2symbols = catmap.string2symbols
 pickle = catmap.pickle
@@ -120,7 +122,12 @@ The central object that defines a microkinetic model consisting of:
         if hasattr(self,'setup_file'): #parse in setup file.
             #Note that the syntax is simply python variable definitions.
             #This is NOT idiot proof.
-            self.model_name = self.setup_file.rsplit('.',1)[0]
+            if type(self.setup_file) is str:
+                self.model_name = self.setup_file.rsplit('.',1)[0]
+            elif type(self.setup_file) is file:
+                self.model_name = '<file-object>'
+            else:
+                self.model_name = ''
             self.load(self.setup_file)
 
 
@@ -263,7 +270,9 @@ The central object that defines a microkinetic model consisting of:
             pickled_data = {}
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self,attr)
-            pickle.dump(pickled_data,open(self.data_file,'w'))
+
+            if not self.data_file.strip() == 'return':
+                pickle.dump(pickled_data,open(self.data_file,'w'))
 
             #Make logfile
             log_txt = self._log_imports
@@ -276,19 +285,26 @@ The central object that defines a microkinetic model consisting of:
             if hasattr(self,'log_file'):
                 logfile = self.log_file
             else:
-                name,suffix = self.setup_file.rsplit('.',1)
-                if suffix != 'log':
-                    suffix = 'log'
-                else:
-                    suffix = 'out'
-                logfile = '.'.join([name,suffix])
+                if type(self.setup_file) is str:
+                    name,suffix = self.setup_file.rsplit('.',1)
+                    if suffix != 'log':
+                        suffix = 'log'
+                    else:
+                        suffix = 'out'
+                    logfile = '.'.join([name,suffix])
+                elif type(self.setup_file) is file or type(self.setup_file) is cStringIO.InputType:
+                    logfile = None
 
-            f = open(logfile,'w')
-            f.write(log_txt)
-            f.close()
+            if logfile is not None:
+                f = open(logfile, 'w')
+                f.write(log_txt)
+                f.close()
 
             if getattr(self,'create_standalone',None):
                 self.make_standalone()
+
+            if self.data_file.strip() == 'return':
+                return pickled_data, log_txt
 
     def descriptor_space_analysis(self):
         """
@@ -349,7 +365,12 @@ The central object that defines a microkinetic model consisting of:
         globs = {}
         locs = defaults
 
-        execfile(setup_file,globs,locs)
+        if type(setup_file) is str:
+            execfile(setup_file, globs, locs)
+        elif type(setup_file) is file or type(setup_file) is cStringIO.InputType:
+            setup_file.seek(0)
+            exec(setup_file.read(), globs, locs)
+            setup_file.close()
         for var in locs.keys():
             if var in self._classes:
                 #black magic to auto-import classes
@@ -440,7 +461,7 @@ The central object that defines a microkinetic model consisting of:
 
             if self.verbose > kwargs['priority']:
                 self._log_lines.append(log_string)
-                print(log_string)
+                #print(log_string)
             if status == 'warning':
                 self._warned.append(log_string)
 
