@@ -472,13 +472,15 @@ class ThermoCorrections(ReactionModelWrapper):
             E_IS = self.get_state_energy(IS, self._electronic_energy_dict)
             E_FS = self.get_state_energy(FS, self._electronic_energy_dict)
             G_IS = E_IS + get_E_to_G(IS, self._correction_dict)
-            G_FS = E_FS + get_E_to_G(FS, self._correction_dict)            
+            G_FS = E_FS + get_E_to_G(FS, self._correction_dict)
             dG = G_FS - G_IS
-            G_TS = G_IS + float(barrier) + (1 - beta) * dG  # G_TS @ 0V vs RHE
-            G_TS += -voltage * (1 - beta)  #  same scaling for fake TS as real ones
-            assert(self._electronic_energy_dict[echem_TS]) == 0.  # make sure we're "correcting" the right value
-            thermo_dict[echem_TS] = G_TS
+            G_TS = G_IS + float(barrier) + beta * dG  # G_TS @ 0V vs RHE
+            G_TS += -voltage * (1 - beta)  # same scaling for fake TS as real ones
+            # make sure we're "correcting" the right value
+            assert(self._electronic_energy_dict[echem_TS]) == 0.
+            self._correction_dict[echem_TS] = 0.
 
+            thermo_dict[echem_TS] = G_TS
         return thermo_dict
 
     def simple_electrochemical(self):

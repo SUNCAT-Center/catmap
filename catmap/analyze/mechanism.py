@@ -1,5 +1,5 @@
 from analysis_base import *
-import math as np
+import numpy as np
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
     """
@@ -26,7 +26,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         self.data_dict = {}
         MechanismPlot.__init__(self,[0])
 
-    def plot(self,ax=None,surfaces=None,mechanisms=None,
+    def plot(self,ax=None,e_plots=None,mechanisms=None,
             labels=None,save=True):
         """
         .. todo:: __doc__
@@ -38,24 +38,33 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             fig = None
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
-        if not surfaces:
-            surfaces = self.surface_names
-        if not self.surface_colors:
-            self.surface_colors = get_colors(max(len(surfaces),len(mechanisms)))
+        if not e_plots and self.descriptor_dict:
+            e_plots = self.surface_names
+        elif not e_plots and 'voltage' in self.descriptor_names:
+            voltage_idx = self.descriptor_names.index('voltage')
+            v_min, v_max = self.descriptor_ranges[voltage_idx]
+            e_plots = np.linspace(v_min, v_max, 5)  # this should be user-specifiable
+        if not self.e_plot_colors:
+            self.e_plot_colors = get_colors(max(len(e_plots),len(mechanisms)))
 
         self.kwarg_list = []
         for key in self.rxn_mechanisms.keys():
             self.kwarg_list.append(self.kwarg_dict.get(key,{}))
 
         for n,mech in enumerate(mechanisms):
-            for i, surf in enumerate(surfaces):
-                xy = self.descriptor_dict[surf]
+            for i, e_plot in enumerate(e_plots):
+                if self.descriptor_dict:
+                    xy = self.descriptor_dict[e_plot]
+                elif 'voltage' in self.descriptor_names:
+                    voltage_idx = self.descriptor_names.index('voltage')
+                    xy = [0, 0]
+                    xy[voltage_idx] = e_plot
+                    xy[1-voltage_idx] = self.descriptor_ranges[1-voltage_idx][0]
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
 
                     if self.energy_type == 'free_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
-
                     elif self.energy_type == 'potential_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
                         energy_dict.update(self.scaler.get_electronic_energies(xy))
@@ -75,20 +84,18 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                         energy_dict = self.scaler.get_free_energies(xy) #get gas G's
                         energy_dict.update(G_dict)
-
                     params = self.adsorption_to_reaction_energies(energy_dict)
-
                     self.energies = [0]
                     self.barriers = []
                     self.labels = ['']
-                    if len(surfaces) > 1:
+                    if len(e_plots) > 1:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
-                                self.surface_colors[i]
+                                self.e_plot_colors[i]
                     else:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
-                                self.surface_colors[n]
+                                self.e_plot_colors[n]
                     for step in mech:
                         if step < 0:
                             reverse = True
