@@ -1163,19 +1163,7 @@ Run several consistency check on the model, such as :
             self.species_definitions[echem_TS]['frequencies'] = []
             self.species_definitions[echem_TS]['name'] = preamble
             self.species_definitions[echem_TS]['n_sites'] = 1  # Someone may want to change this to be user-specified at some point
-
-            # look up what IS and FS of rxn_index are
-            regex = re.compile(regular_expressions['species_separator'][0])
-            eq = regex.sub(' ',self.rxn_expressions[rxn_index])
-            state_dict = functions.match_regex(eq,
-                *regular_expressions['initial_transition_final_states'])
-            IS_species = [si for si in state_dict['initial_state'].split(' ') if si]
-            FS_species = [si for si in state_dict['final_state'].split(' ') if si]
-            # assume composition is already balanced - set TS composition to IS composition
-            total_composition = {}
-            for species in IS_species:
-                functions.add_dict_in_place(total_composition, self.species_definitions[species]['composition'])
-            self.species_definitions[echem_TS]['composition'] = total_composition
+            self.species_definitions[echem_TS]['composition'] = {'H':1}  #placeholder composition - should be unimportant
 
         # add echem TSs to regular TSes - this might be more trouble than it's worth
         self.transition_state_names += tuple(self.echem_transition_state_names)
