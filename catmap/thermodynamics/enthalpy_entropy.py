@@ -474,8 +474,7 @@ class ThermoCorrections(ReactionModelWrapper):
             G_IS = E_IS + get_E_to_G(IS, self._correction_dict)
             G_FS = E_FS + get_E_to_G(FS, self._correction_dict)
             dG = G_FS - G_IS
-            G_TS = G_IS + float(barrier) + beta * dG  # G_TS @ 0V vs RHE
-            G_TS += -voltage * (1 - beta)  # same scaling for fake TS as real ones
+            G_TS = G_FS + float(barrier) + (1 - beta) *  -dG  # only tested for reductions
             # make sure we're "correcting" the right value
             assert(self._electronic_energy_dict[echem_TS]) == 0.
             self._correction_dict[echem_TS] = 0.
