@@ -57,7 +57,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 electrochemical_thermo_mode = 'simple_electrochemical',
                 pressure_mode = 'static',
                 thermodynamic_corrections = ['gas','adsorbate','electrochemical'],
-                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta'],
+                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta','pH'],
                 ideal_gas_params = catmap.data.ideal_gas_params,
                 fixed_entropy_dict = catmap.data.fixed_entropy_dict,
                 shomate_params = catmap.data.shomate_params,
@@ -123,6 +123,12 @@ class ThermoCorrections(ReactionModelWrapper):
 
         getattr(self,self.pressure_mode+'_pressure')()
 
+        if 'electrochemical' in l and self.pH:
+            # the following are placeholders and should be user-definable
+            proton = 'H_g'
+            OH = 'OH_g'
+            self.gas_pressures[proton] = 1./10**self.pH
+            self.gas_pressures[OH] = 1e-14 * 10**self.pH
 
         return correction_dict
 
