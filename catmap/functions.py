@@ -295,7 +295,7 @@ def match_regex(string,regex,group_names):
     else:
         return None
             
-def numerical_jacobian(f, x, matrix, h = 1e-10):
+def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
     """
     Calculate the Jacobian matrix of a function at the point x0.
 
@@ -310,7 +310,9 @@ def numerical_jacobian(f, x, matrix, h = 1e-10):
     m = len(fx)
     n = len(x)
     J = matrix(m, n)
-    for j in xrange(n):
+    if not diff_idxs:
+        diff_idxs = xrange(n)
+    for j in diff_idxs:
         xj = x.copy()
         delta = abs(h*xj[j])
         delta = max(delta,h)

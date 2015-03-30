@@ -107,7 +107,8 @@ class MeanFieldSolver(SolverBase):
         kT = self._kB*self.temperature
         eps = self._mpfloat(self.perturbation_size)
         try:
-            dRdG = numerical_jacobian(self.get_turnover_frequency,rxn_parameters,self._matrix,eps)
+            diff_idxs = range(len(self.adsorbate_names+self.transition_state_names))
+            dRdG = numerical_jacobian(self.get_turnover_frequency,rxn_parameters,self._matrix,eps,diff_idxs=diff_idxs)
         except ValueError, strerror:
             resid = str(strerror).rsplit('=',1)[1]
             resid = resid.replace(')','')
