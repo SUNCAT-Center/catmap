@@ -152,7 +152,10 @@ class MeanFieldSolver(SolverBase):
         dSdG = dSdG.tolist()
         DSC = []
         for si, Ji in zip(s0,dSdG):
-            DSC.append([float(Jj/si) for Jj in Ji])
+            if si == 0:
+                DSC.append([0.0]*len(Ji))
+            else:
+                DSC.append([float(Jj/si) for Jj in Ji])
         return DSC
         
     def get_rxn_order(self,rxn_parameters,epsilon=1e-10):
