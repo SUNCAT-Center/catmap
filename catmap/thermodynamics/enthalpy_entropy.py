@@ -182,7 +182,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
         for gas in gas_names:
             # Hard coding corrections for fictitious gas molecule that's used in electrochemistry
-            if gas in ['pe_g']:
+            if gas in ['pe_g', 'ele_g', 'H_g', 'OH_g']:  # also needs to be changed eventually
                 thermo_dict[gas] = 0.
                 self._zpe_dict[gas] = 0.
                 self._enthalpy_dict[gas] = 0.
