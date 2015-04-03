@@ -389,6 +389,8 @@ The central object that defines a microkinetic model consisting of:
 
         self.load_data_file()
 
+        self.set_rxn_options()
+
         self.generate_echem_TS()
 
         self.verify()
@@ -458,9 +460,21 @@ The central object that defines a microkinetic model consisting of:
         transition_state_names = []
         site_names = []
         echem_transition_state_names = []
-        for rxn_index, eq in enumerate(equations):
+        rxn_options_dict = {'prefactor':{}, 'beta':{}}
+        for rxn_index, rxn in enumerate(equations):
             #Replace separators with ' '
             regex = re.compile(regular_expressions['species_separator'][0])
+            eq = rxn
+            options = None
+            if ';' in rxn:
+                eq, options = rxn.split(';')
+            if options:
+                options = "".join(options.split(" "))
+                suboptions = options.split(',')
+                for subopt in suboptions:
+                    key, value = subopt.split('=')
+                    if key in rxn_options_dict:
+                        rxn_options_dict[key][rxn_index] = value
             eq = regex.sub(' ',eq)
             state_dict = functions.match_regex(eq,
                     *regular_expressions['initial_transition_final_states'])
@@ -559,6 +573,7 @@ The central object that defines a microkinetic model consisting of:
         self.elementary_rxns = elementary_rxns
         self.site_names = site_names
         self.echem_transition_state_names = echem_transition_state_names
+        self.rxn_options_dict = rxn_options_dict
 
     def texify(self,ads): #
         """Generate LaTeX representation of an adsorbate.
@@ -1167,3 +1182,16 @@ Run several consistency check on the model, such as :
 
         # add echem TSs to regular TSes - this might be more trouble than it's worth
         self.transition_state_names += tuple(self.echem_transition_state_names)
+
+    def set_rxn_options(self):
+        """sets elementary rxn-specific attributes to the appropriate places"""
+        # set up prefactor_list
+        if self.rxn_options_dict['prefactor']:
+            if not self.prefactor_list:
+                self.prefactor_list = [None] * len(self.elementary_rxns)
+            for key, value in self.rxn_options_dict['prefactor'].iteritems():
+                if value == "None":
+                    value = None
+                else:
+                    value = float(value)
+                self.prefactor_list[key] = value

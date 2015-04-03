@@ -472,7 +472,10 @@ class ThermoCorrections(ReactionModelWrapper):
         for echem_TS in echem_TS_names:
             preamble, site = echem_TS.split('_')
             echem, rxn_index, barrier = preamble.split('-')
-            rxn = self.elementary_rxns[int(rxn_index)]
+            rxn_index = int(rxn_index)
+            rxn = self.elementary_rxns[rxn_index]
+            if rxn_index in self.rxn_options_dict['beta'].keys():
+                beta = float(self.rxn_options_dict['beta'][rxn_index])
             IS = rxn[0]
             FS = rxn[-1]
             E_IS = self.get_state_energy(IS, self._electronic_energy_dict)
@@ -487,6 +490,13 @@ class ThermoCorrections(ReactionModelWrapper):
 
             thermo_dict[echem_TS] = G_TS
         return thermo_dict
+
+    def get_rxn_index_from_TS(self, TS):
+        # takes in the name of a transition state. returns the reaction index of
+        # the elementary rxn from which it belongs
+        for rxn_index, eq in enumerate(self.elementary_rxns):
+            if TS in eq:
+                return rxn_index
 
     def simple_electrochemical(self):
         thermo_dict = {}
@@ -504,6 +514,9 @@ class ThermoCorrections(ReactionModelWrapper):
 
         # correct TS energies with beta*voltage (and hbonding?)
         for TS in TS_names:
+            rxn_index = self.get_rxn_index_from_TS(TS)
+            if rxn_index in self.rxn_options_dict['beta'].keys():
+                beta = float(self.rxn_options_dict['beta'][rxn_index])
             thermo_dict[TS] = -voltage * (1 - beta)
 
         return thermo_dict
