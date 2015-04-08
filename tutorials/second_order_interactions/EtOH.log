@@ -1,0 +1,474 @@
+from numpy import array
+
+import cPickle as pickle
+
+
+from mpmath import mpf 
+
+parser = None
+
+scaler = 'ThermodynamicScaler'
+
+thermodynamics = 'ThermoCorrections'
+
+solver = 'SteadyStateSolver'
+
+mapper = 'MinResidMapper'
+
+binary_data = pickle.load(open("data.pkl"))
+
+locals().update(binary_data)
+
+CO_cross_coeffs = {'CH3CO_s': [-0.484], 'CHO_s': [-0.385], 'CH3CHOH-H_s': [-1.25], 'CH3CHO-H_s': [-1.624], 'H-CH2CO_s': [0.145], 'CHOH_s': [-1.093], 'CH-OH_s': [-0.346], 'H-CH3CO_s': [-0.111], 'H-CH2_s': [0.479], 'HCO-H_s': [-0.209], 'CH3CHOH_s': [-1.309], 'H-CH3_s': [-0.052], 'H-OH_s': [0.263], 'CH2CO_s': [-0.385], 'CH_s': [-0.739], 'CH3CHO_s': [-1.447], 'CH3_s': [0.263], 'CH-CO_s': [0.578], 'H-CO_s': [0.047], 'CHCO_s': [0.106], 'OH_s': [-0.778], 'H-CHCO_s': [0.538], 'CH-H_s': [0.126]}
+
+adsorbate_interaction_model = 'second_order'
+
+adsorbate_names = ('H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s')
+
+adsorbate_thermo_mode = 'harmonic_adsorbate'
+
+analytical_jacobian = True
+
+atomic_reservoir_dict = {'H': 'H2_g', 'C': 'CO_g', 'O': 'H2O_g'}
+
+atomic_reservoir_list = [{'H': 'CH4_g', 'C': 'CO_g', 'O': 'H2O_g'}, {'H': 'H2_g', 'C': 'CH4_g', 'O': 'CO_g'}, {'H': 'H2_g', 'C': 'CH4_g', 'O': 'H2O_g'}, {'H': 'H2_g', 'C': 'CO_g', 'O': 'H2O_g'}]
+
+atoms_dict = {}
+
+coverage_headers = ['coverage', 'coadsorbate_coverage']
+
+create_standalone = True
+
+cross_interaction_mode = 'neglect'
+
+data_file = 'data.pkl'
+
+decimal_precision = 100
+
+default_self_interaction_parameter = 0
+
+delta = 1e-20
+
+descriptor_decimal_precision = 2
+
+descriptor_names = ('temperature', 'logPressure')
+
+descriptor_ranges = [[400, 600], [0, 3]]
+
+electrochemical_thermo_mode = 'simple_electrochemical'
+
+elementary_rxns = ([['H2_g', 'h', 'h'], ['H_h', 'H_h']], [['s', 'CO_g'], ['CO_s']], [['CO_s', 'H_h'], ['H-CO_s', 'h'], ['CHO_s', 'h']], [['CHO_s', 'H_h'], ['HCO-H_s', 'h'], ['CHOH_s', 'h']], [['CHOH_s', 's'], ['CH-OH_s', 's'], ['CH_s', 'OH_s']], [['CH_s', 'H_h'], ['CH-H_s', 'h'], ['CH2_s', 'h']], [['CH2_s', 'H_h'], ['H-CH2_s', 'h'], ['CH3_s', 'h']], [['CH3_s', 'H_h'], ['H-CH3_s', 'h'], ['CH4_g', 's', 'h']], [['OH_s', 'H_h'], ['H-OH_s', 'h'], ['H2O_g', 's', 'h']])
+
+estimate_frequencies = True
+
+extrapolate_coverages = False
+
+fixed_entropy_dict = {'H2_g': 0.00135, 'other': 0.002}
+
+force_recalculation = False
+
+frequency_dict = {'H2_g': [0.5456544642000001], 'CO_g': [0.26904571400000005], 'H2O_g': [0.45341021940000004, 0.197754799, 0.4656846552], 'CHO_s': [0.006943115200000001, 0.0089268624, 0.025540745200000003, 0.0416586912, 0.056040858400000004, 0.081829572, 0.1534924396, 0.15646806040000003, 0.35112325440000003], 'CO_s': [0.007439052000000001, 0.0286403502, 0.0317399552, 0.037567212600000004, 0.05827257400000001, 0.21660039740000003], 'CHOH_s': [0.006943115200000001, 0.0178537248, 0.025044808400000004, 0.038931038800000005, 0.045502201400000004, 0.0705470098, 0.0943519762, 0.12943950480000002, 0.1491529926, 0.1768014692, 0.36984486860000004, 0.45254233000000005], 'CH-OH_s': [0.024052934800000002, 0.038931038800000005, 0.0509575062, 0.057156716200000006, 0.07972184060000001, 0.0831933982, 0.08964057660000001, 0.09360807100000001, 0.10526258580000002, 0.3920380404, 0.45576591920000004], 'H-CH2_s': [0.006943115200000001, 0.029012302800000004, 0.0420306438, 0.0653396734, 0.076250283, 0.10265891760000001, 0.1201406898, 0.17085022760000002, 0.23718177460000003, 0.3684810424, 0.37542415760000003], 'HCO-H_s': [0.016985835400000003, 0.0286403502, 0.035955418, 0.040542833400000006, 0.061124210600000006, 0.07364661480000001, 0.08430925600000001, 0.11294960620000001, 0.137002541, 0.14456557720000002, 0.36314972180000005], 'H_h': [0.057404684600000006, 0.0887726872, 0.12175248440000001], '*_g': [], '*_h': [], 'H-CH3_s': [0.006943115200000001, 0.006943115200000001, 0.006943115200000001, 0.017729740600000002, 0.053933127000000004, 0.09174830800000001, 0.1024109492, 0.1538643922, 0.17332991160000003, 0.1761815482, 0.2146166502, 0.3712086948, 0.37765587320000005, 0.38348313060000006], 'CH4_g': [0.36166191140000004, 0.19019176280000002, 0.19019176280000002, 0.3743082998, 0.3743082998, 0.3743082998, 0.1619233652, 0.1619233652, 0.1619233652], 'H-OH_s': [0.006943115200000001, 0.0338476866, 0.038683070400000005, 0.049469695800000005, 0.08616901900000001, 0.10303087020000001, 0.1377464462, 0.44820288300000005], 'CH2_s': [0.006943115200000001, 0.037939165200000007, 0.047361964400000005, 0.05802460560000001, 0.0822015246, 0.09794751800000001, 0.1681225752, 0.33934475540000003, 0.3724485368], '*_s': [], 'CH3_s': [0.006943115200000001, 0.014134198800000001, 0.0208293456, 0.0771181724, 0.0850531612, 0.08716089260000001, 0.17134616440000003, 0.17568561140000002, 0.1953990992, 0.3751761892, 0.38348313060000006, 0.38422703580000006], 'H-CO_s': [0.008802878200000001, 0.0244248874, 0.039055023, 0.046618059200000006, 0.06657951540000001, 0.12981145740000002, 0.179157169, 0.26210259880000003], 'CH_s': [0.0512054746, 0.054181095400000004, 0.06038030540000001, 0.08802878200000001, 0.091128387, 0.377531889], 'g': [], 'OH_s': [0.006943115200000001, 0.0422786122, 0.0490977432, 0.08306941400000001, 0.08902065560000001, 0.45650982440000004], 'h': [], 's': [], 'CH-H_s': [0.033475734, 0.045750169800000004, 0.047361964400000005, 0.0701750572, 0.08443324020000001, 0.11840491100000002, 0.2477204316, 0.375052205]}
+
+frequency_surface_names = []
+
+frequency_unit_conversion = 0.0001239842
+
+gas_names = ('CH4_g', 'CO_g', 'H2O_g', 'H2_g')
+
+gas_pressures = [9.9999999999999995e-21, 0.33333333333333331, 9.9999999999999995e-21, 0.66666666666666663]
+
+gas_thermo_mode = 'shomate_gas'
+
+hbond_dict = {'OCHCH2': 0.0, 'C': 0.0, 'CH': 0.0, 'CO': -0.1, 'OH': -0.5, 'CHOH': -0.25, 'H': 0.0, 'OCHO': 0.0, 'O': 0.0, 'CHO': -0.1, 'OCH3': 0.0, 'CH2': 0.0, 'CH3': 0.0, 'COHOH': -0.25, 'OCH2O': 0.0, 'CH2OH': -0.25, 'CH2O': 0.0, 'COH': -0.25, 'COOH': -0.25, 'OCHCHO': 0.0}
+
+ideal_gas_params = {'H2_g': [2, 'linear', 0], 'CH3OH_g': [1, 'nonlinear', 0], 'CO_g': [1, 'linear', 0], 'H2O_g': [2, 'nonlinear', 0], 'HCOOH_g': [1, 'nonlinear', 0], 'CH3CH2CHCH2_g': [1, 'nonlinear', 0], 'CH3CHCH2_g': [1, 'nonlinear', 0], 'O2_g': [2, 'linear', 3], 'N2_g': [2, 'linear', 0], 'CH3CH2OH_g': [1, 'nonlinear', 0], 'NH3_g': [3, 'nonlinear', 0], 'CH4_g': [12, 'nonlinear', 0], 'CH3CHO_g': [1, 'nonlinear', 0], 'CH2CH2_g': [4, 'nonlinear', 0], 'CH3CHCHCH3_g': [2, 'nonlinear', 0], 'CO2_g': [2, 'linear', 0], 'pe_g': [2, 'linear', 0], 'CH3CH3CCH2_g': [2, 'nonlinear', 0], 'C2H4_g': [4, 'nonlinear', 0], 'CH2O_g': [2, 'nonlinear', 0], 'CH3COOH_g': [1, 'nonlinear', 0], 'C2H6_g': [6, 'nonlinear', 0]}
+
+input_file = 'energies.txt'
+
+input_overrides_fit = True
+
+interaction_cross_term_names = ('CH_s&CO_s', 'CHOH_s&CO_s', 'CO_s&OH_s', 'CH-OH_s&CO_s', 'CHO_s&CO_s', 'CO_s&H-OH_s', 'CH2_s&CO_s', 'CO_s&H-CH2_s', 'CO_s&H_h', 'CH3_s&CO_s', 'CO_s&HCO-H_s', 'CO_s&H-CH3_s', 'CH-H_s&CO_s', 'CO_s&H-CO_s')
+
+interaction_fitting_mode = 'differential+integral'
+
+interaction_parameters = [0, 0, 0, 0, 0, 0, 0.92681250000000093, 0, -0.59025000000000061, -0.83731250000000079, -0.61768750000000061, -0.3157500000000002, -0.34318750000000026, 0.10975000000000007, -0.68631250000000055, 0.26068750000000029, 0.44525000000000042, 0.10975000000000007, -0.21968750000000015, -0.10987500000000004, 0.013687500000000003, -0.041250000000000009]
+
+interaction_response_parameters = {'cutoff': 0.62, 'max_coverage': 0.132, 'offset': 0.7, 'smoothing': 0.05}
+
+interaction_strength = 1.0
+
+interaction_surface_names = None
+
+interaction_transition_state_scaling_matrix = [[0.5, 0.5, 0, 0, 0, 0.5, 0, 0], [0, 0, 0, 0.5, 0, 0.5, 0, 0.5], [0.5, 0.5, 0.5, 0, 0, 0, 0, 0], [0.5, 0, 0.5, 0, 0, 0, 0, 0], [0.5, 0, 0, 0, 0.5, 0, 0.5, 0], [0.5, 0, 0, 0, 0, 0, 0, 0.5], [0.5, 0, 0, 0.5, 0.5, 0, 0, 0]]
+
+internally_constrain_coverages = True
+
+logPressure = 0.0
+
+max_bisections = 3
+
+max_initial_guesses = 3
+
+max_rootfinding_iterations = 100
+
+model_name = 'EtOH'
+
+numerical_representation = 'mpmath'
+
+optimize_analytical_expressions = False
+
+output_labels = {'entroy': ('CH4_g', 'CO_g', 'H2O_g', 'H2_g', 'H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s'), 'interaction_matrix': [('H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s'), ('H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s')], 'zero_point_energy': ('CH4_g', 'CO_g', 'H2O_g', 'H2_g', 'H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s'), 'enthalpy': ('CH4_g', 'CO_g', 'H2O_g', 'H2_g', 'H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s'), 'selectivity': ('CH4_g', 'CO_g', 'H2O_g', 'H2_g'), 'rate': ([['H2_g', 'h', 'h'], ['H_h', 'H_h']], [['s', 'CO_g'], ['CO_s']], [['CO_s', 'H_h'], ['H-CO_s', 'h'], ['CHO_s', 'h']], [['CHO_s', 'H_h'], ['HCO-H_s', 'h'], ['CHOH_s', 'h']], [['CHOH_s', 's'], ['CH-OH_s', 's'], ['CH_s', 'OH_s']], [['CH_s', 'H_h'], ['CH-H_s', 'h'], ['CH2_s', 'h']], [['CH2_s', 'H_h'], ['H-CH2_s', 'h'], ['CH3_s', 'h']], [['CH3_s', 'H_h'], ['H-CH3_s', 'h'], ['CH4_g', 's', 'h']], [['OH_s', 'H_h'], ['H-OH_s', 'h'], ['H2O_g', 's', 'h']]), 'production_rate': ('CH4_g', 'CO_g', 'H2O_g', 'H2_g'), 'coverage': ('H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s'), 'interacting_energy': ('H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s'), 'free_energy': ('CH4_g', 'CO_g', 'H2O_g', 'H2_g', 'H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s'), 'equilibrium_constant': ([['H2_g', 'h', 'h'], ['H_h', 'H_h']], [['s', 'CO_g'], ['CO_s']], [['CO_s', 'H_h'], ['H-CO_s', 'h'], ['CHO_s', 'h']], [['CHO_s', 'H_h'], ['HCO-H_s', 'h'], ['CHOH_s', 'h']], [['CHOH_s', 's'], ['CH-OH_s', 's'], ['CH_s', 'OH_s']], [['CH_s', 'H_h'], ['CH-H_s', 'h'], ['CH2_s', 'h']], [['CH2_s', 'H_h'], ['H-CH2_s', 'h'], ['CH3_s', 'h']], [['CH3_s', 'H_h'], ['H-CH3_s', 'h'], ['CH4_g', 's', 'h']], [['OH_s', 'H_h'], ['H-OH_s', 'h'], ['H2O_g', 's', 'h']])}
+
+output_variables = ['coverage', 'rate', 'production_rate', 'selectivity', 'zero_point_energy', 'enthalpy', 'entropy', 'free_energy', 'interaction_matrix', 'interacting_energy', 'equilibrium_constant']
+
+parameter_mode = 'formation_energy'
+
+parameter_names = ('H_h', 'CH2_s', 'CH3_s', 'CHOH_s', 'CHO_s', 'CH_s', 'CO_s', 'OH_s', 'CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s')
+
+parse_headers = ['formation_energy', 'frequencies', 'coverage', 'coverage']
+
+perturbation_size = 1e-14
+
+prefactor_list = ['kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h']
+
+pressure = 1.0
+
+pressure_mode = 'concentration'
+
+products = ['CH4_g', 'H2O_g']
+
+reactants = ['CO_g', 'H2_g']
+
+required_headers = ['species_name', 'surface_name', 'site_name', 'formation_energy', 'frequencies', 'reference']
+
+residual_threshold = 0.9
+
+resolution = [10, 10]
+
+rxn_expressions = ['H2_g + 2*_h -> 2H_h', '*_s + CO_g -> CO*', 'CO* + H_h <-> H-CO* + *_h -> CHO* + *_h', 'CHO* + H_h <-> HCO-H* + *_h -> CHOH* + *_h', 'CHOH* + * <-> CH-OH* + * -> CH* + OH*', 'CH* + H_h <-> CH-H* + *_h -> CH2* + *_h', 'CH2* + H_h <-> H-CH2* + *_h ->  CH3* + *_h', 'CH3* + H_h <-> H-CH3* + *_h ->  CH4_g + * + *_h', 'OH* + H_h <->  H-OH* + *_h ->  H2O_g + * + *_h ']
+
+rxn_mechanisms = {'AcH': [1, 2, 3, 4, 5, 1, 9, 1, 2, 10, 11, 12, 13, 14], 'CH4': [1, 2, 3, 4, 5, 1, 9, 1, 6, 7, 8], 'EtOH': [1, 2, 3, 4, 5, 1, 9, 1, 2, 10, 11, 12, 13, 1, 15, 16, 17]}
+
+search_directions = [[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0], [-1, 1], [1, 1], [1, -1], [-1, -1]]
+
+setup_file = 'EtOH.mkm'
+
+shomate_params = {'HNO3_g:298-1200': [19.63229, 153.9599, -115.8378, 32.87955, -0.249114, -146.8818, 247.7049, -134.306], 'CH4_g:298-1300': [-0.703029, 108.4773, -42.52157, 5.862788, 0.678565, -76.84376, 158.7163, -74.8731], 'CH2CH2_g:298-1200': [-6.38788, 184.4019, -112.9718, 28.49593, 0.31554, 48.17332, 163.1568, 52.46694], 'HCN_g:298-1200': [32.69373, 22.59205, -4.369142, -0.407697, -0.282399, 123.4811, 233.2597, 135.1432], 'N2_g:100-500': [28.98641, 1.853978, -9.647459, 16.63537, 0.000117, -8.671914, 226.4168, 0.0], 'O2_g:2000-6000': [20.91111, 10.72071, -2.020498, 0.146449, 9.245722, 5.337651, 237.6185, 0.0], 'CO2_g:1200-6000': [58.16639, 2.720075, -0.492289, 0.038844, -6.447293, -425.9186, 263.6125, -393.5224], 'H2_g:1000-2500': [18.563083, 12.257357, -2.859786, 0.268238, 1.97799, -1.147438, 156.288133, 0], 'HNO2_g:298-1200': [24.89974, 91.37563, -64.84614, 17.92007, -0.134737, -88.13596, 254.2671, -76.73498], 'NO_g:298-1200': [23.83491, 12.58878, -1.139011, -1.497459, 0.214194, 83.35783, 237.1219, 90.29114], 'NH3_g:298-1400': [19.99563, 49.77119, -15.37599, 1.921168, 0.189174, -53.30667, 203.8591, -45.89806], 'N2_g:500-2000': [19.50583, 19.88705, -8.598535, 1.369784, 0.527601, -4.935202, 212.39, 0.0], 'O2_g:100-700': [31.32234, -20.23531, 57.8664, -36.50624, -0.007374, -8.903471, 246.7945, 0.0], 'CO_g:1300-1600': [35.1507, 1.300095, -0.205921, 0.01355, -3.28278, -127.8375, 231.712, -110.5271], 'CH2O_g:298-1500': [5.193767, 93.23249, -44.85457, 7.882279, 0.551175, -119.3591, 202.4663, -115.8972], 'CH4_g:1300-1600': [85.81217, 11.26467, -2.114146, 0.13819, -26.42221, -153.5327, 224.4143, -74.8731], 'H2O_g:1700-6000': [41.96426, 8.622053, -1.49978, 0.098119, -11.15764, -272.1797, 219.7809, -241.8264], 'H2_g:2500-6000': [43.41356, -4.293079, 1.272428, -0.096876, -20.533862, -38.515158, 162.081354, 0], 'H2_g:298-1000': [33.066178, -11.363417, 11.432816, -2.772874, -0.158558, -9.980797, 172.707974, 0], 'NO3_g:298-1200': [11.22316, 166.3889, -148.4458, 47.40598, -0.176791, 61.00858, 221.7679, 71.128], 'CO_g:298-1300': [25.56759, 6.09613, 4.054656, -2.671201, 0.131021, -118.0089, 227.3665, -110.5271], 'O2_g:700-2000': [30.03235, 8.772972, -3.988133, 0.788313, -0.741599, -11.32468, 236.1663, 0.0], 'H2O_g:500-1700': [30.092, 6.832514, 6.793435, -2.53448, 0.082139, -250.881, 223.3967, -241.8264], 'CH3CH2OH_g:298-1500': [-4.7367880805894265, 271.96181550301463, -169.34946529216657, 43.73860153608533, 0.24643430702178773, -9.828280829187861, 203.3325622617075, 0.0], 'CH3CHO_g:298-1500': [4.8037386340099095, 185.92002366990326, -99.1084610902012, 20.61473919069016, 0.2770802548558646, -8.566600040790945, 220.00244674443837, 0.0], 'N2O_g:298-1400': [27.67988, 51.14898, -30.64454, 6.847911, -0.157906, 71.24934, 238.6164, 82.04824], 'HCOOH_g:298-1500': [3.802752304225226, 153.66217894746168, -84.64046773816926, 16.297377707561505, 0.2772064997263338, -6.16527, 212.9698972559699, 0], 'NO2_g:298-1200': [16.10857, 75.89525, -54.3874, 14.30777, 0.239423, 26.17464, 240.5386, 33.09502], 'CO2_g:298-1200': [24.99735, 55.18696, -33.69137, 7.948387, -0.136638, -403.6075, 228.2431, -393.5224], 'H2O_g:100-500': [36.303952, -24.11232, 63.64111, -38.9524, -0.01385, -10.23966, 237.39431, 0.0], 'CH3OH_g:298-1500': [-1.0845814245433651, 153.2463565199489, -79.53050359618254, 16.47130239316011, 0.5220334601533215, -4.897417024069, 199.1893745506112, 0.0]}
+
+site_names = ('h', 's', 'g')
+
+standard_coadsorbate_coverage = 'min'
+
+standard_coverage = 'min'
+
+surface_names = ('Rh',)
+
+temperature = 400.0
+
+thermodynamic_corrections = ['gas', 'adsorbate', 'electrochemical']
+
+thermodynamic_variables = ['temperature', 'gas_pressures', 'voltage', 'beta', 'gas_thermo_mode', 'adsorbate_thermo_mode', 'electrochemical_thermo_mode', 'pressure']
+
+tolerance = 1e-30
+
+transition_state_cross_interaction_mode = 'intermediate_state'
+
+transition_state_names = ('CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', 'H-OH_s', 'HCO-H_s')
+
+verbose = 1
+
+stdout = """mapper_iteration_0: status - 100 points do not have valid solution.
+interaction_fitting_evaluation: success - interaction parameter CO_s = 0.9268125
+interaction_fitting_evaluation: success - interaction parameter CH_s&CO_s = -0.59025
+interaction_fitting_evaluation: success - interaction parameter CH3_s&CO_s = 0.10975
+interaction_fitting_evaluation: success - interaction parameter CH-H_s&CO_s = 0.0136875
+interaction_fitting_evaluation: success - interaction parameter H-CO_s&CO_s = -0.04125
+interaction_fitting_evaluation: success - interaction parameter HCO-H_s&CO_s = -0.2196875
+interaction_fitting_evaluation: success - interaction parameter OH_s&CO_s = -0.6176875
+interaction_fitting_evaluation: success - interaction parameter H_h&CO_s = 0.44525
+interaction_fitting_evaluation: success - interaction parameter CH-OH_s&CO_s = -0.31575
+interaction_fitting_evaluation: success - interaction parameter CH2_s&CO_s = -0.6863125
+interaction_fitting_evaluation: success - interaction parameter CHOH_s&CO_s = -0.8373125
+interaction_fitting_evaluation: success - interaction parameter H-CH2_s&CO_s = 0.2606875
+interaction_fitting_evaluation: success - interaction parameter H-CH3_s&CO_s = -0.109875
+interaction_fitting_evaluation: success - interaction parameter H-OH_s&CO_s = 0.10975
+interaction_fitting_evaluation: success - interaction parameter CHO_s&CO_s = -0.3431875
+minresid_iteration_0: success - [600.00, 3.00] using coverages from [600.00, 3.00]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 3978800454.16)
+minresid_iteration_0: fail - [600.00, 2.67] using coverages from [600.00, 2.67]; initial residual was 1.66272009434e+13 (residual = 3978800454.16)
+minresid_iteration_1: success - [600.00, 2.67] using coverages from [600.00, 3.00]
+rootfinding_iteration_6: fail - stagnated or diverging (residual = 1451089533.64)
+minresid_iteration_0: fail - [600.00, 2.33] using coverages from [600.00, 2.33]; initial residual was 1.66272009434e+13 (residual = 1451089533.64)
+minresid_iteration_1: success - [600.00, 2.33] using coverages from [600.00, 2.67]
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 58560623.5495)
+minresid_iteration_0: fail - [600.00, 2.00] using coverages from [600.00, 2.00]; initial residual was 1.66272009434e+13 (residual = 58560623.5495)
+minresid_iteration_1: success - [600.00, 2.00] using coverages from [600.00, 2.33]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 954435370.476)
+minresid_iteration_0: fail - [600.00, 1.67] using coverages from [600.00, 1.67]; initial residual was 1.66272009434e+13 (residual = 954435370.476)
+minresid_iteration_1: success - [600.00, 1.67] using coverages from [600.00, 2.00]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 640241686.468)
+minresid_iteration_0: fail - [600.00, 1.33] using coverages from [600.00, 1.33]; initial residual was 1.66272009434e+13 (residual = 640241686.468)
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 42714495.8229)
+minresid_iteration_1: fail - [600.00, 1.33] using coverages from [600.00, 1.67]; initial residual was 1363708375.91 (residual = 42714495.8229)
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 42714495.8229)
+bisection_iteration_1: fail - move from [600.00, 1.67] to [600.00, 1.33]
+bisection_iteration_2: success - moved from [600.00, 1.67] to [600.00, 1.50]
+bisection_iteration_1: success - moved from [600.00, 1.50] to [600.00, 1.33]
+minresid_iteration_0: success - [600.00, 1.33] using coverages from [600.0, 1.6666666666666665]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 2646430.30038)
+minresid_iteration_0: fail - [600.00, 1.00] using coverages from [600.00, 1.00]; initial residual was 1.66272009434e+13 (residual = 2646430.30038)
+minresid_iteration_1: success - [600.00, 1.00] using coverages from [600.00, 1.33]
+minresid_iteration_0: success - [600.00, 0.67] using coverages from [600.00, 0.67]
+minresid_iteration_0: success - [600.00, 0.33] using coverages from [600.00, 0.33]
+minresid_iteration_0: success - [600.00, 0.00] using coverages from [600.00, 0.00]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 2112324882.13)
+minresid_iteration_0: fail - [577.78, 3.00] using coverages from [577.78, 3.00]; initial residual was 1.6011454659e+13 (residual = 2112324882.13)
+minresid_iteration_1: success - [577.78, 3.00] using coverages from [600.00, 3.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 5.19346495049e+12)
+minresid_iteration_0: fail - [577.78, 2.67] using coverages from [577.78, 2.67]; initial residual was 1.6011454659e+13 (residual = 5.19346495049e+12)
+minresid_iteration_1: success - [577.78, 2.67] using coverages from [577.78, 3.00]
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 516031503.804)
+minresid_iteration_0: fail - [577.78, 2.33] using coverages from [577.78, 2.33]; initial residual was 1.6011454659e+13 (residual = 516031503.804)
+minresid_iteration_1: success - [577.78, 2.33] using coverages from [577.78, 2.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 604491837.944)
+minresid_iteration_0: fail - [577.78, 2.00] using coverages from [577.78, 2.00]; initial residual was 1.6011454659e+13 (residual = 604491837.944)
+minresid_iteration_1: success - [577.78, 2.00] using coverages from [577.78, 2.33]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 424677.149543)
+minresid_iteration_0: fail - [577.78, 1.67] using coverages from [577.78, 1.67]; initial residual was 1.6011454659e+13 (residual = 424677.149543)
+minresid_iteration_1: success - [577.78, 1.67] using coverages from [577.78, 2.00]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 921927929.203)
+minresid_iteration_0: fail - [577.78, 1.33] using coverages from [577.78, 1.33]; initial residual was 1.6011454659e+13 (residual = 921927929.203)
+minresid_iteration_1: success - [577.78, 1.33] using coverages from [577.78, 1.67]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 2976587.74354)
+minresid_iteration_0: fail - [577.78, 1.00] using coverages from [577.78, 1.00]; initial residual was 1.6011454659e+13 (residual = 2976587.74354)
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 2456290.79146)
+minresid_iteration_1: fail - [577.78, 1.00] using coverages from [577.78, 1.33]; initial residual was 737751115.001 (residual = 2456290.79146)
+minresid_iteration_2: success - [577.78, 1.00] using coverages from [600.00, 1.00]
+minresid_iteration_0: success - [577.78, 0.67] using coverages from [577.78, 0.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 263813049.447)
+minresid_iteration_0: fail - [577.78, 0.33] using coverages from [577.78, 0.33]; initial residual was 1.6011454659e+13 (residual = 263813049.447)
+minresid_iteration_1: success - [577.78, 0.33] using coverages from [577.78, 0.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 146317838.06)
+minresid_iteration_0: fail - [577.78, 0.00] using coverages from [577.78, 0.00]; initial residual was 1.6011454659e+13 (residual = 146317838.06)
+minresid_iteration_1: success - [577.78, 0.00] using coverages from [577.78, 0.33]
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 2517001311.68)
+minresid_iteration_0: fail - [555.56, 3.00] using coverages from [555.56, 3.00]; initial residual was 1.53956889482e+13 (residual = 2517001311.68)
+minresid_iteration_1: success - [555.56, 3.00] using coverages from [577.78, 3.00]
+rootfinding_iteration_11: fail - stagnated or diverging (residual = 708335339.718)
+minresid_iteration_0: fail - [555.56, 2.67] using coverages from [555.56, 2.67]; initial residual was 1.53956889482e+13 (residual = 708335339.718)
+minresid_iteration_1: success - [555.56, 2.67] using coverages from [555.56, 3.00]
+rootfinding_iteration_6: fail - stagnated or diverging (residual = 4049211050.85)
+minresid_iteration_0: fail - [555.56, 2.33] using coverages from [555.56, 2.33]; initial residual was 1.53956889482e+13 (residual = 4049211050.85)
+minresid_iteration_1: success - [555.56, 2.33] using coverages from [555.56, 2.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 160777441.591)
+minresid_iteration_0: fail - [555.56, 2.00] using coverages from [555.56, 2.00]; initial residual was 1.53956889482e+13 (residual = 160777441.591)
+minresid_iteration_1: success - [555.56, 2.00] using coverages from [555.56, 2.33]
+minresid_iteration_0: success - [555.56, 1.67] using coverages from [555.56, 1.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 101398991.015)
+minresid_iteration_0: fail - [555.56, 1.33] using coverages from [555.56, 1.33]; initial residual was 1.53956889482e+13 (residual = 101398991.015)
+minresid_iteration_1: success - [555.56, 1.33] using coverages from [555.56, 1.67]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 15143215.1745)
+minresid_iteration_0: fail - [555.56, 1.00] using coverages from [555.56, 1.00]; initial residual was 1.53956889482e+13 (residual = 15143215.1745)
+minresid_iteration_1: success - [555.56, 1.00] using coverages from [555.56, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 6.85113015377e+12)
+minresid_iteration_0: fail - [555.56, 0.67] using coverages from [555.56, 0.67]; initial residual was 1.53956889482e+13 (residual = 6.85113015377e+12)
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 16020702.3909)
+minresid_iteration_1: fail - [555.56, 0.67] using coverages from [555.56, 1.00]; initial residual was 498916737.366 (residual = 16020702.3909)
+minresid_iteration_2: success - [555.56, 0.67] using coverages from [577.78, 0.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 287526068.959)
+minresid_iteration_0: fail - [555.56, 0.33] using coverages from [555.56, 0.33]; initial residual was 1.53956889482e+13 (residual = 287526068.959)
+minresid_iteration_1: success - [555.56, 0.33] using coverages from [555.56, 0.67]
+rootfinding_iteration_6: fail - stagnated or diverging (residual = 206135013.5)
+minresid_iteration_0: fail - [555.56, 0.00] using coverages from [555.56, 0.00]; initial residual was 1.53956889482e+13 (residual = 206135013.5)
+minresid_iteration_1: success - [555.56, 0.00] using coverages from [555.56, 0.33]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 25764809.4686)
+minresid_iteration_0: fail - [533.33, 3.00] using coverages from [533.33, 3.00]; initial residual was 1.47799103277e+13 (residual = 25764809.4686)
+minresid_iteration_1: success - [533.33, 3.00] using coverages from [555.56, 3.00]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 1912988591.58)
+minresid_iteration_0: fail - [533.33, 2.67] using coverages from [533.33, 2.67]; initial residual was 1.47799103277e+13 (residual = 1912988591.58)
+minresid_iteration_1: success - [533.33, 2.67] using coverages from [533.33, 3.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 5.52645238716e+12)
+minresid_iteration_0: fail - [533.33, 2.33] using coverages from [533.33, 2.33]; initial residual was 1.47799103277e+13 (residual = 5.52645238716e+12)
+minresid_iteration_1: success - [533.33, 2.33] using coverages from [533.33, 2.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 31698973.1467)
+minresid_iteration_0: fail - [533.33, 2.00] using coverages from [533.33, 2.00]; initial residual was 1.47799103277e+13 (residual = 31698973.1467)
+minresid_iteration_1: success - [533.33, 2.00] using coverages from [533.33, 2.33]
+minresid_iteration_0: success - [533.33, 1.67] using coverages from [533.33, 1.67]
+rootfinding_iteration_12: fail - stagnated or diverging (residual = 1490415544.15)
+minresid_iteration_0: fail - [533.33, 1.33] using coverages from [533.33, 1.33]; initial residual was 1.47799103277e+13 (residual = 1490415544.15)
+minresid_iteration_1: success - [533.33, 1.33] using coverages from [533.33, 1.67]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 1430486845.39)
+minresid_iteration_0: fail - [533.33, 1.00] using coverages from [533.33, 1.00]; initial residual was 1.47799103277e+13 (residual = 1430486845.39)
+minresid_iteration_1: success - [533.33, 1.00] using coverages from [533.33, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 6.77980244007e+12)
+minresid_iteration_0: fail - [533.33, 0.67] using coverages from [533.33, 0.67]; initial residual was 1.47799103277e+13 (residual = 6.77980244007e+12)
+rootfinding_iteration_2: fail - stagnated or diverging (residual = 41496595.5824)
+minresid_iteration_1: fail - [533.33, 0.67] using coverages from [533.33, 1.00]; initial residual was 388694523.327 (residual = 41496595.5824)
+minresid_iteration_2: success - [533.33, 0.67] using coverages from [555.56, 0.67]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 257279529.569)
+minresid_iteration_0: fail - [533.33, 0.33] using coverages from [533.33, 0.33]; initial residual was 1.47799103277e+13 (residual = 257279529.569)
+minresid_iteration_1: success - [533.33, 0.33] using coverages from [533.33, 0.67]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 143126912.746)
+minresid_iteration_0: fail - [533.33, 0.00] using coverages from [533.33, 0.00]; initial residual was 1.47799103277e+13 (residual = 143126912.746)
+minresid_iteration_1: success - [533.33, 0.00] using coverages from [533.33, 0.33]
+rootfinding_iteration_10: fail - stagnated or diverging (residual = 29359734076.7)
+minresid_iteration_0: fail - [511.11, 3.00] using coverages from [511.11, 3.00]; initial residual was 1.4164121284e+13 (residual = 29359734076.7)
+minresid_iteration_1: success - [511.11, 3.00] using coverages from [533.33, 3.00]
+minresid_iteration_0: success - [511.11, 2.67] using coverages from [511.11, 2.67]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 1382376.12292)
+minresid_iteration_0: fail - [511.11, 2.33] using coverages from [511.11, 2.33]; initial residual was 1.4164121284e+13 (residual = 1382376.12292)
+minresid_iteration_1: success - [511.11, 2.33] using coverages from [511.11, 2.67]
+rootfinding_iteration_7: fail - stagnated or diverging (residual = 917963873.582)
+minresid_iteration_0: fail - [511.11, 2.00] using coverages from [511.11, 2.00]; initial residual was 1.4164121284e+13 (residual = 917963873.582)
+minresid_iteration_1: success - [511.11, 2.00] using coverages from [511.11, 2.33]
+minresid_iteration_0: success - [511.11, 1.67] using coverages from [511.11, 1.67]
+minresid_iteration_0: success - [511.11, 1.33] using coverages from [511.11, 1.33]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 12271072276.7)
+minresid_iteration_0: fail - [511.11, 1.00] using coverages from [511.11, 1.00]; initial residual was 1.4164121284e+13 (residual = 12271072276.7)
+minresid_iteration_1: success - [511.11, 1.00] using coverages from [511.11, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 6.5850548564e+12)
+minresid_iteration_0: fail - [511.11, 0.67] using coverages from [511.11, 0.67]; initial residual was 1.4164121284e+13 (residual = 6.5850548564e+12)
+minresid_iteration_1: success - [511.11, 0.67] using coverages from [511.11, 1.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 3.02945327328e+12)
+minresid_iteration_0: fail - [511.11, 0.33] using coverages from [511.11, 0.33]; initial residual was 1.4164121284e+13 (residual = 3.02945327328e+12)
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 990253.60207)
+minresid_iteration_1: fail - [511.11, 0.33] using coverages from [511.11, 0.67]; initial residual was 204861429.547 (residual = 990253.60207)
+minresid_iteration_2: success - [511.11, 0.33] using coverages from [533.33, 0.33]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 131253129.211)
+minresid_iteration_0: fail - [511.11, 0.00] using coverages from [511.11, 0.00]; initial residual was 1.4164121284e+13 (residual = 131253129.211)
+minresid_iteration_1: success - [511.11, 0.00] using coverages from [511.11, 0.33]
+rootfinding_iteration_11: fail - stagnated or diverging (residual = 89623573921.9)
+minresid_iteration_0: fail - [488.89, 3.00] using coverages from [488.89, 3.00]; initial residual was 1.3548323093e+13 (residual = 89623573921.9)
+minresid_iteration_1: success - [488.89, 3.00] using coverages from [511.11, 3.00]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 1520937.58207)
+minresid_iteration_0: fail - [488.89, 2.67] using coverages from [488.89, 2.67]; initial residual was 1.3548323093e+13 (residual = 1520937.58207)
+minresid_iteration_1: success - [488.89, 2.67] using coverages from [488.89, 3.00]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 1014587984.75)
+minresid_iteration_0: fail - [488.89, 2.33] using coverages from [488.89, 2.33]; initial residual was 1.3548323093e+13 (residual = 1014587984.75)
+minresid_iteration_1: success - [488.89, 2.33] using coverages from [488.89, 2.67]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 4.62884822558e+12)
+minresid_iteration_0: fail - [488.89, 2.00] using coverages from [488.89, 2.00]; initial residual was 1.3548323093e+13 (residual = 4.62884822558e+12)
+minresid_iteration_1: success - [488.89, 2.00] using coverages from [488.89, 2.33]
+minresid_iteration_0: success - [488.89, 1.67] using coverages from [488.89, 1.67]
+minresid_iteration_0: success - [488.89, 1.33] using coverages from [488.89, 1.33]
+rootfinding_iteration_12: fail - stagnated or diverging (residual = 553568740.116)
+minresid_iteration_0: fail - [488.89, 1.00] using coverages from [488.89, 1.00]; initial residual was 1.3548323093e+13 (residual = 553568740.116)
+minresid_iteration_1: success - [488.89, 1.00] using coverages from [488.89, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 6.33150430607e+12)
+minresid_iteration_0: fail - [488.89, 0.67] using coverages from [488.89, 0.67]; initial residual was 1.3548323093e+13 (residual = 6.33150430607e+12)
+minresid_iteration_1: success - [488.89, 0.67] using coverages from [488.89, 1.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 2.89031568679e+12)
+minresid_iteration_0: fail - [488.89, 0.33] using coverages from [488.89, 0.33]; initial residual was 1.3548323093e+13 (residual = 2.89031568679e+12)
+minresid_iteration_1: success - [488.89, 0.33] using coverages from [488.89, 0.67]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1.34732156236e+12)
+minresid_iteration_0: fail - [488.89, 0.00] using coverages from [488.89, 0.00]; initial residual was 1.3548323093e+13 (residual = 1.34732156236e+12)
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1321389.23918)
+minresid_iteration_1: fail - [488.89, 0.00] using coverages from [488.89, 0.33]; initial residual was 109510733.824 (residual = 1321389.23918)
+minresid_iteration_2: success - [488.89, 0.00] using coverages from [511.11, 0.00]
+rootfinding_iteration_10: fail - stagnated or diverging (residual = 65782673967.8)
+minresid_iteration_0: fail - [466.67, 3.00] using coverages from [466.67, 3.00]; initial residual was 1.29325168431e+13 (residual = 65782673967.8)
+minresid_iteration_1: success - [466.67, 3.00] using coverages from [488.89, 3.00]
+rootfinding_iteration_10: fail - stagnated or diverging (residual = 69939551146.7)
+minresid_iteration_0: fail - [466.67, 2.67] using coverages from [466.67, 2.67]; initial residual was 1.29325168431e+13 (residual = 69939551146.7)
+minresid_iteration_1: success - [466.67, 2.67] using coverages from [466.67, 3.00]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 1192389168.28)
+minresid_iteration_0: fail - [466.67, 2.33] using coverages from [466.67, 2.33]; initial residual was 1.29325168431e+13 (residual = 1192389168.28)
+minresid_iteration_1: success - [466.67, 2.33] using coverages from [466.67, 2.67]
+rootfinding_iteration_10: fail - stagnated or diverging (residual = 190588490.435)
+minresid_iteration_0: fail - [466.67, 2.00] using coverages from [466.67, 2.00]; initial residual was 1.29325168431e+13 (residual = 190588490.435)
+minresid_iteration_1: success - [466.67, 2.00] using coverages from [466.67, 2.33]
+minresid_iteration_0: success - [466.67, 1.67] using coverages from [466.67, 1.67]
+minresid_iteration_0: success - [466.67, 1.33] using coverages from [466.67, 1.33]
+rootfinding_iteration_11: fail - stagnated or diverging (residual = 1388064140.62)
+minresid_iteration_0: fail - [466.67, 1.00] using coverages from [466.67, 1.00]; initial residual was 1.29325168431e+13 (residual = 1388064140.62)
+minresid_iteration_1: success - [466.67, 1.00] using coverages from [466.67, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 6.05083864172e+12)
+minresid_iteration_0: fail - [466.67, 0.67] using coverages from [466.67, 0.67]; initial residual was 1.29325168431e+13 (residual = 6.05083864172e+12)
+minresid_iteration_1: success - [466.67, 0.67] using coverages from [466.67, 1.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 2.76456874171e+12)
+minresid_iteration_0: fail - [466.67, 0.33] using coverages from [466.67, 0.33]; initial residual was 1.29325168431e+13 (residual = 2.76456874171e+12)
+minresid_iteration_1: success - [466.67, 0.33] using coverages from [466.67, 0.67]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1.28356286995e+12)
+minresid_iteration_0: fail - [466.67, 0.00] using coverages from [466.67, 0.00]; initial residual was 1.29325168431e+13 (residual = 1.28356286995e+12)
+minresid_iteration_1: success - [466.67, 0.00] using coverages from [466.67, 0.33]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 7.73398012953e+11)
+minresid_iteration_0: fail - [444.44, 3.00] using coverages from [444.44, 3.00]; initial residual was 1.23167034208e+13 (residual = 7.73398012953e+11)
+minresid_iteration_1: success - [444.44, 3.00] using coverages from [466.67, 3.00]
+rootfinding_iteration_11: fail - stagnated or diverging (residual = 70216529848.9)
+minresid_iteration_0: fail - [444.44, 2.67] using coverages from [444.44, 2.67]; initial residual was 1.23167034208e+13 (residual = 70216529848.9)
+minresid_iteration_1: success - [444.44, 2.67] using coverages from [444.44, 3.00]
+rootfinding_iteration_11: fail - stagnated or diverging (residual = 14088585.7845)
+minresid_iteration_0: fail - [444.44, 2.33] using coverages from [444.44, 2.33]; initial residual was 1.23167034208e+13 (residual = 14088585.7845)
+minresid_iteration_1: success - [444.44, 2.33] using coverages from [444.44, 2.67]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 723684927.458)
+minresid_iteration_0: fail - [444.44, 2.00] using coverages from [444.44, 2.00]; initial residual was 1.23167034208e+13 (residual = 723684927.458)
+minresid_iteration_1: success - [444.44, 2.00] using coverages from [444.44, 2.33]
+minresid_iteration_0: success - [444.44, 1.67] using coverages from [444.44, 1.67]
+minresid_iteration_0: success - [444.44, 1.33] using coverages from [444.44, 1.33]
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 28110126.2003)
+minresid_iteration_0: fail - [444.44, 1.00] using coverages from [444.44, 1.00]; initial residual was 1.23167034208e+13 (residual = 28110126.2003)
+minresid_iteration_1: success - [444.44, 1.00] using coverages from [444.44, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 5.75643686136e+12)
+minresid_iteration_0: fail - [444.44, 0.67] using coverages from [444.44, 0.67]; initial residual was 1.23167034208e+13 (residual = 5.75643686136e+12)
+minresid_iteration_1: success - [444.44, 0.67] using coverages from [444.44, 1.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 2.64212118097e+12)
+minresid_iteration_0: fail - [444.44, 0.33] using coverages from [444.44, 0.33]; initial residual was 1.23167034208e+13 (residual = 2.64212118097e+12)
+minresid_iteration_1: success - [444.44, 0.33] using coverages from [444.44, 0.67]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1.22450189217e+12)
+minresid_iteration_0: fail - [444.44, 0.00] using coverages from [444.44, 0.00]; initial residual was 1.23167034208e+13 (residual = 1.22450189217e+12)
+minresid_iteration_1: success - [444.44, 0.00] using coverages from [444.44, 0.33]
+rootfinding_iteration_5: fail - stagnated or diverging (residual = 3.86374732685e+11)
+minresid_iteration_0: fail - [422.22, 3.00] using coverages from [422.22, 3.00]; initial residual was 1.17008838124e+13 (residual = 3.86374732685e+11)
+minresid_iteration_1: success - [422.22, 3.00] using coverages from [444.44, 3.00]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 54921912825.9)
+minresid_iteration_0: fail - [422.22, 2.67] using coverages from [422.22, 2.67]; initial residual was 1.17008838124e+13 (residual = 54921912825.9)
+minresid_iteration_1: success - [422.22, 2.67] using coverages from [422.22, 3.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1.92332278112e+12)
+minresid_iteration_0: fail - [422.22, 2.33] using coverages from [422.22, 2.33]; initial residual was 1.17008838124e+13 (residual = 1.92332278112e+12)
+minresid_iteration_1: success - [422.22, 2.33] using coverages from [422.22, 2.67]
+minresid_iteration_0: success - [422.22, 2.00] using coverages from [422.22, 2.00]
+minresid_iteration_0: success - [422.22, 1.67] using coverages from [422.22, 1.67]
+rootfinding_iteration_8: fail - stagnated or diverging (residual = 2066629857.91)
+minresid_iteration_0: fail - [422.22, 1.33] using coverages from [422.22, 1.33]; initial residual was 1.17008838124e+13 (residual = 2066629857.91)
+minresid_iteration_1: success - [422.22, 1.33] using coverages from [422.22, 1.67]
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 155428.894392)
+minresid_iteration_0: fail - [422.22, 1.00] using coverages from [422.22, 1.00]; initial residual was 1.17008838124e+13 (residual = 155428.894392)
+minresid_iteration_1: success - [422.22, 1.00] using coverages from [422.22, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 5.48969444309e+12)
+minresid_iteration_0: fail - [422.22, 0.67] using coverages from [422.22, 0.67]; initial residual was 1.17008838124e+13 (residual = 5.48969444309e+12)
+minresid_iteration_1: success - [422.22, 0.67] using coverages from [422.22, 1.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 2.51758683374e+12)
+minresid_iteration_0: fail - [422.22, 0.33] using coverages from [422.22, 0.33]; initial residual was 1.17008838124e+13 (residual = 2.51758683374e+12)
+minresid_iteration_1: success - [422.22, 0.33] using coverages from [422.22, 0.67]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1.16818583217e+12)
+minresid_iteration_0: fail - [422.22, 0.00] using coverages from [422.22, 0.00]; initial residual was 1.17008838124e+13 (residual = 1.16818583217e+12)
+minresid_iteration_1: success - [422.22, 0.00] using coverages from [422.22, 0.33]
+rootfinding_iteration_10: fail - stagnated or diverging (residual = 43396483714.7)
+minresid_iteration_0: fail - [400.00, 3.00] using coverages from [400.00, 3.00]; initial residual was 1.10850590723e+13 (residual = 43396483714.7)
+minresid_iteration_1: success - [400.00, 3.00] using coverages from [422.22, 3.00]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 45936552260.3)
+minresid_iteration_0: fail - [400.00, 2.67] using coverages from [400.00, 2.67]; initial residual was 1.10850590723e+13 (residual = 45936552260.3)
+minresid_iteration_1: success - [400.00, 2.67] using coverages from [400.00, 3.00]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 49234084215.0)
+minresid_iteration_0: fail - [400.00, 2.33] using coverages from [400.00, 2.33]; initial residual was 1.10850590723e+13 (residual = 49234084215.0)
+minresid_iteration_1: success - [400.00, 2.33] using coverages from [400.00, 2.67]
+rootfinding_iteration_11: fail - stagnated or diverging (residual = 54679260630.2)
+minresid_iteration_0: fail - [400.00, 2.00] using coverages from [400.00, 2.00]; initial residual was 1.10850590723e+13 (residual = 54679260630.2)
+minresid_iteration_1: success - [400.00, 2.00] using coverages from [400.00, 2.33]
+rootfinding_iteration_9: fail - stagnated or diverging (residual = 772667898.216)
+minresid_iteration_0: fail - [400.00, 1.67] using coverages from [400.00, 1.67]; initial residual was 1.10850590723e+13 (residual = 772667898.216)
+minresid_iteration_1: success - [400.00, 1.67] using coverages from [400.00, 2.00]
+minresid_iteration_0: success - [400.00, 1.33] using coverages from [400.00, 1.33]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 2433.66906046)
+minresid_iteration_0: fail - [400.00, 1.00] using coverages from [400.00, 1.00]; initial residual was 1.10850590723e+13 (residual = 2433.66906046)
+minresid_iteration_1: success - [400.00, 1.00] using coverages from [400.00, 1.33]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 5.1508371762e+12)
+minresid_iteration_0: fail - [400.00, 0.67] using coverages from [400.00, 0.67]; initial residual was 1.10850590723e+13 (residual = 5.1508371762e+12)
+minresid_iteration_1: success - [400.00, 0.67] using coverages from [400.00, 1.00]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 2.38580598179e+12)
+minresid_iteration_0: fail - [400.00, 0.33] using coverages from [400.00, 0.33]; initial residual was 1.10850590723e+13 (residual = 2.38580598179e+12)
+minresid_iteration_1: success - [400.00, 0.33] using coverages from [400.00, 0.67]
+rootfinding_iteration_4: fail - stagnated or diverging (residual = 1.10732767637e+12)
+minresid_iteration_0: fail - [400.00, 0.00] using coverages from [400.00, 0.00]; initial residual was 1.10850590723e+13 (residual = 1.10732767637e+12)
+minresid_iteration_1: success - [400.00, 0.00] using coverages from [400.00, 0.33]
+mapper_iteration_1: status - 0 points do not have valid solution."""
