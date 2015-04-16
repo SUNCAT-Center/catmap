@@ -172,8 +172,11 @@ class ReactionModel:
                 interaction_model.interaction_response_function = int_function
             self.thermodynamics.__dict__['adsorbate_interactions'] = interaction_model
 
-        elif self.adsorbate_interaction_model == 'second_order':
-            interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+        elif self.adsorbate_interaction_model in ['second_order','multisite']:
+            if self.adsorbate_interaction_model == 'second_order':
+                interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+            elif self.adsorbate_interaction_model == 'multisite':
+                interaction_model = catmap.thermodynamics.MultisiteInteractions(self)
             interaction_model.get_interaction_info()
             response_func = interaction_model.interaction_response_function
             if not callable(response_func):

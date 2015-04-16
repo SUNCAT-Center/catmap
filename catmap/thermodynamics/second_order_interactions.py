@@ -68,8 +68,6 @@ class SecondOrderInteractions(FirstOrderInteractions,ReactionModelWrapper):
 
         return sum_1
 
-        
-
     @staticmethod
     def smooth_piecewise_linear_response(*args,**kwargs):
         #Note these need to override first-order functions

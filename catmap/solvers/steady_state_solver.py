@@ -182,19 +182,9 @@ class SteadyStateSolver(MeanFieldSolver):
                 pass
             else:
                 raise ValueError('System does not have enough parameters for interactions')
-#        try:
         cvgs =  self.get_steady_state_coverage(rxn_parameters,self.interacting_steady_state_function,
             self.interacting_steady_state_jacobian,c0,findrootArgs)
         return cvgs
-#        except ValueError:
-#            new_cvgs = self.get_ideal_coverages(rxn_parameters[:n_tot],c0)
-#            valid_strength = 0
-#            coverages = self.bisect_interaction_strength(rxn_parameters,valid_strength,new_cvgs,1.0,5)
-#            if coverages is not None:
-#                return coverages
-#            else:
-#                print 'Bisection Failed!'
-#                raise ValueError
 
     def bisect_interaction_strength(self,rxn_parameters,valid_strength,valid_coverages,target_strength,max_bisections,findrootArgs={}):
         n_tot = len(self.adsorbate_names+self.transition_state_names)

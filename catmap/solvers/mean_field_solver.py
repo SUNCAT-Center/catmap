@@ -325,17 +325,50 @@ class MeanFieldSolver(SolverBase):
         idx_dict = {}
         surf_species = self.adsorbate_names+self.transition_state_names
         for s in self.site_names:
-            idxs = [surf_species.index(a) for a in surf_species if
-                    self.species_definitions[a]['site'] == s]
-            if idxs:
-                if self.adsorbate_interaction_model not in ['ideal',None]:
-                    default_params = getattr(
-                            self.thermodynamics.adsorbate_interactions,
-                            'interaction_response_parameters',{})
-                else:
-                    default_params = {}
-                F_params = self.species_definitions[s].get('interaction_response_parameters',default_params)
-                idx_dict[s] = [idxs,self.species_definitions[s]['total'],F_params]
+            for q in self.site_names:
+                if s == q:
+                    idxs = [surf_species.index(a) for a in surf_species if
+                            self.species_definitions[a]['site'] == s]
+                    if idxs:
+                        if self.adsorbate_interaction_model not in ['ideal',None]:
+                            default_params = getattr(
+                                    self.thermodynamics.adsorbate_interactions,
+                                    'interaction_response_parameters',{})
+                        else:
+                            default_params = {}
+                        F_params = self.species_definitions[s].get('interaction_response_parameters',default_params)
+                        idx_dict[s] = [idxs,self.species_definitions[s]['total'],F_params]
+
+                elif self.adsorbate_interaction_model == 'multisite' and 'g' not in [s,q]:
+                    if '&'.join([s,q]) not in idx_dict and '&'.join([q,s]) not in idx_dict:
+                        key = '&'.join([s,q])
+                        idxs = [surf_species.index(a) for a in surf_species if
+                                self.species_definitions[a]['site'] in [s,q]]
+                        if idxs:
+                            if self.adsorbate_interaction_model not in ['ideal',None]:
+                                default_params = getattr(
+                                        self.thermodynamics.adsorbate_interactions,
+                                        'interaction_response_parameters',{})
+                            else:
+                                default_params = {}
+
+                            cirp = 'cross_interaction_response_parameters'
+                            if cirp in self.species_definitions[s]:
+                                F_params = self.species_definitions[s][cirp][q]
+                            elif cirp in self.species_definitions[q]:
+                                F_params = self.species_definitions[q][cirp][s]
+                            else:
+                                print(('Warning: No cross-site interaction params specified'
+                                        ' for {s},{q}. Assuming interaction params of {s}.')
+                                        .format(**locals()))
+                                F_params = self.species_definitions[s].get(
+                                    'interaction_response_parameters',default_params)
+
+                            max_cvg = (self.species_definitions[s][
+                                'total'] + self.species_definitions[q]['total'])/2.
+
+                            idx_dict[key] = [idxs,max_cvg,F_params]
+
         subdict['site_info_dict'] =  'site_info_dict = ' + repr(idx_dict)
         return subdict
 

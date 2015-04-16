@@ -50,7 +50,8 @@ def constrain_coverage_function(cvgs,mpf,c_min):
     cvgs = [min(ci,maxi) for ci,maxi in zip(cvgs,max_coverage_list)]
 
     #enforce site conservation
-    for s in site_info_dict:
+    single_sites = [s for s in site_info_dict if '&' not in s]
+    for s in single_sites:
         idxs = [idx for idx in site_info_dict[s][0] if idx < n_adsorbates]
         tot = site_info_dict[s][1]
         sum_a = sum([cvgs[id] for id in idxs])
@@ -366,6 +367,113 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
 
     return E_diff, E_jacob
 """
+templates['multisite_interaction_function'] = r"""
+def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
+
+    ##this dictionary is passed in via the "template" so that it can be compiled
+    ${site_info_dict}
+
+    N_ads = len(coverages)
+    single_sites = [s for s in site_info_dict if '&' not in s]
+    N_sites = len(single_sites)
+
+    idx_lists = []
+    f = [[0]*N_sites for x in range(N_sites)]
+    df = [[0]*N_sites for x in range(N_sites)]
+    d2f = [[0]*N_sites for x in range(N_sites)]
+
+    ##form matrix of f, df, d2f for each site and cross-site
+    for si,s in enumerate(single_sites):
+        for qi,q in enumerate(single_sites):
+            if s == q:
+                idxs,max_cvg,F_params = site_info_dict[s]
+                idx_lists.append(site_info_dict[s][0])
+                theta_tot = 2*sum([coverages[i] for i in idxs])
+            else:
+                key1 = '&'.join([s,q])
+                key2 = '&'.join([q,s])
+                if key1 in site_info_dict:
+                    idxs,max_cvg,F_params = site_info_dict[key1]
+                elif key2 in site_info_dict:
+                    idxs,max_cvg,F_params = site_info_dict[key2]
+                else:
+                    raise UserWarning(
+                    ('No cross-site interactions'
+                     ' specified for {s},{q}')
+                      .format(**locals()))
+                theta_tot = sum([coverages[i] for i in idxs])
+
+            fs,dfs,d2fs = F(theta_tot,**F_params)
+            f[si][qi] = f[qi][si] = fs
+            df[si][qi] = df[qi][si] = dfs
+            d2f[si][qi] = d2f[qi][si] = d2fs
+
+    #initiate terms for first derivative
+    term_1 = [0]*N_ads
+    term_2 = [0]*N_ads
+    
+    #initate intermediate quantities
+    eps_theta_theta = [[0]*N_sites for x in range(N_sites)]
+    eps_theta = [[0]*N_sites for x in range(N_ads)]
+    site_lookup = [0]*N_ads
+
+    #form site_lookup and eps_theta_theta matrix.
+    #site_lookup used to avoid empty sums over sites
+    #eps_theta_theta used for term_2 and jacobian
+    for s in range(N_sites):
+        for i in idx_lists[s]:
+            if i in idx_lists[s]:
+                site_lookup[i] = s
+            for q in range(N_sites):
+                for j in idx_lists[q]:
+                    ep_t_t = epsilon[i*N_ads+j]*coverages[i]*coverages[j]
+                    eps_theta_theta[s][q] += ep_t_t
+
+    #form term_1 and eps_theta matrix (eps_theta needed for jacobian)
+    for k in range(N_ads):
+        q_k = site_lookup[k]
+        for s in range(N_sites):
+            for i in idx_lists[s]:
+                eps_theta[k][s] += epsilon[i*N_ads+k]*coverages[i]
+            term_1[k] += ((f[s][q_k])**2)*eps_theta[k][s]
+
+    #form term_2
+    for k in range(N_ads):
+        q_k = site_lookup[k]
+        for s in range(N_sites):
+            term_2[k] += 2*f[s][q_k]*df[s][q_k]*eps_theta_theta[s][q_k]
+
+    #combine terms with constant energy to give E_diff
+    E_diff = [a+b+c for a,b,c in zip(energies,term_1,term_2)]
+
+    if include_derivatives:
+        #compute the jacobian
+        E_jacob = [[0]*N_ads for x in range(N_ads)]
+
+        for k in range(N_ads):
+            for l in range(N_ads):
+                s_l = site_lookup[l]
+                q_k = site_lookup[k]
+                f_sq = f[s_l][q_k]
+                df_sq = df[s_l][q_k]
+                #obtained from tensor calculus, checked against numerical derivative
+                E_jacob[l][k] += (     \
+                         (f_sq**2)*epsilon[l*N_ads+k] +\
+                         2*(f_sq*df_sq*(eps_theta[k][s_l]+eps_theta[l][q_k]) + \
+                         eps_theta_theta[s_l][q_k]*((df_sq**2) + (f_sq*d2f[s_l][q_k]))))
+                
+                #term is only included if l and k are on the same site
+                if l in idx_lists[q_k]:
+                    for s in range(N_sites):
+                        E_jacob[l][k] += 2*(     \
+                             f[s][q_k]*df[s][q_k]*(eps_theta[k][s]+eps_theta[l][s]) + \
+                             eps_theta_theta[s][q_k]*((df[s][q_k]**2) + \
+                                                       f[s][q_k]*d2f[s][q_k]))
+    else:
+        E_jacob = None
+
+    return E_diff, E_jacob
+"""
 
 templates['ideal_interaction_function'] = r"""
 def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
@@ -374,3 +482,4 @@ def interaction_function(coverages,energies,interaction_vector,F,include_derivat
     derivs = derivs*len(coverages)
     return energies, derivs
     """
+
