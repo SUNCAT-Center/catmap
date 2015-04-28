@@ -324,10 +324,9 @@ def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
             J[i,j] = Jj[i]
     return J
 
-def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05):
+def smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25,smoothing=0.05):
     x1 = cutoff + smoothing
     x0 = cutoff - smoothing
-    slope = (1./max_coverage)
     if theta_tot <= x0:
         c_0 = 0
         dC = 0
@@ -343,9 +342,9 @@ def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05)
         d2C = (-2*slope*cutoff)/(theta_tot**3)
     return c_0, dC, d2C
 
-def offset_smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25, smoothing=0.05, offset=0.1):
+def offset_smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25, smoothing=0.05, offset=0.1):
     #piecewise linear function with an offset. Not equivalent to piecewise linear
     #for second-order interactions
-    c_0, dC, d2C = smooth_piecewise_linear(theta_tot,max_coverage,cutoff,smoothing)
+    c_0, dC, d2C = smooth_piecewise_linear(theta_tot,slope,cutoff,smoothing)
     c_0 += offset
     return c_0, dC, d2C

@@ -32,7 +32,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 'interaction_fitting_mode':None
                 }
         self._log_strings = {'interaction_fitting_success':
-                "interaction parameter ${param} = ${paramval}"}
+                "interaction parameter ${param} = ${paramval} (error=${error})"}
 
     def parameterize_interactions(self):
         self._parameterized = True
@@ -71,17 +71,17 @@ class FirstOrderInteractions(ReactionModelWrapper):
 
         if 'differential' in self.interaction_fitting_mode:
             Ediff_model = self.interaction_function(theta,E0_list,eps_list,
-                    self.interaction_response_function,False)[0][i]
+                    self.interaction_response_function,False,False)[1][i]
             diff_err = (Ediff-Ediff_model)
         else:
             diff_err = None
 
         if 'integral' in self.interaction_fitting_mode:
-            if getattr(self,'integral_interaction_function',None):
-                Eint_model = self.integral_interaction_function(theta,E0_list,
-                        eps_list,self.interaction_response_function,False)
+            try:
+                Eint_model = self.interaction_function(theta,E0_list,eps_list,
+                        self.interaction_response_function,False,True)[0]
                 int_err = (Eint-Eint_model)
-            else:
+            except UserWarning:
                 raise AttributeError('Interaction model has no function for ' +\
                         'computing integral interacting energies. Fit to differential '+\
                         'energies instead.')
@@ -125,27 +125,14 @@ class FirstOrderInteractions(ReactionModelWrapper):
         eps_ij = fmin(minimize,[x0],disp=verbose_fitting)[0]
         self.log('interaction_fitting_success',
                 param = param_name,
-                paramval = str(eps_ij)
+                paramval = str(eps_ij),
+                error = str(round(minimize(eps_ij),2)),
                 )
         return eps_ij
 
     def fit(self):
         all_adsnames = self.adsorbate_names+self.transition_state_names
-        f_list = []
         E0_list = []
-
-        #Remove
-        for ads in all_adsnames:
-            site = ads.split('_')[-1]
-            total_cvg = self.species_definitions[site].get('total',1)
-            F_params = self.species_definitions[site].get('interaction_response_parameters',
-                    self.interaction_response_parameters)
-            if 'max_coverage' not in F_params:
-                F_params['max_coverage'] = total_cvg
-            else:
-                F_params['max_coverage'] *= total_cvg
-            fi = lambda x: self.interaction_response_function(x,**F_params)
-            f_list.append(fi)
 
         for i, surf in enumerate(self.surface_names):
             fitting_info = {}

@@ -133,7 +133,7 @@ class MeanFieldSolver(SolverBase):
         energies = rxn_parameters[:N_ads]
         eps_vector = rxn_parameters[N_ads:]
         cvg = self._coverage + [0]*len(self.transition_state_names)
-        E_int = self.interaction_function(cvg,energies,eps_vector,self.thermodynamics.adsorbate_interactions.interaction_response_function,False)[0]
+        E_int = self.interaction_function(cvg,energies,eps_vector,self.thermodynamics.adsorbate_interactions.interaction_response_function,False,False)[1]
         return E_int
 
     def get_selectivity_control(self,rxn_parameters):
@@ -339,7 +339,7 @@ class MeanFieldSolver(SolverBase):
                         F_params = self.species_definitions[s].get('interaction_response_parameters',default_params)
                         idx_dict[s] = [idxs,self.species_definitions[s]['total'],F_params]
 
-                elif self.adsorbate_interaction_model == 'multisite' and 'g' not in [s,q]:
+                elif self.adsorbate_interaction_model == 'second_order' and 'g' not in [s,q]:
                     if '&'.join([s,q]) not in idx_dict and '&'.join([q,s]) not in idx_dict:
                         key = '&'.join([s,q])
                         idxs = [surf_species.index(a) for a in surf_species if

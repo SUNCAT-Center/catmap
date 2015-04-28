@@ -39,15 +39,14 @@ descriptor_ranges = [[400,600],[0,3]]
 
 resolution = 10
 
-#the model is called "multisite" for now, but will likely
-#change to "second_order" in the future.
-adsorbate_interaction_model = 'multisite'
-#adsorbate_interaction_model = 'second_order'
+#adsorbate_interaction_model = 'first_order'
+adsorbate_interaction_model = 'second_order'
 #adsorbate_interaction_model = 'ideal'
 
 #interaction auto-fitting mode. integral, differential, or integral+differential
+interaction_fitting_mode = 'integral' 
+#interaction_fitting_mode = 'integral+differential' 
 #interaction_fitting_mode = 'differential' 
-interaction_fitting_mode = 'integral+differential' 
 
 interaction_response_function = 'smooth_piecewise_linear'
 
@@ -102,8 +101,8 @@ species_definitions['CH3CHO_g'] = {'concentration':delta}
 
 species_definitions['s'] = {'site_names': ['111'], 
                             'total':1,
-                            'interaction_response_parameters': {'max_coverage':1.0,
-                                                               'cutoff':0.6,
+                            'interaction_response_parameters': {'slope':1.0,
+                                                               'cutoff':0.33,
                                                                'smoothing':0.05,
                                                                },
                             } #upper step site
@@ -111,12 +110,12 @@ species_definitions['s'] = {'site_names': ['111'],
 species_definitions['h'] = {'site_names': ['111'], 
                             'total':1.0,
                             'interaction_response_parameters': {
-                                                               'max_coverage':1.0,
+                                                               'slope':1.0,
                                                                'cutoff':1.0,
                                                                'smoothing':0.05,
                                                                },
                             'cross_interaction_response_parameters':{'s':{
-                                                               'max_coverage':1.0,
+                                                               'slope':1.0,
                                                                'cutoff':1.0,
                                                                'smoothing':0.05,
                                                                }}

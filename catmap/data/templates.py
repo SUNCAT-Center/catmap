@@ -86,7 +86,7 @@ def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matri
     else:
         raise ValueError('Length of reaction parameters is not correct. '+ str(rxn_parameters))
 
-    Gf,dGs =  interaction_function(theta,energies,interaction_vector,F,include_derivatives=include_derivatives)
+    G_int, Gf,dGs =  interaction_function(theta,energies,interaction_vector,F,include_derivatives=include_derivatives, include_integral=False)
 
     ${kB}
     ${h}
@@ -211,7 +211,7 @@ def ideal_mean_field_jacobian(kf,kr,theta,p,mpf,matrix):
 """
 
 templates['first_order_interaction_function'] = r"""
-def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
+def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True,include_integral=False): 
 
 #    Function for evaluating coverage-dependent intearction energies. 
 #
@@ -246,7 +246,6 @@ def interaction_function(coverages,energies,interaction_vector,F,include_derivat
     c_tots = [0]*len(coverages)
     for s in site_info_dict:
         idxs, max_cvg, F_params = site_info_dict[s]
-        F_params['max_coverage'] = max_cvg
         cvgs = [coverages[j] for j in idxs]
         c_tot_i = sum(cvgs)
         f, df = F(c_tot_i,**F_params)
@@ -291,84 +290,15 @@ def interaction_function(coverages,energies,interaction_vector,F,include_derivat
             dEs.append(diff_vector)
         else:
             dEs = None
-    return Es, dEs
+    E_int = None
+    if include_integral:
+        raise UserWarning('First-order interactions are not '
+                            'compatible with integral energies')
+    return E_int, Es, dEs
     """
 
 templates['second_order_interaction_function'] = r"""
-def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
-    ${site_info_dict}
-
-    N_ads = len(coverages)
-    N_sites = len(site_info_dict)
-
-    idx_lists = []
-    f = []
-    df = []
-    d2f = []
-    for s in site_info_dict:
-        idxs,max_cvg,F_params = site_info_dict[s]
-        #Things might get strange when max_coverage != 1...
-        if 'max_coverage' not in F_params:
-            F_params['max_coverage'] = max_cvg
-        else:
-            F_params['max_coverage'] *= max_cvg
-        idx_lists.append(site_info_dict[s][0])
-        theta_tot = sum([coverages[i] for i in idxs])
-        fs,dfs,d2fs = F(theta_tot,**F_params)
-        f.append(fs)
-        df.append(dfs)
-        d2f.append(d2fs)
-    
-    term_1 = [0]*N_ads
-    term_1_sum = [[0]*N_ads for i in range(N_ads)]
-    term_2 = [0]*N_ads
-    term_2_sum = [[0]*N_sites for i in range(N_sites)]
-
-    for s in range(N_sites):
-        for q in range(N_sites):
-            for j in idx_lists[s]:
-                for k in idx_lists[q]:
-                    term_2_sum[q][s] += epsilon[j*N_ads+k]*coverages[j]*coverages[k]
-
-    for q in range(N_sites):
-        for n in range(N_ads):
-            for j in idx_lists[q]:
-                term_1_sum[n][q] += epsilon[j*N_ads+n]*coverages[j]
-
-    #Double-check:
-        #Should be possible to pull fk out of term_1
-        #Make sure s,q index trick takes care of 1/2 term of sum2 properly
-    for s in range(N_sites):
-        for q in range(N_sites):
-            for n in idx_lists[s]:
-                term_2[n] += df[s]*f[q]*term_2_sum[q][s]
-                term_1[n] += f[s]*f[q]*term_1_sum[n][q]
-                    
-    E_diff = [a+b+c for a,b,c in zip(energies,term_1,term_2)]
-
-    if include_derivatives:
-        E_jacob = [[0]*N_ads for i in range(N_ads)]
-        for s in range(0,N_sites):
-            for q in range(0,N_sites):
-                for n in idx_lists[s]:
-                    for m in idx_lists[s]:
-                        prod_nmsq = df[s]*f[q]*term_1_sum[n][q]
-                        E_jacob[n][m] += prod_nmsq 
-                        E_jacob[m][n] += prod_nmsq
-                        E_jacob[n][m] += d2f[s]*f[q]*term_2_sum[q][s]
-                    for m in idx_lists[q]:
-                        prod_nmsq2 = df[q]*f[s]*term_1_sum[n][q]
-                        E_jacob[n][m] += prod_nmsq2
-                        E_jacob[m][n] += prod_nmsq2
-                        E_jacob[n][m] += df[s]*df[q]*term_2_sum[q][s]
-                        E_jacob[n][m] += epsilon[m*N_ads+n]*f[s]*f[q]
-    else:
-        E_jacob = None
-
-    return E_diff, E_jacob
-"""
-templates['multisite_interaction_function'] = r"""
-def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
+def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,include_integral=False):
 
     ##this dictionary is passed in via the "template" so that it can be compiled
     ${site_info_dict}
@@ -472,14 +402,27 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True):
     else:
         E_jacob = None
 
-    return E_diff, E_jacob
+    if include_integral:
+        E = 0
+        for i in range(N_ads):
+            E += energies[i]*coverages[i]
+
+        for s in range(N_sites):
+            for q in range(N_sites):
+                for i in idx_lists[s]:
+                    for j in idx_lists[q]:
+                        E += 0.5*(f[s][q]**2)*epsilon[i*N_ads+j]*coverages[i]*coverages[j]
+    else:
+        E = 0
+
+
+    return E, E_diff, E_jacob
 """
 
 templates['ideal_interaction_function'] = r"""
-def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True): 
+def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True,include_integral=False): 
     #Dummy function for non-interacting
     derivs = [[0]*len(coverages)]
     derivs = derivs*len(coverages)
-    return energies, derivs
+    return None, energies, derivs
     """
-
