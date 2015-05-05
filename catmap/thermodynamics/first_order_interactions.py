@@ -19,7 +19,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 transition_state_cross_interaction_mode='intermediate_state',
                 default_self_interaction_parameter = 0,
                 interaction_response_function = 'linear',
-                interaction_response_parameters = {'max_coverage':1,'cutoff':0.25,
+                interaction_response_parameters = {'slope':1,'cutoff':0.25,
                     'smoothing':0.05},
                 interaction_fitting_mode=None,
                 input_overrides_fit = True, #user inputs override fitted values
@@ -32,7 +32,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 'interaction_fitting_mode':None
                 }
         self._log_strings = {'interaction_fitting_success':
-                "interaction parameter ${param} = ${paramval} (error=${error})"}
+                "interaction parameter ${param} = ${paramval} (avg_error=${error})"}
 
     def parameterize_interactions(self):
         self._parameterized = True
@@ -75,6 +75,18 @@ class FirstOrderInteractions(ReactionModelWrapper):
             diff_err = (Ediff-Ediff_model)
         else:
             diff_err = None
+
+        if 'semidifferential' in self.interaction_fitting_mode:
+            delta_theta = 0.11
+            Eint_f = self.interaction_function(theta,E0_list,eps_list,
+                    self.interaction_response_function,False,True)[0]
+            new_theta = [x for x in theta]
+            new_theta[i] -= delta_theta
+            Eint_i = self.interaction_function(new_theta,E0_list,eps_list,
+                    self.interaction_response_function,False,True)[0]
+            Ediff_model = (Eint_f - Eint_i)/(delta_theta)
+            diff_err = (Ediff-Ediff_model)
+            
 
         if 'integral' in self.interaction_fitting_mode:
             try:
@@ -245,6 +257,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
         
         #make sure that new parameters get incorporated into interaction matrix
         self.get_interaction_info()
+        self._fitting_info = fitting_info
 
     def get_interaction_info(self):
         interaction_dict = {}
