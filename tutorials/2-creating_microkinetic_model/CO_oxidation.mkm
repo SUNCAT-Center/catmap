@@ -4,7 +4,10 @@
 
 rxn_expressions = [
 
+#               '*_s + CO_g -> CO*', 
+#               '2*_s + O2_g <-> O-O* + *_s -> 2O*',
                '*_s + CO_g -> CO*', 
+#               '2*_s + O2_g -> 2O*',
                '2*_s + O2_g <-> O-O* + *_s -> 2O*',
                'CO* +  O* <-> O-CO* + * -> CO2_g + 2*',
 

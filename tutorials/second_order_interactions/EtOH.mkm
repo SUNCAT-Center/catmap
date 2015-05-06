@@ -28,7 +28,7 @@ rxn_expressions = [
 
                    ]
 
-interaction_strength = 1 #scale the interaction strength. Use this to diagnose convergence issues
+interaction_strength = 1.0 #scale the interaction strength. Use this to diagnose convergence issues
 
 
 surface_names = ['Rh']
@@ -43,10 +43,10 @@ resolution = 10
 adsorbate_interaction_model = 'second_order'
 #adsorbate_interaction_model = 'ideal'
 
-#interaction auto-fitting mode. integral, differential, or integral+differential
-interaction_fitting_mode = 'integral' 
-#interaction_fitting_mode = 'integral+differential' 
-#interaction_fitting_mode = 'differential' 
+#interaction auto-fitting mode. integral, differential, numerical_differential or 
+# any combination (e.g. integral+differential)
+interaction_fitting_mode = 'numerical_differential+integral' 
+numerical_delta_theta = 0.11
 
 interaction_response_function = 'smooth_piecewise_linear'
 
@@ -88,7 +88,7 @@ species_definitions = {}
 #species_definitions['CO_s'] = {'self_interaction_parameter':[0.65],
 #                                'cross_interaction_parameters': CO_cross_coeffs}
 
-default_self_interaction_parameter = 0
+default_self_interaction_parameter = 2.5
 species_definitions['H_h'] = {'self_interaction_parameter':[0]}
 
 delta = 1e-20
@@ -102,21 +102,21 @@ species_definitions['CH3CHO_g'] = {'concentration':delta}
 species_definitions['s'] = {'site_names': ['111'], 
                             'total':1,
                             'interaction_response_parameters': {'slope':1.0,
-                                                               'cutoff':0.33,
+                                                               'cutoff':0.66,
                                                                'smoothing':0.05,
                                                                },
                             } #upper step site
 
 species_definitions['h'] = {'site_names': ['111'], 
                             'total':1.0,
-                            'interaction_response_parameters': {
+                            'interaction_response_parameters': { #H* doesn't interact (cutoff = 2)
                                                                'slope':1.0,
-                                                               'cutoff':1.0,
+                                                               'cutoff':2.0,
                                                                'smoothing':0.05,
                                                                },
                             'cross_interaction_response_parameters':{'s':{
                                                                'slope':1.0,
-                                                               'cutoff':1.0,
+                                                               'cutoff':2.0,
                                                                'smoothing':0.05,
                                                                }}
                             } #hydrogen reservoir

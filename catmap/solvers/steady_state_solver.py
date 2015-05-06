@@ -38,7 +38,9 @@ class SteadyStateSolver(MeanFieldSolver):
                             'rootfinding_status':
                             "converging (residual = ${resid})"}
     
-    def get_rate_constants(self,rxn_parameters,coverages):
+    def get_rate_constants(self,rxn_parameters,coverages=None):
+        if coverages is None:
+            coverages = [0]*len(self.adsorbate_names)
         if self.adsorbate_interaction_model not in [None,'ideal']:
             memo = tuple(rxn_parameters) + tuple(coverages) + tuple(self._gas_energies)
         else:

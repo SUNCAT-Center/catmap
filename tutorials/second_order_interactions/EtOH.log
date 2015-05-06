@@ -45,7 +45,7 @@ data_file = 'data.pkl'
 
 decimal_precision = 100
 
-default_self_interaction_parameter = 0
+default_self_interaction_parameter = 2.5
 
 delta = 1e-20
 
@@ -75,7 +75,7 @@ frequency_unit_conversion = 0.0001239842
 
 gas_names = ('CH4_g', 'CO_g', 'H2O_g', 'H2_g')
 
-gas_pressures = [2.1544346900318837e-20, 0.71814489667729453, 2.1544346900318837e-20, 1.4362897933545891]
+gas_pressures = [9.9999999999999992e-18, 333.33333333333331, 9.9999999999999992e-18, 666.66666666666663]
 
 gas_thermo_mode = 'shomate_gas'
 
@@ -89,13 +89,13 @@ input_overrides_fit = True
 
 interaction_cross_term_names = ('CH_s&CO_s', 'CHOH_s&CO_s', 'CO_s&OH_s', 'CH-OH_s&CO_s', 'CHO_s&CO_s', 'CO_s&H-OH_s', 'CH2_s&CO_s', 'CO_s&H-CH2_s', 'CO_s&H_h', 'CH3_s&CO_s', 'CO_s&HCO-H_s', 'CO_s&H-CH3_s', 'CH-H_s&CO_s', 'CO_s&H-CO_s')
 
-interaction_fitting_mode = 'integral'
+interaction_fitting_mode = 'numerical_differential+integral'
 
-interaction_parameters = [0, 0, 0, 0, 0, 0, 1.0050000000000012, 0, 0.32612500000000022, -0.18525000000000011, 0.43775000000000042, 1.1752500000000015, 1.072375000000001, 2.0685000000000029, 0.2115000000000001, 2.3830000000000036, 0.0, 2.1978750000000029, 1.2457500000000012, 1.5015000000000014, 1.8511250000000024, 1.8041250000000018]
+interaction_parameters = [0, 2.5, 2.5, 2.5, 2.5, 2.5, 5.2898750000000039, 2.5, -2.6108750000000023, -3.9200000000000044, -2.7563750000000025, -0.90637500000000082, -1.3018750000000012, 1.3481250000000014, -3.1200000000000028, 2.1481875000000024, 0.0, 1.0981250000000011, -0.39725000000000033, 0.18450000000000014, 0.83912500000000079, 0.54812500000000053]
 
-interaction_response_parameters = {'cutoff': 0.25, 'max_coverage': 1, 'smoothing': 0.05}
+interaction_response_parameters = {'slope': 1, 'cutoff': 0.25, 'smoothing': 0.05}
 
-interaction_strength = 1
+interaction_strength = 1.0
 
 interaction_surface_names = None
 
@@ -103,7 +103,7 @@ interaction_transition_state_scaling_matrix = [[0.5, 0.5, 0, 0, 0, 0.5, 0, 0], [
 
 internally_constrain_coverages = True
 
-logPressure = 0.33333333333333331
+logPressure = 3.0
 
 max_bisections = 3
 
@@ -112,6 +112,8 @@ max_initial_guesses = 3
 max_rootfinding_iterations = 100
 
 model_name = 'EtOH'
+
+numerical_delta_theta = 0.11
 
 numerical_representation = 'mpmath'
 
@@ -131,7 +133,7 @@ perturbation_size = 1e-14
 
 prefactor_list = ['kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h']
 
-pressure = 2.1544346900318838
+pressure = 1000.0
 
 pressure_mode = 'concentration'
 
@@ -161,7 +163,7 @@ standard_coverage = 'min'
 
 surface_names = ('Rh',)
 
-temperature = 400.0
+temperature = 577.77777777777783
 
 thermodynamic_corrections = ['gas', 'adsorbate', 'electrochemical']
 
@@ -175,182 +177,492 @@ transition_state_names = ('CH-H_s', 'CH-OH_s', 'H-CH2_s', 'H-CH3_s', 'H-CO_s', '
 
 verbose = 1
 
-stdout = """interaction_fitting_evaluation: success - interaction parameter CO_s = 1.005 (error=0.02)
-interaction_fitting_evaluation: success - interaction parameter CH_s&CO_s = 0.326125 (error=0.01)
-interaction_fitting_evaluation: success - interaction parameter CH3_s&CO_s = 2.197875 (error=0.02)
-interaction_fitting_evaluation: success - interaction parameter CH-H_s&CO_s = 1.851125 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter H-CO_s&CO_s = 1.804125 (error=0.02)
-interaction_fitting_evaluation: success - interaction parameter HCO-H_s&CO_s = 1.24575 (error=0.01)
-interaction_fitting_evaluation: success - interaction parameter OH_s&CO_s = 0.43775 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter H_h&CO_s = 0.0 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter CH-OH_s&CO_s = 1.17525 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter CH2_s&CO_s = 0.2115 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter CHOH_s&CO_s = -0.18525 (error=0.01)
-interaction_fitting_evaluation: success - interaction parameter H-CH2_s&CO_s = 2.383 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter H-CH3_s&CO_s = 1.5015 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter H-OH_s&CO_s = 2.0685 (error=0.0)
-interaction_fitting_evaluation: success - interaction parameter CHO_s&CO_s = 1.072375 (error=0.0)
-initial_evaluation: success - initial guess at point [600.00, 3.00]
-initial_evaluation: success - initial guess at point [600.00, 2.67]
-initial_evaluation: success - initial guess at point [600.00, 2.33]
-initial_evaluation: success - initial guess at point [600.00, 2.00]
-initial_evaluation: success - initial guess at point [600.00, 1.67]
-initial_evaluation: success - initial guess at point [600.00, 1.33]
-initial_evaluation: success - initial guess at point [600.00, 1.00]
+stdout = """interaction_fitting_evaluation: success - interaction parameter CO_s = 5.289875 (avg_error=0.17)
+interaction_fitting_evaluation: success - interaction parameter CH_s&CO_s = -2.610875 (avg_error=0.05)
+interaction_fitting_evaluation: success - interaction parameter CH3_s&CO_s = 1.098125 (avg_error=0.17)
+interaction_fitting_evaluation: success - interaction parameter CH-H_s&CO_s = 0.839125 (avg_error=0.04)
+interaction_fitting_evaluation: success - interaction parameter H-CO_s&CO_s = 0.548125 (avg_error=0.19)
+interaction_fitting_evaluation: success - interaction parameter HCO-H_s&CO_s = -0.39725 (avg_error=0.13)
+interaction_fitting_evaluation: success - interaction parameter OH_s&CO_s = -2.756375 (avg_error=0.05)
+interaction_fitting_evaluation: success - interaction parameter H_h&CO_s = 0.0 (avg_error=0.09)
+interaction_fitting_evaluation: success - interaction parameter CH-OH_s&CO_s = -0.906375 (avg_error=0.05)
+interaction_fitting_evaluation: success - interaction parameter CH2_s&CO_s = -3.12 (avg_error=0.06)
+interaction_fitting_evaluation: success - interaction parameter CHOH_s&CO_s = -3.92 (avg_error=0.11)
+interaction_fitting_evaluation: success - interaction parameter H-CH2_s&CO_s = 2.1481875 (avg_error=0.05)
+interaction_fitting_evaluation: success - interaction parameter H-CH3_s&CO_s = 0.1845 (avg_error=0.03)
+interaction_fitting_evaluation: success - interaction parameter H-OH_s&CO_s = 1.348125 (avg_error=0.07)
+interaction_fitting_evaluation: success - interaction parameter CHO_s&CO_s = -1.301875 (avg_error=0.08)
+rootfinding_iteration_20: fail - stagnated or diverging (residual = 3043.59233116)
+initial_evaluation: fail - initial guess at point [600.00, 3.00]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 2394.42633649)
+initial_evaluation: fail - initial guess at point [600.00, 2.67]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1574.25018728)
+initial_evaluation: fail - initial guess at point [600.00, 2.33]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 963.451260707)
+initial_evaluation: fail - initial guess at point [600.00, 2.00]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 708.32318331)
+initial_evaluation: fail - initial guess at point [600.00, 1.67]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 770.183447289)
+initial_evaluation: fail - initial guess at point [600.00, 1.33]
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 921.242926516)
+initial_evaluation: fail - initial guess at point [600.00, 1.00]
 initial_evaluation: success - initial guess at point [600.00, 0.67]
 initial_evaluation: success - initial guess at point [600.00, 0.33]
 initial_evaluation: success - initial guess at point [600.00, 0.00]
-rootfinding_iteration_7: fail - stagnated or diverging (residual = 46329.3495716)
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 1380.79691224)
 initial_evaluation: fail - initial guess at point [577.78, 3.00]
-initial_evaluation: success - initial guess at point [577.78, 2.67]
-initial_evaluation: success - initial guess at point [577.78, 2.33]
-initial_evaluation: success - initial guess at point [577.78, 2.00]
-initial_evaluation: success - initial guess at point [577.78, 1.67]
-initial_evaluation: success - initial guess at point [577.78, 1.33]
-initial_evaluation: success - initial guess at point [577.78, 1.00]
-initial_evaluation: success - initial guess at point [577.78, 0.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 664.101233317)
+initial_evaluation: fail - initial guess at point [577.78, 2.67]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 439.480640923)
+initial_evaluation: fail - initial guess at point [577.78, 2.33]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 279.843535631)
+initial_evaluation: fail - initial guess at point [577.78, 2.00]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 273.585130691)
+initial_evaluation: fail - initial guess at point [577.78, 1.67]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 305.090809744)
+initial_evaluation: fail - initial guess at point [577.78, 1.33]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 306.288744604)
+initial_evaluation: fail - initial guess at point [577.78, 1.00]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 334.983998632)
+initial_evaluation: fail - initial guess at point [577.78, 0.67]
 initial_evaluation: success - initial guess at point [577.78, 0.33]
 initial_evaluation: success - initial guess at point [577.78, 0.00]
-initial_evaluation: success - initial guess at point [555.56, 3.00]
-initial_evaluation: success - initial guess at point [555.56, 2.67]
-initial_evaluation: success - initial guess at point [555.56, 2.33]
-rootfinding_iteration_6: fail - stagnated or diverging (residual = 257211.958228)
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 592.164274383)
+initial_evaluation: fail - initial guess at point [555.56, 3.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 227.989474015)
+initial_evaluation: fail - initial guess at point [555.56, 2.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 132.326036838)
+initial_evaluation: fail - initial guess at point [555.56, 2.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 67.2859104814)
 initial_evaluation: fail - initial guess at point [555.56, 2.00]
-initial_evaluation: success - initial guess at point [555.56, 1.67]
-initial_evaluation: success - initial guess at point [555.56, 1.33]
-initial_evaluation: success - initial guess at point [555.56, 1.00]
-initial_evaluation: success - initial guess at point [555.56, 0.67]
-initial_evaluation: success - initial guess at point [555.56, 0.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 80.618862511)
+initial_evaluation: fail - initial guess at point [555.56, 1.67]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 107.533447033)
+initial_evaluation: fail - initial guess at point [555.56, 1.33]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 113.699958523)
+initial_evaluation: fail - initial guess at point [555.56, 1.00]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 100.915754598)
+initial_evaluation: fail - initial guess at point [555.56, 0.67]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 102.303605838)
+initial_evaluation: fail - initial guess at point [555.56, 0.33]
 initial_evaluation: success - initial guess at point [555.56, 0.00]
-initial_evaluation: success - initial guess at point [533.33, 3.00]
-rootfinding_iteration_4: fail - stagnated or diverging (residual = 9115210.68195)
+initial_evaluation: invalid - initial guess at point [550.00, 3.00]
+initial_evaluation: invalid - initial guess at point [545.83, 3.00]
+initial_evaluation: invalid - initial guess at point [544.44, 2.83]
+initial_evaluation: invalid - initial guess at point [538.89, 2.92]
+initial_evaluation: invalid - initial guess at point [537.50, 2.94]
+initial_evaluation: invalid - initial guess at point [533.33, 2.91]
+initial_evaluation: invalid - initial guess at point [533.33, 2.88]
+initial_evaluation: invalid - initial guess at point [533.33, 2.83]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 66.133793346)
 initial_evaluation: fail - initial guess at point [533.33, 2.67]
-initial_evaluation: success - initial guess at point [533.33, 2.33]
-initial_evaluation: success - initial guess at point [533.33, 2.00]
-initial_evaluation: success - initial guess at point [533.33, 1.67]
-initial_evaluation: success - initial guess at point [533.33, 1.33]
-initial_evaluation: success - initial guess at point [533.33, 1.00]
-initial_evaluation: success - initial guess at point [533.33, 0.67]
-initial_evaluation: success - initial guess at point [533.33, 0.33]
-initial_evaluation: success - initial guess at point [533.33, 0.00]
-initial_evaluation: success - initial guess at point [511.11, 3.00]
-initial_evaluation: success - initial guess at point [511.11, 2.67]
-initial_evaluation: success - initial guess at point [511.11, 2.33]
-rootfinding_iteration_3: fail - stagnated or diverging (residual = 3244249.1805)
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 55.3239475883)
+initial_evaluation: fail - initial guess at point [533.33, 2.33]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 16.9183140957)
+initial_evaluation: fail - initial guess at point [533.33, 2.00]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 43.6396977575)
+initial_evaluation: fail - initial guess at point [533.33, 1.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 41.4990325952)
+initial_evaluation: fail - initial guess at point [533.33, 1.33]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 36.1587868513)
+initial_evaluation: fail - initial guess at point [533.33, 1.00]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 34.0239737051)
+initial_evaluation: fail - initial guess at point [533.33, 0.67]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 31.5794726168)
+initial_evaluation: fail - initial guess at point [533.33, 0.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 29.8946161064)
+initial_evaluation: fail - initial guess at point [533.33, 0.00]
+initial_evaluation: invalid - initial guess at point [527.78, 2.75]
+initial_evaluation: invalid - initial guess at point [523.61, 2.81]
+initial_evaluation: invalid - initial guess at point [516.67, 2.75]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 17.0840575725)
+initial_evaluation: fail - initial guess at point [511.11, 2.67]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 10.2034098735)
+initial_evaluation: fail - initial guess at point [511.11, 2.33]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 6.08681143092)
 initial_evaluation: fail - initial guess at point [511.11, 2.00]
-initial_evaluation: success - initial guess at point [511.11, 1.67]
-initial_evaluation: success - initial guess at point [511.11, 1.33]
-initial_evaluation: success - initial guess at point [511.11, 1.00]
-initial_evaluation: success - initial guess at point [511.11, 0.67]
-initial_evaluation: success - initial guess at point [511.11, 0.33]
-initial_evaluation: success - initial guess at point [511.11, 0.00]
-initial_evaluation: success - initial guess at point [488.89, 3.00]
-initial_evaluation: success - initial guess at point [488.89, 2.67]
-initial_evaluation: success - initial guess at point [488.89, 2.33]
-initial_evaluation: success - initial guess at point [488.89, 2.00]
-rootfinding_iteration_4: fail - stagnated or diverging (residual = 9209087.70902)
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 14.5432125353)
+initial_evaluation: fail - initial guess at point [511.11, 1.67]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 10.1161701275)
+initial_evaluation: fail - initial guess at point [511.11, 1.33]
+rootfinding_iteration_20: fail - stagnated or diverging (residual = 11.9406307286)
+initial_evaluation: fail - initial guess at point [511.11, 1.00]
+rootfinding_iteration_20: fail - stagnated or diverging (residual = 9.87488216361)
+initial_evaluation: fail - initial guess at point [511.11, 0.67]
+rootfinding_iteration_20: fail - stagnated or diverging (residual = 10.7232780317)
+initial_evaluation: fail - initial guess at point [511.11, 0.33]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 11.052371552)
+initial_evaluation: fail - initial guess at point [511.11, 0.00]
+initial_evaluation: invalid - initial guess at point [500.00, 2.50]
+initial_evaluation: invalid - initial guess at point [497.22, 2.54]
+initial_evaluation: invalid - initial guess at point [488.89, 2.50]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 2.23248593382)
+initial_evaluation: fail - initial guess at point [488.89, 2.33]
+rootfinding_iteration_23: fail - stagnated or diverging (residual = 0.881370501204)
+initial_evaluation: fail - initial guess at point [488.89, 2.00]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 1.66219578877)
 initial_evaluation: fail - initial guess at point [488.89, 1.67]
-initial_evaluation: success - initial guess at point [488.89, 1.33]
-initial_evaluation: success - initial guess at point [488.89, 1.00]
-initial_evaluation: success - initial guess at point [488.89, 0.67]
-initial_evaluation: success - initial guess at point [488.89, 0.33]
-initial_evaluation: success - initial guess at point [488.89, 0.00]
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 1364791.77429)
-initial_evaluation: fail - initial guess at point [466.67, 3.00]
-initial_evaluation: success - initial guess at point [466.67, 2.67]
-initial_evaluation: success - initial guess at point [466.67, 2.33]
-initial_evaluation: success - initial guess at point [466.67, 2.00]
-initial_evaluation: success - initial guess at point [466.67, 1.67]
-initial_evaluation: success - initial guess at point [466.67, 1.33]
-initial_evaluation: success - initial guess at point [466.67, 1.00]
-initial_evaluation: success - initial guess at point [466.67, 0.67]
-initial_evaluation: success - initial guess at point [466.67, 0.33]
-initial_evaluation: success - initial guess at point [466.67, 0.00]
-rootfinding_iteration_3: fail - stagnated or diverging (residual = 4987733.33356)
-initial_evaluation: fail - initial guess at point [444.44, 3.00]
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 364254.192768)
-initial_evaluation: fail - initial guess at point [444.44, 2.67]
-initial_evaluation: success - initial guess at point [444.44, 2.33]
-initial_evaluation: success - initial guess at point [444.44, 2.00]
-initial_evaluation: success - initial guess at point [444.44, 1.67]
-initial_evaluation: success - initial guess at point [444.44, 1.33]
-rootfinding_iteration_4: fail - stagnated or diverging (residual = 1155167.28346)
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 8.64278972504)
+initial_evaluation: fail - initial guess at point [488.89, 1.33]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 2.99466405061)
+initial_evaluation: fail - initial guess at point [488.89, 1.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 2.88164390026)
+initial_evaluation: fail - initial guess at point [488.89, 0.67]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 3.35870821812)
+initial_evaluation: fail - initial guess at point [488.89, 0.33]
+rootfinding_iteration_20: fail - stagnated or diverging (residual = 3.66363806067)
+initial_evaluation: fail - initial guess at point [488.89, 0.00]
+initial_evaluation: invalid - initial guess at point [483.33, 2.42]
+initial_evaluation: invalid - initial guess at point [477.78, 2.33]
+initial_evaluation: invalid - initial guess at point [477.78, 2.17]
+initial_evaluation: invalid - initial guess at point [475.00, 2.33]
+initial_evaluation: invalid - initial guess at point [472.92, 2.33]
+initial_evaluation: invalid - initial guess at point [472.22, 2.25]
+initial_evaluation: invalid - initial guess at point [469.44, 2.29]
+initial_evaluation: invalid - initial guess at point [466.67, 2.25]
+initial_evaluation: invalid - initial guess at point [466.67, 2.17]
+rootfinding_iteration_25: fail - stagnated or diverging (residual = 0.293286726662)
+initial_evaluation: fail - initial guess at point [466.67, 2.00]
+rootfinding_iteration_23: fail - stagnated or diverging (residual = 0.328137520166)
+initial_evaluation: fail - initial guess at point [466.67, 1.67]
+rootfinding_iteration_25: fail - stagnated or diverging (residual = 0.662223419119)
+initial_evaluation: fail - initial guess at point [466.67, 1.33]
+rootfinding_iteration_23: fail - stagnated or diverging (residual = 0.636998563149)
+initial_evaluation: fail - initial guess at point [466.67, 1.00]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 0.95365310548)
+initial_evaluation: fail - initial guess at point [466.67, 0.67]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 0.776863351956)
+initial_evaluation: fail - initial guess at point [466.67, 0.33]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 0.671079157634)
+initial_evaluation: fail - initial guess at point [466.67, 0.00]
+initial_evaluation: invalid - initial guess at point [461.11, 2.08]
+initial_evaluation: invalid - initial guess at point [456.94, 2.15]
+rootfinding_iteration_26: fail - stagnated or diverging (residual = 0.0326416218484)
+initial_evaluation: fail - initial guess at point [444.44, 2.00]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.0962531153569)
+initial_evaluation: fail - initial guess at point [444.44, 1.67]
+rootfinding_iteration_20: fail - stagnated or diverging (residual = 0.50774009869)
+initial_evaluation: fail - initial guess at point [444.44, 1.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 1.33676547836)
 initial_evaluation: fail - initial guess at point [444.44, 1.00]
-initial_evaluation: success - initial guess at point [444.44, 0.67]
-initial_evaluation: success - initial guess at point [444.44, 0.33]
-initial_evaluation: success - initial guess at point [444.44, 0.00]
-initial_evaluation: success - initial guess at point [422.22, 3.00]
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 842836.833958)
-initial_evaluation: fail - initial guess at point [422.22, 2.67]
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 171785.200249)
-initial_evaluation: fail - initial guess at point [422.22, 2.33]
-initial_evaluation: success - initial guess at point [422.22, 2.00]
-initial_evaluation: success - initial guess at point [422.22, 1.67]
-initial_evaluation: success - initial guess at point [422.22, 1.33]
-initial_evaluation: success - initial guess at point [422.22, 1.00]
-rootfinding_iteration_3: fail - stagnated or diverging (residual = 41866.2681325)
+rootfinding_iteration_25: fail - stagnated or diverging (residual = 0.125672950611)
+initial_evaluation: fail - initial guess at point [444.44, 0.67]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.127295709926)
+initial_evaluation: fail - initial guess at point [444.44, 0.33]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.157241684633)
+initial_evaluation: fail - initial guess at point [444.44, 0.00]
+initial_evaluation: invalid - initial guess at point [433.33, 1.83]
+rootfinding_iteration_26: fail - stagnated or diverging (residual = 0.0142404406823)
+initial_evaluation: fail - initial guess at point [422.22, 1.67]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.0243588776021)
+initial_evaluation: fail - initial guess at point [422.22, 1.33]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 0.130530608342)
+initial_evaluation: fail - initial guess at point [422.22, 1.00]
+rootfinding_iteration_27: fail - stagnated or diverging (residual = 0.0203745447285)
 initial_evaluation: fail - initial guess at point [422.22, 0.67]
-initial_evaluation: success - initial guess at point [422.22, 0.33]
-initial_evaluation: success - initial guess at point [422.22, 0.00]
-initial_evaluation: success - initial guess at point [400.00, 3.00]
-initial_evaluation: success - initial guess at point [400.00, 2.67]
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 118140.881138)
-initial_evaluation: fail - initial guess at point [400.00, 2.33]
-rootfinding_iteration_2: fail - stagnated or diverging (residual = 23558.1330256)
-initial_evaluation: fail - initial guess at point [400.00, 2.00]
-initial_evaluation: success - initial guess at point [400.00, 1.67]
-initial_evaluation: success - initial guess at point [400.00, 1.33]
-initial_evaluation: success - initial guess at point [400.00, 1.00]
-initial_evaluation: success - initial guess at point [400.00, 0.67]
-rootfinding_iteration_3: fail - stagnated or diverging (residual = 39425.4646884)
+rootfinding_iteration_26: fail - stagnated or diverging (residual = 0.0200536122007)
+initial_evaluation: fail - initial guess at point [422.22, 0.33]
+rootfinding_iteration_26: fail - stagnated or diverging (residual = 0.0188789800781)
+initial_evaluation: fail - initial guess at point [422.22, 0.00]
+initial_evaluation: invalid - initial guess at point [411.11, 1.50]
+rootfinding_iteration_27: fail - stagnated or diverging (residual = 0.00760310761593)
+initial_evaluation: fail - initial guess at point [400.00, 1.33]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 0.0204893473464)
+initial_evaluation: fail - initial guess at point [400.00, 1.00]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 0.108574979732)
+initial_evaluation: fail - initial guess at point [400.00, 0.67]
+rootfinding_iteration_28: fail - stagnated or diverging (residual = 0.00278315624508)
 initial_evaluation: fail - initial guess at point [400.00, 0.33]
-initial_evaluation: success - initial guess at point [400.00, 0.00]
-mapper_iteration_0: status - 15 points do not have valid solution.
-rootfinding_iteration_9: fail - stagnated or diverging (residual = 2.84763786657e+11)
-minresid_iteration_0: fail - [577.78, 3.00] using coverages from [577.78, 3.00]; initial residual was 1.60519132329e+16 (residual = 2.84763786657e+11)
-rootfinding_iteration_11: fail - stagnated or diverging (residual = 681271399.61)
-minresid_iteration_1: fail - [577.78, 3.00] using coverages from [577.78, 3.00]; initial residual was 1.33234106885e+16 (residual = 681271399.61)
-minresid_iteration_2: success - [577.78, 3.00] using coverages from [577.78, 3.00]
-rootfinding_iteration_6: fail - stagnated or diverging (residual = 788626394.43)
-minresid_iteration_0: fail - [555.56, 2.00] using coverages from [555.56, 2.00]; initial residual was 1.75962888326e+14 (residual = 788626394.43)
-minresid_iteration_1: success - [555.56, 2.00] using coverages from [555.56, 1.67]
-rootfinding_iteration_7: fail - stagnated or diverging (residual = 48685494240.3)
-minresid_iteration_0: fail - [533.33, 2.67] using coverages from [533.33, 2.67]; initial residual was 5.01052966576e+14 (residual = 48685494240.3)
-minresid_iteration_1: success - [533.33, 2.67] using coverages from [533.33, 2.33]
-rootfinding_iteration_6: fail - stagnated or diverging (residual = 273056083.088)
-minresid_iteration_0: fail - [511.11, 2.00] using coverages from [511.11, 2.00]; initial residual was 5.90228729881e+13 (residual = 273056083.088)
-minresid_iteration_1: success - [511.11, 2.00] using coverages from [511.11, 1.67]
-rootfinding_iteration_6: fail - stagnated or diverging (residual = 2955999.12207)
-minresid_iteration_0: fail - [488.89, 1.67] using coverages from [488.89, 1.67]; initial residual was 1.34560541858e+13 (residual = 2955999.12207)
-minresid_iteration_1: success - [488.89, 1.67] using coverages from [488.89, 1.33]
-rootfinding_iteration_8: fail - stagnated or diverging (residual = 307060791.641)
-minresid_iteration_0: fail - [466.67, 3.00] using coverages from [466.67, 3.00]; initial residual was 1.33988638904e+14 (residual = 307060791.641)
-minresid_iteration_1: success - [466.67, 3.00] using coverages from [466.67, 2.67]
-rootfinding_iteration_8: fail - stagnated or diverging (residual = 9905704.56136)
-minresid_iteration_0: fail - [444.44, 3.00] using coverages from [444.44, 3.00]; initial residual was 5.33562055262e+13 (residual = 9905704.56136)
-minresid_iteration_1: success - [444.44, 3.00] using coverages from [422.22, 3.00]
-rootfinding_iteration_8: fail - stagnated or diverging (residual = 8488547.53939)
-minresid_iteration_0: fail - [444.44, 2.67] using coverages from [444.44, 2.67]; initial residual was 2.47228125957e+13 (residual = 8488547.53939)
-minresid_iteration_1: success - [444.44, 2.67] using coverages from [444.44, 2.33]
-rootfinding_iteration_6: fail - stagnated or diverging (residual = 1548.13523943)
-minresid_iteration_0: fail - [444.44, 1.00] using coverages from [444.44, 1.00]; initial residual was 4.5421999167e+11 (residual = 1548.13523943)
-minresid_iteration_1: success - [444.44, 1.00] using coverages from [444.44, 0.67]
-rootfinding_iteration_8: fail - stagnated or diverging (residual = 141788.812691)
-minresid_iteration_0: fail - [422.22, 2.67] using coverages from [422.22, 2.67]; initial residual was 8.66104447743e+12 (residual = 141788.812691)
-minresid_iteration_1: success - [422.22, 2.67] using coverages from [400.00, 2.67]
-rootfinding_iteration_7: fail - stagnated or diverging (residual = 1578530.90268)
-minresid_iteration_0: fail - [422.22, 2.33] using coverages from [422.22, 2.33]; initial residual was 4.00505211367e+12 (residual = 1578530.90268)
-minresid_iteration_1: success - [422.22, 2.33] using coverages from [422.22, 2.00]
-rootfinding_iteration_5: fail - stagnated or diverging (residual = 114.662254925)
-minresid_iteration_0: fail - [422.22, 0.67] using coverages from [422.22, 0.67]; initial residual was 1.38989428366e+11 (residual = 114.662254925)
-minresid_iteration_1: success - [422.22, 0.67] using coverages from [422.22, 0.33]
-rootfinding_iteration_8: fail - stagnated or diverging (residual = 11463.4178625)
-minresid_iteration_0: fail - [400.00, 2.33] using coverages from [400.00, 2.33]; initial residual was 1.22153635109e+12 (residual = 11463.4178625)
+rootfinding_iteration_28: fail - stagnated or diverging (residual = 0.00369530308121)
+initial_evaluation: fail - initial guess at point [400.00, 0.00]
+mapper_iteration_0: status - 94 points do not have valid solution.
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 3874.2111605)
+minresid_iteration_0: fail - [600.00, 3.00] using coverages from [600.00, 3.00]; initial residual was 1.66692945111e+16 (residual = 3874.2111605)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 54363.5780055)
+minresid_iteration_1: fail - [600.00, 3.00] using coverages from [600.00, 3.00]; initial residual was 1.38396435591e+16 (residual = 54363.5780055)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 53455.4576453)
+minresid_iteration_2: fail - [600.00, 3.00] using coverages from [600.00, 3.00]; initial residual was 3.84059184689e+15 (residual = 53455.4576453)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 59763.190885)
+minresid_iteration_0: fail - [600.00, 2.67] using coverages from [600.00, 2.67]; initial residual was 1.77606983519e+15 (residual = 59763.190885)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 62067.4032507)
+minresid_iteration_0: fail - [600.00, 2.33] using coverages from [600.00, 2.33]; initial residual was 8.17803536163e+14 (residual = 62067.4032507)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 58418.4947967)
+minresid_iteration_0: fail - [600.00, 2.00] using coverages from [600.00, 2.00]; initial residual was 3.73015720843e+14 (residual = 58418.4947967)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 57880.001807)
+minresid_iteration_0: fail - [600.00, 1.67] using coverages from [600.00, 1.67]; initial residual was 1.66563505152e+14 (residual = 57880.001807)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 56616.9958073)
+minresid_iteration_0: fail - [600.00, 1.33] using coverages from [600.00, 1.33]; initial residual was 7.07368752493e+13 (residual = 56616.9958073)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 59351.1752592)
+minresid_iteration_0: fail - [600.00, 1.00] using coverages from [600.00, 1.00]; initial residual was 2.62580937174e+13 (residual = 59351.1752592)
+minresid_iteration_1: success - [600.00, 1.00] using coverages from [600.00, 0.67]
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 28795.4272786)
+minresid_iteration_0: fail - [577.78, 3.00] using coverages from [577.78, 3.00]; initial residual was 2.70584701786e+15 (residual = 28795.4272786)
+rootfinding_iteration_14: fail - stagnated or diverging (residual = 30411.4246685)
+minresid_iteration_0: fail - [577.78, 2.67] using coverages from [577.78, 2.67]; initial residual was 1.24996182515e+15 (residual = 30411.4246685)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 23130.0518115)
+minresid_iteration_0: fail - [577.78, 2.33] using coverages from [577.78, 2.33]; initial residual was 5.74199779794e+14 (residual = 23130.0518115)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 23369.6665888)
+minresid_iteration_0: fail - [577.78, 2.00] using coverages from [577.78, 2.00]; initial residual was 2.60538823406e+14 (residual = 23369.6665888)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 23224.8942509)
+minresid_iteration_0: fail - [577.78, 1.67] using coverages from [577.78, 1.67]; initial residual was 1.14950304135e+14 (residual = 23224.8942509)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 22851.2106351)
+minresid_iteration_0: fail - [577.78, 1.33] using coverages from [577.78, 1.33]; initial residual was 4.73740996e+13 (residual = 22851.2106351)
+minresid_iteration_1: success - [577.78, 1.33] using coverages from [600.00, 1.00]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 22483.3038123)
+minresid_iteration_0: fail - [577.78, 1.00] using coverages from [577.78, 1.00]; initial residual was 1.91244556466e+13 (residual = 22483.3038123)
+minresid_iteration_1: success - [577.78, 1.00] using coverages from [577.78, 1.33]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 22305.4858142)
+minresid_iteration_0: fail - [577.78, 0.67] using coverages from [577.78, 0.67]; initial residual was 1.91244556466e+13 (residual = 22305.4858142)
+minresid_iteration_1: success - [577.78, 0.67] using coverages from [577.78, 0.33]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9306.19150924)
+minresid_iteration_0: fail - [555.56, 3.00] using coverages from [555.56, 3.00]; initial residual was 1.77610935862e+15 (residual = 9306.19150924)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9720.33784759)
+minresid_iteration_0: fail - [555.56, 2.67] using coverages from [555.56, 2.67]; initial residual was 8.1886848906e+14 (residual = 9720.33784759)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9953.40303488)
+minresid_iteration_0: fail - [555.56, 2.33] using coverages from [555.56, 2.33]; initial residual was 3.74556635937e+14 (residual = 9953.40303488)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 10040.3634418)
+minresid_iteration_0: fail - [555.56, 2.00] using coverages from [555.56, 2.00]; initial residual was 1.68325342327e+14 (residual = 10040.3634418)
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 10009.4613669)
+minresid_iteration_0: fail - [555.56, 1.67] using coverages from [555.56, 1.67]; initial residual was 7.26012553713e+13 (residual = 10009.4613669)
+minresid_iteration_1: success - [555.56, 1.67] using coverages from [577.78, 1.33]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9908.45027177)
+minresid_iteration_0: fail - [555.56, 1.33] using coverages from [555.56, 1.33]; initial residual was 2.81700700591e+13 (residual = 9908.45027177)
+minresid_iteration_1: success - [555.56, 1.33] using coverages from [555.56, 1.67]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9808.38925402)
+minresid_iteration_0: fail - [555.56, 1.00] using coverages from [555.56, 1.00]; initial residual was 1.92132519794e+13 (residual = 9808.38925402)
+minresid_iteration_1: success - [555.56, 1.00] using coverages from [555.56, 1.33]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9784.69688977)
+minresid_iteration_0: fail - [555.56, 0.67] using coverages from [555.56, 0.67]; initial residual was 1.92132519794e+13 (residual = 9784.69688977)
+minresid_iteration_1: success - [555.56, 0.67] using coverages from [555.56, 1.00]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 9775.11119791)
+minresid_iteration_0: fail - [555.56, 0.33] using coverages from [555.56, 0.33]; initial residual was 1.92132519794e+13 (residual = 9775.11119791)
+minresid_iteration_1: success - [555.56, 0.33] using coverages from [555.56, 0.00]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3393.30679487)
+minresid_iteration_0: fail - [533.33, 3.00] using coverages from [533.33, 3.00]; initial residual was 1.07325292816e+15 (residual = 3393.30679487)
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3494.47590602)
+minresid_iteration_0: fail - [533.33, 2.67] using coverages from [533.33, 2.67]; initial residual was 4.92944592852e+14 (residual = 3494.47590602)
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3552.81109539)
+minresid_iteration_0: fail - [533.33, 2.33] using coverages from [533.33, 2.33]; initial residual was 2.23589323929e+14 (residual = 3552.81109539)
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3577.21122085)
+minresid_iteration_0: fail - [533.33, 2.00] using coverages from [533.33, 2.00]; initial residual was 9.85656830789e+13 (residual = 3577.21122085)
+minresid_iteration_1: success - [533.33, 2.00] using coverages from [555.56, 1.67]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3575.16633119)
+minresid_iteration_0: fail - [533.33, 1.67] using coverages from [533.33, 1.67]; initial residual was 4.05348495479e+13 (residual = 3575.16633119)
+minresid_iteration_1: success - [533.33, 1.67] using coverages from [533.33, 2.00]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3558.25728541)
+minresid_iteration_0: fail - [533.33, 1.33] using coverages from [533.33, 1.33]; initial residual was 1.92210882606e+13 (residual = 3558.25728541)
+minresid_iteration_1: success - [533.33, 1.33] using coverages from [533.33, 1.67]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3545.12596322)
+minresid_iteration_0: fail - [533.33, 1.00] using coverages from [533.33, 1.00]; initial residual was 1.92210882606e+13 (residual = 3545.12596322)
+minresid_iteration_1: success - [533.33, 1.00] using coverages from [533.33, 1.33]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3558.91680178)
+minresid_iteration_0: fail - [533.33, 0.67] using coverages from [533.33, 0.67]; initial residual was 1.92210882606e+13 (residual = 3558.91680178)
+minresid_iteration_1: success - [533.33, 0.67] using coverages from [533.33, 1.00]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 3574.14120367)
+minresid_iteration_0: fail - [533.33, 0.33] using coverages from [533.33, 0.33]; initial residual was 1.92210882606e+13 (residual = 3574.14120367)
+minresid_iteration_1: success - [533.33, 0.33] using coverages from [533.33, 0.67]
+rootfinding_iteration_15: fail - stagnated or diverging (residual = 48.1646137365)
+minresid_iteration_0: fail - [533.33, 0.00] using coverages from [533.33, 0.00]; initial residual was 1.92210882606e+13 (residual = 48.1646137365)
+minresid_iteration_1: success - [533.33, 0.00] using coverages from [533.33, 0.33]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1002.92860931)
+minresid_iteration_0: fail - [511.11, 3.00] using coverages from [511.11, 3.00]; initial residual was 5.89854504471e+14 (residual = 1002.92860931)
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1022.78155347)
+minresid_iteration_0: fail - [511.11, 2.67] using coverages from [511.11, 2.67]; initial residual was 2.68770385339e+14 (residual = 1022.78155347)
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1034.92376403)
+minresid_iteration_0: fail - [511.11, 2.33] using coverages from [511.11, 2.33]; initial residual was 1.19736339138e+14 (residual = 1034.92376403)
+minresid_iteration_1: success - [511.11, 2.33] using coverages from [533.33, 2.00]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1041.13190273)
+minresid_iteration_0: fail - [511.11, 2.00] using coverages from [511.11, 2.00]; initial residual was 5.05608626703e+13 (residual = 1041.13190273)
+minresid_iteration_1: success - [511.11, 2.00] using coverages from [511.11, 2.33]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1043.19879409)
+minresid_iteration_0: fail - [511.11, 1.67] using coverages from [511.11, 1.67]; initial residual was 1.91117255726e+13 (residual = 1043.19879409)
+minresid_iteration_1: success - [511.11, 1.67] using coverages from [511.11, 2.00]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1043.4699928)
+minresid_iteration_0: fail - [511.11, 1.33] using coverages from [511.11, 1.33]; initial residual was 1.91117255726e+13 (residual = 1043.4699928)
+minresid_iteration_1: success - [511.11, 1.33] using coverages from [511.11, 1.67]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1046.31903776)
+minresid_iteration_0: fail - [511.11, 1.00] using coverages from [511.11, 1.00]; initial residual was 1.91117255726e+13 (residual = 1046.31903776)
+minresid_iteration_1: success - [511.11, 1.00] using coverages from [511.11, 1.33]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1057.34638626)
+minresid_iteration_0: fail - [511.11, 0.67] using coverages from [511.11, 0.67]; initial residual was 1.91117255726e+13 (residual = 1057.34638626)
+minresid_iteration_1: success - [511.11, 0.67] using coverages from [511.11, 1.00]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 1068.36848206)
+minresid_iteration_0: fail - [511.11, 0.33] using coverages from [511.11, 0.33]; initial residual was 1.91117255726e+13 (residual = 1068.36848206)
+minresid_iteration_1: success - [511.11, 0.33] using coverages from [511.11, 0.67]
+rootfinding_iteration_16: fail - stagnated or diverging (residual = 12.9549080529)
+minresid_iteration_0: fail - [511.11, 0.00] using coverages from [511.11, 0.00]; initial residual was 1.91117255726e+13 (residual = 12.9549080529)
+minresid_iteration_1: success - [511.11, 0.00] using coverages from [511.11, 0.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 234.72787202)
+minresid_iteration_0: fail - [488.89, 3.00] using coverages from [488.89, 3.00]; initial residual was 2.9045975265e+14 (residual = 234.72787202)
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 237.767923295)
+minresid_iteration_0: fail - [488.89, 2.67] using coverages from [488.89, 2.67]; initial residual was 1.29930897675e+14 (residual = 237.767923295)
+minresid_iteration_1: success - [488.89, 2.67] using coverages from [511.11, 2.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 239.818156091)
+minresid_iteration_0: fail - [488.89, 2.33] using coverages from [488.89, 2.33]; initial residual was 5.54200036032e+13 (residual = 239.818156091)
+minresid_iteration_1: success - [488.89, 2.33] using coverages from [488.89, 2.67]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 241.171885704)
+minresid_iteration_0: fail - [488.89, 2.00] using coverages from [488.89, 2.00]; initial residual was 2.08351102124e+13 (residual = 241.171885704)
+minresid_iteration_1: success - [488.89, 2.00] using coverages from [488.89, 2.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 242.189147414)
+minresid_iteration_0: fail - [488.89, 1.67] using coverages from [488.89, 1.67]; initial residual was 1.88605385664e+13 (residual = 242.189147414)
+minresid_iteration_1: success - [488.89, 1.67] using coverages from [488.89, 2.00]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 243.284523097)
+minresid_iteration_0: fail - [488.89, 1.33] using coverages from [488.89, 1.33]; initial residual was 1.88605385664e+13 (residual = 243.284523097)
+minresid_iteration_1: success - [488.89, 1.33] using coverages from [488.89, 1.67]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 245.347730444)
+minresid_iteration_0: fail - [488.89, 1.00] using coverages from [488.89, 1.00]; initial residual was 1.88605385664e+13 (residual = 245.347730444)
+minresid_iteration_1: success - [488.89, 1.00] using coverages from [488.89, 1.33]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 249.475299195)
+minresid_iteration_0: fail - [488.89, 0.67] using coverages from [488.89, 0.67]; initial residual was 1.88605385664e+13 (residual = 249.475299195)
+minresid_iteration_1: success - [488.89, 0.67] using coverages from [488.89, 1.00]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 253.626157527)
+minresid_iteration_0: fail - [488.89, 0.33] using coverages from [488.89, 0.33]; initial residual was 1.88605385664e+13 (residual = 253.626157527)
+minresid_iteration_1: success - [488.89, 0.33] using coverages from [488.89, 0.67]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 2.4333523279)
+minresid_iteration_0: fail - [488.89, 0.00] using coverages from [488.89, 0.00]; initial residual was 1.88605385664e+13 (residual = 2.4333523279)
+minresid_iteration_1: success - [488.89, 0.00] using coverages from [488.89, 0.33]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 42.2012590538)
+minresid_iteration_0: fail - [466.67, 3.00] using coverages from [466.67, 3.00]; initial residual was 1.25254189772e+14 (residual = 42.2012590538)
+minresid_iteration_1: success - [466.67, 3.00] using coverages from [488.89, 2.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 42.5495945953)
+minresid_iteration_0: fail - [466.67, 2.67] using coverages from [466.67, 2.67]; initial residual was 5.33496855843e+13 (residual = 42.5495945953)
+minresid_iteration_1: success - [466.67, 2.67] using coverages from [466.67, 3.00]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 42.8215051947)
+minresid_iteration_0: fail - [466.67, 2.33] using coverages from [466.67, 2.33]; initial residual was 1.9974571212e+13 (residual = 42.8215051947)
+minresid_iteration_1: success - [466.67, 2.33] using coverages from [466.67, 2.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 43.0573688562)
+minresid_iteration_0: fail - [466.67, 2.00] using coverages from [466.67, 2.00]; initial residual was 1.84581460086e+13 (residual = 43.0573688562)
+minresid_iteration_1: success - [466.67, 2.00] using coverages from [466.67, 2.33]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 43.3143707138)
+minresid_iteration_0: fail - [466.67, 1.67] using coverages from [466.67, 1.67]; initial residual was 1.84581460086e+13 (residual = 43.3143707138)
+minresid_iteration_1: success - [466.67, 1.67] using coverages from [466.67, 2.00]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 43.6564281597)
+minresid_iteration_0: fail - [466.67, 1.33] using coverages from [466.67, 1.33]; initial residual was 1.84581460086e+13 (residual = 43.6564281597)
+minresid_iteration_1: success - [466.67, 1.33] using coverages from [466.67, 1.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 44.2317350224)
+minresid_iteration_0: fail - [466.67, 1.00] using coverages from [466.67, 1.00]; initial residual was 1.84581460086e+13 (residual = 44.2317350224)
+minresid_iteration_1: success - [466.67, 1.00] using coverages from [466.67, 1.33]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 45.2138925073)
+minresid_iteration_0: fail - [466.67, 0.67] using coverages from [466.67, 0.67]; initial residual was 1.84581460086e+13 (residual = 45.2138925073)
+minresid_iteration_1: success - [466.67, 0.67] using coverages from [466.67, 1.00]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 46.218754349)
+minresid_iteration_0: fail - [466.67, 0.33] using coverages from [466.67, 0.33]; initial residual was 1.84581460086e+13 (residual = 46.218754349)
+minresid_iteration_1: success - [466.67, 0.33] using coverages from [466.67, 0.67]
+rootfinding_iteration_17: fail - stagnated or diverging (residual = 0.489720776704)
+minresid_iteration_0: fail - [466.67, 0.00] using coverages from [466.67, 0.00]; initial residual was 1.84581460086e+13 (residual = 0.489720776704)
+minresid_iteration_1: success - [466.67, 0.00] using coverages from [466.67, 0.33]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.11796900432)
+minresid_iteration_0: fail - [444.44, 3.00] using coverages from [444.44, 3.00]; initial residual was 4.47047397468e+13 (residual = 7.11796900432)
+minresid_iteration_1: success - [444.44, 3.00] using coverages from [466.67, 3.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.14692796819)
+minresid_iteration_0: fail - [444.44, 2.67] using coverages from [444.44, 2.67]; initial residual was 1.79121450447e+13 (residual = 7.14692796819)
+minresid_iteration_1: success - [444.44, 2.67] using coverages from [444.44, 3.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.17686435048)
+minresid_iteration_0: fail - [444.44, 2.33] using coverages from [444.44, 2.33]; initial residual was 1.79121450447e+13 (residual = 7.17686435048)
+minresid_iteration_1: success - [444.44, 2.33] using coverages from [444.44, 2.67]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.21275649268)
+minresid_iteration_0: fail - [444.44, 2.00] using coverages from [444.44, 2.00]; initial residual was 1.79121450447e+13 (residual = 7.21275649268)
+minresid_iteration_1: success - [444.44, 2.00] using coverages from [444.44, 2.33]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.26291937258)
+minresid_iteration_0: fail - [444.44, 1.67] using coverages from [444.44, 1.67]; initial residual was 1.79121450447e+13 (residual = 7.26291937258)
+minresid_iteration_1: success - [444.44, 1.67] using coverages from [444.44, 2.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.33728918278)
+minresid_iteration_0: fail - [444.44, 1.33] using coverages from [444.44, 1.33]; initial residual was 1.79121450447e+13 (residual = 7.33728918278)
+minresid_iteration_1: success - [444.44, 1.33] using coverages from [444.44, 1.67]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.45987916039)
+minresid_iteration_0: fail - [444.44, 1.00] using coverages from [444.44, 1.00]; initial residual was 1.79121450447e+13 (residual = 7.45987916039)
+minresid_iteration_1: success - [444.44, 1.00] using coverages from [444.44, 1.33]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.65796569299)
+minresid_iteration_0: fail - [444.44, 0.67] using coverages from [444.44, 0.67]; initial residual was 1.79121450447e+13 (residual = 7.65796569299)
+minresid_iteration_1: success - [444.44, 0.67] using coverages from [444.44, 1.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 7.8645006239)
+minresid_iteration_0: fail - [444.44, 0.33] using coverages from [444.44, 0.33]; initial residual was 1.79121450447e+13 (residual = 7.8645006239)
+minresid_iteration_1: success - [444.44, 0.33] using coverages from [444.44, 0.67]
+rootfinding_iteration_18: fail - stagnated or diverging (residual = 0.0733433066075)
+minresid_iteration_0: fail - [444.44, 0.00] using coverages from [444.44, 0.00]; initial residual was 1.79121450447e+13 (residual = 0.0733433066075)
+minresid_iteration_1: success - [444.44, 0.00] using coverages from [444.44, 0.33]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 2.02969086674)
+minresid_iteration_0: fail - [422.22, 3.00] using coverages from [422.22, 3.00]; initial residual was 1.72438601769e+13 (residual = 2.02969086674)
+minresid_iteration_1: success - [422.22, 3.00] using coverages from [444.44, 3.00]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 2.03077880238)
+minresid_iteration_0: fail - [422.22, 2.67] using coverages from [422.22, 2.67]; initial residual was 1.72438601769e+13 (residual = 2.03077880238)
+minresid_iteration_1: success - [422.22, 2.67] using coverages from [422.22, 3.00]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 2.03521510575)
+minresid_iteration_0: fail - [422.22, 2.33] using coverages from [422.22, 2.33]; initial residual was 1.72438601769e+13 (residual = 2.03521510575)
+minresid_iteration_1: success - [422.22, 2.33] using coverages from [422.22, 2.67]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 2.2332088098)
+minresid_iteration_0: fail - [422.22, 2.00] using coverages from [422.22, 2.00]; initial residual was 1.72438601769e+13 (residual = 2.2332088098)
+minresid_iteration_1: success - [422.22, 2.00] using coverages from [422.22, 2.33]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 2.24979375522)
+minresid_iteration_0: fail - [422.22, 1.67] using coverages from [422.22, 1.67]; initial residual was 1.72438601769e+13 (residual = 2.24979375522)
+minresid_iteration_1: success - [422.22, 1.67] using coverages from [422.22, 2.00]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 2.27626757432)
+minresid_iteration_0: fail - [422.22, 1.33] using coverages from [422.22, 1.33]; initial residual was 1.72438601769e+13 (residual = 2.27626757432)
+minresid_iteration_1: success - [422.22, 1.33] using coverages from [422.22, 1.67]
+rootfinding_iteration_21: fail - stagnated or diverging (residual = 2.31994952484)
+minresid_iteration_0: fail - [422.22, 1.00] using coverages from [422.22, 1.00]; initial residual was 1.72438601769e+13 (residual = 2.31994952484)
+minresid_iteration_1: success - [422.22, 1.00] using coverages from [422.22, 1.33]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 1.28602802091)
+minresid_iteration_0: fail - [422.22, 0.67] using coverages from [422.22, 0.67]; initial residual was 1.72438601769e+13 (residual = 1.28602802091)
+minresid_iteration_1: success - [422.22, 0.67] using coverages from [422.22, 1.00]
+rootfinding_iteration_22: fail - stagnated or diverging (residual = 1.32544228946)
+minresid_iteration_0: fail - [422.22, 0.33] using coverages from [422.22, 0.33]; initial residual was 1.72438601769e+13 (residual = 1.32544228946)
+minresid_iteration_1: success - [422.22, 0.33] using coverages from [422.22, 0.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 0.00783575416945)
+minresid_iteration_0: fail - [422.22, 0.00] using coverages from [422.22, 0.00]; initial residual was 1.72438601769e+13 (residual = 0.00783575416945)
+minresid_iteration_1: success - [422.22, 0.00] using coverages from [422.22, 0.33]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.160189711543)
+minresid_iteration_0: fail - [400.00, 3.00] using coverages from [400.00, 3.00]; initial residual was 1.64803422512e+13 (residual = 0.160189711543)
+minresid_iteration_1: success - [400.00, 3.00] using coverages from [422.22, 3.00]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.160080852154)
+minresid_iteration_0: fail - [400.00, 2.67] using coverages from [400.00, 2.67]; initial residual was 1.64803422512e+13 (residual = 0.160080852154)
+minresid_iteration_1: success - [400.00, 2.67] using coverages from [400.00, 3.00]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.160341429529)
+minresid_iteration_0: fail - [400.00, 2.33] using coverages from [400.00, 2.33]; initial residual was 1.64803422512e+13 (residual = 0.160341429529)
 minresid_iteration_1: success - [400.00, 2.33] using coverages from [400.00, 2.67]
-rootfinding_iteration_7: fail - stagnated or diverging (residual = 3530.10900111)
-minresid_iteration_0: fail - [400.00, 2.00] using coverages from [400.00, 2.00]; initial residual was 5.6239855402e+11 (residual = 3530.10900111)
-minresid_iteration_1: success - [400.00, 2.00] using coverages from [400.00, 1.67]
-rootfinding_iteration_5: fail - stagnated or diverging (residual = 0.00890316656249)
-minresid_iteration_0: fail - [400.00, 0.33] using coverages from [400.00, 0.33]; initial residual was 37739560327.0 (residual = 0.00890316656249)
-minresid_iteration_1: success - [400.00, 0.33] using coverages from [400.00, 0.00]
-mapper_iteration_1: status - 0 points do not have valid solution."""
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.161043764698)
+minresid_iteration_0: fail - [400.00, 2.00] using coverages from [400.00, 2.00]; initial residual was 1.64803422512e+13 (residual = 0.161043764698)
+minresid_iteration_1: success - [400.00, 2.00] using coverages from [400.00, 2.33]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.162342128842)
+minresid_iteration_0: fail - [400.00, 1.67] using coverages from [400.00, 1.67]; initial residual was 1.64803422512e+13 (residual = 0.162342128842)
+minresid_iteration_1: success - [400.00, 1.67] using coverages from [400.00, 2.00]
+rootfinding_iteration_23: fail - stagnated or diverging (residual = 0.175536349592)
+minresid_iteration_0: fail - [400.00, 1.33] using coverages from [400.00, 1.33]; initial residual was 1.64803422512e+13 (residual = 0.175536349592)
+minresid_iteration_1: success - [400.00, 1.33] using coverages from [400.00, 1.67]
+rootfinding_iteration_23: fail - stagnated or diverging (residual = 0.179223421462)
+minresid_iteration_0: fail - [400.00, 1.00] using coverages from [400.00, 1.00]; initial residual was 1.64803422512e+13 (residual = 0.179223421462)
+minresid_iteration_1: success - [400.00, 1.00] using coverages from [400.00, 1.33]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.136307598027)
+minresid_iteration_0: fail - [400.00, 0.67] using coverages from [400.00, 0.67]; initial residual was 1.64803422512e+13 (residual = 0.136307598027)
+minresid_iteration_1: success - [400.00, 0.67] using coverages from [400.00, 1.00]
+rootfinding_iteration_24: fail - stagnated or diverging (residual = 0.131131403253)
+minresid_iteration_0: fail - [400.00, 0.33] using coverages from [400.00, 0.33]; initial residual was 1.64803422512e+13 (residual = 0.131131403253)
+minresid_iteration_1: success - [400.00, 0.33] using coverages from [400.00, 0.67]
+rootfinding_iteration_19: fail - stagnated or diverging (residual = 0.000520723825781)
+minresid_iteration_0: fail - [400.00, 0.00] using coverages from [400.00, 0.00]; initial residual was 1.64803422512e+13 (residual = 0.000520723825781)
+minresid_iteration_1: success - [400.00, 0.00] using coverages from [400.00, 0.33]
+mapper_iteration_1: status - 21 points do not have valid solution.
+minresid_iteration_0: success - [600.00, 1.67] using coverages from [577.78, 1.33]
+minresid_iteration_0: success - [600.00, 1.33] using coverages from [600.00, 1.00]
+minresid_iteration_0: success - [577.78, 2.00] using coverages from [600.00, 1.67]
+minresid_iteration_0: success - [577.78, 1.67] using coverages from [577.78, 1.33]
+minresid_iteration_0: success - [555.56, 2.33] using coverages from [577.78, 2.00]
+minresid_iteration_0: success - [555.56, 2.00] using coverages from [555.56, 1.67]
+minresid_iteration_0: success - [533.33, 2.67] using coverages from [555.56, 2.33]
+minresid_iteration_0: success - [533.33, 2.33] using coverages from [533.33, 2.00]
+minresid_iteration_0: success - [511.11, 3.00] using coverages from [533.33, 2.67]
+minresid_iteration_0: success - [511.11, 2.67] using coverages from [511.11, 2.33]
+minresid_iteration_0: success - [488.89, 3.00] using coverages from [488.89, 2.67]
+mapper_iteration_2: status - 10 points do not have valid solution.
+minresid_iteration_0: success - [600.00, 2.33] using coverages from [577.78, 2.00]
+minresid_iteration_0: success - [600.00, 2.00] using coverages from [600.00, 1.67]
+minresid_iteration_0: success - [577.78, 2.67] using coverages from [600.00, 2.33]
+minresid_iteration_0: success - [577.78, 2.33] using coverages from [577.78, 2.00]
+minresid_iteration_0: success - [555.56, 3.00] using coverages from [577.78, 2.67]
+minresid_iteration_0: success - [555.56, 2.67] using coverages from [555.56, 2.33]
+minresid_iteration_0: success - [533.33, 3.00] using coverages from [533.33, 2.67]
+mapper_iteration_3: status - 3 points do not have valid solution.
+minresid_iteration_0: success - [600.00, 3.00] using coverages from [577.78, 2.67]
+minresid_iteration_0: success - [600.00, 2.67] using coverages from [600.00, 2.33]
+minresid_iteration_0: success - [577.78, 3.00] using coverages from [577.78, 2.67]
+mapper_iteration_4: status - 0 points do not have valid solution."""

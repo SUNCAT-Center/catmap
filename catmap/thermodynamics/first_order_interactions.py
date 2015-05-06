@@ -25,6 +25,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 input_overrides_fit = True, #user inputs override fitted values
                 interaction_strength = 1,
                 #weight interaction parameters by this
+                numerical_delta_theta = None
                 )
         self._rxm.update(defaults)
         self._required = {'cross_interaction_mode':str,
@@ -69,15 +70,14 @@ class FirstOrderInteractions(ReactionModelWrapper):
         eps_matrix[i,j] = eps_matrix[j,i] = epsilon_ij
         eps_list = list(eps_matrix.ravel())
 
-        if 'differential' in self.interaction_fitting_mode:
-            Ediff_model = self.interaction_function(theta,E0_list,eps_list,
-                    self.interaction_response_function,False,False)[1][i]
-            diff_err = (Ediff-Ediff_model)
-        else:
-            diff_err = None
+        if 'numerical_differential' in self.interaction_fitting_mode:
+            if self.numerical_delta_theta is None:
+                raise UserWarning('The change in coverage used to numerically compute '
+                        'differential binding energies (numerical_delta_theta) '
+                        'must be specified.')
+            else:
+                delta_theta = self.numerical_delta_theta
 
-        if 'semidifferential' in self.interaction_fitting_mode:
-            delta_theta = 0.11
             Eint_f = self.interaction_function(theta,E0_list,eps_list,
                     self.interaction_response_function,False,True)[0]
             new_theta = [x for x in theta]
@@ -86,7 +86,13 @@ class FirstOrderInteractions(ReactionModelWrapper):
                     self.interaction_response_function,False,True)[0]
             Ediff_model = (Eint_f - Eint_i)/(delta_theta)
             diff_err = (Ediff-Ediff_model)
-            
+
+        elif 'differential' in self.interaction_fitting_mode:
+            Ediff_model = self.interaction_function(theta,E0_list,eps_list,
+                    self.interaction_response_function,False,False)[1][i]
+            diff_err = (Ediff-Ediff_model)
+        else:
+            diff_err = None
 
         if 'integral' in self.interaction_fitting_mode:
             try:
