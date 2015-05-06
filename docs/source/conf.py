@@ -364,7 +364,11 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = [
-            # TODO : fill list with strings of names of packages to mock.
+               'numpy',
+               'mpmath',
+               'scipy',
+               'matplotlib',
+               'ase',
                 ]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
