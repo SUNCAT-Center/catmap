@@ -374,6 +374,7 @@ MOCK_MODULES = [
                'scipy.interpolate',
                'pylab',
                'matplotlib.pylab',
+               'matplotlib.transforms',
                 ]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
