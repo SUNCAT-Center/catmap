@@ -375,6 +375,7 @@ MOCK_MODULES = [
                'pylab',
                'matplotlib.pylab',
                'matplotlib.transforms',
+               'matplotlib.mlab',
                 ]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
