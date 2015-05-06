@@ -376,6 +376,13 @@ MOCK_MODULES = [
                'matplotlib.pylab',
                'matplotlib.transforms',
                'matplotlib.mlab',
+               'scipy.optimize',
+               'scipy.stats',
+               'matplotlib.ticker',
+               'ase.all',
+               'ase.atoms',
+               'ase.structure',
+               'ase.thermochemistry',
                 ]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
