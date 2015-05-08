@@ -254,16 +254,25 @@ def scaling_coefficient_matrix(
         D = np.array(D)
         A = np.array(A)
         Dinv = np.linalg.pinv(D)
-        c0 = np.dot(Dinv,A)
+        if len(A) > 1:
+            c0 = np.dot(Dinv,A)
 
-        #use relaxation method to solve the problem subject to the 
-        #constraints specified by coeff_mins/Maxs.
+            #use relaxation method to solve the problem subject to the 
+            #constraints specified by coeff_mins/Maxs.
 
-        cMin = coeff_mins[Nads]
-        cMax = coeff_maxs[Nads]
+            cMin = coeff_mins[Nads]
+            cMax = coeff_maxs[Nads]
 
-        c = constrained_relaxation(
-                D,A,c0,cMin,cMax)
+            c = constrained_relaxation(
+                    D,A,c0,cMin,cMax)
+
+        else:
+            #If there is only one data point, assume constant.
+            c = [0]*len(Dtotal[i,:])
+            c[-1] = A[0]
+        
+        print ads, c
+
         for Ndesc,coeff in enumerate(c):
             C[Ndesc,Nads] = np.round(coeff,5)
 

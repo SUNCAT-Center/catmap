@@ -60,7 +60,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
             param_names = self.adsorbate_names + self.interaction_cross_term_names
         else:
             param_names = self.adsorbate_names
-
+        
         info = self.thermodynamics.adsorbate_interactions.get_interaction_info()
         params = [info[pi][i_surf] for pi in param_names]
         int_strength = self.interaction_strength
@@ -312,21 +312,21 @@ class FirstOrderInteractions(ReactionModelWrapper):
             param_names = self.adsorbate_names + cross_names
         else:
             param_names = self.adsorbate_names
+
         constraint_dict = {}
         if not self.interaction_scaling_constraint_dict:
-            self.interaction_scaling_constraint_dict = self.scaling_constraint_dict
-
-        for ads in self.interaction_scaling_constraint_dict:
-            if '-' not in ads:
-                constr = self.interaction_scaling_constraint_dict[ads]
-                new_constr = []
-                #preserve only 0 constraints
-                for ci in constr:
-                    if ci != 0:
-                        new_constr.append(None)
-                    else:
-                        new_constr.append(0)
-                constraint_dict[ads] = new_constr
+            self.interaction_scaling_constraint_dict = self.scaling_constraint_dict.copy()
+            for ads in self.interaction_scaling_constraint_dict:
+                if '-' not in ads:
+                    constr = self.interaction_scaling_constraint_dict[ads]
+                    new_constr = []
+                    #preserve only 0 constraints
+                    for ci in constr:
+                        if ci != 0:
+                            new_constr.append(None)
+                        else:
+                            new_constr.append(0)
+                    constraint_dict[ads] = new_constr
 
         for ads in self.interaction_scaling_constraint_dict:
             if '&' in ads:
