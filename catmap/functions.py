@@ -271,8 +271,6 @@ def scaling_coefficient_matrix(
             c = [0]*len(Dtotal[i,:])
             c[-1] = A[0]
         
-        print ads, c
-
         for Ndesc,coeff in enumerate(c):
             C[Ndesc,Nads] = np.round(coeff,5)
 
