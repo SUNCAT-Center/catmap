@@ -251,14 +251,14 @@ catmap/tutorials/generating\_input\_file/generate\_input.py.
 
 Take the simplified methanation reaction mechanism:
 
--  CO(g) + \* → CO\*
--  CO\* + \* → C\* + O\*
--  O\* + H\* ↔ OH\* (quasi-equilibrated)
--  OH\* + H\* → H2O(g) + 2\*
--  C\* + H\* → CH\* + \*
--  CH\* + H\* ↔ CH2\* + \* (quasi-equilibrated)
--  CH2\* + H\* ↔ CH3\* + \* (quasi-equilibrated)
--  CH3\* + H\* ↔ CH4(g) + 2\* (quasi-equilibrated)
+-  CO(g) + \* -> CO\*
+-  CO\* + \* -> C\* + O\*
+-  O\* + H\* <-> OH\* (quasi-equilibrated)
+-  OH\* + H\* -> H2O(g) + 2\*
+-  C\* + H\* -> CH\* + \*
+-  CH\* + H\* <-> CH2\* + \* (quasi-equilibrated)
+-  CH2\* + H\* <-> CH3\* + \* (quasi-equilibrated)
+-  CH3\* + H\* <-> CH4(g) + 2\* (quasi-equilibrated)
 
 Where \* denotes a Rh(111) site. For this example we need energies of
 the following species:
