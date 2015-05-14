@@ -955,7 +955,17 @@ Run several consistency check on the model, such as :
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):
         """
-        .. todo:: __doc__
+        Convert into CatMAP "map" data structure into numpy array.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: [[[descriptor_vals],[output]]]
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
         """
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
