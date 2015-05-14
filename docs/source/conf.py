@@ -18,7 +18,9 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.append(os.path.abspath('.'))
+sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../..'))
 
 # -- General configuration ------------------------------------------------
 
@@ -369,6 +371,18 @@ MOCK_MODULES = [
                'scipy',
                'matplotlib',
                'ase',
+               'scipy.interpolate',
+               'pylab',
+               'matplotlib.pylab',
+               'matplotlib.transforms',
+               'matplotlib.mlab',
+               'scipy.optimize',
+               'scipy.stats',
+               'matplotlib.ticker',
+               'ase.all',
+               'ase.atoms',
+               'ase.structure',
+               'ase.thermochemistry',
                 ]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
