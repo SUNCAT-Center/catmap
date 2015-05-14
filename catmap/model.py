@@ -15,17 +15,16 @@ griddata = catmap.griddata
 
 class ReactionModel:
     """
-The central object that defines a microkinetic model consisting of:
+    The central object that defines a microkinetic model consisting of:
 
-- active sites
-- species
-- possible reaction steps
-- rate constant expressions
-- descriptors and descriptor ranges
-- data files for energies
-- external parameters (temperature, pressures)
-- other more technical settings related to the solver and mapper
-
+    - active sites
+    - species
+    - possible reaction steps
+    - rate constant expressions
+    - descriptors and descriptor ranges
+    - data files for energies
+    - external parameters (temperature, pressures)
+    - other more technical settings related to the solver and mapper
     """
     def __init__(self,**kwargs): #
         """Class for managing microkinetic models.
@@ -122,7 +121,6 @@ The central object that defines a microkinetic model consisting of:
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
-
 
     # Functions for executing the kinetic model
 
@@ -958,7 +956,7 @@ Run several consistency check on the model, such as :
         Convert into CatMAP "map" data structure into numpy array.
 
         :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
-        :type mapp: [[[descriptor_vals],[output]]]
+        :type mapp: CatMAP map (see :py:MapperBase:)
 
         :param descriptor_ranges: Minimum and maximum values of descriptor range for
                      each dimension included in array.
