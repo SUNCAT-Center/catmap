@@ -1,3 +1,31 @@
+"""Class for `mapping' equilibrium coverages and rates through
+descriptor space. This class acts as a base class to be inherited
+by other mapper classes, but is not functional on its own.
+
+get_rxn_parameter_map(descriptor_ranges,resolution): Uses a
+    scaler object to determine the reaction parameters as a function of
+    descriptor space. May be useful for debugging or providing
+    intuition about rate determining steps. Should return a list of
+    the form
+[[descriptor_1,descriptor_2,...],[rxn_parameter1, rxn_parameter2, ...]]
+
+save_map(map,map_file): creates a pickle of the "map" list and dumps it
+    to the map_file
+
+load_map(map_file):  loads a "map" list by loading a pickle from
+    the map_file
+
+A functional derived mapper class must also contain the methods:
+
+get_coverage_map(descriptor_ranges,resolution): a function which
+    returns a list of the form
+    [[descriptor_1,descriptor_2,...], [cvg_ads1,cvg_ads2,...]]
+
+get_rates_map(descriptor_ranges,resolution): a function which returns
+    a list of the form
+    [[descriptor_1,descriptor_2,...], [rate_rxn1,rate_rxn2,...]]
+
+"""
 from matplotlib.mlab import griddata
 import numpy as np
 import mpmath as mp
@@ -16,34 +44,6 @@ class MapperBase(ReactionModelWrapper):
     # as the default value and then instantiate ReactionModel in the
     # function body of __init__ .
     def __init__(self,reaction_model=ReactionModel()):
-        """Class for `mapping' equilibrium coverages and rates through
-        descriptor space. This class acts as a base class to be inherited
-        by other mapper classes, but is not functional on its own.
-
-        get_rxn_parameter_map(descriptor_ranges,resolution): Uses a
-            scaler object to determine the reaction parameters as a function of
-            descriptor space. May be useful for debugging or providing
-            intuition about rate determining steps. Should return a list of
-            the form
-        [[descriptor_1,descriptor_2,...],[rxn_parameter1, rxn_parameter2, ...]]
-
-        save_map(map,map_file): creates a pickle of the "map" list and dumps it
-            to the map_file
-
-        load_map(map_file):  loads a "map" list by loading a pickle from
-            the map_file
-
-        A functional derived mapper class must also contain the methods:
-
-        get_coverage_map(descriptor_ranges,resolution): a function which
-            returns a list of the form
-            [[descriptor_1,descriptor_2,...], [cvg_ads1,cvg_ads2,...]]
-
-        get_rates_map(descriptor_ranges,resolution): a function which returns
-            a list of the form
-            [[descriptor_1,descriptor_2,...], [rate_rxn1,rate_rxn2,...]]
-
-        """
         self._rxm = reaction_model
         self._solver_output = ['coverage','rate', #outputs requiring solver
                 'turnover_frequency','selectivity','rate_control',
