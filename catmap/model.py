@@ -328,7 +328,8 @@ The central object that defines a microkinetic model consisting of:
                 exec func_string in globals(), locs
                 setattr(self,func_name,locs[func_name])
 
-   #File IO functions
+    #File IO functions
+
     def load(self,setup_file): #
         """Load a 'setup file' by importing it and assigning all local
         variables as attributes of the kinetic model. Special attributes
@@ -998,7 +999,18 @@ Run several consistency check on the model, such as :
     @staticmethod
     def array_to_map(array,descriptor_ranges,resolution):
         """
-        .. todo:: __doc__
+        Convert numpy array object into CatMAP "map" data structure.
+
+        :param array: Numpy array of size (resolution x resolution) corresponding to
+                     grid spanning descriptor_ranges.
+        :type array: numpy.array
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
         """
         dim = len(array.shape)
         xy = []
