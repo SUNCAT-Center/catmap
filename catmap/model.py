@@ -953,10 +953,11 @@ Run several consistency check on the model, such as :
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):
         """
-        Convert into CatMAP "map" data structure into numpy array.
+        Convert into CatMAP "map" data structure into numpy array. The "map" will be interpolated
+        onto a regular grid.
 
         :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
-        :type mapp: CatMAP map (see :py:MapperBase:)
+        :type mapp: CatMAP map (see MapperBase)
 
         :param descriptor_ranges: Minimum and maximum values of descriptor range for
                      each dimension included in array.
@@ -964,6 +965,17 @@ Run several consistency check on the model, such as :
 
         :param resolution: Resolution at which the descriptor ranges are sampled.
         :type resolution: int
+
+        :param log_interpolate: Take logarithm of values before interpolation. Defaults to False.
+        :type log_interpolate: bool, optional
+
+        :param minval: Replace any values less than minval with minval. None implies no cutoff.
+                       Defaults to None.
+        :type minval: float
+
+        :param maxval: Replace any values greater than maxval with maxval. None implies no cutoff.
+                       Defaults to None.
+        :type maxval: float
         """
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
@@ -1110,7 +1122,21 @@ Run several consistency check on the model, such as :
 
     def get_rxn_energy(self,rxn,energy_dict):
         """
-        .. todo:: __doc__
+        Calculate reaction energy given the energies of all species.
+
+        :param rxn: Reaction in CatMAP form: 
+                    * [[IS],[TS],[FS]] for activated reaction
+                    * [[IS],[FS]] for non-activated reaction
+                    where IS,TS,FS correspond to the names of the
+                    species in the initial/transition/final states
+                    respectively.
+
+        :type rxn: [[str]]
+
+        :param energy_dict: Dictionary of energies for all species.
+                            Keys should be species names and values
+                            should be energies.
+        :type energy_dict: dict
         """
 
         IS = rxn[0]
