@@ -1119,11 +1119,12 @@ Run several consistency check on the model, such as :
         Reverse the reaction provided. [[IS],[TS],[FS]] -> [[FS],[TS],[IS]]
 
         :param rxn: Reaction in CatMAP form: 
+
                     * [[IS],[TS],[FS]] for activated reaction
                     * [[IS],[FS]] for non-activated reaction
-                    where IS,TS,FS correspond to the names of the
-                    species in the initial/transition/final states
-                    respectively.
+                      where IS,TS,FS correspond to the names of the
+                      species in the initial/transition/final states
+                      respectively.
 
         :type rxn: [[str]]
 
@@ -1140,11 +1141,12 @@ Run several consistency check on the model, such as :
         Calculate reaction energy given the energies of all species.
 
         :param rxn: Reaction in CatMAP form: 
+
                     * [[IS],[TS],[FS]] for activated reaction
                     * [[IS],[FS]] for non-activated reaction
-                    where IS,TS,FS correspond to the names of the
-                    species in the initial/transition/final states
-                    respectively.
+                      where IS,TS,FS correspond to the names of the
+                      species in the initial/transition/final states
+                      respectively.
 
         :type rxn: [[str]]
 
