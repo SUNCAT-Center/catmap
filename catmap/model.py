@@ -298,7 +298,8 @@ class ReactionModel:
         """
         Find rates/coverages at a single point.
 
-        .. todo:: Explain pt argument
+        :param pt: Point in descriptor-space ([x,y])
+        :type pt: [float]
         """
         self.mapper.get_point_output(pt)
         for out in self.output_variables:
@@ -310,7 +311,8 @@ class ReactionModel:
 
     def multi_point_analysis(self):
         """
-        .. todo:: __doc__
+        Analyze the output at a list of points. Points should
+        be specified as a list in the descriptor_values attribute.
         """
         for pt in self.descriptor_values:
             self.single_point_analysis(pt)
@@ -407,13 +409,38 @@ class ReactionModel:
 
     def parse(self,*args, **kwargs): #
         """
-        .. todo:: __doc__
+        Read in all the information from the input_file. Alias
+        to parser.parse.
         """
         self.parser.parse(*args, **kwargs)
 
     def log(self,event,**kwargs):
         """
-        .. todo:: __doc__
+        Add an event to the log file. This assumes that the template
+        for the event has been specified in the _log_strings attribute
+        of the class that calls the log() function.
+
+        :param event: A key that defines the event to be logged. The
+                      _log_strings attribute of the subclass which
+                      calls log() should be a dictionary where `event`
+                      is a key and the value is a template string. The template
+                      string can contain the following variables which
+                      will auto-populate:
+
+                      * pt - the current point in descriptor space
+                      * priority - defaults to 0
+                      
+                      In addition, the template may contain other variables
+                      which can be passed in as keyword arguments. The following
+                      are special arguments:
+
+                      *n_iter - the iteration number will be appended to the event title
+
+                      The event title should be of the form routinename_status, where
+                      routinename is the name of the routine/algorithm and the status
+                      is succeess/failure/evaluation/etc.
+        :type event: str
+
         """
         message = self._log_strings[event]
         loop, status = event.rsplit('_',1)
@@ -1175,7 +1202,15 @@ Run several consistency check on the model, such as :
 
     def get_state_energy(self,rxn_state,energy_dict):
         """
-        .. todo:: __doc__
+        Calculate energy of a "reaction state" (list of species) given the energies of all species.
+
+        :param rxn_state: List of intermediate species (must be defined in species_definitions)
+        :type rxn: [[str]]
+
+        :param energy_dict: Dictionary of energies for all species.
+                            Keys should be species names and values
+                            should be energies.
+        :type energy_dict: dict
         """
         energy = 0
         for species in rxn_state:
