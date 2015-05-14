@@ -1116,9 +1116,24 @@ Run several consistency check on the model, such as :
     @staticmethod
     def reverse_rxn(rxn):
         """
-        .. todo:: __doc__
+        Reverse the reaction provided. [[IS],[TS],[FS]] -> [[FS],[TS],[IS]]
+
+        :param rxn: Reaction in CatMAP form: 
+                    * [[IS],[TS],[FS]] for activated reaction
+                    * [[IS],[FS]] for non-activated reaction
+                    where IS,TS,FS correspond to the names of the
+                    species in the initial/transition/final states
+                    respectively.
+
+        :type rxn: [[str]]
+
         """
-        return [rxn[-1],rxn[1],rxn[0]]
+        if len(rxn) == 3:
+            return [rxn[-1],rxn[1],rxn[0]]
+        elif len(rxn) ==2:
+            return [rxn[-1],rxn[0]]
+        else:
+            raise UserWarning('Incorrect reaction format:'+str(rxn))
 
     def get_rxn_energy(self,rxn,energy_dict):
         """
