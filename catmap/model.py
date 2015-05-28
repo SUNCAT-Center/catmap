@@ -432,6 +432,8 @@ class ReactionModel:
                     for st in state_strings:
                         species_dict = functions.match_regex(st,
                                 *regular_expressions['species_definition'])
+                        if species_dict is None:
+                            raise UserWarning('Could not parse state: '+state_str)
                         if species_dict['stoichiometry'] == '':
                             species_dict['stoichiometry'] = 1
                         else:

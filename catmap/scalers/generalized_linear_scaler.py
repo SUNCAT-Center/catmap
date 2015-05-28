@@ -1,6 +1,7 @@
 from scaler_base import *
 from catmap.data import regular_expressions
 from catmap.functions import parse_constraint
+from math import isnan
 import pylab as plt
 
 class GeneralizedLinearScaler(ScalerBase):
@@ -99,7 +100,6 @@ class GeneralizedLinearScaler(ScalerBase):
         return C.T
 
     def get_transition_state_coefficient_matrix(self):
-
         self.get_transition_state_scaling_matrix()
         if self.transition_state_scaling_matrix is not None:
             if self.adsorbate_coefficient_matrix is None:
@@ -196,6 +196,9 @@ class GeneralizedLinearScaler(ScalerBase):
                     m,b = catmap.functions.linear_regression(x,y)
                 else:
                     raise ValueError('Invalid params')
+                if isnan(m) or isnan(b):
+                    raise UserWarning('Transition-state scaling failed for: '+TS+\
+                                    '. Ensure that the scaling mode is set properly.')
                 
             return [m,b],[m*ci for ci in coeffs] + [b]
 
