@@ -441,6 +441,10 @@ class ReactionModel:
                       is succeess/failure/evaluation/etc.
         :type event: str
 
+        :param kwargs: Keyword arguments can be specified and will be passed into
+                       the template retrieved from _log_strings['event']
+
+        :type kwargs: keyword arguments
         """
         message = self._log_strings[event]
         loop, status = event.rsplit('_',1)
@@ -476,7 +480,23 @@ class ReactionModel:
 
     def parse_elementary_rxns(self, equations): #
         """
-        .. todo:: __doc__
+        Convert elementary reaction strings into structured elementary reaction lists.
+
+        :param equations: List of reaction equation strings. 
+                          For non-activated reactions (e.g. no activation barrier) the strings
+                          should follow a syntax like:
+                          
+                          * A_s + B_q <-> C_s + D_q
+                          * A_s + B_q -> C_s + D_q
+
+                          while an activated reaction should follow a syntax like:
+
+                          * A_s + B_q <-> A-B_s + \*_q -> AB_s + \*_q
+
+                          where A,B,C,D are names of chemical species, A-B is the name of a
+                          transition-state, and s,q are names of different site types.
+
+        :type equations:[str]
         """
         elementary_rxns = []
         gas_names = []
@@ -614,9 +634,24 @@ class ReactionModel:
         tex_ads = tex_ads.replace('}_{','')
         return tex_ads
 
-    def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): #
+    def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): 
         """
-        .. todo:: __doc__
+        Print a structured elementary step and print it as plain text or latex.
+
+        :param rxn: Elementary step list of the form [[IS1,IS2,...],[TS1,TS2,...],[FS1,FS2,...]]
+                    where ISi,TSi,FSi correspond to species in the initial/transition/final states
+                    and the [TS1,TS2,...] list is optional.
+        :type rxn: [[str]]
+
+        :param mode: Output mode. Should be 'latex' for LaTeX, or 'text' for plain text.
+        :type mode: str
+
+        :param include_TS: Include the transition-state in the output. Optional parameter, default is True.
+        :type include_TS:bool
+        
+        :param print_out: Print the reaction to stdout. Optional parameter, default is False.
+        :type print_out:bool
+
         """
         if mode == 'latex':
             def texify(ads):
@@ -651,8 +686,17 @@ class ReactionModel:
     @staticmethod
     def print_point(descriptors,n = 2):
         """
-        .. todo:: __doc__
+        Pretty-print a set of descriptor values.
+
+        :param descriptors: List of descriptor values [d1,d2,...] where d1,d2,... are
+                            floats corresponding to coordinates in descriptor space.
+        :type descriptors: [float]
+
+        :param n: Number of decimals to print out. Optional parameter, default is 2.
+        :type n: int
         """
+
+        #Note that there is probably a much better way to do this with e.g. pprint.
         string = '['
         for d in descriptors:
             d = float(d)
@@ -776,19 +820,31 @@ class ReactionModel:
 
     #Self checks, debugging, and code-structure related functions.
 
-    def update(self,dict,override = False):
+    def update(self,dictvar,override = False):
         """
-        .. todo:: __doc__
+        Update the attributes of the model with the attribute names/vals included
+        in dictvar. The keys of dictvar correspond to attributes of the ReactionModel
+        to be set, and the values correspond to the values they will be set to.
+
+        :param dictvar: Dictionary of key names corresponding to attributes of ReactionModel
+                        instance to be updated with the associated values in dictvar.
+        :type dictvar: dict
+
+        :param override: If True then the values in dictvar will override existing values
+                         of the attributes of ReactionModel instance. Optional parameter,
+                         default is False.
+        :type override: bool
         """
         if override == False:
-            dict.update(self.__dict__)
-            self.__dict__ = dict
+            dictvar.update(self.__dict__)
+            self.__dict__ = dictvar
         else:
-            self.__dict__.update(dict)
+            self.__dict__.update(dictvar)
 
     def compatibility_check(self):
         """
-        Check that the reaction model has all required attributes.
+        Check that the reaction model has all required attributes. Required
+        attributes can be specified in self._required.
         """
         total_dict = self._required
         for var in total_dict:
@@ -807,13 +863,12 @@ class ReactionModel:
 
     def verify(self):
         """
-Run several consistency check on the model, such as :
+        Run several consistency check on the model, such as :
 
-- all gas ratios add to 1.
-- all mass and site balances are fulfilled.
-- prefactors are set in the correct format.
-- a mapping resolution is set (the default 15 data points per descriptor axis).
-
+        - all gas ratios add to 1.
+        - all mass and site balances are fulfilled.
+        - prefactors are set in the correct format.
+        - a mapping resolution is set (the default is 15 data points per descriptor axis).
         """
 
 
@@ -902,7 +957,24 @@ Run several consistency check on the model, such as :
     #Data manipulation and conversion
 
     def _header(self,exclude_outputs=[],re_parse=False):
-        """Create a string which acts as a header for the log file."""
+        """
+        Create a string which acts as a header for the log file. The header string
+        ensures that the logfile can be opened interactively by Python by importing
+        necessary libraries and automatically reading in the data_file.
+        
+        :param exclude_outputs: Attribute names of ReactionModel to exclude in the log file.
+                                Optional parameter, default is [].
+        :type exclude_outputs: [str]
+
+        :param re_parse: Determines whether or not the parser should be specified in the log file.
+                         If a parser is included in the log file then a ReactionModel instantiated
+                         using that log file as a setup_file argument will attempt to re-parse
+                         values from the input_file and setup_file.
+                         Optional parameter, default is False.
+        :type re_parse: bool
+
+        """
+
         header = ''
         for attr in self._classes:
             inst = getattr(self,attr)
@@ -955,7 +1027,18 @@ Run several consistency check on the model, such as :
 
     def retrieve_data(self,mapp,point,precision=2):
         """
-        .. todo:: __doc__
+        Retrieve the data corresponding to a given point in descriptor space from a CatMAP 'map' object.
+        If no data is found for the specified point, then None is returned.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: CatMAP map (see MapperBase)
+
+        :param point: Coordinates of a point in descriptor space.
+        :type point: [float]
+
+        :param precision: Require descriptor coordinates to match with 'precision' decimals. Optional
+                          parameter, default is 2.
+        :type precision: int
         """
         if not mapp:
             return None
@@ -1109,6 +1192,11 @@ Run several consistency check on the model, such as :
     def same_rxn(rxn1,rxn2):
         """Determine if two reactions *rxn1* and *rxn2* are identical.
 
+           :param rxn1: Elementary reaction list. See print_rxn for syntax.
+           :type rxn1: [[str]]
+
+           :param rxn2: Elementary reaction list. See print_rxn for syntax.
+           :type rxn2: [[str]]
         """
 
         def same_state(state1, state2):
@@ -1221,7 +1309,13 @@ Run several consistency check on the model, such as :
         return energy
 
     def adsorption_to_reaction_energies(self,free_energy_dict):
-        "Convert adsorption energies to reaction energies/barriers."
+        """
+        Convert adsorption formation energies to reaction energies/barriers.
+
+        :param free_energy_dict: Dictionary containing free energies for each species
+                                 in the reaction network.
+        :type free_energy_dict: dict
+        """
         Grxn_Ga = []
         for rxn in self.elementary_rxns:
             dG, G_a = self.get_rxn_energy(rxn,free_energy_dict)
