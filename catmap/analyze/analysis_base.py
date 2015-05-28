@@ -655,7 +655,7 @@ class ScalingPlot:
         if not ax_list:
             spx = round(np.sqrt(len(ads_names)+extra))
             spy = round(np.sqrt(len(ads_names)+extra))
-            if spy*spx < len(ads_names):
+            if spy*spx < len(ads_names)+extra:
                 spy+= 1
             fig = plt.figure(figsize=(spy*plot_size,spx*plot_size))
             ax_list = [fig.add_subplot(spx,spy,i+1)

@@ -15,17 +15,16 @@ griddata = catmap.griddata
 
 class ReactionModel:
     """
-The central object that defines a microkinetic model consisting of:
+    The central object that defines a microkinetic model consisting of:
 
-- active sites
-- species
-- possible reaction steps
-- rate constant expressions
-- descriptors and descriptor ranges
-- data files for energies
-- external parameters (temperature, pressures)
-- other more technical settings related to the solver and mapper
-
+    - active sites
+    - species
+    - possible reaction steps
+    - rate constant expressions
+    - descriptors and descriptor ranges
+    - data files for energies
+    - external parameters (temperature, pressures)
+    - other more technical settings related to the solver and mapper
     """
     def __init__(self,**kwargs): #
         """Class for managing microkinetic models.
@@ -122,7 +121,6 @@ The central object that defines a microkinetic model consisting of:
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
-
 
     # Functions for executing the kinetic model
 
@@ -300,7 +298,8 @@ The central object that defines a microkinetic model consisting of:
         """
         Find rates/coverages at a single point.
 
-        .. todo:: Explain pt argument
+        :param pt: Point in descriptor-space ([x,y])
+        :type pt: [float]
         """
         self.mapper.get_point_output(pt)
         for out in self.output_variables:
@@ -312,7 +311,8 @@ The central object that defines a microkinetic model consisting of:
 
     def multi_point_analysis(self):
         """
-        .. todo:: __doc__
+        Analyze the output at a list of points. Points should
+        be specified as a list in the descriptor_values attribute.
         """
         for pt in self.descriptor_values:
             self.single_point_analysis(pt)
@@ -328,7 +328,8 @@ The central object that defines a microkinetic model consisting of:
                 exec func_string in globals(), locs
                 setattr(self,func_name,locs[func_name])
 
-   #File IO functions
+    #File IO functions
+
     def load(self,setup_file): #
         """Load a 'setup file' by importing it and assigning all local
         variables as attributes of the kinetic model. Special attributes
@@ -408,13 +409,42 @@ The central object that defines a microkinetic model consisting of:
 
     def parse(self,*args, **kwargs): #
         """
-        .. todo:: __doc__
+        Read in all the information from the input_file. Alias
+        to parser.parse.
         """
         self.parser.parse(*args, **kwargs)
 
     def log(self,event,**kwargs):
         """
-        .. todo:: __doc__
+        Add an event to the log file. This assumes that the template
+        for the event has been specified in the _log_strings attribute
+        of the class that calls the log() function.
+
+        :param event: A key that defines the event to be logged. The
+                      _log_strings attribute of the subclass which
+                      calls log() should be a dictionary where `event`
+                      is a key and the value is a template string. The template
+                      string can contain the following variables which
+                      will auto-populate:
+
+                      * pt - the current point in descriptor space
+                      * priority - defaults to 0
+                      
+                      In addition, the template may contain other variables
+                      which can be passed in as keyword arguments. The following
+                      are special arguments:
+
+                      *n_iter - the iteration number will be appended to the event title
+
+                      The event title should be of the form routinename_status, where
+                      routinename is the name of the routine/algorithm and the status
+                      is succeess/failure/evaluation/etc.
+        :type event: str
+
+        :param kwargs: Keyword arguments can be specified and will be passed into
+                       the template retrieved from _log_strings['event']
+
+        :type kwargs: keyword arguments
         """
         message = self._log_strings[event]
         loop, status = event.rsplit('_',1)
@@ -450,7 +480,23 @@ The central object that defines a microkinetic model consisting of:
 
     def parse_elementary_rxns(self, equations): #
         """
-        .. todo:: __doc__
+        Convert elementary reaction strings into structured elementary reaction lists.
+
+        :param equations: List of reaction equation strings. 
+                          For non-activated reactions (e.g. no activation barrier) the strings
+                          should follow a syntax like:
+                          
+                          * A_s + B_q <-> C_s + D_q
+                          * A_s + B_q -> C_s + D_q
+
+                          while an activated reaction should follow a syntax like:
+
+                          * A_s + B_q <-> A-B_s + \*_q -> AB_s + \*_q
+
+                          where A,B,C,D are names of chemical species, A-B is the name of a
+                          transition-state, and s,q are names of different site types.
+
+        :type equations:[str]
         """
         elementary_rxns = []
         gas_names = []
@@ -588,9 +634,24 @@ The central object that defines a microkinetic model consisting of:
         tex_ads = tex_ads.replace('}_{','')
         return tex_ads
 
-    def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): #
+    def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): 
         """
-        .. todo:: __doc__
+        Print a structured elementary step and print it as plain text or latex.
+
+        :param rxn: Elementary step list of the form [[IS1,IS2,...],[TS1,TS2,...],[FS1,FS2,...]]
+                    where ISi,TSi,FSi correspond to species in the initial/transition/final states
+                    and the [TS1,TS2,...] list is optional.
+        :type rxn: [[str]]
+
+        :param mode: Output mode. Should be 'latex' for LaTeX, or 'text' for plain text.
+        :type mode: str
+
+        :param include_TS: Include the transition-state in the output. Optional parameter, default is True.
+        :type include_TS:bool
+        
+        :param print_out: Print the reaction to stdout. Optional parameter, default is False.
+        :type print_out:bool
+
         """
         if mode == 'latex':
             def texify(ads):
@@ -625,8 +686,17 @@ The central object that defines a microkinetic model consisting of:
     @staticmethod
     def print_point(descriptors,n = 2):
         """
-        .. todo:: __doc__
+        Pretty-print a set of descriptor values.
+
+        :param descriptors: List of descriptor values [d1,d2,...] where d1,d2,... are
+                            floats corresponding to coordinates in descriptor space.
+        :type descriptors: [float]
+
+        :param n: Number of decimals to print out. Optional parameter, default is 2.
+        :type n: int
         """
+
+        #Note that there is probably a much better way to do this with e.g. pprint.
         string = '['
         for d in descriptors:
             d = float(d)
@@ -750,19 +820,31 @@ The central object that defines a microkinetic model consisting of:
 
     #Self checks, debugging, and code-structure related functions.
 
-    def update(self,dict,override = False):
+    def update(self,dictvar,override = False):
         """
-        .. todo:: __doc__
+        Update the attributes of the model with the attribute names/vals included
+        in dictvar. The keys of dictvar correspond to attributes of the ReactionModel
+        to be set, and the values correspond to the values they will be set to.
+
+        :param dictvar: Dictionary of key names corresponding to attributes of ReactionModel
+                        instance to be updated with the associated values in dictvar.
+        :type dictvar: dict
+
+        :param override: If True then the values in dictvar will override existing values
+                         of the attributes of ReactionModel instance. Optional parameter,
+                         default is False.
+        :type override: bool
         """
         if override == False:
-            dict.update(self.__dict__)
-            self.__dict__ = dict
+            dictvar.update(self.__dict__)
+            self.__dict__ = dictvar
         else:
-            self.__dict__.update(dict)
+            self.__dict__.update(dictvar)
 
     def compatibility_check(self):
         """
-        Check that the reaction model has all required attributes.
+        Check that the reaction model has all required attributes. Required
+        attributes can be specified in self._required.
         """
         total_dict = self._required
         for var in total_dict:
@@ -781,13 +863,12 @@ The central object that defines a microkinetic model consisting of:
 
     def verify(self):
         """
-Run several consistency check on the model, such as :
+        Run several consistency check on the model, such as :
 
-- all gas ratios add to 1.
-- all mass and site balances are fulfilled.
-- prefactors are set in the correct format.
-- a mapping resolution is set (the default 15 data points per descriptor axis).
-
+        - all gas ratios add to 1.
+        - all mass and site balances are fulfilled.
+        - prefactors are set in the correct format.
+        - a mapping resolution is set (the default is 15 data points per descriptor axis).
         """
 
 
@@ -876,7 +957,24 @@ Run several consistency check on the model, such as :
     #Data manipulation and conversion
 
     def _header(self,exclude_outputs=[],re_parse=False):
-        """Create a string which acts as a header for the log file."""
+        """
+        Create a string which acts as a header for the log file. The header string
+        ensures that the logfile can be opened interactively by Python by importing
+        necessary libraries and automatically reading in the data_file.
+        
+        :param exclude_outputs: Attribute names of ReactionModel to exclude in the log file.
+                                Optional parameter, default is [].
+        :type exclude_outputs: [str]
+
+        :param re_parse: Determines whether or not the parser should be specified in the log file.
+                         If a parser is included in the log file then a ReactionModel instantiated
+                         using that log file as a setup_file argument will attempt to re-parse
+                         values from the input_file and setup_file.
+                         Optional parameter, default is False.
+        :type re_parse: bool
+
+        """
+
         header = ''
         for attr in self._classes:
             inst = getattr(self,attr)
@@ -929,7 +1027,18 @@ Run several consistency check on the model, such as :
 
     def retrieve_data(self,mapp,point,precision=2):
         """
-        .. todo:: __doc__
+        Retrieve the data corresponding to a given point in descriptor space from a CatMAP 'map' object.
+        If no data is found for the specified point, then None is returned.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: CatMAP map (see MapperBase)
+
+        :param point: Coordinates of a point in descriptor space.
+        :type point: [float]
+
+        :param precision: Require descriptor coordinates to match with 'precision' decimals. Optional
+                          parameter, default is 2.
+        :type precision: int
         """
         if not mapp:
             return None
@@ -954,7 +1063,29 @@ Run several consistency check on the model, such as :
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):
         """
-        .. todo:: __doc__
+        Convert into CatMAP "map" data structure into numpy array. The "map" will be interpolated
+        onto a regular grid.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: CatMAP map (see MapperBase)
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
+
+        :param log_interpolate: Take logarithm of values before interpolation. Defaults to False.
+        :type log_interpolate: bool, optional
+
+        :param minval: Replace any values less than minval with minval. None implies no cutoff.
+                       Defaults to None.
+        :type minval: float
+
+        :param maxval: Replace any values greater than maxval with maxval. None implies no cutoff.
+                       Defaults to None.
+        :type maxval: float
         """
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
@@ -998,7 +1129,18 @@ Run several consistency check on the model, such as :
     @staticmethod
     def array_to_map(array,descriptor_ranges,resolution):
         """
-        .. todo:: __doc__
+        Convert numpy array object into CatMAP "map" data structure.
+
+        :param array: Numpy array of size (resolution x resolution) corresponding to
+                     grid spanning descriptor_ranges.
+        :type array: numpy.array
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
         """
         dim = len(array.shape)
         xy = []
@@ -1050,6 +1192,11 @@ Run several consistency check on the model, such as :
     def same_rxn(rxn1,rxn2):
         """Determine if two reactions *rxn1* and *rxn2* are identical.
 
+           :param rxn1: Elementary reaction list. See print_rxn for syntax.
+           :type rxn1: [[str]]
+
+           :param rxn2: Elementary reaction list. See print_rxn for syntax.
+           :type rxn2: [[str]]
         """
 
         def same_state(state1, state2):
@@ -1084,13 +1231,44 @@ Run several consistency check on the model, such as :
     @staticmethod
     def reverse_rxn(rxn):
         """
-        .. todo:: __doc__
+        Reverse the reaction provided. [[IS],[TS],[FS]] -> [[FS],[TS],[IS]]
+
+        :param rxn: Reaction in CatMAP form: 
+
+                    * [[IS],[TS],[FS]] for activated reaction
+                    * [[IS],[FS]] for non-activated reaction
+                      where IS,TS,FS correspond to the names of the
+                      species in the initial/transition/final states
+                      respectively.
+
+        :type rxn: [[str]]
+
         """
-        return [rxn[-1],rxn[1],rxn[0]]
+        if len(rxn) == 3:
+            return [rxn[-1],rxn[1],rxn[0]]
+        elif len(rxn) ==2:
+            return [rxn[-1],rxn[0]]
+        else:
+            raise UserWarning('Incorrect reaction format:'+str(rxn))
 
     def get_rxn_energy(self,rxn,energy_dict):
         """
-        .. todo:: __doc__
+        Calculate reaction energy given the energies of all species.
+
+        :param rxn: Reaction in CatMAP form: 
+
+                    * [[IS],[TS],[FS]] for activated reaction
+                    * [[IS],[FS]] for non-activated reaction
+                      where IS,TS,FS correspond to the names of the
+                      species in the initial/transition/final states
+                      respectively.
+
+        :type rxn: [[str]]
+
+        :param energy_dict: Dictionary of energies for all species.
+                            Keys should be species names and values
+                            should be energies.
+        :type energy_dict: dict
         """
 
         IS = rxn[0]
@@ -1112,7 +1290,15 @@ Run several consistency check on the model, such as :
 
     def get_state_energy(self,rxn_state,energy_dict):
         """
-        .. todo:: __doc__
+        Calculate energy of a "reaction state" (list of species) given the energies of all species.
+
+        :param rxn_state: List of intermediate species (must be defined in species_definitions)
+        :type rxn: [[str]]
+
+        :param energy_dict: Dictionary of energies for all species.
+                            Keys should be species names and values
+                            should be energies.
+        :type energy_dict: dict
         """
         energy = 0
         for species in rxn_state:
@@ -1123,7 +1309,13 @@ Run several consistency check on the model, such as :
         return energy
 
     def adsorption_to_reaction_energies(self,free_energy_dict):
-        "Convert adsorption energies to reaction energies/barriers."
+        """
+        Convert adsorption formation energies to reaction energies/barriers.
+
+        :param free_energy_dict: Dictionary containing free energies for each species
+                                 in the reaction network.
+        :type free_energy_dict: dict
+        """
         Grxn_Ga = []
         for rxn in self.elementary_rxns:
             dG, G_a = self.get_rxn_energy(rxn,free_energy_dict)
