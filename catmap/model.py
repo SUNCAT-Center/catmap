@@ -464,12 +464,14 @@ The central object that defines a microkinetic model consisting of:
         for rxn_index, rxn in enumerate(equations):
             #Replace separators with ' '
             regex = re.compile(regular_expressions['species_separator'][0])
+            # Parse out the reaction options.  Options are key=value pairs that
+            # are separated from reactions by ";" and from each other by ","
             eq = rxn
             options = None
             if ';' in rxn:
                 eq, options = rxn.split(';')
             if options:
-                options = "".join(options.split(" "))
+                options = "".join(options.split(" "))  # ignore spaces
                 suboptions = options.split(',')
                 for subopt in suboptions:
                     key, value = subopt.split('=')

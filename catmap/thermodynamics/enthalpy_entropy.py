@@ -116,19 +116,40 @@ class ThermoCorrections(ReactionModelWrapper):
             thermo_dict = getattr(self,mode)()
             add_dict_in_place(correction_dict, thermo_dict)
 
-        # apply electrochemical transition state "corrections" last
-        if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
+        getattr(self,self.pressure_mode+'_pressure')()
+
+        if 'electrochemical' in l:
+            correction_dict = self._get_echem_corrections(correction_dict)
+        return correction_dict
+
+    def _get_echem_corrections(self, correction_dict):
+        """
+        Perform the thermodynamic corrections relevant to electrochemistry but
+        are not specific to any particular mode.
+        """
+        # Generate energy for fake echem transition states after all other corrections
+        if len(self.echem_transition_state_names) > 0:
             echem_thermo_dict = self.generate_echem_TS_energies()
             add_dict_in_place(correction_dict, echem_thermo_dict)
 
-        getattr(self,self.pressure_mode+'_pressure')()
+        # pH corrections to proton and hydroxide species
+        if self.pH:
+            proton_index = self.gas_names.index(self.proton_species or 'H_g')
+            hydroxide_index = self.gas_names.index(self.hydroxide_species or 'OH_g')
+            self.gas_pressures[proton_index] = 1. / 10**self.pH
+            self.gas_pressures[hydroxide_index] = 1e-14 * 10**self.pH
 
-        if 'electrochemical' in l and self.pH:
-            # the following are placeholders and should be user-definable
-            proton = 'H_g'
-            OH = 'OH_g'
-            self.gas_pressures[proton] = 1./10**self.pH
-            self.gas_pressures[OH] = 1e-14 * 10**self.pH
+        # pressure corrections to species in the echem double layer based on kH
+        if 'dl' in self.species_definitions.keys():
+            dl_species = [spec for spec in self.species_definitions.keys()
+                            if '_dl' in spec and '*' not in spec]
+            for spec in dl_species:
+                gas_spec = spec.replace('_dl', '_g')
+                C_H2O = 55.
+                KH_gas = self.species_definitions[spec]['kH']
+                P_gas = C_H2O / KH_gas
+                P_corr = np.log(P_gas) * self._kB * self.temperature
+                correction_dict[spec] = correction_dict[gas_spec] + P_corr
 
         return correction_dict
 
@@ -181,8 +202,9 @@ class ThermoCorrections(ReactionModelWrapper):
         atoms_dict = self.atoms_dict
 
         for gas in gas_names:
-            # Hard coding corrections for fictitious gas molecule that's used in electrochemistry
-            if gas in ['pe_g', 'ele_g', 'H_g', 'OH_g']:  # also needs to be changed eventually
+            # Hard coding corrections for fictitious gas molecules used in echem
+            if gas in ['pe_g', 'ele_g', 'H_g', 'OH_g',
+                        self.proton_species, self.hydroxide_species]:
                 thermo_dict[gas] = 0.
                 self._zpe_dict[gas] = 0.
                 self._enthalpy_dict[gas] = 0.
