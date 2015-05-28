@@ -56,9 +56,21 @@ class MinResidMapper(MapperBase):
                 "no coverages at ${pt}"
                         }
 
-    def get_initial_coverage(self, descriptors, *args,**kwargs):
+    def get_initial_coverage(self, descriptors, *args, **kwargs):
         """
-            .. todo:: __doc__
+            Return initial guess for coverages based on Boltzmann weights.
+            The return format is [descriptors, [coverages]] where the list
+            of coverages represents the initial guess for different choices
+            for gas phase-reservoirs that are in equilibrium with the
+            surface coverages.
+
+            :param descriptors: [float]
+            :type descriptors: A list of descriptor values, like [.5, .5]
+            :param *args: see catmap.solver.get_initial_coverages
+            :type *args: []
+            :param **kwargs: see catmap.solver.get_initial_coverages
+            :type **kwargs: {}
+
         """
         params = self.scaler.get_rxn_parameters(descriptors)
         solver_cvgs = self.solver.get_initial_coverage(params,*args,**kwargs)
@@ -66,10 +78,10 @@ class MinResidMapper(MapperBase):
 
     def get_initial_coverage_from_map(self, descriptors, *args,**kwargs):
         """
-            .. todo:: __doc__
+
         """
         resid_cvg = []
-        for pt,cvgs in self.coverage_map:
+        for pt, cvgs in self.coverage_map:
             resid = self.solver.get_residual(cvgs)
             resid_cvg.append([resid,cvgs])
         resid_cvg.sort()
@@ -81,7 +93,16 @@ class MinResidMapper(MapperBase):
         return cvgs[:max_len]
 
     def get_point_coverage(self, descriptors, *args, **kwargs):
-        "Shortcut to get coverages at a point."
+        """Shortcut to get final coverages at a point.
+        
+            :param descriptors: List of chemical descriptors, like [-.5, -.5]
+            :type descriptors: [float]
+            :param *args: see catmap.solvers.get_coverage
+            :type *args: []
+            :param **kwargs: see catmap.solver.get_coverage
+
+        
+        """
         #Check to see if point has already been solved
         current= self.retrieve_data(self._coverage_map,
                 descriptors,
@@ -111,7 +132,16 @@ class MinResidMapper(MapperBase):
             initial_guess_coverages):
         """Find coverages at point new_descriptors given that coverages are
         initial_guess_coverages at old_descriptors by incrementally halving
-        the distance between points upon failure to converge."""
+        the distance between points upon failure to converge.
+
+            :param new_descriptors: list of descriptors that fails
+            :type new_descriptors: [float]
+            :param old_descriptors: list of descriptors that is known to work
+            :type old_descriptors: [float]
+            :param inititial_guess_coverages: List of best of guess for coverages
+            :type initial_guess_coverages: [float]
+
+        """
 
         def extrapolate_coverages(
                 descriptors0, coverages0, descriptors1, coverages1, descriptors2):
