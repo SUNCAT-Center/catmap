@@ -49,6 +49,10 @@ class FirstOrderInteractions(ReactionModelWrapper):
         E0_list = [self.species_definitions[sp]['formation_energy'][i_surf] 
                     for sp in all_ads]
 
+        if None in E0_list:
+            no_Es = [a for a,E in zip(all_ads,E0_list) if E is None]
+            raise UserWarning('No adsorption energy specified for: '+str(no_Es))
+
         if '&' not in parameter_name:
             i = j = all_ads.index(parameter_name)
         else:
@@ -71,7 +75,11 @@ class FirstOrderInteractions(ReactionModelWrapper):
         eps_list = list(eps_matrix.ravel())
 
         if 'numerical_differential' in self.interaction_fitting_mode:
-            if self.numerical_delta_theta is None:
+
+            if 'delta_theta' in self.species_definitions[all_ads[i]]:
+                delta_theta = self.species_definitions[all_ads[i]]['delta_theta']
+
+            elif self.numerical_delta_theta is None:
                 raise UserWarning('The change in coverage used to numerically compute '
                         'differential binding energies (numerical_delta_theta) '
                         'must be specified.')
