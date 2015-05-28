@@ -5,6 +5,10 @@ from copy import copy
 from ase.atoms import string2symbols
 
 def get_composition(species_string):
+    """
+    Convert string of species into a dictionary of species and the number of each species.
+    .. todo:: Explain what species_string looks like
+    """
     composition = {}
     # clean up transition states and electrochem
     species_string = species_string.replace('-','')
