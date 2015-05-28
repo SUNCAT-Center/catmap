@@ -24,7 +24,7 @@ from ase.structure import molecule
 from catmap.model import ReactionModel
 import data
 
-__version__ = "0.2.92"
+__version__ = "0.2.125"
 
 def load(setup_file):
     rxm = ReactionModel(setup_file = setup_file)
