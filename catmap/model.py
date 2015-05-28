@@ -15,17 +15,16 @@ griddata = catmap.griddata
 
 class ReactionModel:
     """
-The central object that defines a microkinetic model consisting of:
+    The central object that defines a microkinetic model consisting of:
 
-- active sites
-- species
-- possible reaction steps
-- rate constant expressions
-- descriptors and descriptor ranges
-- data files for energies
-- external parameters (temperature, pressures)
-- other more technical settings related to the solver and mapper
-
+    - active sites
+    - species
+    - possible reaction steps
+    - rate constant expressions
+    - descriptors and descriptor ranges
+    - data files for energies
+    - external parameters (temperature, pressures)
+    - other more technical settings related to the solver and mapper
     """
     def __init__(self,**kwargs): #
         """Class for managing microkinetic models.
@@ -122,7 +121,6 @@ The central object that defines a microkinetic model consisting of:
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
-
 
     # Functions for executing the kinetic model
 
@@ -328,7 +326,8 @@ The central object that defines a microkinetic model consisting of:
                 exec func_string in globals(), locs
                 setattr(self,func_name,locs[func_name])
 
-   #File IO functions
+    #File IO functions
+
     def load(self,setup_file): #
         """Load a 'setup file' by importing it and assigning all local
         variables as attributes of the kinetic model. Special attributes
@@ -954,7 +953,17 @@ Run several consistency check on the model, such as :
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):
         """
-        .. todo:: __doc__
+        Convert into CatMAP "map" data structure into numpy array.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: CatMAP map (see :py:MapperBase:)
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
         """
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
@@ -998,7 +1007,18 @@ Run several consistency check on the model, such as :
     @staticmethod
     def array_to_map(array,descriptor_ranges,resolution):
         """
-        .. todo:: __doc__
+        Convert numpy array object into CatMAP "map" data structure.
+
+        :param array: Numpy array of size (resolution x resolution) corresponding to
+                     grid spanning descriptor_ranges.
+        :type array: numpy.array
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
         """
         dim = len(array.shape)
         xy = []

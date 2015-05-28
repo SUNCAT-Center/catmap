@@ -37,8 +37,17 @@ class SteadyStateSolver(MeanFieldSolver):
                             "found solution at point ${pt}",
                             'rootfinding_status':
                             "converging (residual = ${resid})"}
-    
+
     def get_rate_constants(self,rxn_parameters,coverages):
+        """Return rate constants for given sequence of reaction parameters and coverages.
+
+        :param rxn_parameters: Sequence of reaction parameters.
+        :type rxn_parameters: [float]
+        :param coverages: Sequence of coverages.
+        :type coverages: [float]
+
+        """
+
         if self.adsorbate_interaction_model not in [None,'ideal']:
             memo = tuple(rxn_parameters) + tuple(coverages) + tuple(self._gas_energies)
         else:
@@ -58,18 +67,39 @@ class SteadyStateSolver(MeanFieldSolver):
         return kfs + krs
 
     def get_coverage(self,rxn_parameters,c0=None,findrootArgs={}):
+        """Return coverages for given reaction parameters and coverage constraints.
+
+            :param rxn_parameters: Sequence of rxn_parameters
+            :type rxn_parameters: [float]
+            :param c0: Coverage constraints.
+            :type c0: **TODO**
+            :param findrootArgs: *deprecated*
+        """
         if self.adsorbate_interaction_model in [None,'ideal'] or self.interaction_strength == 0:
             return self.get_ideal_coverages(rxn_parameters,c0,True,findrootArgs)
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
 
-    def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn, 
+    def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn,
             c0=None,findrootArgs={}):
+        """Return steady-state coverages using catmap.solvers.solver_base.NewtonRoot .
+
+        :param rxn_parameters: Sequence of reaction parameters.
+        :type rxn_parameters: [float]
+        :param steady_state_fn: **TODO**
+        :type steady_state_fn: **TODO**
+        :param jacobian_fn: **TODO**
+        :type jacobian_fn: **TODO**
+        :param c0: Coverage constraints
+        :type c0: **TODO**
+        :param findrootArgs: *deprecated*
+
+        """
 
         n_tot = len(self.adsorbate_names) + len(self.transition_state_names)
         if c0 is None:
             raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
-        
+
         c0 = self.constrain_coverages(c0)
         self.steady_state_function = steady_state_fn
         self.steady_state_jacobian = jacobian_fn
@@ -105,7 +135,7 @@ class SteadyStateSolver(MeanFieldSolver):
             solver_kwargs['J'] = J
 
 
-        iterations = solver(f,c0, self._matrix, self._mpfloat, 
+        iterations = solver(f,c0, self._matrix, self._mpfloat,
                             self._Axb_solver, **solver_kwargs)
         old_error = 1e99
         coverages = None
@@ -164,6 +194,11 @@ class SteadyStateSolver(MeanFieldSolver):
 
     def get_ideal_coverages(self,rxn_parameters,c0=None,
             refresh_rate_constants=True,findrootArgs={}):
+        """Return
+
+            :TODO:
+
+        """
         if refresh_rate_constants:
             self.get_rate_constants(rxn_parameters,[0]*len(self.adsorbate_names))
         return self.get_steady_state_coverage(rxn_parameters,self.ideal_steady_state_function,
@@ -171,6 +206,9 @@ class SteadyStateSolver(MeanFieldSolver):
 
     def get_interacting_coverages(self,rxn_parameters,c0=None,
             interaction_strength=1.0,findrootArgs={}):
+        """:TODO:
+
+        """
 
         #weight interaction parameters - useful for using non-interacting systems as guess
         n_tot = len(self.adsorbate_names +self.transition_state_names)
@@ -197,6 +235,9 @@ class SteadyStateSolver(MeanFieldSolver):
 #                raise ValueError
 
     def bisect_interaction_strength(self,rxn_parameters,valid_strength,valid_coverages,target_strength,max_bisections,findrootArgs={}):
+        """
+            :TODO:
+        """
         n_tot = len(self.adsorbate_names+self.transition_state_names)
         bisect_iter = 0
         n_bisects = 0
@@ -218,6 +259,14 @@ class SteadyStateSolver(MeanFieldSolver):
 
 
     def get_initial_coverage(self,rxn_parameters):
+        """Return coverages based on probabilties according to the Boltzmann distribution
+        and the adsorption energies for a given sequence of rxn_parameters.
+
+        :param rxn_parameters: Sequence of reaction parameters
+        :type rxn_parameter: [float]
+
+        """
+
         energy_dict = {}
         for ads,E in zip(self.adsorbate_names,rxn_parameters):
             energy_dict[ads] = E
@@ -239,6 +288,9 @@ class SteadyStateSolver(MeanFieldSolver):
 
     def get_residual(self, coverages,
             validate_coverages = True, refresh_rate_constants = True):
+        """
+            :TODO:
+        """
 
         if validate_coverages == True:
             coverages = self.constrain_coverages(coverages)
@@ -253,7 +305,11 @@ class SteadyStateSolver(MeanFieldSolver):
         return residual
 
 
-    def interacting_steady_state_function(self,coverages):
+    def interacting_steady_state_function(self, coverages):
+        """
+            :TODO:
+        """
+
         memo = tuple(self._rxn_parameters) + tuple(self._gas_energies) + \
                 tuple(self._site_energies) + tuple(coverages) + tuple(self.gas_pressures+[self.temperature])
         if memo in self._steady_state_memoize:
@@ -268,6 +324,10 @@ class SteadyStateSolver(MeanFieldSolver):
             return c
 
     def ideal_steady_state_function(self,coverages):
+        """
+            :TODO:
+        """
+
         memo = tuple(self._kf) + tuple(self._kr) + tuple(coverages) + tuple(self.gas_pressures+[self.temperature])
         if memo in self._steady_state_memoize:
             return self._steady_state_memoize[memo]
@@ -279,6 +339,10 @@ class SteadyStateSolver(MeanFieldSolver):
             return c
 
     def interacting_steady_state_jacobian(self,coverages):
+        """
+            :TODO:
+        """
+
         J = self.interacting_mean_field_jacobian(
                 self._rxn_parameters,coverages,self.gas_pressures,
                 self._gas_energies,self._site_energies,
@@ -287,17 +351,27 @@ class SteadyStateSolver(MeanFieldSolver):
         return J
 
     def ideal_steady_state_jacobian(self,coverages):
+        """
+            :TODO:
+        """
         J = self.ideal_mean_field_jacobian(
                 self._kf,self._kr,coverages,self.gas_pressures,
                 self._mpfloat, self._matrix)
         return J
 
     def constrain_coverages(self,cvgs):
+        """
+            :TODO:
+        """
+
         min_cvg = self._mpfloat(10**(-(self.decimal_precision)))
         cvgs = self.constrain_coverage_function(list(cvgs),self._mpfloat,min_cvg)
         return cvgs
 
     def compile(self):
+        """
+            :TODO:
+        """
         if not self._compiled:
             intermediate_subs = {}
             self._function_substitutions.update(
@@ -313,7 +387,7 @@ class SteadyStateSolver(MeanFieldSolver):
             #make steady-state expressions
             ss_eqs = self.rate_equations()
             self._function_substitutions['steady_state_expressions'] = '\n    '.join(ss_eqs)
-            
+
             #make jacobian expressions
             jac_eqs = self.jacobian_equations(adsorbate_interactions=True)
             self._function_substitutions['jacobian_expressions'] = '\n    '.join(jac_eqs)
@@ -324,7 +398,7 @@ class SteadyStateSolver(MeanFieldSolver):
                 lines = string.split('\n')
                 indention = '\n'+'    '*levels
                 return indention.join(lines)
-            
+
             #pre-substitute the interaction function into rate_constants (needed because its nested 2 levels)
             indented = indent_string(templates[self.adsorbate_interaction_model+'_interaction_function'],1)
             indented = Template(indented).substitute(self._function_substitutions)
@@ -417,7 +491,9 @@ class SteadyStateSolver(MeanFieldSolver):
                 self.steady_state_function = self.ideal_steady_state_function
 
     def optimize_analytical_function(self,func_name,func_string,insertion_line,indention_level,*test_args):
-        """Replace some common multiplication terms to speed up functions"""
+        """Replace some common multiplication terms to speed up functions.
+
+        """
 
         locs = {}
         exec func_string in globals(), locs
@@ -442,7 +518,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     ' + ':r'( +\- *\-1\*| +\+ *1\*| +\+ *\+ +)+',
                     ' - ':r'( +\+ *\-1\*| +\- *1\*| +\+ *\- +| +0 +\-|\-1\*|\-1\*1\*)',
                     }
-        
+
         opt_str = '\n'+'    '*indention_level+'subs = [0]*'+str(len(opt_strs))
         for i,op in enumerate(opt_strs):
             opt_str += '\n'+'    '*indention_level+ 'subs['+str(i)+'] = '+op
