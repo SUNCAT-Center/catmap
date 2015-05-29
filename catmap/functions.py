@@ -199,11 +199,11 @@ def constrained_relaxation(
     N = len(x0)
 
     def find_min(q):
-    """
-    Find minimum
+        """
+        Find minimum
 
-    .. todo:: Explain what this does in the context of constrained_relaxation.
-    """
+        .. todo:: Explain what this does in the context of constrained_relaxation.
+        """
         u[q] = 0
         v = np.dot(A,u)
         num1 = 0
