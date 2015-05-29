@@ -288,17 +288,17 @@ def scaling_coefficient_matrix(
 
     #Check that input dictionaries are valid.
     def check_lengths(dictionary,force_numeric = False):
-    """
-    Check that the input dictionaries are valid.
+        """
+        Check that the input dictionaries are valid.
 
-    :param dictionary: Input dictionary.
+        :param dictionary: Input dictionary.
 
-    :type dictionary: dict
+        :type dictionary: dict
 
-    :param force_numeric: Ensure that all values in the dictionary are numeric.
+        :param force_numeric: Ensure that all values in the dictionary are numeric.
 
-    :type force_numeric: bool, optional
-    """
+        :type force_numeric: bool, optional
+        """
         for val in dictionary.values():
             if len(val) != len(dictionary.values()[0]):
                 key_len = '\n'.join([key+':'+str(len(dictionary[key])) 
