@@ -8,10 +8,11 @@ def get_composition(species_string):
     """
     Convert string of species into a dictionary of species and the number of each species.
 
-    :param species_string: A string of the reaction species
+    :param species_string: A string of the reaction species. Should be a chemical formula string
+                           that may also contain '-','&',or,'pe'. 'pe' is a special case corresponding
+                           to a proton-electron pair and has the compositon of H.
     :type species: str
 
-    .. todo:: Explain what species_string looks like
     """
     composition = {}
     # clean up transition states and electrochem
