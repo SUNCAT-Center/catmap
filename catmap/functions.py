@@ -371,10 +371,12 @@ def scaling_coefficient_matrix(
         #construct "descriptor" matrix (note that this is done inside the 
         #for loop to allow different parameters to have different number 
         #of surfaces)
+
         if len(surfs) <= len(descriptor_dict.values()[0])+1:
             warnings.warn('Number of energies specified is less than the number'
                           'of free parameters for '+ads+'. Scaling is not reliable'
-                          'unless parameters are explicitly specified in constraints_dict')
+                          'unless parameters are explicitly specified in '
+                          ' constraints_dict.')
 
         if len(surfs) == len(surface_names):
             D = Dtotal
@@ -392,16 +394,26 @@ def scaling_coefficient_matrix(
         D = np.array(D)
         A = np.array(A)
         Dinv = np.linalg.pinv(D)
-        c0 = np.dot(Dinv,A)
+        if len(A) > 1:
+            c0 = np.dot(Dinv,A)
 
-        #use relaxation method to solve the problem subject to the 
-        #constraints specified by coeff_mins/Maxs.
+            #use relaxation method to solve the problem subject to the 
+            #constraints specified by coeff_mins/Maxs.
 
-        cMin = coeff_mins[Nads]
-        cMax = coeff_maxs[Nads]
+            cMin = coeff_mins[Nads]
+            cMax = coeff_maxs[Nads]
 
-        c = constrained_relaxation(
-                D,A,c0,cMin,cMax)
+            c = constrained_relaxation(
+                    D,A,c0,cMin,cMax)
+
+        elif coeff_mins[Nads] == coeff_maxs[Nads]:
+            c = coeff_mins[Nads]
+        else:
+            #If there is only one data point, assume constant.
+            warnings.warn('Assuming constant value for: '+ads)
+            c = [0]*len(Dtotal[i,:])
+            c[-1] = A[0]
+
         for Ndesc,coeff in enumerate(c):
             C[Ndesc,Nads] = np.round(coeff,5)
 
