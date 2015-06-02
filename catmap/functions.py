@@ -370,6 +370,11 @@ def scaling_coefficient_matrix(
         #construct "descriptor" matrix (note that this is done inside the 
         #for loop to allow different parameters to have different number 
         #of surfaces)
+        if len(surfs) <= len(descriptor_dict.values()[0])+1:
+            warnings.warn('Number of energies specified is less than the number'
+                          'of free parameters for '+ads+'. Scaling is not reliable'
+                          'unless parameters are explicitly specified in constraints_dict')
+
         if len(surfs) == len(surface_names):
             D = Dtotal
         else:

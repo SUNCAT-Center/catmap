@@ -30,7 +30,7 @@ class GeneralizedLinearScaler(ScalerBase):
 
         #Check that descriptors are in reaction network
         all_ads = list(self.adsorbate_names) + list(self.transition_state_names)
-        for d in self.descriptor_names: #REMOVE THIS REQUIREMENT LATER
+        for d in self.descriptor_names: #REMOVE THIS REQUIREMENT LATER?
             if d not in all_ads:
                 raise AttributeError('Descriptor '+d+' does not appear in reaction'+\
                         ' network. Add descriptor to network via "dummy" site, or '+\
