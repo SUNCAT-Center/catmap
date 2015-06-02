@@ -70,6 +70,10 @@ class TableParser(ParserBase):
             for k, v in zip(headers, 
                     L.split(self._separator, len(headers))):
                 linedict[k] = v
+            for s in self.species_definitions:
+                if self.species_definitions[s].get('type',None) == 'site':
+                    print s, self.species_definitions[s]
+
             sites = [s for s in self.species_definitions if
                     self.species_definitions[s].get('type',None) == 'site' and 
                     linedict['site_name'] in 
@@ -107,7 +111,7 @@ class TableParser(ParserBase):
             if ads is None:
                 del self.species_definitions[adsdef]
                 print('Warning: Species with undefined "name" was encountered ('+adsdef+'). '+\
-                     'Ensure that all species which are explicitly set in "species_definitions '+\
+                     'Ensure that all species which are explicitly set in "species_definitions" '+\
                      'are also defined in the reaction network ("rxn_expressions"). This definition '+\
                      'will be ignored.')
             else:
