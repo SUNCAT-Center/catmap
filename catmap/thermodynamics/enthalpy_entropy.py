@@ -80,9 +80,8 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def get_thermodynamic_corrections(self,**kwargs):
         '''
-	echem in generalized linear scaling needs recalculation
 	
-	
+	echem in generalized linear scaling needs recalculation	
 	'''        
 	l = self.thermodynamic_corrections
         if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
@@ -215,7 +214,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def shomate_gas(self):
-        gas_names = self.gas_names
+        """
+	Calculate free energy corrections using shomate equation
+	"""
+	gas_names = self.gas_names
         temperature = float(self.temperature)
         temperature_ref = 298.15
 
@@ -287,7 +289,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def fixed_entropy_gas(self,include_ZPE=True):
-        thermo_dict = {}
+        """
+
+	"""
+	thermo_dict = {}
         gas_names = self.gas_names
         temperature = self.temperature
         entropy_dict = self.fixed_entropy_dict
