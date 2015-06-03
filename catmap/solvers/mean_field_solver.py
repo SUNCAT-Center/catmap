@@ -146,7 +146,7 @@ class MeanFieldSolver(SolverBase):
                 DRC.append([0.0]*len(Ji))
            else:
                 DRC.append([float(Jj/ti) for Jj in Ji])
-    return DRC
+        return DRC
 
     def get_interacting_energies(self,rxn_parameters):
         """
