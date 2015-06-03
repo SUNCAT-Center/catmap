@@ -79,8 +79,12 @@ class ThermoCorrections(ReactionModelWrapper):
             self.thermodynamic_variables.append(corr+'_thermo_mode')
 
     def get_thermodynamic_corrections(self,**kwargs):
-        # echem in generalized linear scaling needs recalculation
-        l = self.thermodynamic_corrections
+        '''
+	echem in generalized linear scaling needs recalculation
+	
+	
+	'''        
+	l = self.thermodynamic_corrections
         if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
             self.force_recalculation = True
         state_dict = {}
@@ -127,7 +131,7 @@ class ThermoCorrections(ReactionModelWrapper):
         return correction_dict
 
     def ideal_gas(self):
-        """Function to calculate the thermal correction to the free energy of 
+        """Calculate the thermal correction to the free energy of 
         an ideal gas using the IdealGasThermo class in ase.thermochemistry 
         along with the molecular structures in ase.data.molecules.
 
