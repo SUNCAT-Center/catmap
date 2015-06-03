@@ -583,13 +583,14 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def hbond_electrochemical(self):
-        thermo_dict = self.simple_electrochemical()
+        """
+	Update simple_electrochemical with hbonding corrections as if they were on Pt(111)
+	"""
+	thermo_dict = self.simple_electrochemical()
         TS_names = [TS for TS in self.transition_state_names if
             'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
         hbond_dict = self.hbond_dict
-	""" Update simple_electrochemical with hbonding corrections as if they were on Pt(111)
-	""" 
-       for ads in list(self.adsorbate_names) + TS_names:
+	for ads in list(self.adsorbate_names) + TS_names:
             if ads in hbond_dict:
                 if ads in thermo_dict:
                     thermo_dict[ads] += hbond_dict[ads]
@@ -754,7 +755,7 @@ if __name__ == '__main__':
         """ Raw data from CRC handbook, 91st edition
         H is constrained to 0 since it can be lumped with F
 	""" 
-       Ts =  [298.15, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0, 1200.0, 1300.0, 1400.0, 1500.0]
+	Ts =  [298.15, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0, 1200.0, 1300.0, 1400.0, 1500.0]
         Ss =  [239.865, 240.139, 253.845, 266.257, 277.835, 288.719, 298.987, 308.696, 317.896, 326.629, 334.93, 342.833, 350.367, 357.558]
         Cps =  [44.101, 44.219, 51.713, 59.8, 67.294, 73.958, 79.838, 85.025, 89.597, 93.624, 97.165, 100.277, 103.014, 105.422]
         Hs =  [0.0, 0.082, 4.864, 10.442, 16.803, 23.873, 31.569, 39.817, 48.553, 57.718, 67.262, 77.137, 87.304, 97.729]
