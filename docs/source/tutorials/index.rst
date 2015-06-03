@@ -2,7 +2,10 @@
 Tutorials
 ============
 
-.. include:: generating_an_input_file.rst
-.. include:: creating_a_microkinetic_model.rst
-.. include:: refining_a_microkinetic_model.rst 
-.. include:: including_adsorbate_adsorbate_interactions.rst 
+.. toctree:: 
+    :maxdepth: 2
+
+    generating_an_input_file.rst
+    creating_a_microkinetic_model.rst
+    refining_a_microkinetic_model.rst 
+    including_adsorbate_adsorbate_interactions.rst 
