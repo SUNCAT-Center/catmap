@@ -318,7 +318,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_entropy_gas(self,include_ZPE=True):
         """
-	LOOK UP FIXED ENTROPY!
+	Add entropy based on fixed_entropy_dict (entropy linear with temperature) and ZPE 
 	"""
 	thermo_dict = {}
         gas_names = self.gas_names
@@ -345,11 +345,14 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def frozen_fixed_entropy_gas(self):
+	"""
+	Do not add ZPE, calculate fixed entropy correction.
+	"""
         return self.fixed_entropy_gas(False)
 
     def zero_point_gas(self):
 	"""
-	Add zero point energy correction to gas.
+	Add zero point energy correction to gasses.
 	"""
         gas_names = self.gas_names
         freq_dict = self.frequency_dict
@@ -377,7 +380,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_enthalpy_entropy_gas(self,gas_names=None):
 	"""
-	
+	TO DO
 	"""
         thermo_dict = {}
         if not gas_names:
@@ -481,7 +484,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_enthalpy_entropy_adsorbate(self):
 	"""
-	
+	TO DO
 	"""
         return self.fixed_enthalpy_entropy_gas(self.adsorbate_names+self.transition_state_names)
 
@@ -543,9 +546,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def get_rxn_index_from_TS(self, TS):
-        # takes in the name of a transition state. returns the reaction index of
-        # the elementary rxn from which it belongs
-        for rxn_index, eq in enumerate(self.elementary_rxns):
+        """ Take in the name of a transition state and return the reaction index of
+        the elementary rxn from which it belongs
+        """
+	for rxn_index, eq in enumerate(self.elementary_rxns):
             if TS in eq:
                 return rxn_index
 
