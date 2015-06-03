@@ -186,7 +186,7 @@ One key point for generating input files is that the energies are
 computed as a "generalized formation energy" relative to a *common
 reference*:
 
-Ei = Ui - Σj (nj Rj)
+:math:`E_i = U_i - \sum_j (n_j R_j)`
 
 where Ei is the "generalized formation energy" of species i, Ui is the
 raw/DFT energy of species i, nj is the number of atomic species j in i,
@@ -197,7 +197,10 @@ energy of gas-phase CO relative to carbon (C) in methane (CH4), oxygen
 (O) in H2O, and hydrogen (H) in molecular hydrogen (H2). We first
 compute the reference energies (Rj) for each atomic species:
 
-RH = 0.5(UH2) RC = UCH4 - 4\ *RH RO = UH2O - 2*\ RH
+.. math::
+    R_H = 0.5(U_{H_2}})
+    R_C = U_{CH_4} - 4R_H
+    R_O = U_{H_2O} - 2R_H
 
 (where again U is a "raw" energy from an ab-initio calculation, or a
 "regular" formation energy from NIST).
