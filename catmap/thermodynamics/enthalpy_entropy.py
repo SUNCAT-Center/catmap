@@ -57,7 +57,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 electrochemical_thermo_mode = 'simple_electrochemical',
                 pressure_mode = 'static',
                 thermodynamic_corrections = ['gas','adsorbate','electrochemical'],
-                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta'],
+                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta','pH'],
                 ideal_gas_params = catmap.data.ideal_gas_params,
                 fixed_entropy_dict = catmap.data.fixed_entropy_dict,
                 shomate_params = catmap.data.shomate_params,
@@ -120,13 +120,40 @@ class ThermoCorrections(ReactionModelWrapper):
             thermo_dict = getattr(self,mode)()
             add_dict_in_place(correction_dict, thermo_dict)
 
-        # apply electrochemical transition state "corrections" last
-        if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
+        getattr(self,self.pressure_mode+'_pressure')()
+
+        if 'electrochemical' in l:
+            correction_dict = self._get_echem_corrections(correction_dict)
+        return correction_dict
+
+    def _get_echem_corrections(self, correction_dict):
+        """
+        Perform the thermodynamic corrections relevant to electrochemistry but
+        are not specific to any particular mode.
+        """
+        # Generate energy for fake echem transition states after all other corrections
+        if len(self.echem_transition_state_names) > 0:
             echem_thermo_dict = self.generate_echem_TS_energies()
             add_dict_in_place(correction_dict, echem_thermo_dict)
 
-        getattr(self,self.pressure_mode+'_pressure')()
+        # pH corrections to proton and hydroxide species
+        if self.pH:
+            proton_index = self.gas_names.index(self.proton_species or 'H_g')
+            hydroxide_index = self.gas_names.index(self.hydroxide_species or 'OH_g')
+            self.gas_pressures[proton_index] = 1. / 10**self.pH
+            self.gas_pressures[hydroxide_index] = 1e-14 * 10**self.pH
 
+        # pressure corrections to species in the echem double layer based on kH
+        if 'dl' in self.species_definitions.keys():
+            dl_species = [spec for spec in self.species_definitions.keys()
+                            if '_dl' in spec and '*' not in spec]
+            for spec in dl_species:
+                gas_spec = spec.replace('_dl', '_g')
+                C_H2O = 55.
+                KH_gas = self.species_definitions[spec]['kH']
+                P_gas = C_H2O / KH_gas
+                P_corr = np.log(P_gas) * self._kB * self.temperature
+                correction_dict[spec] = correction_dict[gas_spec] + P_corr
 
         return correction_dict
 
@@ -179,8 +206,9 @@ class ThermoCorrections(ReactionModelWrapper):
         atoms_dict = self.atoms_dict
 
         for gas in gas_names:
-            # Hard coding corrections for fictitious gas molecule that's used in electrochemistry
-            if gas in ['pe_g']:
+            # Hard coding corrections for fictitious gas molecules used in echem
+            if gas in ['pe_g', 'ele_g', 'H_g', 'OH_g',
+                        self.proton_species, self.hydroxide_species]:
                 thermo_dict[gas] = 0.
                 self._zpe_dict[gas] = 0.
                 self._enthalpy_dict[gas] = 0.
@@ -470,25 +498,37 @@ class ThermoCorrections(ReactionModelWrapper):
         for echem_TS in echem_TS_names:
             preamble, site = echem_TS.split('_')
             echem, rxn_index, barrier = preamble.split('-')
-            rxn = self.elementary_rxns[int(rxn_index)]
+            rxn_index = int(rxn_index)
+            rxn = self.elementary_rxns[rxn_index]
+            if rxn_index in self.rxn_options_dict['beta'].keys():
+                beta = float(self.rxn_options_dict['beta'][rxn_index])
             IS = rxn[0]
             FS = rxn[-1]
             E_IS = self.get_state_energy(IS, self._electronic_energy_dict)
             E_FS = self.get_state_energy(FS, self._electronic_energy_dict)
             G_IS = E_IS + get_E_to_G(IS, self._correction_dict)
-            G_FS = E_FS + get_E_to_G(FS, self._correction_dict)            
+            G_FS = E_FS + get_E_to_G(FS, self._correction_dict)
             dG = G_FS - G_IS
-            G_TS = G_IS + float(barrier) + (1 - beta) * dG  # G_TS @ 0V vs RHE
-            G_TS += -voltage * (1 - beta)  #  same scaling for fake TS as real ones
-            assert(self._electronic_energy_dict[echem_TS]) == 0.  # make sure we're "correcting" the right value
-            thermo_dict[echem_TS] = G_TS
+            G_TS = G_FS + float(barrier) + (1 - beta) *  -dG  # only tested for reductions
+            # make sure we're "correcting" the right value
+            assert(self._electronic_energy_dict[echem_TS]) == 0.
+            self._correction_dict[echem_TS] = 0.
 
+            thermo_dict[echem_TS] = G_TS
         return thermo_dict
+
+    def get_rxn_index_from_TS(self, TS):
+        # takes in the name of a transition state. returns the reaction index of
+        # the elementary rxn from which it belongs
+        for rxn_index, eq in enumerate(self.elementary_rxns):
+            if TS in eq:
+                return rxn_index
 
     def simple_electrochemical(self):
         thermo_dict = {}
-        gas_names = [gas for gas in self.gas_names if 'pe' in gas]
-        TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
+        gas_names = [gas for gas in self.gas_names if gas.split('_')[0] in ['pe', 'ele']]
+        TS_names = [TS for TS in self.transition_state_names if
+            'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
         voltage = self.voltage
         beta = self.beta
 
@@ -500,13 +540,17 @@ class ThermoCorrections(ReactionModelWrapper):
 
         # correct TS energies with beta*voltage (and hbonding?)
         for TS in TS_names:
+            rxn_index = self.get_rxn_index_from_TS(TS)
+            if rxn_index in self.rxn_options_dict['beta'].keys():
+                beta = float(self.rxn_options_dict['beta'][rxn_index])
             thermo_dict[TS] = -voltage * (1 - beta)
 
         return thermo_dict
 
     def hbond_electrochemical(self):
         thermo_dict = self.simple_electrochemical()
-        TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
+        TS_names = [TS for TS in self.transition_state_names if
+            'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
         hbond_dict = self.hbond_dict
 
         # updates simple_electrochemical with hbonding corrections as if they were on Pt(111)
@@ -546,7 +590,8 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def hbond_with_estimates_electrochemical(self):
         thermo_dict = self.hbond_electrochemical()
-        TS_names = [TS for TS in self.transition_state_names if 'pe' in TS]
+        TS_names = [TS for TS in self.transition_state_names if
+            'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
 
         for ads in list(self.adsorbate_names) + TS_names:
             if ads not in hbond_dict:

@@ -1,19 +1,16 @@
 from analysis_base import *
-import math as np
+import numpy as np
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
     """
-      .. todo:: Explain purpose
-
-      rxn\_mechanisms - dictionary of lists of integers. Each integer
-      corresponds to an elementary step. Elementary steps are indexed in
-      the order that they are input with 1 being the first index.
-      Negative integers are used to designate reverse reactions.
-      [dictionary of string:list of integers]
+      A simple tool for the generation of potential energy diagrams
+      from a reaction network.
     """
     def __init__(self,reaction_model=None):
         """
-        .. todo:: __doc__
+        Class for generating potential energy diagrams.
+
+        :param reaction_model: The ReactionModel object to load.
         """
         self._rxm = reaction_model
         defaults = {'pressure_correction':True,
@@ -26,36 +23,65 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         self.data_dict = {}
         MechanismPlot.__init__(self,[0])
 
-    def plot(self,ax=None,surfaces=None,mechanisms=None,
+    def plot(self,ax=None,plot_variants=None,mechanisms=None,
             labels=None,save=True):
         """
-        .. todo:: __doc__
+        Generates the potential energy diagram plot
+
+        :param ax: Matplotlib Axes object to optionally plot into
+
+        :param plot_variants: Which PEDs to plot. Defaults to all surfaces
+                              or all applied voltages
+        :param plot_variants: list
+
+        :param mechanisms: Which reaction pathways to plot.  Each integer
+                           corresponds to an elementary step. Elementary
+                           steps are indexed in the order that they are
+                           input with 1 being the first index. Negative
+                           integers are used to designate reverse reactions.
+                           Read in from model.rxn_mechanisms by default
+        :type mechanisms: {string:[int]}
+
+        :param labels: Labels for each state.  Can be generated automatically
+        :type labels: [string]
+
+        :param save: Whether to write plot to file
+        :type save: bool
         """
         if not ax:
             fig = plt.figure()
             ax = fig.add_subplot(111)
         else:
-            fig = None
+            fig = ax.get_figure()
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
-        if not surfaces:
-            surfaces = self.surface_names
-        if not self.surface_colors:
-            self.surface_colors = get_colors(max(len(surfaces),len(mechanisms)))
+        if not plot_variants and self.descriptor_dict:
+            plot_variants = self.surface_names
+        elif not plot_variants and 'voltage' in self.descriptor_names:
+            voltage_idx = self.descriptor_names.index('voltage')
+            v_min, v_max = self.descriptor_ranges[voltage_idx]
+            plot_variants = np.linspace(v_min, v_max, 5)
+        if not self.plot_variant_colors:
+            self.plot_variant_colors = get_colors(max(len(plot_variants),len(mechanisms)))
 
         self.kwarg_list = []
         for key in self.rxn_mechanisms.keys():
             self.kwarg_list.append(self.kwarg_dict.get(key,{}))
 
         for n,mech in enumerate(mechanisms):
-            for i, surf in enumerate(surfaces):
-                xy = self.descriptor_dict[surf]
+            for i, variant in enumerate(plot_variants):
+                if self.descriptor_dict:
+                    xy = self.descriptor_dict[variant]
+                elif 'voltage' in self.descriptor_names:
+                    voltage_idx = self.descriptor_names.index('voltage')
+                    xy = [0, 0]
+                    xy[voltage_idx] = variant
+                    xy[1-voltage_idx] = self.descriptor_ranges[1-voltage_idx][0]
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
 
                     if self.energy_type == 'free_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
-
                     elif self.energy_type == 'potential_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
                         energy_dict.update(self.scaler.get_electronic_energies(xy))
@@ -75,20 +101,18 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                         energy_dict = self.scaler.get_free_energies(xy) #get gas G's
                         energy_dict.update(G_dict)
-
                     params = self.adsorption_to_reaction_energies(energy_dict)
-
                     self.energies = [0]
                     self.barriers = []
                     self.labels = ['']
-                    if len(surfaces) > 1:
+                    if len(plot_variants) > 1:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
-                                self.surface_colors[i]
+                                self.plot_variant_colors[i]
                     else:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
-                                self.surface_colors[n]
+                                self.plot_variant_colors[n]
                     for step in mech:
                         if step < 0:
                             reverse = True
