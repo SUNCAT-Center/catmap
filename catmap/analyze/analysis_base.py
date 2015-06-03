@@ -234,6 +234,7 @@ class MapPlot:
         if dim == 1:
             ax.set_xlim(descriptor_ranges[0])
             ax.set_xlabel(self.descriptor_labels[0])
+            ax.set_ylim([float(self.min), float(self.max)])
         elif dim == 2:
             if self.colorbar:
                 if log_scale: #take only integer tick labels

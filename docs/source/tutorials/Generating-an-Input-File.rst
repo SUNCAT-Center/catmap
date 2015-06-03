@@ -1,6 +1,3 @@
-Generating an Input File
-========================
-
 The first step for any kinetic model is to properly generate an input
 file. Input files are processed by a "parser" class of CatMAP. The job
 of the parser is to convert some standard input into a Python data
@@ -86,7 +83,7 @@ site\_name
 
 These names are used to distinguish different site types. They can
 correspond to a facet ("111" or "211") or be more specific ("hcp", "fcc"
-or "top"). Gas-phase species should have the site defined as "gas"gas.
+or "top"). Gas-phase species should have the site defined as "gas".
 Site names which appear in the {
 {species\_definitions[site]['site\_names']}} list will be parsed in,
 where "site" is the designation of any site in the model.
@@ -317,9 +314,9 @@ energies relative to the clean (111) Rh slab.
 .. code:: python
 
     ref_dict = {}
-    ref_dict['H'] = 0.5*abinitio_energies['H2_g']
-    ref_dict['O'] = abinitio_energies['H2O_g'] - 2*ref_dict['H']
-    ref_dict['C'] = abinitio_energies['CH4_g'] - 4*ref_dict['H']
+    ref_dict['H'] = 0.5*abinitio_energies['H2_gas']
+    ref_dict['O'] = abinitio_energies['H2O_gas'] - 2*ref_dict['H']
+    ref_dict['C'] = abinitio_energies['CH4_gas'] - 4*ref_dict['H']
     ref_dict['111'] = abinitio_energies['slab_111']
 
 Now we can write a function to convert these "raw" energies to

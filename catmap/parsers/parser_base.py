@@ -62,7 +62,7 @@ class ParserBase(ReactionModelWrapper):
 
             if species in self.species_definitions:
                 ads_info.update(self.species_definitions[species])
-            if not ads_info['composition']:
+            if ads_info['composition'] == None:
                 raise ValueError('Could not determine composition for '+species)
             self.species_definitions[species] = ads_info
 
