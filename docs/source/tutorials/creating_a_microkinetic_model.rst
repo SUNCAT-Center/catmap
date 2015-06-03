@@ -1,3 +1,6 @@
+Creating a Microkinetic Model
+=============================
+
 This tutorial provides a walk-through of how to create a very basic
 micro-kinetic model for CO oxidation on transition-metal (111) surfaces.
 More advanced features are explored in `3 Refining a Microkinetic

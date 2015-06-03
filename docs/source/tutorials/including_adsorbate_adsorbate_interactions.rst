@@ -1,3 +1,6 @@
+Including Lateral Adsorbate-Adsorbate Interactions
+==================================================
+
 In all of the previous tutorials we have made some assumptions about how
 the adsorbed species interact with the surface lattice and each other.
 Specifically, we assume that every species adsorbs at a single site and
