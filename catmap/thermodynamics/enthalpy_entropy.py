@@ -318,7 +318,7 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_entropy_gas(self,include_ZPE=True):
         """
-
+	LOOK UP FIXED ENTROPY!
 	"""
 	thermo_dict = {}
         gas_names = self.gas_names
@@ -348,6 +348,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return self.fixed_entropy_gas(False)
 
     def zero_point_gas(self):
+	"""
+	Add zero point energy correction to gas.
+	"""
         gas_names = self.gas_names
         freq_dict = self.frequency_dict
         thermo_dict = {}
@@ -360,6 +363,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def frozen_gas(self):
+	"""
+	Neglect all thermal contributions, including the zero point energy.
+	"""
         gas_names = self.gas_names
         thermo_dict = {}
         for gas in gas_names:
@@ -370,6 +376,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def fixed_enthalpy_entropy_gas(self,gas_names=None):
+	"""
+	
+	"""
         thermo_dict = {}
         if not gas_names:
             gas_names = self.gas_names
@@ -389,7 +398,7 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def harmonic_adsorbate(self):
-        """Function to calculate the thermal correction to the free energy of 
+        """Calculate the thermal correction to the free energy of 
         an adsorbate in the harmonic approximation using the HarmonicThermo 
         class in ase.thermochemistry.
 
@@ -434,7 +443,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
     
     def zero_point_adsorbate(self):
-        adsorbate_names = self.adsorbate_names+self.transition_state_names
+        """
+	Add zero point energy correction to adsorbate energy.
+	"""
+	adsorbate_names = self.adsorbate_names+self.transition_state_names
         freq_dict = self.frequency_dict
         thermo_dict = {}
         avg_TS = []
@@ -456,6 +468,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def frozen_adsorbate(self):
+	"""
+	Neglect all zero point, enthalpy, entropy corrections to adsorbate energy.
+	"""
         thermo_dict = {}
         for ads in self.adsorbate_names+self.transition_state_names:
             self._zpe_dict[ads] = 0
@@ -465,6 +480,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def fixed_enthalpy_entropy_adsorbate(self):
+	"""
+	
+	"""
         return self.fixed_enthalpy_entropy_gas(self.adsorbate_names+self.transition_state_names)
 
     def average_transition_state(self,thermo_dict,transition_state_list = []):
@@ -487,8 +505,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def generate_echem_TS_energies(self):
-        # give real energies to the fake echem transition states
-        echem_TS_names = self.echem_transition_state_names
+        """ 
+	Give real energies to the fake echem transition states
+        """
+	echem_TS_names = self.echem_transition_state_names
         voltage = self.voltage
         beta = self.beta
         thermo_dict = {}
