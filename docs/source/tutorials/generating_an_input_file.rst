@@ -198,9 +198,9 @@ energy of gas-phase CO relative to carbon (C) in methane (CH4), oxygen
 compute the reference energies (Rj) for each atomic species:
 
 .. math::
-    R_H = 0.5(U_{H_2}})
-    R_C = U_{CH_4} - 4R_H
-    R_O = U_{H_2O} - 2R_H
+    R_H &= 0.5(U_{H_2}) \\
+    R_C &= U_{CH_4} - 4R_H \\
+    R_O &= U_{H_2O} - 2R_H \\
 
 (where again U is a "raw" energy from an ab-initio calculation, or a
 "regular" formation energy from NIST).
