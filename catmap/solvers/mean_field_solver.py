@@ -20,8 +20,13 @@ class MeanFieldSolver(SolverBase):
                             "stagnated or diverging (residual = ${resid})."+\
                             " Assuming Jacobian is 0.",
                             }
-    
+
     def get_rxn_rates(self,coverages,rate_constants):
+    """
+        returns list of reaction rate for each elementary reaction
+        based on reaction constants & coverage
+        .. todo:: coverages, rate_constants
+    """
         rates = self.elementary_rates(
                 rate_constants,
                 coverages,
@@ -31,12 +36,12 @@ class MeanFieldSolver(SolverBase):
                 )
         return [ri for ri in rates]
 
-    def get_rate(self, rxn_parameters, 
+    def get_rate(self, rxn_parameters,
             coverages=None, verify_coverages=True,
             **coverage_kwargs):
-        if not coverages: 
+        if not coverages:
             coverages = self._coverage
-        if not coverages: 
+        if not coverages:
             raise ValueError('Input coverages to use as an initial guess '+\
                     'for the solver.')
         if verify_coverages == True:
@@ -48,6 +53,14 @@ class MeanFieldSolver(SolverBase):
         return rates
 
     def get_turnover_frequency(self,rxn_parameters,rates=None,verify_coverages=True):
+        """
+        return list of turnover frequencies of all the gas-phase species
+        :param rates: list of rates of each rxn
+        :type rates: list
+        :param verify_coverages: verify that the species has a certain value for the coverage
+        :type verify_coverages: bool, optional
+        :param rxn_parameters: reaction parameters, see solver-base
+        """
         rxn_parameters = list(rxn_parameters)
         if rates is None:
             rates = self.get_rate(rxn_parameters,verify_coverages=verify_coverages)
@@ -74,11 +87,15 @@ class MeanFieldSolver(SolverBase):
             idxs = gas_to_idxs(g)
             tof = sum([idx_to_rate(idx,rates) for idx in idxs])
             turnover_freq.append(tof)
-        
+
         self._turnover_frequency = turnover_freq
         return turnover_freq
 
     def get_selectivity(self,rxn_parameters):
+        """
+        return list of selectivity of each reaction
+        :param rxn_parameters: reaction parameters, see solver-base
+        """
         tofs = self.get_turnover_frequency(rxn_parameters)
         if self.products is None:
             self.products = [g for g,r in zip(self.gas_names,tofs) if r >0]
@@ -104,6 +121,11 @@ class MeanFieldSolver(SolverBase):
         return selectivities
 
     def get_rate_control(self,rxn_parameters):
+        """
+        return list of degree of rate control for each reaction
+        Ref: Stegelmann et al., DOI: 10.1021/ja9000097
+        :param rxn_parameters: reaction parameters, see solver-base
+        """
         kT = self._kB*self.temperature
         eps = self._mpfloat(self.perturbation_size)
         try:
@@ -124,9 +146,13 @@ class MeanFieldSolver(SolverBase):
                 DRC.append([0.0]*len(Ji))
            else:
                 DRC.append([float(Jj/ti) for Jj in Ji])
-	return DRC
+        return DRC
 
     def get_interacting_energies(self,rxn_parameters):
+        """
+        return the integral energy under high coverage with interactions
+        :param rxn_parameters: reaction parameters, see solver-base
+        """
         all_ads = self.adsorbate_names + self.transition_state_names
         N_ads = len(all_ads)
         energies = rxn_parameters[:N_ads]
@@ -136,6 +162,10 @@ class MeanFieldSolver(SolverBase):
         return E_int
 
     def get_selectivity_control(self,rxn_parameters):
+        """
+        return the list of degree of selectivity control for each rxn
+        :param rxn_parameters: reaction parameters, see solver-base
+        """
         kT = self._kB*self.temperature
         eps = self._mpfloat(self.perturbation_size)
         try:
@@ -157,8 +187,14 @@ class MeanFieldSolver(SolverBase):
             else:
                 DSC.append([float(Jj/si) for Jj in Ji])
         return DSC
-        
+
     def get_rxn_order(self,rxn_parameters,epsilon=1e-10):
+        """
+        return the reaction orders for the reactants
+        :param rxn_parameters: reaction parameters, see solver-base
+        :param epsilon: degree of perturbation in pressure
+        :type epsilon: float, optional
+        """
         current_tofs = self.get_turnover_frequency(rxn_parameters)
         current_Ps = [p for p in self.gas_pressures]
         DRC = []
@@ -188,10 +224,15 @@ class MeanFieldSolver(SolverBase):
         return DRC
 
     def get_apparent_activation_energy(self,rxn_parameters,epsilon=1e-10):
-        #returns apparent Arrhenius activation energies (in units of R)
-        #for production/consumption of each gas phase species.
-        #Calculated as
-        #E_app = T^2(dlnr_+/dT)=(T^2/r_+)(dr_+/dT), where r+ is the TOF
+        """
+        returns apparent Arrhenius activation energies (in units of R)
+        for production/consumption of each gas phase species.
+        Calculated as
+        E_app = T^2(dlnr_+/dT)=(T^2/r_+)(dr_+/dT), where r+ is the TOF
+        :param rxn_parameters: reaction paramenters, see solver-base
+        :param epsilon: degree of pertubation in temperature
+        :type epsilon: float, optional
+        """
         current_tofs = self.get_turnover_frequency(rxn_parameters)
         current_T = self.temperature
         new_T = current_T*(1+epsilon)
@@ -215,23 +256,27 @@ class MeanFieldSolver(SolverBase):
         self.temperature = current_T
         self._apparent_activation_energy = E_apps
         #self.get_turnover_frequency(rxn_parameters)
-	print E_apps
+        print E_apps
         return E_apps
 
     def summary_text(self):
         return ''
 
     def rate_equation_term(self,species_list,rate_constant_string,d_wrt=None):
-        """Function to compose a term in the rate equation - e.g. kf[1]*theta[0]*p[0]"""
+        """
+        Function to compose a term in the rate equation - e.g. kf[1]*theta[0]*p[0]
+        :param species_list: list of species in rate equations
+        :type species_list: list
+        """
 
-        #This clause allows for multiple site types. 
+        #This clause allows for multiple site types.
         site_indices={}
 
-        gas_idxs = [self.gas_names.index(gas) 
+        gas_idxs = [self.gas_names.index(gas)
                 for gas in species_list if gas in self.gas_names]
-        ads_idxs = [self.adsorbate_names.index(ads) 
+        ads_idxs = [self.adsorbate_names.index(ads)
                 for ads in species_list if ads in self.adsorbate_names]
-        sites = [s for s in species_list 
+        sites = [s for s in species_list
                 if s in self.site_names] #allows for multiple site types
         if len(gas_idxs+ads_idxs+sites) != len(species_list):
             raise ValueError('Undefined species in '+','.join(species_list))
@@ -252,13 +297,13 @@ class MeanFieldSolver(SolverBase):
             if (d_idx in ads_idxs #expression is a function of d_wrt
                     and d_site not in sites): #empty site not there -> easy
                 multiplier = ads_idxs.count(d_idx) #get order
-                ads_idxs.remove(d_idx) #reduce order by 1   
+                ads_idxs.remove(d_idx) #reduce order by 1
                 if multiplier != 1:
                     rate_string = str(multiplier)+'*'+rate_string
-            elif (d_site in sites #empty site appears, 
+            elif (d_site in sites #empty site appears,
                     and d_idx not in ads_idxs): #but not the adsorbate
                 multiplier = sites.count(d_site)
-                multiplier = -1*multiplier #this accounds for the 
+                multiplier = -1*multiplier #this accounds for the
                 #fact that d_site/d_ads = -1
                 sites.remove(d_site) #reduce the order of site by 1
                 rate_string = str(multiplier)+'*'+rate_string
@@ -266,13 +311,13 @@ class MeanFieldSolver(SolverBase):
                     and d_idx in ads_idxs): #and function of site (1-theta_i)
                 #need to use chain rule...
                 ads_mult = ads_idxs.count(d_idx)
-                site_mult = sites.count(d_site)*-1 #negative 1 to account for 
+                site_mult = sites.count(d_site)*-1 #negative 1 to account for
                 #d_site/d_ads
                 ads_str = 'theta['+str(d_idx)+']'
                 site_str = 's['+str(self.site_names.index(d_site))+']'
-                sites = [s for s in sites if s != d_site] #remove d_site 
+                sites = [s for s in sites if s != d_site] #remove d_site
                 #from the site list
-                ads_idxs = [a for a in ads_idxs if a != d_idx] #remove d_idx 
+                ads_idxs = [a for a in ads_idxs if a != d_idx] #remove d_idx
                 #for adsorbate list
                 if (-site_mult-1):
                     op = '*'
@@ -281,7 +326,7 @@ class MeanFieldSolver(SolverBase):
                 mult_rule = '('+str(site_mult)+'*'+ads_str+op+'*'.join(
                         [site_str]*(-site_mult-1)) # cvg*d_site
                 mult_rule += ' + '+str(ads_mult)+'*'+site_str+'*'.join(
-                        [ads_str]*(ads_mult-1))+ ')' 
+                        [ads_str]*(ads_mult-1))+ ')'
                 rate_string += '*'+mult_rule
             else:
                 return '0'
@@ -294,7 +339,7 @@ class MeanFieldSolver(SolverBase):
             return rate_string
 
     def site_string_list(self):
-        """Function to compose an alalytic expression for the coverage of empty sites"""
+        """Function to compose an analytic expression for the coverage of empty sites"""
         site_strings=[]
         site_totals={}
         for site in self.site_names:
@@ -316,7 +361,7 @@ class MeanFieldSolver(SolverBase):
         subdict['prefactor_list'] =  'prefactor_list = [' + ', '.join(self.prefactor_list) + ']'
         subdict['n_adsorbates'] = 'n_adsorbates = '+str(len(self.adsorbate_names))
         subdict['n_transition_states'] = 'n_transition_states = '+str(len(self.transition_state_names))
-        
+
         max_cvg_list = []
         for ads in self.adsorbate_names:
             site = self.species_definitions[ads]['site']
@@ -342,10 +387,10 @@ class MeanFieldSolver(SolverBase):
         return subdict
 
     def rate_equations(self):
-        """Compose analytical expressions for the reaction rates and 
+        """Compose analytical expressions for the reaction rates and
         change of surface species wrt time (dc/dt).
         Assumes:
-        
+
         kf is defined as a list of forward rate-constants
         kr is defined as a list of reverse rate-constants
         theta is defined as a list of coverages
@@ -370,7 +415,7 @@ class MeanFieldSolver(SolverBase):
             for j,rxn in enumerate(self.elementary_rxns):
                 rxnCounts = [-1.0*rxn[0].count(ads), 1.0*rxn[-1].count(ads)]
                 rxnOrder = [o for o in rxnCounts if o]
-                if rxnOrder: 
+                if rxnOrder:
                     rxnOrder = rxnOrder[0]
                     dcdt_str += ' + ' + str(int(rxnOrder))+'*r['+str(j)+']'
             if dcdt_str.endswith('= '):
@@ -389,8 +434,8 @@ class MeanFieldSolver(SolverBase):
         theta is defined as a list of coverages
         p is defined as a list of pressures
 
-        If the rate constants depend on coverage, use 
-        adsorbate_interactions = True. 
+        If the rate constants depend on coverage, use
+        adsorbate_interactions = True.
         Assumes:
 
         kB is defined as Boltzmann's constant
@@ -399,8 +444,10 @@ class MeanFieldSolver(SolverBase):
             derivative of forward activation free energy i wrt coverage j
         dEr is defined as a list of lists where dEr[i][j] is the
             derivative of reverse activation free energy i wrt coverage j
+        :param: adsorbate_interactions: tell if need to include interactions
+        :type: adsorbate_interactions: bool, optional
         """
-        
+
         site_strings = self.site_string_list()
 
         J_strings = []
@@ -419,10 +466,10 @@ class MeanFieldSolver(SolverBase):
             for j,ads_j in enumerate(self.adsorbate_names):
                 J_str = 'J['+str(i)+']['+str(j)+'] = 0'
                 for k,rxn in enumerate(self.elementary_rxns):
-                    rxnCounts = [-1.0*rxn[0].count(ads_i), 
+                    rxnCounts = [-1.0*rxn[0].count(ads_i),
                             1.0*rxn[-1].count(ads_i)]
                     rxnOrder = [o for o in rxnCounts if o]
-                    if rxnOrder: 
+                    if rxnOrder:
                         rxnOrder = rxnOrder[0]
                         fRate_string = self.rate_equation_term(rxn[0],'kf['+str(k)+']',ads_j)
                         rRate_string = self.rate_equation_term(rxn[-1],'kr['+str(k)+']',ads_j)
@@ -445,24 +492,26 @@ class MeanFieldSolver(SolverBase):
         return J_strings
 
     def reaction_energy_equations(self,adsorbate_interactions=True):
-        """Composes a list of analytical expressions which give the reaction 
-        and activation energies for elementary steps. Note that while this 
-        is useful primarily for models with adsorbate-interactions 
+        """Composes a list of analytical expressions which give the reaction
+        and activation energies for elementary steps. Note that while this
+        is useful primarily for models with adsorbate-interactions
         (otherwise these energetics can easily be obtained by the reaction
         model itself), they are technically valid for all mean-field models.
         Assumes:
-       
-        Gf is a list of formation energies ordered as 
+
+        Gf is a list of formation energies ordered as
             adsorbate_names+transition_state_names
 
-        If model includes adsorbate interactions then use 
+        If model includes adsorbate interactions then use
         adsorbate_interactions = True to include dEa/dtheta in the output.
         Assumes:
 
         dGs is a matrix/array of derivatives of free energies wrt coverages
             such that dGs[:,i] is a vector of derivatives of the free energy
             of species i wrt each coverage ordered as adsorbate_names
-            
+
+        :param: adsorbate_interaction: specify whether or not to include interactions
+        :type: adsorbate_interaction: bool, optional
         """
 
         idx_dict = {}
@@ -484,6 +533,13 @@ class MeanFieldSolver(SolverBase):
             expressions.append('dG_FS = [0]*'+str(n_rxns))
 
         def species_strings(state_list,list_name,include_constants=True,type='list'):
+        """
+        return the strings containing the IS, TS and FS for the reactions
+        :param: include_constants: tell if need to include the energies
+        :type: include_constants: bool, optional
+        :param: type: the output type
+        :type: type: string, optional
+        """
             species_strs = []
             for species in state_list:
                 if species in idx_dict:
