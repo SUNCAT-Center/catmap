@@ -6,7 +6,8 @@ import mpmath as mp
 
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=ReactionModel()):
-        """Class for `solving' for equilibrium coverages and rates as a 
+        """
+        Class for `solving' for equilibrium coverages and rates as a 
         function of reaction parameters. This class acts as a base class 
         to be inherited by other solver classes, but is not 
         functional on its own. 
@@ -33,6 +34,10 @@ class SolverBase(ReactionModelWrapper):
         self._compiled = False
 
     def set_output_attrs(self,rxn_parameters):
+    """
+    :param rxn_parameters: Reaction parameters.
+    :type rxn_parameters: list
+    """
         if True in [v in self.mapper._solver_output 
                 for v in self.output_variables]:
             cvgs = ReactionModelWrapper.__getattr__(self,'_coverage')
