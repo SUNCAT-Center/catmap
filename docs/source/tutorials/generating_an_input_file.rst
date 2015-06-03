@@ -182,9 +182,9 @@ the model, and it is always good practice to note the source of inputs.
 Formation Energy Approach
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
- One key point for generating input files is that the energies are
-computed as a "generalized formation energy" relative to a \*common
-reference":
+One key point for generating input files is that the energies are
+computed as a "generalized formation energy" relative to a *common
+reference*:
 
 Ei = Ui - Σj (nj Rj)
 
