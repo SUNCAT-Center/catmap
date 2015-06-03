@@ -94,14 +94,14 @@ class MinResidMapper(MapperBase):
 
     def get_point_coverage(self, descriptors, *args, **kwargs):
         """Shortcut to get final coverages at a point.
-        
+
             :param descriptors: List of chemical descriptors, like [-.5, -.5]
             :type descriptors: [float]
             :param *args: see catmap.solvers.get_coverage
             :type *args: []
             :param **kwargs: see catmap.solver.get_coverage
 
-        
+
         """
         #Check to see if point has already been solved
         current= self.retrieve_data(self._coverage_map,
