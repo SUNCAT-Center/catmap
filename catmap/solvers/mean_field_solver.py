@@ -260,6 +260,8 @@ class MeanFieldSolver(SolverBase):
         return E_apps
 
     def summary_text(self):
+        """Stub for producing solver summary.
+        """
         return ''
 
     def rate_equation_term(self,species_list,rate_constant_string,d_wrt=None):
@@ -395,6 +397,7 @@ class MeanFieldSolver(SolverBase):
         kr is defined as a list of reverse rate-constants
         theta is defined as a list of coverages
         p is defined as a list of pressures
+
         """
 
         site_strings = self.site_string_list()
