@@ -390,6 +390,8 @@ class ReactionModel:
 
         self.load_data_file()
 
+        self.set_rxn_options()
+
         self.generate_echem_TS()
 
         self.verify()
@@ -504,9 +506,23 @@ class ReactionModel:
         transition_state_names = []
         site_names = []
         echem_transition_state_names = []
-        for rxn_index, eq in enumerate(equations):
+        rxn_options_dict = {'prefactor':{}, 'beta':{}}
+        for rxn_index, rxn in enumerate(equations):
             #Replace separators with ' '
             regex = re.compile(regular_expressions['species_separator'][0])
+            # Parse out the reaction options.  Options are key=value pairs that
+            # are separated from reactions by ";" and from each other by ","
+            eq = rxn
+            options = None
+            if ';' in rxn:
+                eq, options = rxn.split(';')
+            if options:
+                options = "".join(options.split(" "))  # ignore spaces
+                suboptions = options.split(',')
+                for subopt in suboptions:
+                    key, value = subopt.split('=')
+                    if key in rxn_options_dict:
+                        rxn_options_dict[key][rxn_index] = value
             eq = regex.sub(' ',eq)
             state_dict = functions.match_regex(eq,
                     *regular_expressions['initial_transition_final_states'])
@@ -605,6 +621,7 @@ class ReactionModel:
         self.elementary_rxns = elementary_rxns
         self.site_names = site_names
         self.echem_transition_state_names = echem_transition_state_names
+        self.rxn_options_dict = rxn_options_dict
 
     def texify(self,ads): #
         """Generate LaTeX representation of an adsorbate.
@@ -1355,19 +1372,20 @@ class ReactionModel:
             self.species_definitions[echem_TS]['frequencies'] = []
             self.species_definitions[echem_TS]['name'] = preamble
             self.species_definitions[echem_TS]['n_sites'] = 1  # Someone may want to change this to be user-specified at some point
-
-            # look up what IS and FS of rxn_index are
-            regex = re.compile(regular_expressions['species_separator'][0])
-            eq = regex.sub(' ',self.rxn_expressions[rxn_index])
-            state_dict = functions.match_regex(eq,
-                *regular_expressions['initial_transition_final_states'])
-            IS_species = [si for si in state_dict['initial_state'].split(' ') if si]
-            FS_species = [si for si in state_dict['final_state'].split(' ') if si]
-            # assume composition is already balanced - set TS composition to IS composition
-            total_composition = {}
-            for species in IS_species:
-                functions.add_dict_in_place(total_composition, self.species_definitions[species]['composition'])
-            self.species_definitions[echem_TS]['composition'] = total_composition
+            self.species_definitions[echem_TS]['composition'] = {'H':1}  #placeholder composition - should be unimportant
 
         # add echem TSs to regular TSes - this might be more trouble than it's worth
         self.transition_state_names += tuple(self.echem_transition_state_names)
+
+    def set_rxn_options(self):
+        """sets elementary rxn-specific attributes to the appropriate places"""
+        # set up prefactor_list
+        if self.rxn_options_dict['prefactor']:
+            if not self.prefactor_list:
+                self.prefactor_list = [None] * len(self.elementary_rxns)
+            for key, value in self.rxn_options_dict['prefactor'].iteritems():
+                if value == "None":
+                    value = None
+                else:
+                    value = float(value)
+                self.prefactor_list[key] = value
