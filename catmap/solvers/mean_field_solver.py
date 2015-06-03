@@ -22,11 +22,11 @@ class MeanFieldSolver(SolverBase):
                             }
 
     def get_rxn_rates(self,coverages,rate_constants):
-    """
-        returns list of reaction rate for each elementary reaction
-        based on reaction constants & coverage
-        .. todo:: coverages, rate_constants
-    """
+        """
+            returns list of reaction rate for each elementary reaction
+            based on reaction constants & coverage
+            .. todo:: coverages, rate_constants
+        """
         rates = self.elementary_rates(
                 rate_constants,
                 coverages,
@@ -533,13 +533,13 @@ class MeanFieldSolver(SolverBase):
             expressions.append('dG_FS = [0]*'+str(n_rxns))
 
         def species_strings(state_list,list_name,include_constants=True,type='list'):
-        """
-        return the strings containing the IS, TS and FS for the reactions
-        :param: include_constants: tell if need to include the energies
-        :type: include_constants: bool, optional
-        :param: type: the output type
-        :type: type: string, optional
-        """
+            """
+            return the strings containing the IS, TS and FS for the reactions
+            :param: include_constants: tell if need to include the energies
+            :type: include_constants: bool, optional
+            :param: type: the output type
+            :type: type: string, optional
+            """
             species_strs = []
             for species in state_list:
                 if species in idx_dict:
