@@ -1,3 +1,6 @@
+Refining a Microkinetic Model
+=============================
+
 In this tutorial we will take the simple CO oxidation model presented in
 `2 - Creating a Microkinetic
 Model <2%20Creating%20a%20Microkinetic%20Model>`__ and refine it to be
