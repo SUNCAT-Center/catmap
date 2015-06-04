@@ -1,4 +1,4 @@
-Including Lateral Adsorbate-Adsorbate Interactions
+Including Adsorbate-Adsorbate Interactions
 ==================================================
 
 
