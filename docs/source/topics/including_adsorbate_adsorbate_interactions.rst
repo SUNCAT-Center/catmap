@@ -1,6 +1,12 @@
 Including Lateral Adsorbate-Adsorbate Interactions
 ==================================================
 
+
+.. WARNING::
+    The support of adsorbate-adsorbate interactions in CatMAP is currently undergoing
+    significant changes. This will produce backwards-incompatible changes and this
+    tutorial will change accordingly.
+
 In all of the previous tutorials we have made some assumptions about how
 the adsorbed species interact with the surface lattice and each other.
 Specifically, we assume that every species adsorbs at a single site and
@@ -69,9 +75,9 @@ descriptors <Using%20Thermodynamic%20Descriptors>`__ tutorial:
 
 We use the same input file (energies.txt) and start with the same setup
 file (CO\_oxidation.mkm) from `Tutorial
-2 <2%20Creating%20a%20Microkinetic%20Model>`__. Note that each section
+2 <../tutorials/2%20Creating%20a%20Microkinetic%20Model>`__. Note that each section
 assumes you are starting with the "fresh" CO\_oxidation.mkm file from
-`Tutorial 2 <2%20Creating%20a%20Microkinetic%20Model>`__.
+`Tutorial 2 <../tutorials/2%20Creating%20a%20Microkinetic%20Model>`__.
 
 Multi-site adsorbates and maximum coverages
 -------------------------------------------
@@ -112,7 +118,14 @@ doesn't get confused about the site balance:
 
 Now we can run the model and get the following coverages:
 
+.. figure:: ../_static/5_multisite_coverage.png
+  :align: center
+
 and rate:
+
+.. figure:: ../_static/5_multisite_rate.png
+  :align: center
+
 
 If we compare these to `Tutorial
 2 <2%20Creating%20a%20Microkinetic%20Model>`__ then we can see that the
@@ -160,6 +173,9 @@ bounds we have defined (which means they are not physical). This isn't
 too surprising since we just made the constraint up. We can still take a
 look at the points that did converge in coverages.pdf:
 
+.. figure:: ../_static/5_maxcov_coverage.png
+  :align: center
+
 This is pretty consistent with what we might expect. The model converges
 everywhere that CO coverage is less than 0.5 in the unconstrained
 solution, but starts to break down when the constraint limits the CO
@@ -190,22 +206,35 @@ First order adsorption energy model
  In this model we assume that adsorption energies follow the following
 relationship:
 
-where Ei is the `generalized formation
+.. math::
+
+    E_{i} =& E_{i}^{i} +  \sum_{j} {\cal{F} (|\theta|_{j}) \varepsilon_{ij} \theta_{j}} \\
+    |\theta|_j =& \sum_{{\mathrm{site}_k}={\mathrm{site}_j}} \theta_{k}
+
+
+where :math:`E_{i}` is the `generalized formation
 energy <1%20Generating%20an%20Input%20File#formation_energy>`__ for
-species *i*, \|θ\|j is the total coverage of occupied sites for the site
-on which adsorbate *j* is adsorbed, εij is the "interaction matrix", and
+species :math:`i`, \|θ\|j is the total coverage of occupied sites for the site
+on which adsorbate :math:`j` is adsorbed, :math:`\varepsilon_{ij}` is the "interaction matrix", and
 **F** is the "interaction response function" which is usually some
 smoothed piecewise linear function and will be discussed later. When
 computing the Jacobian matrix for the system we will also need the
 derivative of the energy with respect to coverages. This is given by:
 
+.. math::
+
+    \frac{\partial E_{i}}{\partial \theta_l} = \sum_{j} \varepsilon_{ij}
+    \left(
+     \frac{\rm{d} \cal{F} \left(|\theta|_j\right)}{\rm{d}|\theta|_j} \frac{\rm{d}|\theta|_j}{\rm{d}\theta_{l}} \theta_{j} + \cal{F} \left(|\theta|_j\right)\delta_{jl}
+    \right)
+
 The model is called "first order" since it includes only one term of
 coverage dependence, and this term is first order in the coverage (and
-**F**).
+:math:`\cal{F}`).
 
 We see that in order to calculate adsorption energies we need the
-function **F**, and the matrix εij. We will also end up needing the
-derivative of the function **F** w.r.t. \|θ\|j . These two quantities
+function :math:`\cal{F}`, and the matrix :math:`\varepsilon`.
+We will also end up needing the derivative of the function :math:`\cal{F}` w.r.t. :math:`|θ|_j` . These two quantities
 will be discussed below.
 
 Interaction response function
@@ -216,6 +245,8 @@ energy changes as a function of the total coverage at a site. This is
 necessary because adsorption energies often follow non-linear behavior
 as a function of coverage. Some examples of possible response functions
 are shown below:
+
+.. figure:: ../_static/5_response_funcs.png
 
 The "linear", "piecewise\_linear", and "smooth\_piecewise\_linear" are
 implemented in CatMAP, while the "linear\_step" is a hypothetical model
@@ -231,11 +262,11 @@ Interaction matrix
 
 The other key input for the "first order" interaction model is the
 "interaction matrix", εij. There are two types of terms in this matrix -
-"self interaction" terms (εii) and "cross interaction" terms (εij
-(i≠j)). As the name suggests the "self interaction" terms tell how much
+"self interaction" terms (:math:`\varepsilon_{ii}`) and "cross interaction" terms (:math:`\varepsilon_{ij} (i\ne j)`).
+As the name suggests the "self interaction" terms tell how much
 an adsorbate interacts with itself, while "cross interactions" tell how
 much it interacts with other adsorbates. The interaction matrix is
-symmetric (εij = εji). The values for the matrix are determined by
+symmetric (:math:`\varepsilon_{ij} = \varepsilon_{ji}`). The values for the matrix are determined by
 fitting to data. If the differential binding energies are available at
 various coverages then the fitting is very straight-forward. However, in
 most cases density functional theory (DFT) will be used to calculate
@@ -244,9 +275,15 @@ impossible to calculate differential binding energies. Instead, average
 binding energies are calculated and used to obtain the interaction
 parameters. The definition of average binding energy is:
 
+.. math::
+
+    \bar{E}_i =& \frac{\int_{0}^{\theta_i} E_{i} \rm{d} \theta_{i}}{|\theta|_i} \\
+    =& \frac{\int_0^{\theta_i} \left(E_i^0 + \sum_k \cal{F}(|\theta|_k)\varepsilon_{ik}\theta_k \right) \rm{d}\theta_i}{|\theta|_i}
+
+
 from this we can solve for the self-interaction parameters:
 
-These equations look nasty at first site, but the form of **F** is
+These equations look nasty at first site, but the form of :math:`\cal{F}` is
 usually simple enough that they aren't so intimidating. CatMAP also
 includes the ability to fit the self-interaction functions
 automatically, as discussed later.
@@ -256,8 +293,10 @@ require many DFT calculations (two per adsorbate per adsorbate, or
 Nadsorbates2). For this reason it is common to use some approximations.
 The most common approximations are:
 
- \* geometric mean: εij = sqrt(abs(εii\ *εjj)) * arithmetic mean: εij =
-(εii + εjj)/2 \* neglect: εij = 0
+.. math::
+  {\mathrm{geometric\ mean:}}\ \varepsilon_{ij} =& \sqrt{|\varepsilon_{ii} \varepsilon_{jj}|} \\
+  {\mathrm{arithmetic\ mean:}}\ \varepsilon_{ij} =& (\varepsilon_{ii} + \varepsilon_{j})/2\\
+  {\mathrm{ neglect:}}\ \varepsilon_{ij} =& 0
 
 In CatMAP the cross interaction terms are between adsorbate-adsorbate
 and adsorbate-transition\_states. This means that the interaction matrix
@@ -305,11 +344,11 @@ model:
 
 -  adsorbate\_interaction\_model: Determines which model to use.
    Currently can be 'ideal' (default) or 'first\_order'
--  interaction\_response\_function: The function **F** from
+-  interaction\_response\_function: The function :math:`F` from
    `above <#first_order_model>`__. Can be 'linear', 'piecewise\_linear',
    or 'smooth\_piecewise\_linear'. Can also be a callable function which
    takes the total coverage of a site as its first argument and the
-   "interaction\_response\_parameters" dictionary as a \*\*kwargs
+   "interaction\_response\_parameters" dictionary as a `**kwargs`
    argument. Must return the value and derivative of the function at the
    specified total coverage.
 -  interaction\_response\_parameters: This is a dictionary of argument
@@ -480,6 +519,13 @@ in the species definitions for adsorbed O and the O-O transition-states
 dictionary) but it is easier to group them both into the CO\_s
 definition. If we now run the submission script we get the following
 outputs:
+
+.. figure:: ../_static/5_cross_interactions_coverage.png
+    :align: center
+
+.. figure:: ../_static/5_cross_interactions_rate.png
+    :align: center
+
 
 These results are not physical because there is no reason to expect that
 CO does not interact with O or O-O, but they do illustrate the syntax
