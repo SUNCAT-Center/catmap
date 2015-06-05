@@ -538,6 +538,9 @@ the matplotlib figure object which can be further modified if necessary.
 If we run this script with "python mkm\_job.py" we get the following
 plot:
 
+.. figure:: ../_static/2_rate.png
+  :align: center
+
 This looks pretty similar to previously published results by `Falsig et.
 al. <http://onlinelibrary.wiley.com/doi/10.1002/anie.200801479/abstract>`__,
 with minor differences to be expected since the model and inputs used
@@ -558,6 +561,9 @@ steady-state condition). If we want to include it we can do:
 generally less cluttered)
 
 which gives us a plot for each elementary step:
+
+.. figure:: ../_static/2_all_rates.png
+  :align: center
 
 We might also be interested in the production rate of CO2 rather than
 the rates of elementary steps (it is trivial to see that they are
@@ -589,6 +595,9 @@ cutoff). We can make a few aesthetic improvements fairly simply:
     vm.subplots_adjust_kwargs = {'left':0.2,'right':0.8,'bottom':0.15}
     vm.plot(save='pretty_production_rate.pdf')
 
+.. figure:: ../_static/2_pretty_production_rate.png
+  :align: center
+
 Ok, so its still not publishable, but its better. There are ways to
 control the finer details of the plots, but that will come in a later
 tutorial.
@@ -606,6 +615,9 @@ to want to make a few changes to the settings:
     vm.max = 1
     vm.plot(save='coverage.pdf')
 
+.. figure:: ../_static/2_coverage.png
+  :align: center
+
 Not the prettiest plot ever, but you get the point. We could re-adjust
 the subplots\_adjust\_kwargs to make this more readable, but that is
 left as an independent exercise.
@@ -619,14 +631,15 @@ this by:
     vm.include_labels = ['CO_s']
     vm.plot(save='CO_coverage.pdf')
 
+.. figure:: ../_static/2_CO_coverage.png
+  :align: center
+
 Note that the strings to use in "include\_labels" can be found by
 examining the "output\_labels" dictionary `from the log
 file <#output_labels>`__; alternatively you can specify
 "include\_indices = [0,1,...]" where the integers correspond to the
 indices of the plots to include.
 
-Free Energy Diagrams (coming soon)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. Free Energy Diagrams
 
-Scaling Plots (coming soon)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. Scaling Plots

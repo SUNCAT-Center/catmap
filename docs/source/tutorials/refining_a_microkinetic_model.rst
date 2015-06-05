@@ -104,6 +104,9 @@ model should converge.
 If you look at "pretty\_production\_rate.pdf" it should look like the
 following:
 
+.. figure:: ../_static/3_pretty_production_rate.png
+  :align: center
+
 If we compare this to the
 `figure <2%20Creating%20a%20Microkinetic%20Model#CO2rate>`__ from the
 previous tutorial we can see that there are a few differences, but the
@@ -236,7 +239,10 @@ analysis:
 If we check the "pretty\_production\_rate.pdf" then we see the
 following:
 
-which is not very pretty. The plot on the left is showing up because the
+.. figure:: ../_static/3_ugly_production_rate.png
+  :align: center
+
+which is not very pretty. The plot on the right is showing up because the
 plotter says it is not empty; however, as you can see it looks pretty
 empty. This is happening because of numerical issues - there are some
 very small (<1e-50 - the tolerance) positive values for production of CO
@@ -252,6 +258,9 @@ values as 0:
     vm.plot(save='pretty_production_rate.pdf')
 
 Now we get the following:
+
+.. figure:: ../_static/3_211_pretty_production_rate.png
+  :align: center
 
 The same thing can also be achieved by tightening the numerical
 precision/tolerance, as discussed `later <#numerical>`__. When we look
@@ -273,20 +282,20 @@ First, we need to define the mechanisms on both sites:
 
     rxn_expressions = [
 
-                   '*_s + CO_g -> CO*', 
-                   '2*_s + O2_g <-> O-O* + *_s -> 2O*',
-    #               '*_s + O2_g -> O2_s',
-    #               '*_s + O2_s <-> O-O* + *_s -> 2O*',
+                   '\*_s + CO_g -> CO*', 
+                   '2*_s + O2_g <-> O-O* + \*_s -> 2O*',
+    #               '\*_s + O2_g -> O2_s',
+    #               '\*_s + O2_s <-> O-O* + \*_s -> 2O*',
                    'CO* +  O* <-> O-CO* + * -> CO2_g + 2*',
 
-                   '*_t + CO_g -> CO_t',
-    #               '2*_t + O2_g <-> O-O* + *_t -> 2O*',
-                   '*_t + O2_g -> O2_t',
-                   '*_t + O2_t <-> O-O_t + *_t -> 2O_t',
-                   'CO_t +  O_t <-> O-CO_t + *_t -> CO2_g + 2*_t',
+                   '\*_t + CO_g -> CO_t',
+    #               '2*_t + O2_g <-> O-O* + \*_t -> 2O*',
+                   '\*_t + O2_g -> O2_t',
+                   '\*_t + O2_t <-> O-O_t + \*_t -> 2O_t',
+                   'CO_t +  O_t <-> O-CO_t + \*_t -> CO2_g + 2*_t',
 
-                   '*_t + CO_s -> CO_t + *_s',
-                   '*_t + O_s -> O_t + *_s',
+                   '\*_t + CO_s -> CO_t + \*_s',
+                   '\*_t + O_s -> O_t + \*_s',
 
 
                        ]
@@ -314,6 +323,9 @@ better correlation to the parameters. However, lets just stick with the
 Here we have assumed that there are 5% step sites, and 95% terrace
 sites. Now we can run mkm\_job.py, and after a lot of fussing the model
 should converge. The new output looks like:
+
+.. figure:: ../_static/3_dual_pretty_production_rate.png
+  :align: center
 
 which clearly shows Pt and Pd as the best CO oxidation catalysts (as we
 would expect). It is a little worrying that Ag is predicted to be better
@@ -343,11 +355,11 @@ Campbell <http://pubs.acs.org/doi/abs/10.1021/ja9000097>`__ is the most
 general and is implemented in the micro-kinetics module. In this
 definition we have:
 
-*X*\ ij = d log(ri)/ d (-Gj/kT)
+:math:`X_{ij} = \frac{\mathrm{d} \log(r_i)}{\mathrm{d} (-G_j/kT)}`
 
-where *X*\ ij is the degree of rate control matrix, ri is the rate of
-production for product *i*, Gj is the free energy of species *j*, k is
-Boltzmann's constant, and T is the temperature. A positive degree of
+where :math:`X_{ij}` is the degree of rate control matrix, :math:`r_i` is the rate of
+production for product *i*, :math:`G_j` is the free energy of species *j*, *k* is
+Boltzmann's constant, and *T* is the temperature. A positive degree of
 rate control implies that the rate will increase by making the species
 more stable, while a negative degree of rate control implies the
 opposite.
@@ -407,7 +419,9 @@ to load in the results of a previous simulation directly like:
 In general this is a good way to re-load the results of a simulation
 without recalculating it. Regardless, the rate control plot looks like:
 
-!rate\_control.pdf\|height=850, width=1100!
+.. !rate\_control.pdf\|height=850, width=1100!
+.. figure:: ../_static/3_rate_control.png
+  :align: center
 
 This shows us that the rate is decreased when O\* or CO\* are bound more
 strongly (depending on descriptor values). Conversely, the rate can be
@@ -430,9 +444,9 @@ Other Sensitivity Analyses
 Similar to the degree of rate control, the degree of selectivity control
 can also be defined:
 
-*XS*\ ij = d log(si)/ d (-Gj/kT)
+:math:`X^S_{ij} = \frac{\mathrm{d}\log(s_i)}{\mathrm{d}(-G_j/kT)}`
 
-where *XS*\ ij is the degree of selectivity control, and si is the
+where :math:`X^S_{ij}` is the degree of selectivity control, and :math:`s_i` is the
 selectivity towards species *i*. This can be included analogously to
 rate control by adding 'selectivity\_control' to the output variables
 and analyzing with the MatrixMap class.
@@ -440,9 +454,9 @@ and analyzing with the MatrixMap class.
 There is also the reaction order with respect to external pressures of
 various gasses, given mathematically by:
 
-*R*\ ij = d log(ri)/ d log(pj)
+:math:`R_{ij} = \frac{\mathrm{d} \log(r_i)}{\mathrm{d} \log(pj)}`
 
-where pj is the pressure of gas species *j*. This can also be included
+where :math:`p_j` is the pressure of gas species *j*. This can also be included
 in the same way as rate\_control and selectivity control by including
 "rxn\_order" in the output variables.
 
@@ -522,7 +536,8 @@ points from the previous solution.
 The CO oxidation volcano is shown below at a resolution of 29 (as
 opposed to 15):
 
-!hires\_pretty\_production\_rate.pdf\|height=300, width=350!
+.. figure:: ../_static/3_hires_pretty_production_rate.png
+  :align: center
 
 It looks nicer, but doesn't give much new insight.
 

@@ -1,3 +1,12 @@
+.. |H2O| replace:: H\ :sub:`2`\ O
+.. |CH2| replace:: CH\ :sub:`2`\ 
+.. |CH3| replace:: CH\ :sub:`3`\ 
+.. |CH4| replace:: CH\ :sub:`4`\ 
+.. |H2| replace:: H\ :sub:`2`\ 
+.. |CO2| replace:: CO\ :sub:`2`\ 
+.. |O2| replace:: O\ :sub:`2`\ 
+.. |Rj| replace:: R\ :sub:`j`\ 
+
 Generating an Input File
 ========================
 
@@ -150,13 +159,13 @@ The values, in order of increasing accuracy, are:
 -  estimate\_frequencies >3: Use empty frequency set for species without
    any frequencies specified.
 -  estimate\_frequencies >= 3: Use frequencies of atomic species (e.g.
-   nu\_CH4 = nu\_C + 4\*nu\_H where nu\_X is a Python list of the
+   :math:`\nu_{CH_4}` = :math:`\nu_C` + :math:`4*\nu_H` where :math:`\nu_X` is a Python list of the
    vibrational species of species X adsorbed)
 -  estimate\_frequencies >= 2: Estimate frequency of transition-states
-   from the dissociated state frequency (e.g. nu\_C-O = nu\_C + nu\_O)
+   from the dissociated state frequency (e.g. :math:`\nu_{C-O}` = :math:`\nu_C` + :math:`\nu_O`)
 -  estimate\_frequencies >= 1: Estimate frequency of adsorbed state at
-   one site using frequency from other sites (e.g. nu\_CO(111) =
-   nu\_CO(211) )
+   one site using frequency from other sites (e.g. :math:`\nu_{CO(111)}` =
+   :math:`\nu_{CO(211)}` )
 -  estimate\_frequencies = 0: Only accept frequencies from the exact
    adsorbate on the correct site. However, a single set of frequencies
    will still be used for all surfaces. If the attribute
@@ -190,12 +199,13 @@ reference*:
 
 where Ei is the "generalized formation energy" of species i, Ui is the
 raw/DFT energy of species i, nj is the number of atomic species j in i,
-and Rj is the reference energy of that atomic species. Mathematically
+and |Rj| is the reference energy of that atomic species. Mathematically
 this looks a little confusing (especially with such crude notation) but
 in practice it is pretty easy. For example, say we want to find the
-energy of gas-phase CO relative to carbon (C) in methane (CH4), oxygen
-(O) in H2O, and hydrogen (H) in molecular hydrogen (H2). We first
-compute the reference energies (Rj) for each atomic species:
+energy of gas-phase CO relative to carbon (C) in methane (|CH4|), oxygen
+(O) in |H2O|, and hydrogen (H) in molecular hydrogen (|H2|). We first
+compute the reference energies (|Rj|) for each atomic species:
+
 
 .. math::
     R_H &= 0.5(U_{H_2}) \\
@@ -207,38 +217,38 @@ compute the reference energies (Rj) for each atomic species:
 
 Now we can compute the "generalized formation energy" of CO as:
 
-ECO = UCO - RC - RO
+:math:`E_{CO} = U_{CO} - R_C - R_O`
 
 In the case where CO is adsorbed to a surface, say Pt(211), we can
 compute a "generalized" formation energy relative to the clean surface:
 
-ECO\ *@Pt(211) = U(Pt(211)+CO*) - UPt(211) - RC - RO
+:math:`E_{CO*@Pt(211)} = U_{Pt(211)+CO*} - U_{Pt(211)} - R_C - R_O`
 
 One nice thing about the formation energy approach is that it does not
 distinguish between thermodynamic minima (adsorbed states) and saddle
 points (transition-states). Thus, it is possible to compute a formation
 energy of the C-O dissociation transition-state on Pt(211) as:
 
-EC-O@Pt(211) = U(Pt(211)+C-O) - UPt(211) - RC - RO
+:math:`E_{C-O@Pt(211)} = U_{Pt(211)+C-O} - U_{Pt(211)} - R_C - R_O`
 
 Then one could compute the barrier for C-O dissociation as:
 
-EC-O@Pt(211) - ECO\*@Pt(211)
+:math:`E_{C-O@Pt(211)} - E_{CO*@Pt(211)}`
 
 If this still doesn't make sense, try working through the
 `example <#example>`__ below.
 
 In principle the choice of reference species is arbitrary since the
-reference energies Rj cancel out in any relative quantities. However, in
+reference energies |Rj| cancel out in any relative quantities. However, in
 many cases it is necessary to use some correction scheme for the
 gas-phase energies if they are poorly described by the level of theory
 used (e.g. DFT). In this case it is best to select a reference set for
 which the reference species are well-described by the level of theory.
-For example, it is well-known that O2 and CO2 are not properly described
+For example, it is well-known that |O2| and |CO2| are not properly described
 by DFT, so it would not make sense to use these to compute the reference
-energies Rj.
+energies |Rj|.
 
-It is also worth re-iterating that the *same reference energies Rj must
+It is also worth re-iterating that the *same reference energies* |Rj| *must
 be used for all energies in a given input file*. One can usually see
 which gas-phase species are used as references since their formation
 energies will be 0 by definition (see `above <#input_text>`__).
@@ -247,7 +257,7 @@ Example
 -------
 
 In this example we will generate an input file for methane synthesis
-from CO and H2 (methanation) on Rh(111) using some previously computed
+from CO and |H2| (methanation) on Rh(111) using some previously computed
 DFT values and a Python script. You can copy-paste the code as you go
 along, or find the whole script at
 catmap/tutorials/generating\_input\_file/generate\_input.py.
@@ -257,33 +267,31 @@ Take the simplified methanation reaction mechanism:
 -  CO(g) + \* → CO\*
 -  CO\* + \* → C\* + O\*
 -  O\* + H\* ↔ OH\* (quasi-equilibrated)
--  OH\* + H\* → H2O(g) + 2\*
+-  OH\* + H\* → |H2O|\ (g) + 2\*
 -  C\* + H\* → CH\* + \*
--  CH\* + H\* ↔ CH2\* + \* (quasi-equilibrated)
--  CH2\* + H\* ↔ CH3\* + \* (quasi-equilibrated)
--  CH3\* + H\* ↔ CH4(g) + 2\* (quasi-equilibrated)
+-  CH\* + H\* ↔ |CH2|\* + \* (quasi-equilibrated)
+-  |CH2|\* + H\* ↔ |CH3|\* + \* (quasi-equilibrated)
+-  |CH3|\* + H\* ↔ |CH4|\ (g) + 2\* (quasi-equilibrated)
 
 Where \* denotes a Rh(111) site. For this example we need energies of
 the following species:
 
 -  CO (gas)
--  H2 (gas)
--  CH4 (gas)
--  H2O (gas)
+-  |H2| (gas)
+-  |CH4| (gas)
+-  |H2O| (gas)
 -  CO (adsorbed)
 -  O (adsorbed)
 -  C (adsorbed)
 -  H (adsorbed)
 -  CH (adsorbed)
 -  OH (adsorbed)
--  CH2 (adsorbed)
--  CH3 (adsorbed)
+-  |CH2| (adsorbed)
+-  |CH3| (adsorbed)
 -  C-O (transition-state)
 -  H-OH (transition-state)
 -  H-C (transition-state)
--  
-
-   -  (111 slab)
+-  (111 slab)
 
 Let's assume that we have computed the energies of these species on a
 Rh(111) surface using some ab-initio method and stored them in a Python
@@ -313,8 +321,8 @@ dictionary:
 (in this case the energies were generated by Quantum Espresso)
 
 Next, we need to decide on a choice of reference molecules. One simple
-option for this system is to take hydrogen relative to H2, carbon
-relative to CH4, and water relative to H2O. We will take all adsorption
+option for this system is to take hydrogen relative to |H2|, carbon
+relative to |CH4|, and water relative to |H2O|. We will take all adsorption
 energies relative to the clean (111) Rh slab.
 
 .. code:: python
@@ -529,3 +537,4 @@ included here for reference.
 
 The output of this should contain all species in the model along with
 their energies, frequencies, etc.
+
