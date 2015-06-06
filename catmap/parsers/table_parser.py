@@ -70,10 +70,6 @@ class TableParser(ParserBase):
             for k, v in zip(headers, 
                     L.split(self._separator, len(headers))):
                 linedict[k] = v
-            for s in self.species_definitions:
-                if self.species_definitions[s].get('type',None) == 'site':
-                    print s, self.species_definitions[s]
-
             sites = [s for s in self.species_definitions if
                     self.species_definitions[s].get('type',None) == 'site' and 
                     linedict['site_name'] in 

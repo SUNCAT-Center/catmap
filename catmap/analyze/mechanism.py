@@ -35,7 +35,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             fig = plt.figure()
             ax = fig.add_subplot(111)
         else:
-            fig = None
+            fig = ax.get_figure()
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
         if not surfaces:

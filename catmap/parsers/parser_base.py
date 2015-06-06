@@ -75,7 +75,6 @@ class ParserBase(ReactionModelWrapper):
 
             if species in self.species_definitions:
                 ads_info.update(self.species_definitions[species])
-                print species, ads_info
             if not ads_info['composition'] and species not in site_names:
                 raise ValueError('Could not determine composition for '+species)
 
@@ -86,9 +85,11 @@ class ParserBase(ReactionModelWrapper):
                         self.species_definitions['*_'+species] = ads_info
 
         for species in self.species_definitions.keys(): #set site definitions
+            ##This entire block can probably be deleted since sites are now
+            #handled in the above section. Wait for a version or 2 to let
+            #the clauses deprecate...
             site = self.species_definitions[species].get('site',None)
             if site and site not in self.species_definitions:
-                print 'Why???'
                 ads_info = {}
                 ads_info['type'] = 'site'
                 ads_info['site'] = site
