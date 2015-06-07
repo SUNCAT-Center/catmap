@@ -548,6 +548,8 @@ class MechanismPlot:
                                 for t in ax.xaxis.get_ticklabels()]
                     except:
                         pass
+            elif label_position in ['omit']:
+                pass
             else:
                 ypos = energy_lines[i][1][0]
                 if 'ha' not in args:# and 'textcoords' not in args:

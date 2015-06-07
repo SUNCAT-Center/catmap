@@ -2,6 +2,7 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import get_composition
+from scipy.optimize import fmin_powell
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -555,8 +556,29 @@ class ThermoCorrections(ReactionModelWrapper):
             self.thermodynamic_variables += ['pressure']
         self.gas_pressures = [self.species_definitions[g]['concentration']*self.pressure for g in self.gas_names]
 
+    def get_frequency_cutoff(self,kB_multiplier,temperature=None):
+        kB = self._kB
+        if temperature is None:
+            T = self.temperature
+        else:
+            T = temperature
+
+        def get_entropy(nu,T):
+            nu_eV = nu*1e-3 #input in meV
+            HT = HarmonicThermo([nu_eV])
+            return HT.get_entropy(T,verbose=False)
+
+        def target(nu,kB_multiplier=kB_multiplie,T=T):
+            nu = max(1e-8,nu)
+            SbykB = (get_entropy(nu,T)/kB)
+            return (kB_multiplier - SbykB)**2
+
+        nu_cutoff = fmin_powell(target,10,disp=0)
+        return nu_cutoff
+
     def summary_text(self):
         return ''
+
 
 def fit_shomate(Ts, Cps, Hs, Ss, params0,plot_file = None):
     from scipy.optimize import leastsq

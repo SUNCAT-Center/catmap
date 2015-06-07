@@ -78,16 +78,19 @@ class MeanFieldSolver(SolverBase):
         self._turnover_frequency = turnover_freq
         return turnover_freq
 
-    def get_selectivity(self,rxn_parameters):
+    def get_selectivity(self,rxn_parameters,weights=None):
         tofs = self.get_turnover_frequency(rxn_parameters)
+        if weights is None:
+            weights = [1]*len(tofs) #use for weighted selectivity (e.g. % carbon)
+            
         if self.products is None:
             self.products = [g for g,r in zip(self.gas_names,tofs) if r >0]
         if self.reactants is None:
             self.reactants = [g for g,r in zip(self.gas_names,tofs) if r <=0]
         prod_rate = sum([max(r,0)
-            for g,r in zip(self.gas_names,tofs) if g in self.products])
+            for g,r,w in zip(self.gas_names,tofs,weights) if g in self.products])
         reac_rate = sum([max(-r,0)
-            for g,r in zip(self.gas_names,tofs) if g in self.reactants])
+            for g,r,w in zip(self.gas_names,tofs,weights) if g in self.reactants])
 
         selectivities = []
         for g,r in zip(self.gas_names,tofs):

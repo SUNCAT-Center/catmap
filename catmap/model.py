@@ -836,6 +836,16 @@ class ReactionModel:
                 self._dict_maps[id(mapp)][pt] = cvg
         return self._dict_maps[id(mapp)].get(newpt,None)
 
+    def nearest_mapped_point(self,mapp,point):
+        """Get the point in the map nearest to the point supplied"""
+        pts,outs = zip(*mapp)
+        deltas = []
+        for pt in pts:
+            dist = sum([(xi-xo)**2 for xi,xo in zip(point,pt)])
+            deltas.append(dist)
+        min_idx = deltas.index(min(deltas))
+        return pts[min_idx]
+
     @staticmethod
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):

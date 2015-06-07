@@ -3,6 +3,7 @@ from catmap.model import ReactionModel
 from catmap import ReactionModelWrapper
 import numpy as np
 import mpmath as mp
+from ase.atoms import string2symbols
 
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=ReactionModel()):
@@ -55,6 +56,17 @@ class SolverBase(ReactionModelWrapper):
         if 'selectivity' in self.output_variables:
             self._selectivity = self.get_selectivity(rxn_parameters)
             self.output_labels['selectivity'] = self.gas_names
+
+        if 'carbon_selectivity' in self.output_variables:
+            weights = []
+            for g in self.gas_names:
+                name,site = g.split('_')
+                weight = string2symbols(name).count('C')
+                weights.append(weight)
+
+            self._carbon_selectivity = self.get_selectivity(rxn_parameters,weights=weights)
+            self.output_labels['carbon_selectivity'] = self.gas_names
+
 
         if 'rate_control' in self.output_variables:
             self._rate_control = self.get_rate_control(rxn_parameters)

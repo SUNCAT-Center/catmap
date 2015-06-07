@@ -21,7 +21,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             fig = plt.figure()
             ax = fig.add_subplot(111)
         else:
-            fig = None
+            fig = ax.get_figure()
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
         if not surfaces:
@@ -51,6 +51,11 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             raise ValueError('No interacting energy map found.')
                         G_dict = {}
                         G_labels = self.output_labels['interacting_energy']
+                        xyo = self.nearest_mapped_point(self.interacting_energy_map,xy)
+                        if xyo != xy:
+                            print('Warning: No output at: '+str(xy)+'. Using output from: '+str(xyo))
+                        xy = xyo
+
                         valid = False
                         for pt, energies in self.interacting_energy_map:
                             if pt == xy:
@@ -81,7 +86,6 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             if pt == xy:
                                 valid = True
                                 for ads,cvg in zip(cvg_labels, cvgs):
-                                    print ads, cvg
                                     energy_dict[ads] += self._kB*self.temperature*np.log(
                                                                                      cvg)
                         if valid == False:
