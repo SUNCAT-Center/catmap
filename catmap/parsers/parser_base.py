@@ -35,8 +35,9 @@ class ParserBase(ReactionModelWrapper):
         if not self.species_definitions:
             self.species_definitions = {}
         for species in (self.gas_names+self.adsorbate_names+
-                self.transition_state_names):
-
+                self.transition_state_names+self.site_names+tuple(self._gas_sites)):
+            
+            site_names = self.site_names + tuple(self._gas_sites)
             ads_info = {}
             if '_' in species:
                 name,site = species.rsplit('_',1)
@@ -54,21 +55,42 @@ class ParserBase(ReactionModelWrapper):
             elif species in self.transition_state_names:
                 ads_info['type'] = 'transition_state'
                 ads_info['n_sites'] = 1
+            elif species in site_names:
+                ads_info['type'] = 'site'
+                ads_info['site'] = species
+                ads_info['formation_energy'] = 0
+                if species not in self._gas_sites:
+                    ads_info['n_sites'] = 1
+                else:
+                    ads_info['n_sites'] = 0
+                    ads_info['site_names'] = ['gas']
+                    ads_info['total'] = 0
+                ads_info['composition'] = {}
             else:
                 ads_info['type'] = 'unknown'
-
-            composition = get_composition(name)
-            ads_info['composition'] = composition
+            
+            if species not in site_names:
+                composition = get_composition(name)
+                ads_info['composition'] = composition
 
             if species in self.species_definitions:
                 ads_info.update(self.species_definitions[species])
-            if ads_info['composition'] == None:
+
+            if not ads_info['composition'] and species not in site_names:
                 raise ValueError('Could not determine composition for '+species)
-            self.species_definitions[species] = ads_info
+
+            if species not in site_names:
+                self.species_definitions[species] = ads_info
+            else:
+                self.species_definitions[species] = \
+                        self.species_definitions['*_'+species] = ads_info
 
         for species in self.species_definitions.keys(): #set site definitions
+            ##This entire block can probably be deleted since sites are now
+            #handled in the above section. Wait for a version or 2 to let
+            #the clauses deprecate...
             site = self.species_definitions[species].get('site',None)
-            if site:
+            if site and site not in self.species_definitions:
                 ads_info = {}
                 ads_info['type'] = 'site'
                 ads_info['site'] = site
@@ -81,11 +103,17 @@ class ParserBase(ReactionModelWrapper):
                     ads_info['total'] = 0
                 ads_info['composition'] = {}
                 if self.site_definitions: #Deprecate later...
+                    warnings.warn('Deprecation Warning: site_definitions will not be'
+                                  ' supported in future versions. Please use new '
+                                  'species_definitions syntax.')
                     site_names = self.site_definitions[site]
                     if isinstance(site_names,basestring):
                         site_names = [site_names]
                     ads_info['site_names'] = site_names
                 if self.site_totals: #Deprecate later...
+                    warnings.warn('Deprecation Warning: site_totals will not be'
+                                  ' supported in future versions. Please use new '
+                                  'species_definitions syntax.')
                     ads_info['total'] = self.site_totals[site]
                 if site in self.species_definitions:
                     ads_info.update(self.species_definitions[site])
