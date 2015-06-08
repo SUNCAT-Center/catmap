@@ -364,15 +364,27 @@ class ThermoCorrections(ReactionModelWrapper):
         if temperature == 0: temperature = 1e-99
 
         avg_TS = []
+        self._freq_cutoffs = {}
 
         for ads in adsorbate_names:
             if ads in freq_dict:
                 if '-' in ads and freq_dict[ads] in [None,[],()]:
                     avg_TS.append(ads)
-                therm = HarmonicThermo(freq_dict[ads])
+                frequencies = freq_dict[ads]
+                if self.max_entropy_per_mode:
+                    if temperature in self._freq_cutoffs:
+                        nu_min = self._freq_cutoffs[temperature]
+                    else:
+                        kB_multiplier = float(self.max_entropy_per_mode/self._kB)
+                        nu_min = self.get_frequency_cutoff(kB_multiplier,float(temperature))
+                        nu_min /= 1000.
+                        self._freq_cutoffs[temperature] = nu_min
+
+                    frequencies = [max(nu,nu_min) for nu in frequencies]
+                therm = HarmonicThermo(frequencies)
                 free_energy = therm.get_free_energy(
                         temperature,verbose=False)
-                ZPE = sum(freq_dict[ads])/2.0 
+                ZPE = sum(frequencies)/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
                 self._zpe_dict[ads] = ZPE
@@ -557,7 +569,7 @@ class ThermoCorrections(ReactionModelWrapper):
         self.gas_pressures = [self.species_definitions[g]['concentration']*self.pressure for g in self.gas_names]
 
     def get_frequency_cutoff(self,kB_multiplier,temperature=None):
-        kB = self._kB
+        kB = float(self._kB)
         if temperature is None:
             T = self.temperature
         else:
@@ -565,10 +577,10 @@ class ThermoCorrections(ReactionModelWrapper):
 
         def get_entropy(nu,T):
             nu_eV = nu*1e-3 #input in meV
-            HT = HarmonicThermo([nu_eV])
-            return HT.get_entropy(T,verbose=False)
+            HT = HarmonicThermo([float(nu_eV)])
+            return HT.get_entropy(float(T),verbose=False)
 
-        def target(nu,kB_multiplier=kB_multiplie,T=T):
+        def target(nu,kB_multiplier=kB_multiplier,T=T):
             nu = max(1e-8,nu)
             SbykB = (get_entropy(nu,T)/kB)
             return (kB_multiplier - SbykB)**2
