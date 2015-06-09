@@ -326,6 +326,7 @@ class TableParser(ParserBase):
                         E_int = linedict.get('integral_formation_energy',None)
                         if E_int:
                             E_int = float(E_int)
+
                         theta_E = [theta_vec,
                                 E_diff,E_int]
 
