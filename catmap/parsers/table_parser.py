@@ -298,28 +298,30 @@ class TableParser(ParserBase):
                         idx_i = ads_names.index(ads)
                         theta_i = float(linedict['coverage'])
                         theta_vec[idx_i] += theta_i
-                        if 'coadsorbate_name' in linedict:
-                            if linedict['coadsorbate_name'] != 'None':
-                                coads = linedict['coadsorbate_name']
-                                site = ads.split('_')[-1]
-                                coads += '_'+site #assume coads on same site as ads
-                                theta_j = float(linedict['coadsorbate_coverage'])
-                                if coads in ads_names:
-                                    idx_j = ads_names.index(coads)
-                                    theta_vec[idx_j] += theta_j
-                                else:
-                                    names_only = [n.split('_')[0] for n in ads_names]
-                                    coads_name = coads.split('_')[0]
-                                    if coads_name not in names_only:
-                                        print 'Warning: Could not find co-adsorbed species '\
-                                        +coads+' (adsorbate '+ads+'). Ignoring this entry.'
-                                    else:
-                                        idx_j = names_only.index(coads_name)
-                                        actual_ads = ads_names[idx_j]
-                                        print 'Warning: Could not find co-adsorbed species '\
-                                        +coads+' (adsorbate '+ads+'). Using '+actual_ads+'.'
+                        for coads_name in ['coadsorbate','coadsorbate2']: 
+                            #could add coadsorbate3, coadsorbate4,... as needed
+                            if coads_name+'_name' in linedict:
+                                if linedict[coads_name+'_name'] != 'None':
+                                    coads = linedict[coads_name+'_name']
+                                    site = ads.split('_')[-1]
+                                    site = linedict.get(coads_name+'_site',site)
+                                    coads += '_'+site #assume coads on same site as ads if not specified
+                                    theta_j = float(linedict[coads_name+'_coverage'])
+                                    if coads in ads_names:
+                                        idx_j = ads_names.index(coads)
                                         theta_vec[idx_j] += theta_j
-                        
+                                    else:
+                                        names_only = [n.split('_')[0] for n in ads_names]
+                                        coads_name = coads.split('_')[0]
+                                        if coads_name not in names_only:
+                                            print 'Warning: Could not find co-adsorbed species '\
+                                            +coads+' (adsorbate '+ads+'). Ignoring this entry.'
+                                        else:
+                                            idx_j = names_only.index(coads_name)
+                                            actual_ads = ads_names[idx_j]
+                                            print 'Warning: Could not find co-adsorbed species '\
+                                            +coads+' (adsorbate '+ads+'). Using '+actual_ads+'.'
+                                            theta_vec[idx_j] += theta_j
                         E_diff = float(linedict['formation_energy'])
                         E_int = linedict.get('integral_formation_energy',None)
                         if E_int:
