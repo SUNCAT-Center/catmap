@@ -409,12 +409,13 @@ def scaling_coefficient_matrix(
 
         elif coeff_mins[Nads] == coeff_maxs[Nads]:
             c = coeff_mins[Nads]
+
         else:
             #If there is only one data point, assume constant.
             warnings.warn('Assuming constant value for: '+ads)
             c = [0]*len(Dtotal[i,:])
             c[-1] = A[0]
-
+        
         for Ndesc,coeff in enumerate(c):
             C[Ndesc,Nads] = np.round(coeff,5)
 
@@ -478,7 +479,7 @@ def match_regex(string,regex,group_names):
     else:
         return None
             
-def numerical_jacobian(f, x, matrix, h = 1e-10):
+def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
     """
     Calculate the Jacobian matrix of a function at the point x0.
 
@@ -511,7 +512,9 @@ def numerical_jacobian(f, x, matrix, h = 1e-10):
     m = len(fx)
     n = len(x)
     J = matrix(m, n)
-    for j in xrange(n):
+    if not diff_idxs:
+        diff_idxs = xrange(n)
+    for j in diff_idxs:
         xj = x.copy()
         delta = abs(h*xj[j])
         delta = max(delta,h)
@@ -523,7 +526,7 @@ def numerical_jacobian(f, x, matrix, h = 1e-10):
             J[i,j] = Jj[i]
     return J
 
-def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05):
+def smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25,smoothing=0.05):
     """
     Smooth piecewise linear function.
 
@@ -531,9 +534,9 @@ def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05)
 
     :type theta_tot:
 
-    :param max_coverage: Coverage.
+    :param slope: slope of line
 
-    :type max_coverage: int, optional
+    :type slope: float, optional
 
     :param cutoff: Cutoff.
 
@@ -547,7 +550,6 @@ def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05)
     """
     x1 = cutoff + smoothing
     x0 = cutoff - smoothing
-    slope = (1./max_coverage)
     if theta_tot <= x0:
         c_0 = 0
         dC = 0
@@ -563,7 +565,7 @@ def smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25,smoothing=0.05)
         d2C = (-2*slope*cutoff)/(theta_tot**3)
     return c_0, dC, d2C
 
-def offset_smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25, smoothing=0.05, offset=0.1):
+def offset_smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25, smoothing=0.05, offset=0.1):
     """
     Piecewise linear function with an offset. Not equivalent to piecewise linear
     for second-order interactions
@@ -590,7 +592,7 @@ def offset_smooth_piecewise_linear(theta_tot,max_coverage=1,cutoff=0.25, smoothi
 
     .. todo:: Fill in description for theta_tot
     """
-    c_0, dC, d2C = smooth_piecewise_linear(theta_tot,max_coverage,cutoff,smoothing)
+    c_0, dC, d2C = smooth_piecewise_linear(theta_tot,slope,cutoff,smoothing)
     c_0 += offset
     return c_0, dC, d2C
 

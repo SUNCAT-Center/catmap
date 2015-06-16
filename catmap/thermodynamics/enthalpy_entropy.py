@@ -2,6 +2,7 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import get_composition, add_dict_in_place
+from scipy.optimize import fmin_powell
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -119,7 +120,8 @@ class ThermoCorrections(ReactionModelWrapper):
             thermo_dict = getattr(self,mode)()
             add_dict_in_place(correction_dict, thermo_dict)
 
-        getattr(self,self.pressure_mode+'_pressure')()
+        if self.pressure_mode:
+            getattr(self,self.pressure_mode+'_pressure')()
 
         if 'electrochemical' in l:
             correction_dict = self._get_echem_corrections(correction_dict)
@@ -419,15 +421,27 @@ class ThermoCorrections(ReactionModelWrapper):
         if temperature == 0: temperature = 1e-99
 
         avg_TS = []
+        self._freq_cutoffs = {}
 
         for ads in adsorbate_names:
             if ads in freq_dict:
                 if '-' in ads and freq_dict[ads] in [None,[],()]:
                     avg_TS.append(ads)
-                therm = HarmonicThermo(freq_dict[ads])
+                frequencies = freq_dict[ads]
+                if self.max_entropy_per_mode:
+                    if temperature in self._freq_cutoffs:
+                        nu_min = self._freq_cutoffs[temperature]
+                    else:
+                        kB_multiplier = float(self.max_entropy_per_mode/self._kB)
+                        nu_min = self.get_frequency_cutoff(kB_multiplier,float(temperature))
+                        nu_min /= 1000.
+                        self._freq_cutoffs[temperature] = nu_min
+
+                    frequencies = [max(nu,nu_min) for nu in frequencies]
+                therm = HarmonicThermo(frequencies)
                 free_energy = therm.get_gibbs_energy(
                         temperature,verbose=False)
-                ZPE = sum(freq_dict[ads])/2.0 
+                ZPE = sum(frequencies)/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
                 self._zpe_dict[ads] = ZPE
@@ -673,10 +687,115 @@ class ThermoCorrections(ReactionModelWrapper):
     def concentration_pressure(self):
         if 'pressure' not in self.thermodynamic_variables:
             self.thermodynamic_variables += ['pressure']
+        for g in self.gas_names:
+            if 'concentration' not in self.species_definitions[g]:
+                raise UserWarning('Concentration not specified for '+g+'.')
         self.gas_pressures = [self.species_definitions[g]['concentration']*self.pressure for g in self.gas_names]
+
+    def approach_to_equilibrium_pressure(self):
+        """Set product pressures based on approach to equilibrium. Requires the following attributes
+        to be set:
+
+        global_reactions - a list of global reactions in the same syntax as elementary expressions,
+            with each one followed by its respective approach to equilibrium.
+        pressure_mode - must be set to 'approach_to_equilibrium'
+
+        Note that this function is not well-tested and should be used with caution.
+        """
+
+           
+        if 'pressure' not in self.thermodynamic_variables:
+            self.thermodynamic_variables += ['pressure']
+
+        self.pressure_mode = None #avoid recursion...
+        G_dict = self.scaler.get_free_energies(self._descriptors)
+        self.pressure_mode = 'approach_to_equilibrium'
+
+        def set_product_pressures(rxn,G_dict,gamma,gas_pressures,product_pressures={}):
+
+            dG = float(self.get_rxn_energy(rxn,G_dict)[0])
+            K_eq = np.exp(-dG/float(self._kB*self.temperature))
+            K_eq *= gamma
+            PK = K_eq
+
+            for g in gas_pressures:
+                n_g = rxn[0].count(g)
+                p_g = gas_pressures[g]
+                PK *= p_g**(n_g)
+
+            #remove any products that have pressures specified
+            products = rxn[-1]
+            for sp in products:
+                if sp in product_pressures:
+                    gas_pressures[sp] = product_pressures[sp]
+                    n_prod = products.count(sp)
+                    PK /= product_pressures[sp]**(n_prod)
+                    products = [p for p in products if p != sp]
+
+            N_products = len(products)
+            P_i = PK**(float(1./float(N_products)))
+            for gi in set(products):
+                gas_pressures[gi] += P_i
+
+        gas_pressures = {}
+        global_rxns = []
+        gammas = []
+        reactants = []
+        products = []
+        for gi,gamma_i in self.global_reactions:
+            rxn = self.expression_string_to_list(gi)
+            global_rxns.append(rxn)
+            reactants += rxn[0]
+            products += rxn[1]
+            gammas.append(gamma_i)
+        
+        for sp in set(reactants):
+            c = self.species_definitions[sp].get('concentration',None)
+            if c is None:
+                raise UserWarning('Concentrations must be specified for all reactants. No concentration '
+                        'was found for '+str(sp)+'.')
+            gas_pressures[sp] = c*self.pressure
+
+        product_pressures = {}
+        for sp in set(products):
+            gas_pressures[sp] = 0
+            c = self.species_definitions[sp].get('concentration',None)
+            if c is not None:
+                product_pressures[sp] = c*self.pressure
+                gas_pressures[sp] = c*self.pressure
+
+        #Ensure that all gasses are either products or reactants
+        if sorted(list(set(products))+list(set(reactants))) != sorted(self.gas_names):
+            raise UserWarning('All gasses must appear as products or reactants in self.global_reactions.')
+
+        for gi,gamma_i in zip(global_rxns,gammas):
+            set_product_pressures(gi,G_dict,gamma_i,gas_pressures,product_pressures)
+
+        self.gas_pressures = [gas_pressures[gi] for gi in self.gas_names] 
+
+    def get_frequency_cutoff(self,kB_multiplier,temperature=None):
+        kB = float(self._kB)
+        if temperature is None:
+            T = self.temperature
+        else:
+            T = temperature
+
+        def get_entropy(nu,T):
+            nu_eV = nu*1e-3 #input in meV
+            HT = HarmonicThermo([float(nu_eV)])
+            return HT.get_entropy(float(T),verbose=False)
+
+        def target(nu,kB_multiplier=kB_multiplier,T=T):
+            nu = max(1e-8,nu)
+            SbykB = (get_entropy(nu,T)/kB)
+            return (kB_multiplier - SbykB)**2
+
+        nu_cutoff = fmin_powell(target,10,disp=0)
+        return nu_cutoff
 
     def summary_text(self):
         return ''
+
 
 def fit_shomate(Ts, Cps, Hs, Ss, params0,plot_file = None):
     from scipy.optimize import leastsq

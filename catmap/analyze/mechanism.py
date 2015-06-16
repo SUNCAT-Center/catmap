@@ -1,5 +1,6 @@
 from analysis_base import *
 import numpy as np
+from catmap.functions import convert_formation_energies
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
     """
@@ -91,16 +92,49 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             raise ValueError('No interacting energy map found.')
                         G_dict = {}
                         G_labels = self.output_labels['interacting_energy']
+                        xyo = self.nearest_mapped_point(self.interacting_energy_map,xy)
+                        if xyo != xy:
+                            print('Warning: No output at: '+str(xy)+'. Using output from: '+str(xyo))
+                        xy = xyo
+
+                        valid = False
                         for pt, energies in self.interacting_energy_map:
                             if pt == xy:
+                                valid = True
                                 for ads,E in zip(G_labels, energies):
                                     G_dict[ads] = E
+                        if valid == False:
+                            raise UserWarning('No coverages found for '+xy+' in map')
 
                         if not G_dict:
                             raise ValueError('No energies found for point: ', xy)
 
                         energy_dict = self.scaler.get_free_energies(xy) #get gas G's
                         energy_dict.update(G_dict)
+
+                    if self.pressure_correction == True:
+                        for key in energy_dict:
+                            if key.endswith('_g'):
+                                P = self.gas_pressures[self.gas_names.index(key)]
+                                energy_dict[key] += self._kB*self.temperature*np.log(P)
+                   
+                    if self.coverage_correction == True:
+                        if not self.energy_type == 'interacting_energy':
+                            raise UserWarning('Coverage correction can only be used with'
+                                    ' "energy_type=interacting_energy"')
+                        if not self.coverage_map:
+                            raise UserWarning('No coverage map found.')
+                        cvg_labels = self.output_labels['interacting_energy']
+                        valid = False
+                        for pt, cvgs in self.coverage_map:
+                            if pt == xy:
+                                valid = True
+                                for ads,cvg in zip(cvg_labels, cvgs):
+                                    energy_dict[ads] += self._kB*self.temperature*np.log(
+                                                                                     cvg)
+                        if valid == False:
+                            raise UserWarning('No coverages found for '+str(xy)+' in map')
+                    
                     params = self.adsorption_to_reaction_energies(energy_dict)
                     self.energies = [0]
                     self.barriers = []
@@ -136,27 +170,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             L = self.label_maker(species)
                             self.labels.append(L)
 
-                        correction = 0
-                        if self.pressure_correction == True:
-                            IS_gasses = [self.gas_pressures[self.gas_names.index(s)]
-                                    for s in self.elementary_rxns[step-1][0]
-                                    if s in self.gas_names]
-                            FS_gasses = [self.gas_pressures[self.gas_names.index(s)]
-                                    for s in self.elementary_rxns[step-1][-1]
-                                    if s in self.gas_names]
-                            P_IS = max(sum(IS_gasses),self.min_pressure)
-                            P_FS = max(sum(FS_gasses),self.min_pressure)
-                            if IS_gasses:
-                                correction -= float(
-                                        self._kB*self.temperature*np.log(P_IS))
-                                if bar != 0:
-                                    bar = max(0,bar+correction)
-                            if FS_gasses:
-                                correction += float(
-                                        self._kB*self.temperature*np.log(P_FS))
-                            if reverse:
-                                correction = -correction
-                        self.energies.append(nrg+correction)
+                        self.energies.append(nrg)
                         self.barriers.append(bar)
 
                     if labels and self.include_labels:

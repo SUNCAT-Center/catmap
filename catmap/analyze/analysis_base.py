@@ -423,7 +423,7 @@ class MapPlot:
         xminmax,yminmax = self.descriptor_ranges
         xmin,xmax = xminmax
         ymin,ymax = yminmax
-        ax.imshow(rgb_array,extent=[xmin,xmax,ymin,ymax],origin='lower',interpolation='nearest')
+        ax.imshow(rgb_array,extent=[xmin,xmax,ymin,ymax],origin='lower')
         self.plot_descriptor_pts(mapp, i, ax)
         if getattr(self,'n_xticks',None):
             ax.xaxis.set_major_locator(MaxNLocator(self.n_xticks))
@@ -578,6 +578,8 @@ class MechanismPlot:
                                 for t in ax.xaxis.get_ticklabels()]
                     except:
                         pass
+            elif label_position in ['omit']:
+                pass
             else:
                 ypos = energy_lines[i][1][0]
                 if 'ha' not in args:# and 'textcoords' not in args:

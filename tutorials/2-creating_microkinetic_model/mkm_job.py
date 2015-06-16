@@ -23,7 +23,7 @@ vm.threshold = 1e-30 #do not plot rates below this
 vm.plot_variable = 'production_rate'
 vm.plot(save='production_rate.pdf')
 
-vm.descriptor_labels = ['CO reactivity [eV]', 'O reactivity [eV]']
+vm.descriptor_labels = ['O reactivity [eV]', 'CO reactivity [eV]']
 vm.subplots_adjust_kwargs = {'left':0.2,'right':0.8,'bottom':0.15}
 vm.plot(save='pretty_production_rate.pdf')
 

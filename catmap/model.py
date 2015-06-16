@@ -137,6 +137,7 @@ class ReactionModel:
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
+
         #ensure resolution has the proper dimensions
         if not hasattr(self.resolution,'__iter__'):
             self.resolution = [self.resolution]*len(self.descriptor_names)
@@ -191,8 +192,11 @@ class ReactionModel:
                 interaction_model.interaction_response_function = int_function
             self.thermodynamics.__dict__['adsorbate_interactions'] = interaction_model
 
-        elif self.adsorbate_interaction_model == 'second_order':
-            interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+        elif self.adsorbate_interaction_model in ['second_order','multisite']:
+            if self.adsorbate_interaction_model == 'second_order':
+                interaction_model = catmap.thermodynamics.SecondOrderInteractions(self)
+            elif self.adsorbate_interaction_model == 'multisite':
+                interaction_model = catmap.thermodynamics.MultisiteInteractions(self)
             interaction_model.get_interaction_info()
             response_func = interaction_model.interaction_response_function
             if not callable(response_func):
@@ -247,7 +251,6 @@ class ReactionModel:
             #not discarded)
             if not ran_dsa and getattr(self,'descriptor_ranges',None) and getattr(self,'resolution',None):
                     self.descriptor_space_analysis()
-
 
             #Save long attrs in data_file
             for attr in dir(self):
@@ -404,7 +407,7 @@ class ReactionModel:
             pickled_data = pickle.load(open(self.data_file,'r'))
             for attr in pickled_data:
                 if not overwrite:
-                    if not getattr(self,attr,None): #don't over-write
+                    if getattr(self,attr,None) is None: #don't over-write
                         setattr(self,attr,pickled_data[attr])
                 else:
                     setattr(self,attr,pickled_data[attr])
@@ -479,6 +482,61 @@ class ReactionModel:
                 self._warned.append(log_string)
 
     #Parsing and formatting functions
+
+    def expression_string_to_list(self,eq):
+        elementary_rxns = []
+        gas_names = []
+        adsorbate_names = []
+        transition_state_names = []
+        site_names = []
+        #Replace separators with ' '
+        regex = re.compile(regular_expressions['species_separator'][0])
+        eq = regex.sub(' ',eq)
+        state_dict = functions.match_regex(eq,
+                *regular_expressions['initial_transition_final_states'])
+        rxn_list = []
+        for key in ['initial_state','transition_state','final_state']:
+            state_list = []
+            state_str = state_dict[key]
+            if state_str:
+                state_strings = [si for si in state_str.split() if si]
+                for st in state_strings:
+                    species_dict = functions.match_regex(st,
+                            *regular_expressions['species_definition'])
+                    if species_dict is None:
+                        raise UserWarning('Could not parse state: '+state_str)
+                    if species_dict['stoichiometry'] == '':
+                        species_dict['stoichiometry'] = 1
+                    else:
+                        try:
+                            species_dict['stoichiometry'] = int(
+                                    species_dict['stoichiometry'])
+                        except:
+                            raise ValueError('Non-integer stoichomtry: '+st)
+                    if species_dict['site'] is None:
+                        species_dict['site'] = self._default_site
+                    site_names.append(species_dict['site'])
+                    if species_dict['name'] != '*':
+                        species_key = species_dict['name']+'_'+species_dict['site']
+                    else:
+                        species_key = species_dict['site']
+                    if key in ['initial_state','final_state']:
+                        if species_dict['name'] != '*':
+                            if species_dict['site'] not in  self._gas_sites:
+                                adsorbate_names.append(species_key)
+                            else:
+                                gas_names.append(species_key)
+                    else:
+                        if species_dict['name'] != '*':
+                            if species_key not in adsorbate_names+gas_names:
+                                transition_state_names.append(species_key)
+                    state_list += ([species_key]*species_dict['stoichiometry'])
+                rxn_list.append(state_list)
+            elif key == 'transition_state':
+                pass # No transition-state
+            else:
+                raise ValueError('Initial or final state is undefined: '+eq)
+        return rxn_list
 
     def parse_elementary_rxns(self, equations): #
         """
@@ -560,6 +618,8 @@ class ReactionModel:
                     for st in state_strings:
                         species_dict = functions.match_regex(st,
                                 *regular_expressions['species_definition'])
+                        if species_dict is None:
+                            raise UserWarning('Could not parse state: '+state_str)
                         if species_dict['stoichiometry'] == '':
                             species_dict['stoichiometry'] = 1
                         else:
@@ -1075,6 +1135,16 @@ class ReactionModel:
                 pt = tuple([round(v,n) for v in pt])
                 self._dict_maps[id(mapp)][pt] = cvg
         return self._dict_maps[id(mapp)].get(newpt,None)
+
+    def nearest_mapped_point(self,mapp,point):
+        """Get the point in the map nearest to the point supplied"""
+        pts,outs = zip(*mapp)
+        deltas = []
+        for pt in pts:
+            dist = sum([(xi-xo)**2 for xi,xo in zip(point,pt)])
+            deltas.append(dist)
+        min_idx = deltas.index(min(deltas))
+        return pts[min_idx]
 
     @staticmethod
     def map_to_array(mapp,descriptor_ranges,resolution,

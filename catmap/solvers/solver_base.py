@@ -3,6 +3,7 @@ from catmap.model import ReactionModel
 from catmap import ReactionModelWrapper
 import numpy as np
 import mpmath as mp
+from ase.atoms import string2symbols
 
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=ReactionModel()):
@@ -56,6 +57,16 @@ class SolverBase(ReactionModelWrapper):
             self._selectivity = self.get_selectivity(rxn_parameters)
             self.output_labels['selectivity'] = self.gas_names
 
+        if 'carbon_selectivity' in self.output_variables:
+            weights = []
+            for g in self.gas_names:
+                name,site = g.split('_')
+                weight = string2symbols(name).count('C')
+                weights.append(weight)
+            self._carbon_selectivity = self.get_selectivity(rxn_parameters,weights=weights)
+            self.output_labels['carbon_selectivity'] = self.gas_names
+
+
         if 'rate_control' in self.output_variables:
             self._rate_control = self.get_rate_control(rxn_parameters)
             self.output_labels['rate_control'] = [self.gas_names,self.parameter_names]
@@ -73,7 +84,10 @@ class SolverBase(ReactionModelWrapper):
                 self.output_labels['apparent_activation_energy'] = self.gas_names
 
         if 'interacting_energy' in self.output_variables:
-            self._interacting_energy = self.get_interacting_energies(rxn_parameters)
+            if self.adsorbate_interaction_model in [None,'ideal']:
+                self._interacting_energy = rxn_parameters
+            else:
+                self._interacting_energy = self.get_interacting_energies(rxn_parameters)
             self.output_labels['interacting_energy'] = self.adsorbate_names+self.transition_state_names
 
         for out in self.output_variables:

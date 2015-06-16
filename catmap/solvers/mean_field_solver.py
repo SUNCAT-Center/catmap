@@ -91,33 +91,39 @@ class MeanFieldSolver(SolverBase):
         self._turnover_frequency = turnover_freq
         return turnover_freq
 
-    def get_selectivity(self,rxn_parameters):
+    def get_selectivity(self,rxn_parameters,weights=None):
         """
         return list of selectivity of each reaction
         :param rxn_parameters: reaction parameters, see solver-base
+        :param weights: weights for each species. Defaults to 1 for all species
         """
         tofs = self.get_turnover_frequency(rxn_parameters)
+        if weights is None:
+            weights = [1]*len(tofs) #use for weighted selectivity (e.g. % carbon)
+            
         if self.products is None:
             self.products = [g for g,r in zip(self.gas_names,tofs) if r >0]
         if self.reactants is None:
             self.reactants = [g for g,r in zip(self.gas_names,tofs) if r <=0]
+
         prod_rate = sum([max(r,0)
-            for g,r in zip(self.gas_names,tofs) if g in self.products])
+            for g,r,w in zip(self.gas_names,tofs,weights) if g in self.products])
         reac_rate = sum([max(-r,0)
-            for g,r in zip(self.gas_names,tofs) if g in self.reactants])
+            for g,r,w in zip(self.gas_names,tofs,weights) if g in self.reactants])
 
         selectivities = []
-        for g,r in zip(self.gas_names,tofs):
+        for g,r,w in zip(self.gas_names,tofs,weights):
             if g in self.products and prod_rate:
-                sel = max(r,0)/prod_rate
+                sel = max(r,0)*w/prod_rate
 
             elif g in self.reactants and reac_rate:
-                sel = max(-r,0)/reac_rate
+                sel = max(-r,0)*w/reac_rate
             else:
                 sel = 0
             selectivities.append(sel)
 
-        self._selectivities = selectivities
+        if weights is None:
+            self._selectivities = selectivities
         return selectivities
 
     def get_rate_control(self,rxn_parameters):
@@ -129,7 +135,8 @@ class MeanFieldSolver(SolverBase):
         kT = self._kB*self.temperature
         eps = self._mpfloat(self.perturbation_size)
         try:
-            dRdG = numerical_jacobian(self.get_turnover_frequency,rxn_parameters,self._matrix,eps)
+            diff_idxs = range(len(self.adsorbate_names+self.transition_state_names))
+            dRdG = numerical_jacobian(self.get_turnover_frequency,rxn_parameters,self._matrix,eps,diff_idxs=diff_idxs)
         except ValueError, strerror:
             resid = str(strerror).rsplit('=',1)[1]
             resid = resid.replace(')','')
@@ -158,7 +165,7 @@ class MeanFieldSolver(SolverBase):
         energies = rxn_parameters[:N_ads]
         eps_vector = rxn_parameters[N_ads:]
         cvg = self._coverage + [0]*len(self.transition_state_names)
-        E_int = self.interaction_function(cvg,energies,eps_vector,self.thermodynamics.adsorbate_interactions.interaction_response_function,False)[0]
+        E_int = self.interaction_function(cvg,energies,eps_vector,self.thermodynamics.adsorbate_interactions.interaction_response_function,False,False)[1]
         return E_int
 
     def get_selectivity_control(self,rxn_parameters):
@@ -374,17 +381,50 @@ class MeanFieldSolver(SolverBase):
         idx_dict = {}
         surf_species = self.adsorbate_names+self.transition_state_names
         for s in self.site_names:
-            idxs = [surf_species.index(a) for a in surf_species if
-                    self.species_definitions[a]['site'] == s]
-            if idxs:
-                if self.adsorbate_interaction_model not in ['ideal',None]:
-                    default_params = getattr(
-                            self.thermodynamics.adsorbate_interactions,
-                            'interaction_response_parameters',{})
-                else:
-                    default_params = {}
-                F_params = self.species_definitions[s].get('interaction_response_parameters',default_params)
-                idx_dict[s] = [idxs,self.species_definitions[s]['total'],F_params]
+            for q in self.site_names:
+                if s == q:
+                    idxs = [surf_species.index(a) for a in surf_species if
+                            self.species_definitions[a]['site'] == s]
+                    if idxs:
+                        if self.adsorbate_interaction_model not in ['ideal',None]:
+                            default_params = getattr(
+                                    self.thermodynamics.adsorbate_interactions,
+                                    'interaction_response_parameters',{})
+                        else:
+                            default_params = {}
+                        F_params = self.species_definitions[s].get('interaction_response_parameters',default_params)
+                        idx_dict[s] = [idxs,self.species_definitions[s]['total'],F_params]
+
+                elif self.adsorbate_interaction_model == 'second_order' and 'g' not in [s,q]:
+                    if '&'.join([s,q]) not in idx_dict and '&'.join([q,s]) not in idx_dict:
+                        key = '&'.join([s,q])
+                        idxs = [surf_species.index(a) for a in surf_species if
+                                self.species_definitions[a]['site'] in [s,q]]
+                        if idxs:
+                            if self.adsorbate_interaction_model not in ['ideal',None]:
+                                default_params = getattr(
+                                        self.thermodynamics.adsorbate_interactions,
+                                        'interaction_response_parameters',{})
+                            else:
+                                default_params = {}
+
+                            cirp = 'cross_interaction_response_parameters'
+                            if cirp in self.species_definitions[s]:
+                                F_params = self.species_definitions[s][cirp][q]
+                            elif cirp in self.species_definitions[q]:
+                                F_params = self.species_definitions[q][cirp][s]
+                            else:
+                                print(('Warning: No cross-site interaction params specified'
+                                        ' for {s},{q}. Assuming interaction params of {s}.')
+                                        .format(**locals()))
+                                F_params = self.species_definitions[s].get(
+                                    'interaction_response_parameters',default_params)
+
+                            max_cvg = (self.species_definitions[s][
+                                'total'] + self.species_definitions[q]['total'])/2.
+
+                            idx_dict[key] = [idxs,max_cvg,F_params]
+
         subdict['site_info_dict'] =  'site_info_dict = ' + repr(idx_dict)
         return subdict
 
