@@ -78,8 +78,11 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 energy_dict[key] += self._kB*self.temperature*np.log(P)
                    
                     if self.coverage_correction == True:
+                        if not self.energy_type == 'interacting_energy':
+                            raise UserWarning('Coverage correction can only be used with'
+                                    ' "energy_type=interacting_energy"')
                         if not self.coverage_map:
-                            raise ValueError('No coverage map found.')
+                            raise UserWarning('No coverage map found.')
                         cvg_labels = self.output_labels['interacting_energy']
                         valid = False
                         for pt, cvgs in self.coverage_map:
@@ -89,7 +92,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                     energy_dict[ads] += self._kB*self.temperature*np.log(
                                                                                      cvg)
                         if valid == False:
-                            raise UserWarning('No coverages found for '+xy+' in map')
+                            raise UserWarning('No coverages found for '+str(xy)+' in map')
                     
                     params = self.adsorption_to_reaction_energies(energy_dict)
 

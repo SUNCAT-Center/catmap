@@ -318,7 +318,13 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,i
             if s == q:
                 idxs,max_cvg,F_params = site_info_dict[s]
                 idx_lists.append(site_info_dict[s][0])
-                theta_tot = 2*sum([coverages[i] for i in idxs])
+                theta_tot = sum([coverages[i] for i in idxs])
+                #note that depending on the definition of
+                #the cutoff parameter there should be a factor
+                #of 2 in theta_tot. Experience has shown that
+                #it is typically more intuitive if the factor
+                #of 2 is omitted and the cutoff corresponds to the
+                #average coverage between sites s and q.
             else:
                 key1 = '&'.join([s,q])
                 key2 = '&'.join([q,s])
@@ -331,7 +337,8 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,i
                     ('No cross-site interactions'
                      ' specified for {s},{q}')
                       .format(**locals()))
-                theta_tot = sum([coverages[i] for i in idxs])
+                theta_tot = sum([coverages[i] for i in idxs])/2.
+                #see note about factor of 2 above
 
             fs,dfs,d2fs = F(theta_tot,**F_params)
             f[si][qi] = f[qi][si] = fs

@@ -31,12 +31,16 @@ class ThermodynamicScaler(ScalerBase):
             setattr(self,var,val)
         if 'pressure' in self.descriptor_names:
             P = thermo_state['pressure']
-            self.pressure_mode = 'concentration'
         elif 'logPressure' in self.descriptor_names:
             P = 10**thermo_state['logPressure']
-            self.pressure_mode = 'concentration'
         else:
             P = 1
+
+        if 'pressure' in self.descriptor_names or 'logPressure' in self.descriptor_names:
+            if self.pressure_mode == 'static':
+                #static pressure doesn't make sense if
+                #pressure is a descriptor
+                self.pressure_mode = 'concentration'
 
         self.pressure = P
 

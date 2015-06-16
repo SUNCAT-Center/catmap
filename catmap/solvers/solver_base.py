@@ -63,7 +63,6 @@ class SolverBase(ReactionModelWrapper):
                 name,site = g.split('_')
                 weight = string2symbols(name).count('C')
                 weights.append(weight)
-
             self._carbon_selectivity = self.get_selectivity(rxn_parameters,weights=weights)
             self.output_labels['carbon_selectivity'] = self.gas_names
 

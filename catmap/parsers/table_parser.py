@@ -293,7 +293,12 @@ class TableParser(ParserBase):
                 for skey in linedict['species_keys']:
                     if (skey in self.adsorbate_names+self.transition_state_names
                             and linedict['surface_name'] == surf):
+
                         ads = skey
+                        if 'delta_theta' in linedict:
+                            self.species_definitions[ads]['delta_theta'] = float(
+                                    linedict['delta_theta'])
+
                         theta_vec = [0]*len(ads_names)
                         idx_i = ads_names.index(ads)
                         theta_i = float(linedict['coverage'])

@@ -118,6 +118,7 @@ class ReactionModel:
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
+
         #ensure resolution has the proper dimensions
         if not hasattr(self.resolution,'__iter__'):
             self.resolution = [self.resolution]*len(self.descriptor_names)
@@ -231,7 +232,6 @@ class ReactionModel:
             #not discarded)
             if not ran_dsa and getattr(self,'descriptor_ranges',None) and getattr(self,'resolution',None):
                     self.descriptor_space_analysis()
-
 
             #Save long attrs in data_file
             for attr in dir(self):
@@ -410,6 +410,61 @@ class ReactionModel:
                 self._warned.append(log_string)
 
     #Parsing and formatting functions
+
+    def expression_string_to_list(self,eq):
+        elementary_rxns = []
+        gas_names = []
+        adsorbate_names = []
+        transition_state_names = []
+        site_names = []
+        #Replace separators with ' '
+        regex = re.compile(regular_expressions['species_separator'][0])
+        eq = regex.sub(' ',eq)
+        state_dict = functions.match_regex(eq,
+                *regular_expressions['initial_transition_final_states'])
+        rxn_list = []
+        for key in ['initial_state','transition_state','final_state']:
+            state_list = []
+            state_str = state_dict[key]
+            if state_str:
+                state_strings = [si for si in state_str.split() if si]
+                for st in state_strings:
+                    species_dict = functions.match_regex(st,
+                            *regular_expressions['species_definition'])
+                    if species_dict is None:
+                        raise UserWarning('Could not parse state: '+state_str)
+                    if species_dict['stoichiometry'] == '':
+                        species_dict['stoichiometry'] = 1
+                    else:
+                        try:
+                            species_dict['stoichiometry'] = int(
+                                    species_dict['stoichiometry'])
+                        except:
+                            raise ValueError('Non-integer stoichomtry: '+st)
+                    if species_dict['site'] is None:
+                        species_dict['site'] = self._default_site
+                    site_names.append(species_dict['site'])
+                    if species_dict['name'] != '*':
+                        species_key = species_dict['name']+'_'+species_dict['site']
+                    else:
+                        species_key = species_dict['site']
+                    if key in ['initial_state','final_state']:
+                        if species_dict['name'] != '*':
+                            if species_dict['site'] not in  self._gas_sites:
+                                adsorbate_names.append(species_key)
+                            else:
+                                gas_names.append(species_key)
+                    else:
+                        if species_dict['name'] != '*':
+                            if species_key not in adsorbate_names+gas_names:
+                                transition_state_names.append(species_key)
+                    state_list += ([species_key]*species_dict['stoichiometry'])
+                rxn_list.append(state_list)
+            elif key == 'transition_state':
+                pass # No transition-state
+            else:
+                raise ValueError('Initial or final state is undefined: '+eq)
+        return rxn_list
 
     def parse_elementary_rxns(self, equations): #
         elementary_rxns = []
