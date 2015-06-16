@@ -131,7 +131,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 valid = True
                                 for ads,cvg in zip(cvg_labels, cvgs):
                                     energy_dict[ads] += self._kB*self.temperature*np.log(
-                                                                                     cvg)
+                                                                            float(cvg))
                         if valid == False:
                             raise UserWarning('No coverages found for '+str(xy)+' in map')
                     
