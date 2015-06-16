@@ -80,11 +80,12 @@ class ThermoCorrections(ReactionModelWrapper):
             self.thermodynamic_variables.append(corr+'_thermo_mode')
 
     def get_thermodynamic_corrections(self,**kwargs):
-        '''
-	
-	echem in generalized linear scaling needs recalculation	
-	'''        
-	l = self.thermodynamic_corrections
+        """
+        Calculate all ``thermodynamic'' corrections beyond the energies
+        in the input file. This master function will call sub-functions
+        depending on the ``thermo mode'' of each class of species
+        """
+        l = self.thermodynamic_corrections
         if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
             self.force_recalculation = True
         state_dict = {}
