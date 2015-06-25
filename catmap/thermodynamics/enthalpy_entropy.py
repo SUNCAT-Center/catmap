@@ -3,6 +3,9 @@ from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import get_composition, add_dict_in_place
 from scipy.optimize import fmin_powell
+import warnings
+from mpmath import mpf
+from math import exp, log
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -440,8 +443,14 @@ class ThermoCorrections(ReactionModelWrapper):
 
                     frequencies = [max(nu,nu_min) for nu in frequencies]
                 therm = HarmonicThermo(frequencies)
-                free_energy = therm.get_gibbs_energy(
-                        temperature,verbose=False)
+                try:
+                    free_energy = therm.get_gibbs_energy(
+                            temperature,verbose=False)
+                except AttributeError:
+                    warnings.warn('HarmonicThermo.get_free_energy is deprecated.'
+                                   'Update your ASE version.')
+                    free_energy = therm.get_free_energy(
+                            temperature,verbose=False)
                 ZPE = sum(frequencies)/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
@@ -714,15 +723,15 @@ class ThermoCorrections(ReactionModelWrapper):
 
         def set_product_pressures(rxn,G_dict,gamma,gas_pressures,product_pressures={}):
 
-            dG = float(self.get_rxn_energy(rxn,G_dict)[0])
-            K_eq = np.exp(-dG/float(self._kB*self.temperature))
-            K_eq *= gamma
+            dG = mpf(self.get_rxn_energy(rxn,G_dict)[0])
+            K_eq = exp(-dG/(self._kB*self.temperature))
+            K_eq *= mpf(gamma)
             PK = K_eq
 
             for g in gas_pressures:
-                n_g = rxn[0].count(g)
-                p_g = gas_pressures[g]
-                PK *= p_g**(n_g)
+                n_g = mpf(rxn[0].count(g))
+                p_g = mpf(gas_pressures[g])
+                PK *= pow(p_g,n_g)
 
             #remove any products that have pressures specified
             products = rxn[-1]
@@ -730,11 +739,11 @@ class ThermoCorrections(ReactionModelWrapper):
                 if sp in product_pressures:
                     gas_pressures[sp] = product_pressures[sp]
                     n_prod = products.count(sp)
-                    PK /= product_pressures[sp]**(n_prod)
+                    PK /= pow(mpf(product_pressures[sp]),n_prod)
                     products = [p for p in products if p != sp]
 
             N_products = len(products)
-            P_i = PK**(float(1./float(N_products)))
+            P_i = pow(PK,(mpf(1.)/mpf(N_products)))
             for gi in set(products):
                 gas_pressures[gi] += P_i
 

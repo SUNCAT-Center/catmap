@@ -1,5 +1,6 @@
 from analysis_base import *
 import numpy as np
+from math import log
 from catmap.functions import convert_formation_energies
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
@@ -80,6 +81,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     xy[1-voltage_idx] = self.descriptor_ranges[1-voltage_idx][0]
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
+                    self._rxm._descriptors = xy
 
                     if self.energy_type == 'free_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
@@ -88,6 +90,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         energy_dict.update(self.scaler.get_electronic_energies(xy))
 
                     elif self.energy_type == 'interacting_energy':
+
                         if not self.interacting_energy_map:
                             raise ValueError('No interacting energy map found.')
                         G_dict = {}
@@ -96,6 +99,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         if xyo != xy:
                             print('Warning: No output at: '+str(xy)+'. Using output from: '+str(xyo))
                         xy = xyo
+                        self._rxm._descriptors = xyo
 
                         valid = False
                         for pt, energies in self.interacting_energy_map:
@@ -116,7 +120,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         for key in energy_dict:
                             if key.endswith('_g'):
                                 P = self.gas_pressures[self.gas_names.index(key)]
-                                energy_dict[key] += self._kB*self.temperature*np.log(P)
+                                energy_dict[key] += self._kB*self.temperature*log(P)
                    
                     if self.coverage_correction == True:
                         if not self.energy_type == 'interacting_energy':
@@ -130,7 +134,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             if pt == xy:
                                 valid = True
                                 for ads,cvg in zip(cvg_labels, cvgs):
-                                    energy_dict[ads] += self._kB*self.temperature*np.log(
+                                    energy_dict[ads] += self._kB*self.temperature*log(
                                                                             float(cvg))
                         if valid == False:
                             raise UserWarning('No coverages found for '+str(xy)+' in map')
