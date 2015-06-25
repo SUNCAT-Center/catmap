@@ -150,14 +150,14 @@ class ThermoCorrections(ReactionModelWrapper):
             dl_species = [spec for spec in self.species_definitions.keys()
                             if '_dl' in spec and '*' not in spec]
             for spec in dl_species:
-		tempname = spec.split('_')[0]
-		gas_spec = tempname+'_g'
-                C_H2O = 55.
-                KH_gas = self.species_definitions[spec]['kH']
-                P_gas = C_H2O / KH_gas
-                P_corr = np.log(P_gas) * self._kB * self.temperature
-                correction_dict[spec] = correction_dict[gas_spec] + P_corr
-
+            	tempname = spec.split('_')[0]
+            	gas_spec = tempname+'_g'
+            	C_H2O = 55.
+            	KH_gas = self.species_definitions[spec]['kH']
+            	P_gas = C_H2O / KH_gas
+            	P_corr = np.log(P_gas) * self._kB * self.temperature
+            	correction_dict[spec] = correction_dict[gas_spec] + P_corr
+            	
         return correction_dict
 
     def ideal_gas(self):
