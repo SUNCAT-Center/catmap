@@ -150,7 +150,8 @@ class ThermoCorrections(ReactionModelWrapper):
             dl_species = [spec for spec in self.species_definitions.keys()
                             if '_dl' in spec and '*' not in spec]
             for spec in dl_species:
-                gas_spec = spec.replace('_dl', '_g')
+		tempname = spec.split('_')[0]
+		gas_spec = tempname+'_g'
                 C_H2O = 55.
                 KH_gas = self.species_definitions[spec]['kH']
                 P_gas = C_H2O / KH_gas
@@ -499,13 +500,13 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_enthalpy_entropy_adsorbate(self):
 	"""
-	TO DO
+	Return free energy corrections based on input enthalpy, entropy, ZPE
 	"""
         return self.fixed_enthalpy_entropy_gas(self.adsorbate_names+self.transition_state_names)
 
     def average_transition_state(self,thermo_dict,transition_state_list = []):
         """
-	TO DO
+	Return transition state thermochemical corrections as average of IS and FS corrections 
 	"""
 	if transition_state_list is None:
             transition_state_list = self.transition_state_names
@@ -564,7 +565,8 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def get_rxn_index_from_TS(self, TS):
-        """ Take in the name of a transition state and return the reaction index of
+        """ 
+	Take in the name of a transition state and return the reaction index of
         the elementary rxn from which it belongs
         """
 	for rxn_index, eq in enumerate(self.elementary_rxns):
@@ -640,6 +642,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return corr
 
     def hbond_with_estimates_electrochemical(self):
+	"""
+	Add hbond corrections to transition states involving pe and ele (coupled proton-electron transfers and electron transfers)
+	"""
         thermo_dict = self.hbond_electrochemical()
         TS_names = [TS for TS in self.transition_state_names if
             'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
@@ -654,6 +659,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def boltzmann_coverages(self,energy_dict):
+	"""
+	Return coverages based on Boltzmann distribution
+	"""
         #change the reference
         reservoirs = getattr(self,'atomic_reservoir_dict',None)
         if reservoirs:
@@ -696,11 +704,9 @@ class ThermoCorrections(ReactionModelWrapper):
     def approach_to_equilibrium_pressure(self):
         """Set product pressures based on approach to equilibrium. Requires the following attributes
         to be set:
-
         global_reactions - a list of global reactions in the same syntax as elementary expressions,
             with each one followed by its respective approach to equilibrium.
         pressure_mode - must be set to 'approach_to_equilibrium'
-
         Note that this function is not well-tested and should be used with caution.
         """
 
