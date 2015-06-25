@@ -1,9 +1,18 @@
 from analysis_base import *
-import math as np
+import numpy as np
 from catmap.functions import convert_formation_energies
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
+    """
+      A simple tool for the generation of potential energy diagrams
+      from a reaction network.
+    """
     def __init__(self,reaction_model=None):
+        """
+        Class for generating potential energy diagrams.
+
+        :param reaction_model: The ReactionModel object to load.
+        """
         self._rxm = reaction_model
         defaults = {'pressure_correction':True,
                     'min_pressure':1e-12,
@@ -15,8 +24,31 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         self.data_dict = {}
         MechanismPlot.__init__(self,[0])
 
-    def plot(self,ax=None,surfaces=None,mechanisms=None,
+    def plot(self,ax=None,plot_variants=None,mechanisms=None,
             labels=None,save=True):
+        """
+        Generates the potential energy diagram plot
+
+        :param ax: Matplotlib Axes object to optionally plot into
+
+        :param plot_variants: Which PEDs to plot. Defaults to all surfaces
+                              or all applied voltages
+        :param plot_variants: list
+
+        :param mechanisms: Which reaction pathways to plot.  Each integer
+                           corresponds to an elementary step. Elementary
+                           steps are indexed in the order that they are
+                           input with 1 being the first index. Negative
+                           integers are used to designate reverse reactions.
+                           Read in from model.rxn_mechanisms by default
+        :type mechanisms: {string:[int]}
+
+        :param labels: Labels for each state.  Can be generated automatically
+        :type labels: [string]
+
+        :param save: Whether to write plot to file
+        :type save: bool
+        """
         if not ax:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -24,24 +56,33 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             fig = ax.get_figure()
         if not mechanisms:
             mechanisms = self.rxn_mechanisms.values()
-        if not surfaces:
-            surfaces = self.surface_names
-        if not self.surface_colors:
-            self.surface_colors = get_colors(max(len(surfaces),len(mechanisms)))
-       
+        if not plot_variants and self.descriptor_dict:
+            plot_variants = self.surface_names
+        elif not plot_variants and 'voltage' in self.descriptor_names:
+            voltage_idx = self.descriptor_names.index('voltage')
+            v_min, v_max = self.descriptor_ranges[voltage_idx]
+            plot_variants = np.linspace(v_min, v_max, 5)
+        if not self.plot_variant_colors:
+            self.plot_variant_colors = get_colors(max(len(plot_variants),len(mechanisms)))
+
         self.kwarg_list = []
         for key in self.rxn_mechanisms.keys():
             self.kwarg_list.append(self.kwarg_dict.get(key,{}))
 
         for n,mech in enumerate(mechanisms):
-            for i, surf in enumerate(surfaces):
-                xy = self.descriptor_dict[surf]
+            for i, variant in enumerate(plot_variants):
+                if self.descriptor_dict:
+                    xy = self.descriptor_dict[variant]
+                elif 'voltage' in self.descriptor_names:
+                    voltage_idx = self.descriptor_names.index('voltage')
+                    xy = [0, 0]
+                    xy[voltage_idx] = variant
+                    xy[1-voltage_idx] = self.descriptor_ranges[1-voltage_idx][0]
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
 
                     if self.energy_type == 'free_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
-
                     elif self.energy_type == 'potential_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
                         energy_dict.update(self.scaler.get_electronic_energies(xy))
@@ -90,28 +131,27 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 valid = True
                                 for ads,cvg in zip(cvg_labels, cvgs):
                                     energy_dict[ads] += self._kB*self.temperature*np.log(
-                                                                                     cvg)
+                                                                            float(cvg))
                         if valid == False:
                             raise UserWarning('No coverages found for '+str(xy)+' in map')
                     
                     params = self.adsorption_to_reaction_energies(energy_dict)
-
                     self.energies = [0]
                     self.barriers = []
                     self.labels = ['']
-                    if len(surfaces) > 1:
+                    if len(plot_variants) > 1:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
-                                self.surface_colors[i]
+                                self.plot_variant_colors[i]
                     else:
                         self.energy_line_args['color'] = \
                                 self.barrier_line_args['color'] = \
-                                self.surface_colors[n]
+                                self.plot_variant_colors[n]
                     for step in mech:
-                        if step < 0: 
+                        if step < 0:
                             reverse = True
                             step = step*-1
-                        else: 
+                        else:
                             reverse = False
                         p = params[step-1]
                         if reverse == True:
@@ -132,7 +172,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                         self.energies.append(nrg)
                         self.barriers.append(bar)
-                    
+
                     if labels and self.include_labels:
                         self.labels = labels
                     elif self.labels and self.include_labels:
@@ -148,13 +188,13 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                             reverse = False
                     self.data_dict[self.rxn_mechanisms.keys()[n]] = [self.energies,
                             self.barriers]
-                    
+
                     kwargs = self.kwarg_list[n]
                     for key in kwargs:
                         setattr(self,key,kwargs[key])
 
                     self.draw(ax)
-        
+
         if self.energy_type == 'free_energy':
             ax.set_ylabel('$\Delta G$ [eV]')
         elif self.energy_type == 'potential_energy':
@@ -169,6 +209,9 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         return fig
 
     def label_maker(self,species):
+        """
+        .. todo:: __doc__
+        """
         species = [s for s in species if self.species_definitions[s].get('type',None) not in 'site']
         new_species = []
         for sp in species:

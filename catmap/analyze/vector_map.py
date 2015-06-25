@@ -1,7 +1,10 @@
 from analysis_base import *
 from string import Template
 
-class VectorMap(MapPlot,ReactionModelWrapper):
+class VectorMap(MapPlot, ReactionModelWrapper):
+    """
+    .. todo:: __doc__
+    """
     def __init__(self,reaction_model):
         self._rxm = copy(reaction_model) #use copy to avoid changing model
         MapPlot.__init__(self)
@@ -18,7 +21,10 @@ class VectorMap(MapPlot,ReactionModelWrapper):
         self.plot_precision = 5 #round to this precision when testing for uniqueness
 
     def get_pts_cols(self):
-        mapp = getattr(self,self.plot_variable+'_map')
+        """
+        .. todo:: __doc__
+        """
+        mapp = getattr(self, self.plot_variable+'_map')
         if not mapp:
             raise AttributeError('No output found for ' + self.plot_variable)
         pts,datas = zip(*mapp)
@@ -31,6 +37,9 @@ class VectorMap(MapPlot,ReactionModelWrapper):
         return pts,cols
 
     def include_labels_to_idxs(self):
+        """
+        .. todo:: __doc__
+        """
         if self.include_labels:
             labels = self.output_labels[self.plot_variable]
             label_idxs = [labels.index(L) for L in self.include_labels]
@@ -43,6 +52,9 @@ class VectorMap(MapPlot,ReactionModelWrapper):
             return include_indices
 
     def get_included_indices(self,pts,cols):
+        """
+        .. todo:: __doc__
+        """
 
         include_indices = self.include_labels_to_idxs()
 
@@ -77,6 +89,9 @@ class VectorMap(MapPlot,ReactionModelWrapper):
         return include_indices
 
     def get_labels(self):
+        """
+        .. todo:: __doc__
+        """
         labels = self.output_labels[self.plot_variable]
         if self.label_template:
             template = Template(self.label_template)
@@ -86,6 +101,9 @@ class VectorMap(MapPlot,ReactionModelWrapper):
         return labels
 
     def plot(self,ax=None,ax_list=None,save=True):
+        """
+        .. todo:: __doc__
+        """
         pts,cols = self.get_pts_cols()
         include_indices = self.get_included_indices(pts,cols)
         datas = zip(*cols)

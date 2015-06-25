@@ -15,7 +15,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import pylab as plt
 import matplotlib.transforms as mtransforms
-from matplotlib.mlab import griddata
+from matplotlib.mlab import griddata as mlab_griddata
 
 import mpmath as mp
 from ase.atoms import string2symbols
@@ -24,7 +24,15 @@ from ase.structure import molecule
 from catmap.model import ReactionModel
 import data
 
-__version__ = "0.2.119"
+__version__ = "0.2.270"
+
+def griddata(*args, **kwargs):
+    """Wrapper function to avoid annoying griddata errors"""
+    try:
+        return mlab_griddata(*args, **kwargs)
+    except RuntimeError:
+        kwargs['interp'] = 'linear'
+        return mlab_griddata(*args, **kwargs)
 
 def load(setup_file):
     rxm = ReactionModel(setup_file = setup_file)

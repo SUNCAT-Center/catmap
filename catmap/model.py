@@ -14,8 +14,23 @@ plt = catmap.plt
 from catmap import griddata
 
 class ReactionModel:
+    """
+    The central object that defines a microkinetic model consisting of:
+
+    - active sites
+    - species
+    - possible reaction steps
+    - rate constant expressions
+    - descriptors and descriptor ranges
+    - data files for energies
+    - external parameters (temperature, pressures)
+    - other more technical settings related to the solver and mapper
+    """
     def __init__(self,**kwargs): #
         """Class for managing microkinetic models.
+
+           :param setup_file: Specify <mkm-file> from which to load model.
+           :type setup_file: str
             """
 
         #Set static utility functions
@@ -43,7 +58,7 @@ class ReactionModel:
 
         self._classes = ['parser','scaler', 'thermodynamics',
                 'solver','mapper']
-        self._solved = None 
+        self._solved = None
         #keeps track of whether or not the model was solved
 
         #attributes for logging
@@ -101,20 +116,24 @@ class ReactionModel:
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
-        if hasattr(self,'setup_file'): #parse in setup file. 
-            #Note that the syntax is simply python variable definitions. 
+        if hasattr(self,'setup_file'): #parse in setup file.
+            #Note that the syntax is simply python variable definitions.
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
-        
 
     # Functions for executing the kinetic model
 
     def run(self,**kwargs):
         """Run the microkinetic model. If recalculate is True then
         data which is re-loaded will be used as an initial guess; otherwise it
-        will be assumed to be correct."""
-        
+        will be assumed to be correct.
+
+        :param recalculate: If True solve model again using previous results as initial guess
+        :type recalculate: bool
+
+        """
+
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
@@ -122,7 +141,7 @@ class ReactionModel:
         #ensure resolution has the proper dimensions
         if not hasattr(self.resolution,'__iter__'):
             self.resolution = [self.resolution]*len(self.descriptor_names)
-        
+
         #set numerical representation
         if self.numerical_representation == 'mpmath':
             import mpmath as mp
@@ -238,7 +257,7 @@ class ReactionModel:
                 if (not attr.startswith('_') and
                         not callable(getattr(self,attr)) and
                         attr not in self._classes):
-                    if (len(repr(getattr(self,attr))) > 
+                    if (len(repr(getattr(self,attr))) >
                             self._max_log_line_length):
                         #line is too long for logfile -> put into pickle
                         self._pickle_attrs.append(attr)
@@ -270,14 +289,21 @@ class ReactionModel:
             f.close()
 
             if getattr(self,'create_standalone',None):
-                self.make_standalone() 
-        
+                self.make_standalone()
+
     def descriptor_space_analysis(self):
-        #Use mapper to create map/volcano-plot of rates/coverages
+        """
+        Use mapper to create map/volcano-plot of rates/coverages.
+        """
         self.mapper.get_output_map(self.descriptor_ranges,self.resolution)
 
     def single_point_analysis(self,pt):
-        #Find rates/coverages at a single point
+        """
+        Find rates/coverages at a single point.
+
+        :param pt: Point in descriptor-space ([x,y])
+        :type pt: [float]
+        """
         self.mapper.get_point_output(pt)
         for out in self.output_variables:
             mapp = getattr(self,out+'_map',[])
@@ -287,6 +313,10 @@ class ReactionModel:
             setattr(self,out+'_map',mapp)
 
     def multi_point_analysis(self):
+        """
+        Analyze the output at a list of points. Points should
+        be specified as a list in the descriptor_values attribute.
+        """
         for pt in self.descriptor_values:
             self.single_point_analysis(pt)
 
@@ -301,11 +331,12 @@ class ReactionModel:
                 exec func_string in globals(), locs
                 setattr(self,func_name,locs[func_name])
 
-   #File IO functions
+    #File IO functions
+
     def load(self,setup_file): #
-        """Load a 'setup file' by importing it and assigning all local 
-        variables as attributes of the kinetic model. Special attributes 
-        mapper, parser, scaler, solver will attempt to convert strings 
+        """Load a 'setup file' by importing it and assigning all local
+        variables as attributes of the kinetic model. Special attributes
+        mapper, parser, scaler, solver will attempt to convert strings
         to modules."""
         defaults = dict(mapper='MinResidMapper',
                 parser='TableParser',
@@ -334,7 +365,7 @@ class ReactionModel:
                             pyfile = var
                         basepath=os.path.dirname(
                                 inspect.getfile(inspect.currentframe()))
-                        if basepath not in sys.path: 
+                        if basepath not in sys.path:
                             sys.path.append(basepath)
                         sublocs = {}
                         _temp = __import__(pyfile,globals(),sublocs, [locs[var]])
@@ -362,10 +393,16 @@ class ReactionModel:
 
         self.load_data_file()
 
+        self.set_rxn_options()
+
+        self.generate_echem_TS()
+
         self.verify()
 
     def load_data_file(self,overwrite=False):
-        #load in output data from external files
+        """
+        Load in output data from external files.
+        """
         if os.path.exists(self.data_file):
             pickled_data = pickle.load(open(self.data_file,'r'))
             for attr in pickled_data:
@@ -376,9 +413,44 @@ class ReactionModel:
                     setattr(self,attr,pickled_data[attr])
 
     def parse(self,*args, **kwargs): #
+        """
+        Read in all the information from the input_file. Alias
+        to parser.parse.
+        """
         self.parser.parse(*args, **kwargs)
 
     def log(self,event,**kwargs):
+        """
+        Add an event to the log file. This assumes that the template
+        for the event has been specified in the _log_strings attribute
+        of the class that calls the log() function.
+
+        :param event: A key that defines the event to be logged. The
+                      _log_strings attribute of the subclass which
+                      calls log() should be a dictionary where `event`
+                      is a key and the value is a template string. The template
+                      string can contain the following variables which
+                      will auto-populate:
+
+                      * pt - the current point in descriptor space
+                      * priority - defaults to 0
+                      
+                      In addition, the template may contain other variables
+                      which can be passed in as keyword arguments. The following
+                      are special arguments:
+
+                      *n_iter - the iteration number will be appended to the event title
+
+                      The event title should be of the form routinename_status, where
+                      routinename is the name of the routine/algorithm and the status
+                      is succeess/failure/evaluation/etc.
+        :type event: str
+
+        :param kwargs: Keyword arguments can be specified and will be passed into
+                       the template retrieved from _log_strings['event']
+
+        :type kwargs: keyword arguments
+        """
         message = self._log_strings[event]
         loop, status = event.rsplit('_',1)
         kwargs['loop'] = loop
@@ -467,14 +539,48 @@ class ReactionModel:
         return rxn_list
 
     def parse_elementary_rxns(self, equations): #
+        """
+        Convert elementary reaction strings into structured elementary reaction lists.
+
+        :param equations: List of reaction equation strings. 
+                          For non-activated reactions (e.g. no activation barrier) the strings
+                          should follow a syntax like:
+                          
+                          * A_s + B_q <-> C_s + D_q
+                          * A_s + B_q -> C_s + D_q
+
+                          while an activated reaction should follow a syntax like:
+
+                          * A_s + B_q <-> A-B_s + \*_q -> AB_s + \*_q
+
+                          where A,B,C,D are names of chemical species, A-B is the name of a
+                          transition-state, and s,q are names of different site types.
+
+        :type equations:[str]
+        """
         elementary_rxns = []
         gas_names = []
         adsorbate_names = []
         transition_state_names = []
         site_names = []
-        for eq in equations:
+        echem_transition_state_names = []
+        rxn_options_dict = {'prefactor':{}, 'beta':{}}
+        for rxn_index, rxn in enumerate(equations):
             #Replace separators with ' '
             regex = re.compile(regular_expressions['species_separator'][0])
+            # Parse out the reaction options.  Options are key=value pairs that
+            # are separated from reactions by ";" and from each other by ","
+            eq = rxn
+            options = None
+            if ';' in rxn:
+                eq, options = rxn.split(';')
+            if options:
+                options = "".join(options.split(" "))  # ignore spaces
+                suboptions = options.split(',')
+                for subopt in suboptions:
+                    key, value = subopt.split('=')
+                    if key in rxn_options_dict:
+                        rxn_options_dict[key][rxn_index] = value
             eq = regex.sub(' ',eq)
             state_dict = functions.match_regex(eq,
                     *regular_expressions['initial_transition_final_states'])
@@ -484,6 +590,31 @@ class ReactionModel:
                 state_str = state_dict[key]
                 if state_str:
                     state_strings = [si for si in state_str.split() if si]
+                    # echem transition state syntax parsing. generate echem transition state from TS like "^0.6eV_a"
+                    if key == 'transition_state' and len(state_strings) == 1 and state_strings[0].startswith('^'):
+                        try:
+                            preamble, site = state_strings[0].split('_')
+                            barrier = preamble.lstrip('^').rstrip('eV')
+                            echem_TS_name = '-'.join(["echemTS", str(rxn_index), barrier]) + "_" + site
+                            rxn_list.append([echem_TS_name])
+                            echem_transition_state_names.append(echem_TS_name)
+                            continue
+                        except:
+                            raise ValueError('improper specification of electrochemical transition state.  should be\
+                                of the form "^0.6eV_a" for an 0.6 eV barrier on site a')
+                    elif key == 'transition_state' and len(state_strings) == 1 and state_strings[0].startswith('echemTS'):
+                        try:
+                            echem_TS = state_strings[0]
+                            preamble, site = echem_TS.split('_')
+                            echem, i, barrier = preamble.split('-')
+                            i = int(i)
+                            assert(rxn_index == i)
+                            barrier = float(barrier)
+                            echem_transition_state_names.append(echem_TS)
+                            continue
+                        except:
+                            raise ValueError('improper specification of electrochemical transition state.  should be\
+                                of the form "echemTS-10-0.6_a" for an 0.6 eV barrier on site a for rxn 10')
                     for st in state_strings:
                         species_dict = functions.match_regex(st,
                                 *regular_expressions['species_definition'])
@@ -529,6 +660,9 @@ class ReactionModel:
             if ts in gas_names + adsorbate_names:
                 transition_state_names.remove(ts)
         def sort_list(species_list):
+            """
+            .. todo:: __doc__
+            """
             if not species_list:
                 return ()
             new_list = []
@@ -546,8 +680,16 @@ class ReactionModel:
         self.transition_state_names = sort_list(transition_state_names)
         self.elementary_rxns = elementary_rxns
         self.site_names = site_names
+        self.echem_transition_state_names = echem_transition_state_names
+        self.rxn_options_dict = rxn_options_dict
 
     def texify(self,ads): #
+        """Generate LaTeX representation of an adsorbate.
+
+        :param ads: Adsorbate short-hand.
+        :type ads: str
+
+        """
         sub_nums = [str(n) for n in range(2,15)]
         ads_def = ads
         ads = ads.replace('-','\mathrm{-}')
@@ -560,16 +702,34 @@ class ReactionModel:
             site = 's'
         for num in sub_nums:
             adsN = adsN.replace(num,'_{'+num+'}')
-        if site == 'g': 
+        if site == 'g':
             site = '(g)'
             tex_ads = adsN + '_{'+site+'}'
-        else: 
+        else:
             site = '*_'+site
             tex_ads = adsN + '^{'+site+'}'
         tex_ads = tex_ads.replace('}_{','')
         return tex_ads
 
-    def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): #
+    def print_rxn(self,rxn,mode='latex',include_TS=True,print_out = False): 
+        """
+        Print a structured elementary step and print it as plain text or latex.
+
+        :param rxn: Elementary step list of the form [[IS1,IS2,...],[TS1,TS2,...],[FS1,FS2,...]]
+                    where ISi,TSi,FSi correspond to species in the initial/transition/final states
+                    and the [TS1,TS2,...] list is optional.
+        :type rxn: [[str]]
+
+        :param mode: Output mode. Should be 'latex' for LaTeX, or 'text' for plain text.
+        :type mode: str
+
+        :param include_TS: Include the transition-state in the output. Optional parameter, default is True.
+        :type include_TS:bool
+        
+        :param print_out: Print the reaction to stdout. Optional parameter, default is False.
+        :type print_out:bool
+
+        """
         if mode == 'latex':
             def texify(ads):
                 return self.texify(ads)
@@ -602,6 +762,18 @@ class ReactionModel:
 
     @staticmethod
     def print_point(descriptors,n = 2):
+        """
+        Pretty-print a set of descriptor values.
+
+        :param descriptors: List of descriptor values [d1,d2,...] where d1,d2,... are
+                            floats corresponding to coordinates in descriptor space.
+        :type descriptors: [float]
+
+        :param n: Number of decimals to print out. Optional parameter, default is 2.
+        :type n: int
+        """
+
+        #Note that there is probably a much better way to do this with e.g. pprint.
         string = '['
         for d in descriptors:
             d = float(d)
@@ -612,6 +784,13 @@ class ReactionModel:
         return string
 
     def model_summary(self,summary_file='summary.tex'):
+        """
+            Write summary of model into TeX file.
+
+            :param summary_file: Filename where TeX summary of model is written.
+            :type summary_file: str
+
+        """
         if not hasattr(self,'summary_file'):
             self.summary_file = summary_file
 
@@ -644,7 +823,7 @@ class ReactionModel:
         out_txt += r'\section{Input Summary}' + '\n'
         longtable_txt = ''
 
-        max_freqs = 3 
+        max_freqs = 3
         #This could be cleaned up a lot using templates...
         for spec in self.gas_names:
             energy = self.species_definitions[spec]['formation_energy']
@@ -673,11 +852,11 @@ class ReactionModel:
                 if e and e != '-':
                     e = str(round(e,2))
                     if self.species_definitions[spec].get('frequencies',[]):
-                        freqs = [str(round(v*1e3,1)) 
+                        freqs = [str(round(v*1e3,1))
                                 for v in self.species_definitions[spec].get('frequencies',[])]
                         frequencies = '\parbox[t]{3cm}{'
                         while freqs:
-                            freq_subset = [freqs.pop(0) 
+                            freq_subset = [freqs.pop(0)
                                     for i in range(0,max_freqs) if freqs]
                             frequencies += ', '.join(freq_subset)+r'\\'
                         frequencies = frequencies[:-2] + '}'
@@ -718,15 +897,32 @@ class ReactionModel:
 
     #Self checks, debugging, and code-structure related functions.
 
-    def update(self,dict,override = False):
+    def update(self,dictvar,override = False):
+        """
+        Update the attributes of the model with the attribute names/vals included
+        in dictvar. The keys of dictvar correspond to attributes of the ReactionModel
+        to be set, and the values correspond to the values they will be set to.
+
+        :param dictvar: Dictionary of key names corresponding to attributes of ReactionModel
+                        instance to be updated with the associated values in dictvar.
+        :type dictvar: dict
+
+        :param override: If True then the values in dictvar will override existing values
+                         of the attributes of ReactionModel instance. Optional parameter,
+                         default is False.
+        :type override: bool
+        """
         if override == False:
-            dict.update(self.__dict__)
-            self.__dict__ = dict
+            dictvar.update(self.__dict__)
+            self.__dict__ = dictvar
         else:
-            self.__dict__.update(dict)
+            self.__dict__.update(dictvar)
 
     def compatibility_check(self):
-        #Check that the reaction model has all required attributes
+        """
+        Check that the reaction model has all required attributes. Required
+        attributes can be specified in self._required.
+        """
         total_dict = self._required
         for var in total_dict:
             val = getattr(self,var,None)
@@ -736,15 +932,23 @@ class ReactionModel:
                     setattr(self,var,right_type)
                 except:
                     raise TypeError('The attribute '+str(var)+' must be '+
-                            'compatible with the function ' + 
+                            'compatible with the function ' +
                             str(total_dict[var]))
             if not hasattr(self,var):
                 raise AttributeError('Reaction model must contain the '+
                         'attribute '+str(var))
 
     def verify(self):
+        """
+        Run several consistency check on the model, such as :
 
-        
+        - all gas ratios add to 1.
+        - all mass and site balances are fulfilled.
+        - prefactors are set in the correct format.
+        - a mapping resolution is set (the default is 15 data points per descriptor axis).
+        """
+
+
         #Check gas_ratios
         if hasattr(self,'gas_ratios') and self.gas_ratios:
             if sum(self.gas_ratios) != 1.0:
@@ -754,6 +958,9 @@ class ReactionModel:
 
         #Check for mass/site balances on elementary equations
         def composition(state_list,type='atoms'):
+            """
+            .. todo:: __doc__
+            """
             total_comp = {}
             for sp in state_list:
                 if type == 'atoms':
@@ -782,6 +989,9 @@ class ReactionModel:
                 TS = IS
             else:
                 IS,TS,FS = rxn
+            # ignore composition checking for echemTS stuff
+            if 'echemTS' in TS[0]:
+                TS = IS
             if composition(IS) == composition(TS) == composition(FS):
                 pass
             else:
@@ -817,10 +1027,31 @@ class ReactionModel:
                 'elements of this list may contain None if you wish to use ' + \
                 'the default prefactor of kB*T/h for that rxn')
 
+        if not hasattr(self, 'resolution') or self.resolution is None:
+            self.resolution = 15
+            print("Info: set resolution to {self.resolution} as default.".format(**locals()))
+
     #Data manipulation and conversion
 
     def _header(self,exclude_outputs=[],re_parse=False):
-        """Create a string which acts as a header for the log file."""
+        """
+        Create a string which acts as a header for the log file. The header string
+        ensures that the logfile can be opened interactively by Python by importing
+        necessary libraries and automatically reading in the data_file.
+        
+        :param exclude_outputs: Attribute names of ReactionModel to exclude in the log file.
+                                Optional parameter, default is [].
+        :type exclude_outputs: [str]
+
+        :param re_parse: Determines whether or not the parser should be specified in the log file.
+                         If a parser is included in the log file then a ReactionModel instantiated
+                         using that log file as a setup_file argument will attempt to re-parse
+                         values from the input_file and setup_file.
+                         Optional parameter, default is False.
+        :type re_parse: bool
+
+        """
+
         header = ''
         for attr in self._classes:
             inst = getattr(self,attr)
@@ -863,7 +1094,7 @@ class ReactionModel:
 
     def _token(self):
         """Create a 'token' which uniquely identifies the model
-        based on the user-input parameters. Two models with 
+        based on the user-input parameters. Two models with
         identical tokens should have identical solutions, although
         this is not guaranteed if an expert user changes some private
         attributes."""
@@ -872,6 +1103,20 @@ class ReactionModel:
         return token
 
     def retrieve_data(self,mapp,point,precision=2):
+        """
+        Retrieve the data corresponding to a given point in descriptor space from a CatMAP 'map' object.
+        If no data is found for the specified point, then None is returned.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: CatMAP map (see MapperBase)
+
+        :param point: Coordinates of a point in descriptor space.
+        :type point: [float]
+
+        :param precision: Require descriptor coordinates to match with 'precision' decimals. Optional
+                          parameter, default is 2.
+        :type precision: int
+        """
         if not mapp:
             return None
         n = precision
@@ -904,6 +1149,31 @@ class ReactionModel:
     @staticmethod
     def map_to_array(mapp,descriptor_ranges,resolution,
             log_interpolate=False,minval=None,maxval=None):
+        """
+        Convert into CatMAP "map" data structure into numpy array. The "map" will be interpolated
+        onto a regular grid.
+
+        :param mapp: CatMAP "map" structured lists of descriptor points and corresponding values.
+        :type mapp: CatMAP map (see MapperBase)
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
+
+        :param log_interpolate: Take logarithm of values before interpolation. Defaults to False.
+        :type log_interpolate: bool, optional
+
+        :param minval: Replace any values less than minval with minval. None implies no cutoff.
+                       Defaults to None.
+        :type minval: float
+
+        :param maxval: Replace any values greater than maxval with maxval. None implies no cutoff.
+                       Defaults to None.
+        :type maxval: float
+        """
         desc_rngs = copy(descriptor_ranges)
         pts,datas = zip(*mapp)
         cols = zip(*datas)
@@ -935,20 +1205,34 @@ class ReactionModel:
                 if log_interpolate == True:
                     Zdata_log = np.array(
                             [np.log(abs(float(zn))) for zn in Zdata])
-                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi))#,interp='linear'))
-                    z_num = griddata(xData,yData,Zdata_log,xi,yi)#,interp='linear')
+                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi))
+                    z_num = griddata(xData,yData,Zdata_log,xi,yi)
                     zi = np.exp(z_num)*z_sign
                 else:
-                    zi = griddata(xData,yData,Zdata,xi,yi)#,interp='linear')
+                    zi = griddata(xData,yData,Zdata,xi,yi)
                 maparray[:,:,i] = zi
         return maparray
 
     @staticmethod
     def array_to_map(array,descriptor_ranges,resolution):
+        """
+        Convert numpy array object into CatMAP "map" data structure.
+
+        :param array: Numpy array of size (resolution x resolution) corresponding to
+                     grid spanning descriptor_ranges.
+        :type array: numpy.array
+
+        :param descriptor_ranges: Minimum and maximum values of descriptor range for
+                     each dimension included in array.
+        :type descriptor_ranges: [[float]]
+
+        :param resolution: Resolution at which the descriptor ranges are sampled.
+        :type resolution: int
+        """
         dim = len(array.shape)
         xy = []
         ij = []
-            
+
         def make_ptlist(descriptor_ranges,resolution,pt_list=[],ij_list=[]):
             if descriptor_ranges:
                 rng = descriptor_ranges.pop(0)
@@ -993,6 +1277,14 @@ class ReactionModel:
 
     @staticmethod
     def same_rxn(rxn1,rxn2):
+        """Determine if two reactions *rxn1* and *rxn2* are identical.
+
+           :param rxn1: Elementary reaction list. See print_rxn for syntax.
+           :type rxn1: [[str]]
+
+           :param rxn2: Elementary reaction list. See print_rxn for syntax.
+           :type rxn2: [[str]]
+        """
 
         def same_state(state1, state2):
             state1 = [s.replace('_s','') for s in state1]
@@ -1015,8 +1307,8 @@ class ReactionModel:
         IS1, TS1, FS1 = get_IS_TS_FS(rxn1)
         IS2, TS2, FS2 = get_IS_TS_FS(rxn2)
         if (
-                same_state(IS1,IS2) and 
-                same_state(TS1, TS2) and 
+                same_state(IS1,IS2) and
+                same_state(TS1, TS2) and
                 same_state(FS1, FS2)
                     ):
             return True
@@ -1025,9 +1317,47 @@ class ReactionModel:
 
     @staticmethod
     def reverse_rxn(rxn):
-        return [rxn[-1],rxn[1],rxn[0]]
+        """
+        Reverse the reaction provided. [[IS],[TS],[FS]] -> [[FS],[TS],[IS]]
+
+        :param rxn: Reaction in CatMAP form: 
+
+                    * [[IS],[TS],[FS]] for activated reaction
+                    * [[IS],[FS]] for non-activated reaction
+                      where IS,TS,FS correspond to the names of the
+                      species in the initial/transition/final states
+                      respectively.
+
+        :type rxn: [[str]]
+
+        """
+        if len(rxn) == 3:
+            return [rxn[-1],rxn[1],rxn[0]]
+        elif len(rxn) ==2:
+            return [rxn[-1],rxn[0]]
+        else:
+            raise UserWarning('Incorrect reaction format:'+str(rxn))
 
     def get_rxn_energy(self,rxn,energy_dict):
+        """
+        Calculate reaction energy given the energies of all species.
+
+        :param rxn: Reaction in CatMAP form: 
+
+                    * [[IS],[TS],[FS]] for activated reaction
+                    * [[IS],[FS]] for non-activated reaction
+                      where IS,TS,FS correspond to the names of the
+                      species in the initial/transition/final states
+                      respectively.
+
+        :type rxn: [[str]]
+
+        :param energy_dict: Dictionary of energies for all species.
+                            Keys should be species names and values
+                            should be energies.
+        :type energy_dict: dict
+        """
+
         IS = rxn[0]
         FS = rxn[-1]
         if len(rxn) <= 2:
@@ -1046,6 +1376,17 @@ class ReactionModel:
         return dE, E_a
 
     def get_state_energy(self,rxn_state,energy_dict):
+        """
+        Calculate energy of a "reaction state" (list of species) given the energies of all species.
+
+        :param rxn_state: List of intermediate species (must be defined in species_definitions)
+        :type rxn: [[str]]
+
+        :param energy_dict: Dictionary of energies for all species.
+                            Keys should be species names and values
+                            should be energies.
+        :type energy_dict: dict
+        """
         energy = 0
         for species in rxn_state:
             if species in energy_dict:
@@ -1055,18 +1396,66 @@ class ReactionModel:
         return energy
 
     def adsorption_to_reaction_energies(self,free_energy_dict):
-        "Convert adsorption energies to reaction energies/barriers."
+        """
+        Convert adsorption formation energies to reaction energies/barriers.
+
+        :param free_energy_dict: Dictionary containing free energies for each species
+                                 in the reaction network.
+        :type free_energy_dict: dict
+        """
         Grxn_Ga = []
         for rxn in self.elementary_rxns:
             dG, G_a = self.get_rxn_energy(rxn,free_energy_dict)
             Grxn_Ga.append([dG,G_a])
         return Grxn_Ga
 
-    def make_standalone(self):
+    def make_standalone(self, standalone_script='stand_alone.py'):
+        """Create a stand alone script containing the current model.
+
+           :param standalone_script: The name of the file where the standalone script is created [stand_alone.py].
+           :type standalone_script: str
+
+
+        """
         txt = ''
         for func in self._function_strings:
             txt+= self._function_strings[func]
             txt += '\n'*3
-        f = open('stand_alone.py','w')
+        f = open(standalone_script, 'w')
         f.write(txt)
         f.close()
+
+    def generate_echem_TS(self):
+        """generates fake transition state species from self.echem_transition_state_names
+        and populates self.species_definitions with them.
+        """
+        for echem_TS in self.echem_transition_state_names:
+            preamble, site = echem_TS.split('_')
+            echem, rxn_index, barrier = preamble.split('-')
+            rxn_index = int(rxn_index)
+            barrier = float(barrier)
+            self.species_definitions[echem_TS] = {}
+            self.species_definitions[echem_TS]['type'] = 'transition_state'
+            self.species_definitions[echem_TS]['site'] = site
+            self.species_definitions[echem_TS]['formation_energy_source'] = ["Generated by CatMAP"] * len(self.surface_names)
+            self.species_definitions[echem_TS]['formation_energy'] = [0.] * len(self.surface_names)
+            self.species_definitions[echem_TS]['frequencies'] = []
+            self.species_definitions[echem_TS]['name'] = preamble
+            self.species_definitions[echem_TS]['n_sites'] = 1  # Someone may want to change this to be user-specified at some point
+            self.species_definitions[echem_TS]['composition'] = {'H':1}  #placeholder composition - should be unimportant
+
+        # add echem TSs to regular TSes - this might be more trouble than it's worth
+        self.transition_state_names += tuple(self.echem_transition_state_names)
+
+    def set_rxn_options(self):
+        """sets elementary rxn-specific attributes to the appropriate places"""
+        # set up prefactor_list
+        if self.rxn_options_dict['prefactor']:
+            if not self.prefactor_list:
+                self.prefactor_list = [None] * len(self.elementary_rxns)
+            for key, value in self.rxn_options_dict['prefactor'].iteritems():
+                if value == "None":
+                    value = None
+                else:
+                    value = float(value)
+                self.prefactor_list[key] = value

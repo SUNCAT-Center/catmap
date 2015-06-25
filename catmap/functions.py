@@ -3,13 +3,24 @@ import catmap
 import re
 from copy import copy
 from ase.atoms import string2symbols
+import warnings
 
 def get_composition(species_string):
+    """
+    Convert string of species into a dictionary of species and the number of each species.
+
+    :param species_string: A string of the reaction species. Should be a chemical formula string
+                           that may also contain '-','&',or,'pe'. 'pe' is a special case corresponding
+                           to a proton-electron pair and has the compositon of H.
+    :type species: str
+
+    """
     composition = {}
     # clean up transition states and electrochem
     species_string = species_string.replace('-','')
     species_string = species_string.replace('pe','H')
     species_string = species_string.replace('&','')
+    species_string = species_string.replace('ele','')
     try:
         symbs = string2symbols(species_string)
         for a in set(symbs):
@@ -19,7 +30,12 @@ def get_composition(species_string):
     return composition
 
 def cartesian_product(*args, **kwds):
-        # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
+    """
+    Take the Cartesian product
+
+    .. todo:: Explain what the args and kwds are
+    """
+    # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
     # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
     pools = map(tuple, args) * kwds.get('repeat', 1)
     result = [[]]
@@ -29,6 +45,25 @@ def cartesian_product(*args, **kwds):
                 yield tuple(prod)
 
 def convert_formation_energies(energy_dict,atomic_references,composition_dict):
+    """
+    Convert dictionary of energies, atomic references and compositions into a dictionary of formation energies
+
+    :param energy_dict: Dictionary of energies for all species.
+                        Keys should be species names and values
+                        should be energies.
+                        
+    :type energy_dict: dict
+
+    :param atomic_references: Dictionary of atomic reference energies (?)
+
+    :type atomic_references: dict
+
+    :param composition_dict: Dictionary of compositions
+
+    :type composition_dict: dict
+
+    .. todo:: Explain the keys and values for energy_dict, atomic_references, and composition_dict
+    """
     n = len(atomic_references)
     R = np.zeros((n,n))
     e = []
@@ -60,6 +95,19 @@ def convert_formation_energies(energy_dict,atomic_references,composition_dict):
     return new_data,ref_offsets
 
 def parse_constraint(minmaxlist,name):
+    """
+    Parse constraints for the relation. Returns two lists of minimum and maximum constraints
+
+    :param minmaxlist: List of minimum and maximum constraints.
+
+    :type minmaxlist: list
+
+    :param name: Name for the list of constraints.
+
+    :type name: str
+
+    .. todo:: Explain minmaxlist and name
+    """
     minlist = []
     maxlist = []
     for mm in minmaxlist:
@@ -87,15 +135,63 @@ def parse_constraint(minmaxlist,name):
 
 def constrained_relaxation(
         A,b,x0,x_min,x_max,max_iter = 100000,tolerance = 1e-10):
-    """Solve Ax=b subject to the constraints that 
+    """
+    Solve Ax=b subject to the constraints that 
     x_i > x_min_i and x_i < x_max_i. Algorithm is from Axelson 1996.
     
-    Note that x_min/Max are both lists/arrays of length equal to x"""
+    Note that x_min/Max are both lists/arrays of length equal to x
+
+    :param A: A matrix.
+
+    :type A: numpy.array
+
+    :param b: b vector.
+
+    :type b: numpy.array
+
+    :param x0: x vector
+
+    :type x0: numpy.array
+
+    :param x_min: Minimum constraints.
+
+    :type x_min: array_like
+
+    :param x_max: Maximum constraints.
+
+    :type x_max: array_like
+
+    :param max_iter: Maximum number of iterations.
+
+    :type max_iter: int, optional
+
+    :param tolerance: Tolerance.
+
+    :type tolerance: float, optional
+
+    .. todo:: Check to make sure docstring is correct.
+    """
 
     #define functional corresponding to Ax=b
     def J(x,A,b):
-        """Functional of x which corresponds to Ax=b for 
-        the relaxation method used."""
+        """
+        Functional of x which corresponds to Ax=b for 
+        the relaxation method used.
+        
+        :param x: x vector.
+
+        :type x: array_like
+
+        :param A: A matrix.
+
+        :type A: numpy.array
+
+        :param b: b vector.
+
+        :param b: array_like
+
+        .. todo:: Check that docstring is correct
+        """
         answer =  np.dot(
                 np.dot(np.dot(x.T,A.T),A),x) - 2*np.dot(np.dot(b.T,A),x)
         return answer
@@ -105,6 +201,11 @@ def constrained_relaxation(
     N = len(x0)
 
     def find_min(q):
+        """
+        Find minimum
+
+        .. todo:: Explain what this does in the context of constrained_relaxation.
+        """
         u[q] = 0
         v = np.dot(A,u)
         num1 = 0
@@ -146,20 +247,42 @@ def scaling_coefficient_matrix(
     """Class for determining adsorption and transition-state energies
     as a linear function of descriptors. 
 
-    parameter_dict - dictionary where the key is adsorbate name 
-        and the value is a list of adsorption energies for each surface. 
-        If some surfaces do not have an adsorption energy use None
-        as a placeholder.
-    descriptor_dict - dictionary where the key is surface name and the 
-        value is a list of descriptor values for each surface.
-    surface_names - list of surfaces which defines the order of 
-        surface adsorption energies in parameter_dict.
-    parameter_names - list of adsorbates which defines the order 
-        of adsorption coefficients in the output. Default is the 
-        order of parameter_dict.keys().
-    coeff_mins/Maxs - defines the min/max value of the coefficient 
-        for each descriptor. Should be a matrix/array/list of lists
-        which matches the shape of the expected output.
+    :param parameter_dict: Dictionary where the key is adsorbate name 
+                           and the value is a list of adsorption energies for each surface. 
+                           If some surfaces do not have an adsorption energy use None
+                           as a placeholder.
+
+    :type parameter_dict: dict
+    
+    :param descriptor_dict: Dictionary where the key is surface name and the 
+                            value is a list of descriptor values for each surface.
+    
+    :type descriptor_dict: dict
+
+    :param surface_names: List of surfaces which defines the order of 
+                          surface adsorption energies in parameter_dict.
+
+    :type surface_names: list
+    
+    :param parameter_names: List of adsorbates which defines the order 
+                            of adsorption coefficients in the output. Default is the 
+                            order of parameter_dict.keys().
+
+    :type parameter_names: list, optional
+
+    :param coeff_mins: Defines the minimum value of the coefficient 
+                       for each descriptor. Should be a matrix/array/list of lists
+                       which matches the shape of the expected output.
+
+    :type coeff_mins: float, optional
+
+    :param coeff_maxs: Same as coeff_mins but for the maximum value of the coefficient.
+
+    :type coeff_maxs: float, optional
+
+    :param return_error_dict: Specify whether or not to return a dictionary of the errors.
+
+    :type return_error_dict: bool, optional
     """
 
     #Define adsorbate order if it isn't
@@ -167,6 +290,17 @@ def scaling_coefficient_matrix(
 
     #Check that input dictionaries are valid.
     def check_lengths(dictionary,force_numeric = False):
+        """
+        Check that the input dictionaries are valid.
+
+        :param dictionary: Input dictionary.
+
+        :type dictionary: dict
+
+        :param force_numeric: Ensure that all values in the dictionary are numeric.
+
+        :type force_numeric: bool, optional
+        """
         for val in dictionary.values():
             if len(val) != len(dictionary.values()[0]):
                 key_len = '\n'.join([key+':'+str(len(dictionary[key])) 
@@ -238,6 +372,13 @@ def scaling_coefficient_matrix(
         #construct "descriptor" matrix (note that this is done inside the 
         #for loop to allow different parameters to have different number 
         #of surfaces)
+
+        if len(surfs) <= len(descriptor_dict.values()[0])+1:
+            warnings.warn('Number of energies specified is less than the number'
+                          'of free parameters for '+ads+'. Scaling is not reliable'
+                          'unless parameters are explicitly specified in '
+                          ' constraints_dict.')
+
         if len(surfs) == len(surface_names):
             D = Dtotal
         else:
@@ -266,8 +407,12 @@ def scaling_coefficient_matrix(
             c = constrained_relaxation(
                     D,A,c0,cMin,cMax)
 
+        elif coeff_mins[Nads] == coeff_maxs[Nads]:
+            c = coeff_mins[Nads]
+
         else:
             #If there is only one data point, assume constant.
+            warnings.warn('Assuming constant value for: '+ads)
             c = [0]*len(Dtotal[i,:])
             c[-1] = A[0]
         
@@ -285,6 +430,21 @@ def scaling_coefficient_matrix(
         return C
 
 def linear_regression(x,y,constrain_slope=None):
+    """
+    Perform linear regression on x and y and return the slope and intercept.
+
+    :param x: x-coordinates.
+
+    :type x: array_like
+
+    :param y: y-coordinates.
+
+    :type y: array_like
+
+    :param constrain_slope: Slope constraint
+
+    :type constrain_slope: float, optional
+    """
     if constrain_slope is None:
         m,b = catmap.plt.polyfit(x,y,1)
     else:
@@ -293,6 +453,23 @@ def linear_regression(x,y,constrain_slope=None):
     return m,b
 
 def match_regex(string,regex,group_names):
+    """
+    Find matching regular expression in string and return a dictionary of the matched expressions.
+
+    :param string: String.
+
+    :type string: str
+
+    :param regex: Regular expression.
+
+    :type regex: str
+
+    :param group_names: Corresponding names for each matched group.
+
+    :type group_names: list
+
+    .. todo:: Check that this docstring is correct.
+    """
     match_dict = {}
     match = re.match(regex,string)
     if match:
@@ -311,6 +488,24 @@ def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
         f : R^m -> R^n with m >= n
 
     Hacked from mpmath.calculus.optimize
+
+    :param f: Function.
+
+    :type f: callable
+
+    :param x:
+
+    :type x:
+
+    :param matrix:
+
+    :type matrix: 
+
+    :param h:
+
+    :type h: float, optional
+
+    .. todo:: Fill in the descriptions for f, x, matrix, and h
     """
     x = matrix(x)
     fx = matrix(f(x))
@@ -332,6 +527,27 @@ def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
     return J
 
 def smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25,smoothing=0.05):
+    """
+    Smooth piecewise linear function.
+
+    :param theta_tot:
+
+    :type theta_tot:
+
+    :param slope: slope of line
+
+    :type slope: float, optional
+
+    :param cutoff: Cutoff.
+
+    :type cutoff: float, optional
+
+    :param smoothing: Amount of smoothing.
+
+    :type smoothing: float, optional
+
+    .. todo:: Fill in descriptions and types for theta_tot
+    """
     x1 = cutoff + smoothing
     x0 = cutoff - smoothing
     if theta_tot <= x0:
@@ -350,8 +566,51 @@ def smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25,smoothing=0.05):
     return c_0, dC, d2C
 
 def offset_smooth_piecewise_linear(theta_tot,slope=1,cutoff=0.25, smoothing=0.05, offset=0.1):
-    #piecewise linear function with an offset. Not equivalent to piecewise linear
-    #for second-order interactions
+    """
+    Piecewise linear function with an offset. Not equivalent to piecewise linear
+    for second-order interactions
+
+    :param theta_tot:
+
+    :type theta_tot:
+
+    :param max_coverage: Maximum coverage.
+
+    :type max_coverage: int, optional
+
+    :param cutoff: Cutoff.
+
+    :type cutoff: float, optional
+
+    :param smoothing: Smoothing.
+
+    :type smoothing: smoothing, optional
+
+    :param offset: Offset.
+
+    :type offset: float, optional
+
+    .. todo:: Fill in description for theta_tot
+    """
     c_0, dC, d2C = smooth_piecewise_linear(theta_tot,slope,cutoff,smoothing)
     c_0 += offset
     return c_0, dC, d2C
+
+def add_dict_in_place(dict1, dict2):
+    """
+    Updates dict1 with elements in dict2 if they do not exist.  otherwise,
+    add the value for key in dict2 to the value for that key in dict1
+
+    :param dict1: Dictionary.
+
+    :type dict1: dict
+
+    :param dict2: Dictionary.
+
+    :type dict2: dict
+    """
+    for k, v in dict2.iteritems():
+        if k in dict1:
+            dict1[k] += dict2[k]
+        else:
+            dict1[k] = dict2[k]

@@ -33,7 +33,7 @@ requires = ['ase',
             'numpy',
                    ]
 license = 'COPYING.txt'
-long_description = file('README.txt').read()
+long_description = file('README.md').read()
 name='python-catmap'
 packages = [
            'catmap',
