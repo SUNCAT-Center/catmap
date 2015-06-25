@@ -31,7 +31,7 @@ class GeneralizedLinearScaler(ScalerBase):
 
         #Check that descriptors are in reaction network
         all_ads = list(self.adsorbate_names) + list(self.transition_state_names)
-        for d in self.descriptor_names: #REMOVE THIS REQUIREMENT LATER
+        for d in self.descriptor_names: #REMOVE THIS REQUIREMENT LATER?
             if d not in all_ads:
                 raise AttributeError('Descriptor '+d+' does not appear in reaction'+\
                         ' network. Add descriptor to network via "dummy" site, or '+\
@@ -195,7 +195,8 @@ class GeneralizedLinearScaler(ScalerBase):
                 elif params is None:
                     m,b = catmap.functions.linear_regression(x,y)
                 else:
-                    raise ValueError('Invalid params')
+                    raise UserWarning('Invalid params')
+
                 if isnan(m) or isnan(b):
                     raise UserWarning('Transition-state scaling failed for: '+TS+\
                                     '. Ensure that the scaling mode is set properly.')
@@ -214,17 +215,25 @@ class GeneralizedLinearScaler(ScalerBase):
         def explicit_state_scaling(TS,params):
             return state_scaling(TS,params,'explicit')
 
+        def echem_state_scaling(TS,params):
+            #ugly workaround for ambiguous echem TS names in rxn definitions
+            return [0,0], [0]*len(self.adsorbate_names) + [0]
+
         TS_scaling_functions = {
                 'initial_state':initial_state_scaling,
                 'final_state':final_state_scaling,
                 'BEP':BEP_scaling,
                 'TS':explicit_state_scaling,
+                'echem':echem_state_scaling,
                 }
 
         TS_matrix = []
         TS_coeffs = []
         for TS in self.transition_state_names:
-            if TS in self.scaling_constraint_dict:
+            if TS in self.echem_transition_state_names:
+                mode = 'echem'
+                params = None
+            elif TS in self.scaling_constraint_dict:
                 constring = self.scaling_constraint_dict[TS]
                 if not isinstance(constring,basestring):
                     raise ValueError('Constraints must be strings: '\

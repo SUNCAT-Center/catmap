@@ -54,12 +54,11 @@ def main(args=None):
     The optional argument args, can be used to
     directly supply command line argument like
 
-    $ kmos <args>
+    $ catmap <args>
 
     otherwise args will be taken from STDIN.
 
     """
-
     from glob import glob
 
     options, args, parser = get_options(args, get_parser=True)

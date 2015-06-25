@@ -1,0 +1,8 @@
+This example uses the same model as the example in ORR_scaling, but we instead focus on
+rate as a function of potential on Pt.  We use ThermodynamicScaler to change voltage
+as one of the descriptors.  We end up with polarization curves similar to those found in
+Hansen et al. (2014)
+
+Quick version of tutorial:
+# python make_input.py
+# python mkm_job.py

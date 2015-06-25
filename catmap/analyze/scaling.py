@@ -1,6 +1,9 @@
 from analysis_base import *
 
 class ScalingAnalysis(ScalingPlot,ReactionModelWrapper):
+    """
+    .. todo:: __doc__
+    """
     def __init__(self,reaction_model):
         self._rxm = reaction_model
         self.scaling_mode = 'linear'
@@ -11,10 +14,16 @@ class ScalingAnalysis(ScalingPlot,ReactionModelWrapper):
                 self.plotter_x_axis_function)
 
     def plotter_scaling_function(self,descriptors,**kwargs):
+        """
+        .. todo:: __doc__
+        """
         descriptors = list(descriptors)
         return self.scaler.get_electronic_energies(descriptors,**kwargs)
 
     def plotter_x_axis_function(self,descriptors,**kwargs):
+        """
+        .. todo:: __doc__
+        """
         if self.scaling_mode == 'linear':
             x_dict = {}
             labels = {}
@@ -43,6 +52,9 @@ class ScalingAnalysis(ScalingPlot,ReactionModelWrapper):
             return x_dict,labels
 
     def get_error(self):
+        """
+        .. todo:: __doc__
+        """
         if not self.scaling_error:
             self.plot(save=False)
         return self.scaling_error

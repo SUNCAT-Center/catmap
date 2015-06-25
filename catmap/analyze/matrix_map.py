@@ -2,8 +2,14 @@ from analysis_base import *
 from vector_map import *
 
 class MatrixMap(VectorMap):
+    """
+    .. todo:: __doc__
+    """
 
     def get_pts_cols(self):
+        """
+        .. todo:: __doc__
+        """
         mapp = getattr(self,self.plot_variable+'_map')
         if not mapp:
             raise AttributeError('No output found for ' + self.plot_variable)
@@ -14,6 +20,9 @@ class MatrixMap(VectorMap):
         return pts,cols
 
     def include_labels_to_idxs(self):
+        """
+        .. todo:: __doc__
+        """
         if self.include_labels:
             labels_x,labels_y = self.output_labels[self.plot_variable]
             include_x, include_y = self.include_labels
@@ -38,6 +47,9 @@ class MatrixMap(VectorMap):
             return include_indices
 
     def get_labels(self):
+        """
+        .. todo:: __doc__
+        """
         labels_x,labels_y = self.output_labels[self.plot_variable]
         if self.label_template:
             template = Template(self.label_template)

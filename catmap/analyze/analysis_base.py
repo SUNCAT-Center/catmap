@@ -14,7 +14,7 @@ mtransforms = catmap.mtransforms
 griddata = catmap.griddata
 
 basic_colors = [[0,0,0],[0,0,1],[0.1,1,0.1],[1,0,0],[0,1,1],[1,0.5,0],[1,0.9,0],
-        [1,0,1],[0,0.5,0.5],[0.5,0.25,0.15],[0.5,0.5,0.5]] 
+        [1,0,1],[0,0.5,0.5],[0.5,0.25,0.15],[0.5,0.5,0.5]]
         #black,blue,green,red,cyan,orange,yellow,magenta,turquoise,brown,gray
 
 def get_colors(n_colors):
@@ -26,8 +26,10 @@ def get_colors(n_colors):
         return longlist[0:n_colors]
 
 def boltzmann_vector(energy_list,vector_list,temperature):
-    #create a vector which is a boltzmann average of the vector_list weighted 
-    #with energies in the energy_list.
+    """
+    Create a vector which is a boltzmann average of the vector_list weighted
+    with energies in the energy_list.
+    """
     def boltzmann_avg(es,ns,T):
         kB = 8.613e-5 #assuming energies are in eV and T is in K
         es = [e-min(es) for e in es] #normalize to minimum energy
@@ -40,6 +42,9 @@ def boltzmann_vector(energy_list,vector_list,temperature):
     return boltz_vec
 
 class MapPlot:
+    """
+    .. todo:: __doc__
+    """
     def __init__(self):
         defaults = dict(
                 resolution_enhancement = 1,
@@ -71,6 +76,9 @@ class MapPlot:
                 setattr(self,key,val)
 
     def update_descriptor_args(self):
+        """
+        .. todo:: __doc__
+        """
         if getattr(self,'descriptor_dict',None):
             if self.descriptor_pt_args == {}:
                 for pt in self.descriptor_dict:
@@ -82,6 +90,9 @@ class MapPlot:
                             self.default_descriptor_label_args)
 
     def plot_descriptor_pts(self, mapp, idx, ax, plot_in=None):
+        """
+        .. todo:: __doc__
+        """
         if getattr(self,'descriptor_dict',None):
             self.update_descriptor_args()
             xy,rates = zip(*mapp)
@@ -111,6 +122,9 @@ class MapPlot:
     def plot_single(self, mapp, rxn_index, ax=None,
             overlay_map = None, alpha_range=None,
             **plot_args):
+        """
+        .. todo:: __doc__
+        """
         if not ax:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -220,6 +234,7 @@ class MapPlot:
         if dim == 1:
             ax.set_xlim(descriptor_ranges[0])
             ax.set_xlabel(self.descriptor_labels[0])
+            ax.set_ylim([float(self.min), float(self.max)])
         elif dim == 2:
             if self.colorbar:
                 if log_scale: #take only integer tick labels
@@ -231,7 +246,7 @@ class MapPlot:
                     cbar_nums = np.linspace(min_val,max_val,self.n_ticks)
                 formatstring = '%.'+str(self.axis_label_decimals)+'g'
                 cbar_labels = [formatstring % (s,) for s in cbar_nums]
-                cbar_labels = [lab.replace('e-0','e-').replace('e+0','e') 
+                cbar_labels = [lab.replace('e-0','e-').replace('e+0','e')
                         for lab in cbar_labels]
                 plot.set_clim(min_val,max_val)
                 fig = ax.get_figure()
@@ -272,6 +287,9 @@ class MapPlot:
 
     def plot_separate(self,mapp,ax_list=None,indices=None,
             overlay_map = None,**plot_single_kwargs):
+        """
+        .. todo:: __doc__
+        """
 
         pts,rates = zip(*mapp)
         if indices is None:
@@ -341,6 +359,9 @@ class MapPlot:
 
     def plot_weighted(self,mapp,ax=None,weighting='linear',
             second_map=None,indices=None,**plot_args):
+        """
+        .. todo:: __doc__
+        """
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -357,7 +378,7 @@ class MapPlot:
         pts,datas = zip(*mapp)
         if indices is None:
             indices = range(0,len(datas[0]))
-        rgbs = [] 
+        rgbs = []
         datas = zip(*datas)
         datas = [d for id,d in enumerate(datas) if id in indices]
         datas = zip(*datas)
@@ -378,21 +399,21 @@ class MapPlot:
                 rgbs.append([r,g,b])
             elif weighting =='dual':
                 rs,gs,bs = zip(*color_list)
-                r = 1 - sum(float((1-ri)*di*d2i) 
+                r = 1 - sum(float((1-ri)*di*d2i)
                         for ri,di,d2i in zip(rs,data,data2))
-                g = 1 - sum(float((1-gi)*di*d2i) 
+                g = 1 - sum(float((1-gi)*di*d2i)
                         for gi,di,d2i in zip(gs,data,data2))
-                b = 1 - sum(float((1-bi)*di*d2i) 
+                b = 1 - sum(float((1-bi)*di*d2i)
                         for bi,di,d2i in zip(bs,data,data2))
                 eff_res = 300
                 rgbs.append([r,g,b])
         r,g,b = zip(*rgbs)
-        x,y = zip(*pts) 
+        x,y = zip(*pts)
         xi = np.linspace(min(x),max(x),eff_res)
         yi = np.linspace(min(y),max(y),eff_res)
-        ri = griddata(x,y,r,xi,yi)#,interp='linear')
-        gi = griddata(x,y,g,xi,yi)#,interp='linear')
-        bi = griddata(x,y,b,xi,yi)#,interp='linear')
+        ri = griddata(x,y,r,xi,yi)
+        gi = griddata(x,y,g,xi,yi)
+        bi = griddata(x,y,b,xi,yi)
         rgb_array = np.zeros((eff_res,eff_res,3))
         for i in range(0,eff_res):
             for j in range(0,eff_res):
@@ -415,7 +436,10 @@ class MapPlot:
             ax.apply_aspect()
         return fig
 
-    def save(self,fig,save=True,default_name = 'map_plot.pdf'):
+    def save(self, fig, save=True, default_name='map_plot.pdf'):
+        """
+        .. todo:: __doc__
+        """
         if save == True:
             if not hasattr(self,'output_file'):
                 save = default_name
@@ -425,6 +449,9 @@ class MapPlot:
             fig.savefig(save)
 
 class MechanismPlot:
+    """
+    .. todo:: __doc__
+    """
     def __init__(self,energies,barriers=[],labels=[]):
         self.energies = energies
         self.barriers = barriers
@@ -438,9 +465,12 @@ class MechanismPlot:
         self.energy_mode ='relative' #absolute
         self.energy_line_widths = 0.5
 
-    def draw(self,ax=None):
+    def draw(self, ax=None):
+        """
+        .. todo:: __doc__
+        """
         def attr_to_list(attrname,required_length=len(self.energies)):
-            try: 
+            try:
                 getattr(self,attrname)[0] #Ensure that it is a list
                 iter(getattr(self,attrname)) #Ensure that it is a list...
                 if len(getattr(self,attrname)) == required_length:
@@ -475,7 +505,7 @@ class MechanismPlot:
         energy_list = list(energy_list)
         energy_lines = [
                 [[i+self.initial_stepnumber,i+width+self.initial_stepnumber],
-                    [energy_list[i]]*2] 
+                    [energy_list[i]]*2]
                 for i,width in enumerate(energy_line_widths)]
         self.energy_lines = energy_lines
         for i,line in enumerate(energy_lines):
@@ -538,13 +568,13 @@ class MechanismPlot:
                 args['transform'] = trans
                 ax.text(xpos,ypos,label,**args)
             elif label_position in ['bot','bottom','ymin']:
-                ypos = -0.1 
-                ax.xaxis.set_ticks([float(sum(line[0])/len(line[0])) 
+                ypos = -0.1
+                ax.xaxis.set_ticks([float(sum(line[0])/len(line[0]))
                     for line in energy_lines])
                 ax.set_xticklabels(self.labels)
                 for attr in args.keys():
                     try:
-                        [getattr(t,'set_'+attr)(args[attr]) 
+                        [getattr(t,'set_'+attr)(args[attr])
                                 for t in ax.xaxis.get_ticklabels()]
                     except:
                         pass
@@ -559,6 +589,9 @@ class MechanismPlot:
                 ax.annotate(label,[xpos,ypos],**args)
 
 class ScalingPlot:
+    """
+    .. todo:: __doc__
+    """
     def __init__(self,descriptor_names,descriptor_dict,surface_names,
             parameter_dict,scaling_function,x_axis_function,
             scaling_function_kwargs={},x_axis_function_kwargs={},
@@ -567,14 +600,14 @@ class ScalingPlot:
         self.surface_names = surface_names
         self.descriptor_dict = descriptor_dict
         self.parameter_dict = parameter_dict
-        self.scaling_function = scaling_function 
-        #function to project descriptors into energies. 
-        #Should take descriptors as an argument and return a 
+        self.scaling_function = scaling_function
+        #function to project descriptors into energies.
+        #Should take descriptors as an argument and return a
         #dictionary of {adsorbate:energy} pairs.
         self.scaling_function_kwargs = scaling_function_kwargs
-        self.x_axis_function = x_axis_function 
-        #function to project descriptors onto the x-axis. 
-        #Should take descriptors as an argument and return a 
+        self.x_axis_function = x_axis_function
+        #function to project descriptors onto the x-axis.
+        #Should take descriptors as an argument and return a
         #dictionary of {adsorbate:x_value} pairs.
         self.x_axis_function_kwargs = x_axis_function_kwargs
         self.axis_label_size = 16
@@ -593,14 +626,18 @@ class ScalingPlot:
         self.include_empty = True
         self.include_error_histogram = True
 
-    def plot(self,ax_list=None,plot_size=4.0,save=None):
+    def plot(self, ax_list=None, plot_size=4.0, save=None):
+        """
+        .. todo:: __doc__
+        """
         all_ads = self.adsorbate_names + self.transition_state_names
-        all_ads = [a for a in all_ads if a in self.parameter_dict.keys()]
+        all_ads = [a for a in all_ads if a in self.parameter_dict.keys() and
+            a not in self.echem_transition_state_names]
         if self.include_empty:
             ads_names = all_ads
         else:
-            ads_names = [n for n in all_ads if 
-                            (None in self.parameter_dict[n] or 
+            ads_names = [n for n in all_ads if
+                            (None in self.parameter_dict[n] or
                                 sum(self.parameter_dict[n])>0.0)]
 
         if not self.surface_colors:
@@ -624,11 +661,11 @@ class ScalingPlot:
             if spy*spx < len(ads_names)+extra:
                 spy+= 1
             fig = plt.figure(figsize=(spy*plot_size,spx*plot_size))
-            ax_list = [fig.add_subplot(spx,spy,i+1) 
+            ax_list = [fig.add_subplot(spx,spy,i+1)
                     for i in range(len(ads_names))]
         else:
             fig = None
-        all_xs, all_ys = zip(*[self.descriptor_dict[s] 
+        all_xs, all_ys = zip(*[self.descriptor_dict[s]
             for s in self.surface_names])
 
         fig.subplots_adjust(**self.subplots_adjust_kwargs)
@@ -645,7 +682,7 @@ class ScalingPlot:
                 desc_vals[0],**self.x_axis_function_kwargs)[-1][ads]
             scaled_y_vals = [self.scaling_function(
                 d,**self.scaling_function_kwargs)[ads] for d in desc_vals]
-            diffs = [scaled-actual for scaled,actual 
+            diffs = [scaled-actual for scaled,actual
                     in zip(scaled_y_vals,actual_y_vals) if actual != None]
             ax = ax_list[i]
             m,b = plt.polyfit(scaled_x_vals,scaled_y_vals,1)
