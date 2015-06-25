@@ -9,6 +9,7 @@ Welcome to CatMAP's documentation!
 .. toctree::
    :maxdepth: 2
 
+   installation
    tutorials/index
    topics/index
    reference/catmap

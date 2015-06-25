@@ -2,6 +2,10 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import get_composition, add_dict_in_place
+from scipy.optimize import fmin_powell
+import warnings
+from mpmath import mpf
+from math import exp, log
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -79,12 +83,12 @@ class ThermoCorrections(ReactionModelWrapper):
             self.thermodynamic_variables.append(corr+'_thermo_mode')
 
     def get_thermodynamic_corrections(self,**kwargs):
-        '''
-	echem in generalized linear scaling needs recalculation
-	
-	
-	'''        
-	l = self.thermodynamic_corrections
+        """
+        Calculate all ``thermodynamic'' corrections beyond the energies
+        in the input file. This master function will call sub-functions
+        depending on the ``thermo mode'' of each class of species
+        """
+        l = self.thermodynamic_corrections
         if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
             self.force_recalculation = True
         state_dict = {}
@@ -120,7 +124,8 @@ class ThermoCorrections(ReactionModelWrapper):
             thermo_dict = getattr(self,mode)()
             add_dict_in_place(correction_dict, thermo_dict)
 
-        getattr(self,self.pressure_mode+'_pressure')()
+        if self.pressure_mode:
+            getattr(self,self.pressure_mode+'_pressure')()
 
         if 'electrochemical' in l:
             correction_dict = self._get_echem_corrections(correction_dict)
@@ -243,7 +248,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def shomate_gas(self):
-        gas_names = self.gas_names
+        """
+	Calculate free energy corrections using shomate equation
+	"""
+	gas_names = self.gas_names
         temperature = float(self.temperature)
         temperature_ref = 298.15
 
@@ -315,7 +323,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def fixed_entropy_gas(self,include_ZPE=True):
-        thermo_dict = {}
+        """
+	Add entropy based on fixed_entropy_dict (entropy contribution to free energy assumed linear with temperature) and ZPE 
+	"""
+	thermo_dict = {}
         gas_names = self.gas_names
         temperature = self.temperature
         entropy_dict = self.fixed_entropy_dict
@@ -340,9 +351,15 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def frozen_fixed_entropy_gas(self):
+	"""
+	Do not add ZPE, calculate fixed entropy correction.
+	"""
         return self.fixed_entropy_gas(False)
 
     def zero_point_gas(self):
+	"""
+	Add zero point energy correction to gasses.
+	"""
         gas_names = self.gas_names
         freq_dict = self.frequency_dict
         thermo_dict = {}
@@ -355,6 +372,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def frozen_gas(self):
+	"""
+	Neglect all thermal contributions, including the zero point energy.
+	"""
         gas_names = self.gas_names
         thermo_dict = {}
         for gas in gas_names:
@@ -365,6 +385,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def fixed_enthalpy_entropy_gas(self,gas_names=None):
+	"""
+	Calculate free energy corrections based on input enthalpy, entropy, ZPE
+	"""
         thermo_dict = {}
         if not gas_names:
             gas_names = self.gas_names
@@ -384,7 +407,7 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def harmonic_adsorbate(self):
-        """Function to calculate the thermal correction to the free energy of 
+        """Calculate the thermal correction to the free energy of 
         an adsorbate in the harmonic approximation using the HarmonicThermo 
         class in ase.thermochemistry.
 
@@ -402,15 +425,33 @@ class ThermoCorrections(ReactionModelWrapper):
         if temperature == 0: temperature = 1e-99
 
         avg_TS = []
+        self._freq_cutoffs = {}
 
         for ads in adsorbate_names:
             if ads in freq_dict:
                 if '-' in ads and freq_dict[ads] in [None,[],()]:
                     avg_TS.append(ads)
-                therm = HarmonicThermo(freq_dict[ads])
-                free_energy = therm.get_gibbs_energy(
-                        temperature,verbose=False)
-                ZPE = sum(freq_dict[ads])/2.0 
+                frequencies = freq_dict[ads]
+                if self.max_entropy_per_mode:
+                    if temperature in self._freq_cutoffs:
+                        nu_min = self._freq_cutoffs[temperature]
+                    else:
+                        kB_multiplier = float(self.max_entropy_per_mode/self._kB)
+                        nu_min = self.get_frequency_cutoff(kB_multiplier,float(temperature))
+                        nu_min /= 1000.
+                        self._freq_cutoffs[temperature] = nu_min
+
+                    frequencies = [max(nu,nu_min) for nu in frequencies]
+                therm = HarmonicThermo(frequencies)
+                try:
+                    free_energy = therm.get_gibbs_energy(
+                            temperature,verbose=False)
+                except AttributeError:
+                    warnings.warn('HarmonicThermo.get_free_energy is deprecated.'
+                                   'Update your ASE version.')
+                    free_energy = therm.get_free_energy(
+                            temperature,verbose=False)
+                ZPE = sum(frequencies)/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
                 self._zpe_dict[ads] = ZPE
@@ -429,7 +470,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
     
     def zero_point_adsorbate(self):
-        adsorbate_names = self.adsorbate_names+self.transition_state_names
+        """
+	Add zero point energy correction to adsorbate energy.
+	"""
+	adsorbate_names = self.adsorbate_names+self.transition_state_names
         freq_dict = self.frequency_dict
         thermo_dict = {}
         avg_TS = []
@@ -451,6 +495,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def frozen_adsorbate(self):
+	"""
+	Neglect all zero point, enthalpy, entropy corrections to adsorbate energy.
+	"""
         thermo_dict = {}
         for ads in self.adsorbate_names+self.transition_state_names:
             self._zpe_dict[ads] = 0
@@ -460,10 +507,16 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def fixed_enthalpy_entropy_adsorbate(self):
+	"""
+	TO DO
+	"""
         return self.fixed_enthalpy_entropy_gas(self.adsorbate_names+self.transition_state_names)
 
     def average_transition_state(self,thermo_dict,transition_state_list = []):
-        if transition_state_list is None:
+        """
+	TO DO
+	"""
+	if transition_state_list is None:
             transition_state_list = self.transition_state_names
 
         def state_thermo(therm_dict,rx,site_defs,rx_id):
@@ -482,8 +535,10 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def generate_echem_TS_energies(self):
-        # give real energies to the fake echem transition states
-        echem_TS_names = self.echem_transition_state_names
+        """ 
+	Give real energies to the fake echem transition states
+        """
+	echem_TS_names = self.echem_transition_state_names
         voltage = self.voltage
         beta = self.beta
         thermo_dict = {}
@@ -518,14 +573,18 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def get_rxn_index_from_TS(self, TS):
-        # takes in the name of a transition state. returns the reaction index of
-        # the elementary rxn from which it belongs
-        for rxn_index, eq in enumerate(self.elementary_rxns):
+        """ Take in the name of a transition state and return the reaction index of
+        the elementary rxn from which it belongs
+        """
+	for rxn_index, eq in enumerate(self.elementary_rxns):
             if TS in eq:
                 return rxn_index
 
     def simple_electrochemical(self):
-        thermo_dict = {}
+        """
+	Calculate electrochemical (potential) corrections to free energy. Transition state energies are corrected by a beta*voltage term.  
+	"""
+	thermo_dict = {}
         gas_names = [gas for gas in self.gas_names if gas.split('_')[0] in ['pe', 'ele']]
         TS_names = [TS for TS in self.transition_state_names if
             'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
@@ -548,13 +607,14 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def hbond_electrochemical(self):
-        thermo_dict = self.simple_electrochemical()
+        """
+	Update simple_electrochemical with hbonding corrections as if they were on Pt(111)
+	"""
+	thermo_dict = self.simple_electrochemical()
         TS_names = [TS for TS in self.transition_state_names if
             'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
         hbond_dict = self.hbond_dict
-
-        # updates simple_electrochemical with hbonding corrections as if they were on Pt(111)
-        for ads in list(self.adsorbate_names) + TS_names:
+	for ads in list(self.adsorbate_names) + TS_names:
             if ads in hbond_dict:
                 if ads in thermo_dict:
                     thermo_dict[ads] += hbond_dict[ads]
@@ -570,10 +630,10 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def estimate_hbond_corr(formula):
         """
-        function to generate hydrogen bonding corrections given a formula and estimations
+        Generate hydrogen bonding corrections given a formula and estimations
         for various functional groups used in Peterson(2010) - valid mostly for Pt(111)
         This is a very simplistic function.  If you need more advanced descriptions of
-        hydrogen bonding, consider setting your own hbond_dict
+        hydrogen bonding, consider setting your own hbond_dict.
         """
         num_OH = formula.count('OH')
         num_O = get_composition(formula.split('_s')[0]).setdefault('O',0)
@@ -637,10 +697,115 @@ class ThermoCorrections(ReactionModelWrapper):
     def concentration_pressure(self):
         if 'pressure' not in self.thermodynamic_variables:
             self.thermodynamic_variables += ['pressure']
+        for g in self.gas_names:
+            if 'concentration' not in self.species_definitions[g]:
+                raise UserWarning('Concentration not specified for '+g+'.')
         self.gas_pressures = [self.species_definitions[g]['concentration']*self.pressure for g in self.gas_names]
+
+    def approach_to_equilibrium_pressure(self):
+        """Set product pressures based on approach to equilibrium. Requires the following attributes
+        to be set:
+
+        global_reactions - a list of global reactions in the same syntax as elementary expressions,
+            with each one followed by its respective approach to equilibrium.
+        pressure_mode - must be set to 'approach_to_equilibrium'
+
+        Note that this function is not well-tested and should be used with caution.
+        """
+
+           
+        if 'pressure' not in self.thermodynamic_variables:
+            self.thermodynamic_variables += ['pressure']
+
+        self.pressure_mode = None #avoid recursion...
+        G_dict = self.scaler.get_free_energies(self._descriptors)
+        self.pressure_mode = 'approach_to_equilibrium'
+
+        def set_product_pressures(rxn,G_dict,gamma,gas_pressures,product_pressures={}):
+
+            dG = mpf(self.get_rxn_energy(rxn,G_dict)[0])
+            K_eq = exp(-dG/(self._kB*self.temperature))
+            K_eq *= mpf(gamma)
+            PK = K_eq
+
+            for g in gas_pressures:
+                n_g = mpf(rxn[0].count(g))
+                p_g = mpf(gas_pressures[g])
+                PK *= pow(p_g,n_g)
+
+            #remove any products that have pressures specified
+            products = rxn[-1]
+            for sp in products:
+                if sp in product_pressures:
+                    gas_pressures[sp] = product_pressures[sp]
+                    n_prod = products.count(sp)
+                    PK /= pow(mpf(product_pressures[sp]),n_prod)
+                    products = [p for p in products if p != sp]
+
+            N_products = len(products)
+            P_i = pow(PK,(mpf(1.)/mpf(N_products)))
+            for gi in set(products):
+                gas_pressures[gi] += P_i
+
+        gas_pressures = {}
+        global_rxns = []
+        gammas = []
+        reactants = []
+        products = []
+        for gi,gamma_i in self.global_reactions:
+            rxn = self.expression_string_to_list(gi)
+            global_rxns.append(rxn)
+            reactants += rxn[0]
+            products += rxn[1]
+            gammas.append(gamma_i)
+        
+        for sp in set(reactants):
+            c = self.species_definitions[sp].get('concentration',None)
+            if c is None:
+                raise UserWarning('Concentrations must be specified for all reactants. No concentration '
+                        'was found for '+str(sp)+'.')
+            gas_pressures[sp] = c*self.pressure
+
+        product_pressures = {}
+        for sp in set(products):
+            gas_pressures[sp] = 0
+            c = self.species_definitions[sp].get('concentration',None)
+            if c is not None:
+                product_pressures[sp] = c*self.pressure
+                gas_pressures[sp] = c*self.pressure
+
+        #Ensure that all gasses are either products or reactants
+        if sorted(list(set(products))+list(set(reactants))) != sorted(self.gas_names):
+            raise UserWarning('All gasses must appear as products or reactants in self.global_reactions.')
+
+        for gi,gamma_i in zip(global_rxns,gammas):
+            set_product_pressures(gi,G_dict,gamma_i,gas_pressures,product_pressures)
+
+        self.gas_pressures = [gas_pressures[gi] for gi in self.gas_names] 
+
+    def get_frequency_cutoff(self,kB_multiplier,temperature=None):
+        kB = float(self._kB)
+        if temperature is None:
+            T = self.temperature
+        else:
+            T = temperature
+
+        def get_entropy(nu,T):
+            nu_eV = nu*1e-3 #input in meV
+            HT = HarmonicThermo([float(nu_eV)])
+            return HT.get_entropy(float(T),verbose=False)
+
+        def target(nu,kB_multiplier=kB_multiplier,T=T):
+            nu = max(1e-8,nu)
+            SbykB = (get_entropy(nu,T)/kB)
+            return (kB_multiplier - SbykB)**2
+
+        nu_cutoff = fmin_powell(target,10,disp=0)
+        return nu_cutoff
 
     def summary_text(self):
         return ''
+
 
 def fit_shomate(Ts, Cps, Hs, Ss, params0,plot_file = None):
     from scipy.optimize import leastsq
@@ -716,9 +881,10 @@ if __name__ == '__main__':
         return params
 
     def CH3OH_shomate(output_file=None):
-        #Raw data from CRC handbook, 91st edition
-        #H is constrained to 0 since it can be lumped with F
-        Ts =  [298.15, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0, 1200.0, 1300.0, 1400.0, 1500.0]
+        """ Raw data from CRC handbook, 91st edition
+        H is constrained to 0 since it can be lumped with F
+	""" 
+	Ts =  [298.15, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0, 1200.0, 1300.0, 1400.0, 1500.0]
         Ss =  [239.865, 240.139, 253.845, 266.257, 277.835, 288.719, 298.987, 308.696, 317.896, 326.629, 334.93, 342.833, 350.367, 357.558]
         Cps =  [44.101, 44.219, 51.713, 59.8, 67.294, 73.958, 79.838, 85.025, 89.597, 93.624, 97.165, 100.277, 103.014, 105.422]
         Hs =  [0.0, 0.082, 4.864, 10.442, 16.803, 23.873, 31.569, 39.817, 48.553, 57.718, 67.262, 77.137, 87.304, 97.729]
@@ -730,8 +896,9 @@ if __name__ == '__main__':
         return params
 
     def CH3CH2OH_shomate(output_file=None):
-        #Raw data from CRC handbook, 91st edition
-        #H is constrained to 0 since it can be lumped with F
+        """Raw data from CRC handbook, 91st edition
+        H is constrained to 0 since it can be lumped with F
+	"""
         Ts =  [298.15, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0, 1200.0]
         Ss =  [281.622, 282.029, 303.076, 322.75, 341.257, 358.659, 375.038, 390.482, 405.075, 418.892, 431.997]
         Cps =  [65.652, 65.926, 81.169, 95.4, 107.656, 118.129, 127.171, 135.049, 141.934, 147.958, 153.232]
@@ -744,8 +911,9 @@ if __name__ == '__main__':
         return params
 
     def CH3CHO_shomate(output_file=None):
-        #Raw data from CRC handbook, 91st edition
-        #H is constrained to 0 since it can be lumped with F
+        """Raw data from CRC handbook, 91st edition
+        H is constrained to 0 since it can be lumped with F
+	"""
         Ts =  [298.15, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0, 1200.0, 1300.0, 1400.0, 1500.0]
         Ss =  [263.84, 264.18, 281.62, 297.54, 312.36, 326.23, 339.26, 351.52, 363.1, 374.04, 384.4, 394.23, 403.57, 412.46]
         Cps =  [55.318, 55.51, 66.282, 76.675, 85.942, 94.035, 101.07, 107.19, 112.49, 117.08, 121.06, 124.5, 127.49, 130.09]
@@ -759,7 +927,8 @@ if __name__ == '__main__':
 
     def ideal_shomate_comparison(): 
 
-        #Compare ideal gas and shomate corrections
+        """ Compare ideal gas and shomate corrections
+	"""
         thermo = ThermoCorrections()
 #        thermo.gas_names = [g+'_g' for g in thermo.ideal_gas_params.keys()]
         thermo.gas_names = [g for g in thermo.ideal_gas_params.keys()]

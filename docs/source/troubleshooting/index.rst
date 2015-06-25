@@ -16,4 +16,7 @@ Frequently Asked Questions
 ----------------------------
 
 
-What does CatMAP stand for ?
+- What does CatMAP stand for ?
+
+  CatMAP is an acronym for **Cat**\ alysis **M**\ icrokinetic **A**\ nalysis **P**\ ackage. It is also
+  an allusion to Richard Feynman's anecdote regarding a \"map of a cat\".

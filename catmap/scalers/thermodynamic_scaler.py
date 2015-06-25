@@ -31,12 +31,16 @@ class ThermodynamicScaler(ScalerBase):
             setattr(self,var,val)
         if 'pressure' in self.descriptor_names:
             P = thermo_state['pressure']
-            self.pressure_mode = 'concentration'
         elif 'logPressure' in self.descriptor_names:
             P = 10**thermo_state['logPressure']
-            self.pressure_mode = 'concentration'
         else:
             P = 1
+
+        if 'pressure' in self.descriptor_names or 'logPressure' in self.descriptor_names:
+            if self.pressure_mode == 'static':
+                #static pressure doesn't make sense if
+                #pressure is a descriptor
+                self.pressure_mode = 'concentration'
 
         self.pressure = P
 
@@ -49,7 +53,7 @@ class ThermodynamicScaler(ScalerBase):
         return thermo_dict
 
     def get_rxn_parameters(self,descriptors, *args, **kwargs):
-        if self.adsorbate_interaction_model in ['first_order','second_order']:
+        if self.adsorbate_interaction_model not in ['ideal',None]:
             params =  self.get_formation_energy_interaction_parameters(descriptors)
             return params
         else:

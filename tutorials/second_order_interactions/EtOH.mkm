@@ -1,0 +1,135 @@
+scaler = 'ThermodynamicScaler'
+
+rxn_expressions = [
+
+                   'H2_g + 2*_h -> 2H_h',                                #1
+                   '*_s + CO_g -> CO*',                                  #2           
+                   'CO* + H_h <-> H-CO* + *_h -> CHO* + *_h',            #3
+                   'CHO* + H_h <-> HCO-H* + *_h -> CHOH* + *_h',         #4             
+                   'CHOH* + * <-> CH-OH* + * -> CH* + OH*',              #5
+
+                   'CH* + H_h <-> CH-H* + *_h -> CH2* + *_h',            #6
+                   'CH2* + H_h <-> H-CH2* + *_h ->  CH3* + *_h',          #7       
+                   'CH3* + H_h <-> H-CH3* + *_h ->  CH4_g + * + *_h',     #8      
+
+                   'OH* + H_h <->  H-OH* + *_h ->  H2O_g + * + *_h ',      #9
+
+#                   'CH*  +  CO* <-> CH-CO* + * -> CHCO* + *',             #10
+#
+#                   'CHCO* + H_h <-> H-CHCO* + *_h -> CH2CO* + *_h ',     #11
+#                   'CH2CO* + H_h <-> H-CH2CO* + *_h -> CH3CO* + *_h',    #12
+#
+#                   'CH3CO* + H_h  <-> H-CH3CO* + *_h -> CH3CHO* + *_h',  #13
+#                   'CH3CHO* -> CH3CHO_g + *',                            #14
+#
+#                   'CH3CHO* + H_h  <-> CH3CHO-H* + *_h -> CH3CHOH* + *_h',  #15
+#                   'CH3CHOH* + H_h <-> CH3CHOH-H* + *_h -> CH3CH2OH* + *_h', #16
+#                   'CH3CH2OH* -> CH3CH2OH_g + *',
+
+                   ]
+
+interaction_strength = 1.0 #scale the interaction strength. Use this to diagnose convergence issues
+
+
+surface_names = ['Rh']
+
+descriptor_names = ['temperature','logPressure']
+
+descriptor_ranges = [[400,600],[0,3]]
+
+resolution = 10
+
+#adsorbate_interaction_model = 'first_order'
+adsorbate_interaction_model = 'second_order'
+#adsorbate_interaction_model = 'ideal'
+
+#interaction auto-fitting mode. integral, differential, numerical_differential or 
+# any combination (e.g. integral+differential)
+interaction_fitting_mode = 'numerical_differential+integral' 
+numerical_delta_theta = 0.11
+
+interaction_response_function = 'smooth_piecewise_linear'
+
+#This would be a way to manually input cross-interaction params
+CO_cross_coeffs = { 
+                   'H-CH3CO_s': [-0.111], 
+                   'HCO-H_s': [-0.209], 
+                   'CH3CHOH_s': [-1.309], 
+                   'CH3CHOH-H_s': [-1.25], 
+                   'CH3CHO-H_s': [-1.624],  
+                   'CH3CHO_s': [-1.447],
+                   'CHCO_s': [0.106], 
+                   'CH3_s': [0.263], 
+                   'H-CH2_s': [0.479], 
+                   'H-OH_s': [0.263], 
+                   'CH-CO_s': [0.578], 
+                   'H-CO_s': [0.047], 
+                   'CH-H_s': [0.126],
+                   'H-CH2CO_s': [0.145], 
+                   'H-CHCO_s': [0.538], 
+                   'OH_s': [-0.778], 
+                   'CH2CO_s': [-0.385], 
+                   'CH3CO_s': [-0.484],
+                   'CHO_s': [-0.385], 
+                  'CHOH_s': [-1.093], 
+                   'H-CH3_s': [-0.052], 
+                   'CH-OH_s': [-0.346], 
+                   'CH_s': [-0.739], 
+                   } 
+
+parse_headers = ['formation_energy','frequencies','coverage']
+
+species_definitions = {}
+
+#uncommenting this line will manually input interaction parameters. 
+#Note that for a descriptor-based model the interaction parameters
+#Must be a vector of the same length as the number of surfaces.
+
+#species_definitions['CO_s'] = {'self_interaction_parameter':[0.65],
+#                                'cross_interaction_parameters': CO_cross_coeffs}
+
+default_self_interaction_parameter = 2.5
+species_definitions['H_h'] = {'self_interaction_parameter':[0]}
+
+delta = 1e-20
+species_definitions['CO_g'] = {'concentration':(1./3. - 4*delta)} 
+species_definitions['H2_g'] = {'concentration':(2./3. - 4*delta)}
+species_definitions['CH4_g'] = {'concentration':delta}
+species_definitions['H2O_g'] = {'concentration':delta}
+species_definitions['CH3CH2OH_g'] = {'concentration':delta}
+species_definitions['CH3CHO_g'] = {'concentration':delta}
+
+species_definitions['s'] = {'site_names': ['111'], 
+                            'total':1,
+                            'interaction_response_parameters': {'slope':1.0,
+                                                               'cutoff':0.66,
+                                                               'smoothing':0.05,
+                                                               },
+                            } #upper step site
+
+species_definitions['h'] = {'site_names': ['111'], 
+                            'total':1.0,
+                            'interaction_response_parameters': { #H* doesn't interact (cutoff = 2)
+                                                               'slope':1.0,
+                                                               'cutoff':2.0,
+                                                               'smoothing':0.05,
+                                                               },
+                            'cross_interaction_response_parameters':{'s':{
+                                                               'slope':1.0,
+                                                               'cutoff':2.0,
+                                                               'smoothing':0.05,
+                                                               }}
+                            } #hydrogen reservoir
+
+data_file = 'data.pkl'
+
+input_file = 'energies.txt' #input data
+
+gas_thermo_mode = "shomate_gas"
+adsorbate_thermo_mode = "harmonic_adsorbate"
+
+decimal_precision = 100 #precision of numbers involved
+
+tolerance = 1e-30 #all d_theta/d_t's must be less than this at the solution
+
+max_rootfinding_iterations = 100
