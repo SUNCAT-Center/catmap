@@ -17,6 +17,14 @@ import pylab as plt
 import matplotlib.transforms as mtransforms
 from matplotlib.mlab import griddata as mlab_griddata
 
+def griddata(*args, **kwargs):
+    """Wrapper function to avoid annoying griddata errors"""
+    try:
+        return mlab_griddata(*args, **kwargs)
+    except RuntimeError:
+        kwargs['interp'] = 'linear'
+        return mlab_griddata(*args, **kwargs)
+
 import mpmath as mp
 from ase.atoms import string2symbols
 from ase.thermochemistry import IdealGasThermo, HarmonicThermo
@@ -25,14 +33,6 @@ from catmap.model import ReactionModel
 import data
 
 __version__ = "0.2.270"
-
-def griddata(*args, **kwargs):
-    """Wrapper function to avoid annoying griddata errors"""
-    try:
-        return mlab_griddata(*args, **kwargs)
-    except RuntimeError:
-        kwargs['interp'] = 'linear'
-        return mlab_griddata(*args, **kwargs)
 
 def load(setup_file):
     rxm = ReactionModel(setup_file = setup_file)
