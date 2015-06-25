@@ -15,7 +15,15 @@ import matplotlib as mpl
 mpl.use('Agg')
 import pylab as plt
 import matplotlib.transforms as mtransforms
-from matplotlib.mlab import griddata
+from matplotlib.mlab import griddata as mlab_griddata
+
+def griddata(*args, **kwargs):
+    """Wrapper function to avoid annoying griddata errors"""
+    try:
+        return mlab_griddata(*args, **kwargs)
+    except RuntimeError:
+        kwargs['interp'] = 'linear'
+        return mlab_griddata(*args, **kwargs)
 
 import mpmath as mp
 from ase.atoms import string2symbols

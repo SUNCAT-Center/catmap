@@ -11,7 +11,7 @@ from data import regular_expressions
 string2symbols = catmap.string2symbols
 pickle = catmap.pickle
 plt = catmap.plt
-griddata = catmap.griddata
+from catmap import griddata
 
 class ReactionModel:
     """
@@ -1205,11 +1205,11 @@ class ReactionModel:
                 if log_interpolate == True:
                     Zdata_log = np.array(
                             [np.log(abs(float(zn))) for zn in Zdata])
-                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi,interp='linear'))
-                    z_num = griddata(xData,yData,Zdata_log,xi,yi,interp='linear')
+                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi))
+                    z_num = griddata(xData,yData,Zdata_log,xi,yi)
                     zi = np.exp(z_num)*z_sign
                 else:
-                    zi = griddata(xData,yData,Zdata,xi,yi,interp='linear')
+                    zi = griddata(xData,yData,Zdata,xi,yi)
                 maparray[:,:,i] = zi
         return maparray
 

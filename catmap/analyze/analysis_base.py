@@ -1,6 +1,7 @@
 import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel as RM
+from catmap import griddata
 from copy import copy
 from scipy.stats import norm
 from matplotlib.ticker import MaxNLocator
@@ -11,7 +12,6 @@ pickle= catmap.pickle
 np = catmap.np
 spline = catmap.spline
 mtransforms = catmap.mtransforms
-griddata = catmap.griddata
 
 basic_colors = [[0,0,0],[0,0,1],[0.1,1,0.1],[1,0,0],[0,1,1],[1,0.5,0],[1,0.9,0],
         [1,0,1],[0,0.5,0.5],[0.5,0.25,0.15],[0.5,0.5,0.5]]
@@ -411,9 +411,9 @@ class MapPlot:
         x,y = zip(*pts)
         xi = np.linspace(min(x),max(x),eff_res)
         yi = np.linspace(min(y),max(y),eff_res)
-        ri = griddata(x,y,r,xi,yi,interp='linear')
-        gi = griddata(x,y,g,xi,yi,interp='linear')
-        bi = griddata(x,y,b,xi,yi,interp='linear')
+        ri = griddata(x,y,r,xi,yi)
+        gi = griddata(x,y,g,xi,yi)
+        bi = griddata(x,y,b,xi,yi)
         rgb_array = np.zeros((eff_res,eff_res,3))
         for i in range(0,eff_res):
             for j in range(0,eff_res):
