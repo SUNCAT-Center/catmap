@@ -62,7 +62,6 @@ class GeneralizedLinearScaler(ScalerBase):
 
 
     def get_coefficient_matrix(self):
-
         self.parameterize()
         if not self.scaling_constraint_dict:
             self.scaling_constraint_dict = {}
@@ -75,6 +74,11 @@ class GeneralizedLinearScaler(ScalerBase):
         all_coeffs = []
         all_coeffs += list(self.get_adsorbate_coefficient_matrix())
         all_coeffs += list(self.get_transition_state_coefficient_matrix())
+        for i, TS in enumerate(self.transition_state_names):
+            if TS in self.scaling_constraint_dict and hasattr(
+                self.scaling_constraint_dict[TS],'__iter__'):
+                    TS_row = i + len(self.adsorbate_names)
+                    all_coeffs[TS_row] = self.total_coefficient_dict[TS]
         if self.adsorbate_interaction_model not in [None,'ideal']:
             self.thermodynamics.adsorbate_interactions.parameterize_interactions()
             all_coeffs += list(
@@ -85,21 +89,27 @@ class GeneralizedLinearScaler(ScalerBase):
         return all_coeffs
 
     def get_adsorbate_coefficient_matrix(self):
-
-        adsorbate_dict = {}
-        n_ads = len(self.adsorbate_names)
-        for a in self.adsorbate_names:
-            adsorbate_dict[a] = self.parameter_dict[a]
+        n_ads = len(self.parameter_names)
         C = catmap.functions.scaling_coefficient_matrix(
-                adsorbate_dict, self.descriptor_dict, 
+                self.parameter_dict, self.descriptor_dict, 
                 self.surface_names, 
-                self.adsorbate_names,
+                self.parameter_names,
                 self.coefficient_mins,self.coefficient_maxs)
-        self.adsorbate_coefficient_matrix = C.T
-        return C.T
+        self.adsorbate_coefficient_matrix = C.T[:len(self.adsorbate_names),:]
+        self.total_coefficient_dict = dict(zip(self.parameter_names, C.T))
+        return self.adsorbate_coefficient_matrix
 
     def get_transition_state_coefficient_matrix(self):
+        """
+        returns the transition_state_coefficient_matrix, which
+        gives the linear coefficients for each transition state
+        [a, b, c] which satisfies the equation 
+        E_TS = a*E_descriptor1 + b*E_descriptor2 + c
 
+        this matrix is generated from the dot product of transition
+        states as linear combinations of adsorbate energies with
+        the adsorbate energies as a linear combination of descriptors
+        """
         self.get_transition_state_scaling_matrix()
         if self.transition_state_scaling_matrix is not None:
             if self.adsorbate_coefficient_matrix is None:
@@ -215,12 +225,17 @@ class GeneralizedLinearScaler(ScalerBase):
             #ugly workaround for ambiguous echem TS names in rxn definitions
             return [0,0], [0]*len(self.adsorbate_names) + [0]
 
+        def old_school_scaling(TS,params):
+            # dummy scaling parameters for old_school scaling
+            return [0,0], [0]*len(self.adsorbate_names) + [0]
+
         TS_scaling_functions = {
                 'initial_state':initial_state_scaling,
                 'final_state':final_state_scaling,
                 'BEP':BEP_scaling,
                 'TS':explicit_state_scaling,
                 'echem':echem_state_scaling,
+                'old_school':old_school_scaling,
                 }
 
         TS_matrix = []
@@ -229,6 +244,10 @@ class GeneralizedLinearScaler(ScalerBase):
             if TS in self.echem_transition_state_names:
                 mode = 'echem'
                 params = None
+            elif TS in self.scaling_constraint_dict and hasattr(
+                self.scaling_constraint_dict[TS], '__iter__'):
+                    mode = 'old_school'
+                    params = None
             elif TS in self.scaling_constraint_dict:
                 constring = self.scaling_constraint_dict[TS]
                 if not isinstance(constring,basestring):
@@ -362,8 +381,10 @@ class GeneralizedLinearScaler(ScalerBase):
                             constraint_dict[key]
                     del constraint_dict[key]
 
-            for ads in self.adsorbate_names:
+            for ads in self.adsorbate_names + self.transition_state_names:
                 if ads not in constraint_dict:
+                    constr = self.default_constraints
+                elif not hasattr(constraint_dict[ads], '__iter__'):
                     constr = self.default_constraints
                 else:
                     constr = constraint_dict[ads]
