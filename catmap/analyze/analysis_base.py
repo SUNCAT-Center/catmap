@@ -1,6 +1,7 @@
 import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel as RM
+from catmap import griddata
 from copy import copy
 from scipy.stats import norm
 from matplotlib.ticker import MaxNLocator
@@ -11,7 +12,6 @@ pickle= catmap.pickle
 np = catmap.np
 spline = catmap.spline
 mtransforms = catmap.mtransforms
-griddata = catmap.griddata
 
 basic_colors = [[0,0,0],[0,0,1],[0.1,1,0.1],[1,0,0],[0,1,1],[1,0.5,0],[1,0.9,0],
         [1,0,1],[0,0.5,0.5],[0.5,0.25,0.15],[0.5,0.5,0.5]] 

@@ -11,7 +11,7 @@ from data import regular_expressions
 string2symbols = catmap.string2symbols
 pickle = catmap.pickle
 plt = catmap.plt
-griddata = catmap.griddata
+from catmap import griddata
 
 class ReactionModel:
     def __init__(self,**kwargs): #
