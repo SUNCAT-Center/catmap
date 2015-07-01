@@ -36,8 +36,7 @@ class SolverBase(ReactionModelWrapper):
     def set_output_attrs(self,rxn_parameters):
         if True in [v in self.mapper._solver_output 
                 for v in self.output_variables]:
-            cvgs = ReactionModelWrapper.__getattr__(self,'_coverage')
-            ##HACK - not sure why the hell cvgs=self._coverage doesnt work
+            cvgs = self._coverage
             self._coverage = list(self.solver.get_coverage( 
                     rxn_parameters,c0=cvgs)) #verify coverage
 
