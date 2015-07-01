@@ -212,9 +212,10 @@ compute the reference energies (:math:`\left|R_j\right|`) for each atomic specie
 
 
 .. math::
+
     R_{\rm{H}} &= 0.5(U_{\rm{H}_2}) \\
-    R_{\rm{C} &= U_{CH_4} - 4R_{\rm{H}} \\
-    R_{\rm{O}} &= U_{{\rm{H}}_{\rm{2O}}} - 2R_{\rm{H}} \\
+    R_{\rm{C}} &= U_{\rm{CH_4}} - 4R_{\rm{H}} \\
+    R_{\rm{O}} &= U_{\rm{H_2O}} - 2R_{\rm{H}} \\
 
 (where again U is a "raw" energy from an ab-initio calculation, or a
 "regular" formation energy from NIST).
