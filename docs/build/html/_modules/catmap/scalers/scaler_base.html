@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>catmap.scalers.scaler_base &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../../../index.html" />
+    <link rel="up" title="catmap" href="../../catmap.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" accesskey="U">catmap</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for catmap.scalers.scaler_base</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">catmap</span>
+<span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">ReactionModelWrapper</span>
+<span class="kn">from</span> <span class="nn">catmap.model</span> <span class="kn">import</span> <span class="n">ReactionModel</span>
+<span class="n">np</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">np</span>
+<span class="n">re</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">re</span>
+<span class="n">copy</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">copy</span>
+<span class="n">string2symbols</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">string2symbols</span>
+
+<div class="viewcode-block" id="ScalerBase"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase">[docs]</a><span class="k">class</span> <span class="nc">ScalerBase</span><span class="p">(</span><span class="n">ReactionModelWrapper</span><span class="p">):</span>
+<div class="viewcode-block" id="ScalerBase.__init__"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">()):</span>
+        <span class="sd">&quot;&quot;&quot;Class for `scaling&#39; descriptors to free energies of reaction and </span>
+<span class="sd">        activation (or other parameters). This class acts as a base class </span>
+<span class="sd">        to be inherited by other scaler classes, but is not </span>
+<span class="sd">        functional on its own. </span>
+
+<span class="sd">        This class contains the description of the microkinetic model </span>
+<span class="sd">        (adsorbate_names, gas_names, etc.) along with the temperature and </span>
+<span class="sd">        gas_pressures. In most cases these will automatically be populated </span>
+<span class="sd">        by the parent reaction_model class. </span>
+<span class="sd">        The scaler-specific attributes are:</span>
+
+<span class="sd">        gas_energies: defines the energies of the gas-phase species. </span>
+<span class="sd">            This sets the references for the system.</span>
+<span class="sd">        gas_thermo_mode: the mode for obtaining thermal contributions in </span>
+<span class="sd">            the gas phase. Default is to use the ideal gas approxmation.</span>
+<span class="sd">        adsorbate_thermo_mode: the mode for obtaining thermal contributions </span>
+<span class="sd">            from adsorbed species. Default is to use the harmonic </span>
+<span class="sd">            adsorbate approximation.</span>
+<span class="sd">        frequency_dict: a dictionary of vibrational frequencies (in eV) for </span>
+<span class="sd">            each gas/adsorbate. Should be of the form </span>
+<span class="sd">            frequency_dict[ads] = [freq1, freq2,...]. Needed for ideal gas or </span>
+<span class="sd">            harmonic adsorbate approximations.</span>
+
+<span class="sd">        A functional derived scaler class must also contain the methods:</span>
+
+<span class="sd">        get_electronic_energies(descriptors): a function to `scale&#39; the </span>
+<span class="sd">            descriptors to electronic energies. Returns a dictionary of </span>
+<span class="sd">            the electronic energies of each species in the model.</span>
+<span class="sd">        get_energetics(descriptors): a function to obtain the reaction </span>
+<span class="sd">            energetics from the descriptors. Should return a list of </span>
+<span class="sd">            length N (number of elementary reactions): </span>
+<span class="sd">            [[E_rxn1,E_a1],[E_rxn2,E_a2],...[E_rxnN,E_aN]]</span>
+<span class="sd">        get_rxn_parameters(descriptors): a function to obtain all necessary </span>
+<span class="sd">            reaction parameters frm the descriptors. Should return a list of </span>
+<span class="sd">            length N (number of elementary reactions): </span>
+<span class="sd">            [[param1_rxn1,param2_rxn1...]...[param1_rxnN,param2_rxnN...]]. </span>
+<span class="sd">            For a simple model this could be the same as get_energetics, </span>
+<span class="sd">            but models accounting for interactions may require more </span>
+<span class="sd">            parameters which can be scaled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rxm</span> <span class="o">=</span> <span class="n">reaction_model</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+		        <span class="n">parameter_mode</span> <span class="o">=</span> <span class="s">&#39;formation_energy&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rxm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span><span class="n">override</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.set_output_attrs"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.set_output_attrs">[docs]</a>    <span class="k">def</span> <span class="nf">set_output_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="s">&quot;Function to set output information.&quot;</span>
+        <span class="n">ads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_names</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span>
+        <span class="k">if</span> <span class="s">&#39;rxn_parameter&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rxn_parameters</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameter</span> <span class="o">=</span> <span class="n">params</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;rxn_parameter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_names</span>
+
+        <span class="k">if</span> <span class="s">&#39;frequency&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_frequency</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">a</span><span class="p">,[])</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">]</span>
+            <span class="n">max_len</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_frequency</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_len</span><span class="p">:</span>
+                    <span class="n">max_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">nu_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;nu_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_len</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">ads</span><span class="p">,</span><span class="n">nu_labels</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s">&#39;electronic_energy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="n">electronic_energy_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_electronic_energies</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_electronic_energy</span> <span class="o">=</span> <span class="p">[</span><span class="n">electronic_energy_dict</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> 
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;electronic_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ads</span>
+
+        <span class="k">if</span> <span class="s">&#39;free_energy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="n">free_energy_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_free_energies</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span> <span class="o">=</span> <span class="p">[</span><span class="n">free_energy_dict</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;free_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ads</span>
+
+        <span class="k">if</span> <span class="s">&#39;gas_pressure&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gas_pressure</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;gas_pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_names</span>
+
+        <span class="k">if</span> <span class="s">&#39;boltzmann_coverage&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="n">cvgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">boltzmann_coverages</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_free_energies</span><span class="p">(</span><span class="n">descriptors</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_boltzmann_coverage</span> <span class="o">=</span> <span class="n">cvgs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;boltzmann_coverage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span>
+
+        <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;enthalpy&#39;</span><span class="p">,</span><span class="s">&#39;entropy&#39;</span><span class="p">,</span><span class="s">&#39;zero_point_energy&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">get_thermodynamic_corrections</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_zero_point_energy</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_zpe_dict</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_enthalpy</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_enthalpy_dict</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_entropy</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_entropy_dict</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;enthalpy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ads</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;entroy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ads</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;zero_point_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ads</span>
+
+        <span class="k">if</span> <span class="s">&#39;interaction_matrix&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_matrix</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">adsorbate_interactions</span><span class="p">,</span>
+                <span class="s">&#39;_interaction_matrix&#39;</span><span class="p">,</span>
+                <span class="bp">None</span><span class="p">)</span>
+            <span class="n">all_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;interaction_matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">all_names</span><span class="p">,</span><span class="n">all_names</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.get_energetics"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.get_energetics">[docs]</a>    <span class="k">def</span> <span class="nf">get_energetics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;Scaler class does not contain this method. </span><span class="se">\</span>
+<span class="s">                Please ensure that it is defined in order for the scaler </span><span class="se">\</span>
+<span class="s">                to be useful.&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.get_rxn_parameters"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.get_rxn_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_rxn_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;Scaler class does not contain this method. </span><span class="se">\</span>
+<span class="s">                Please ensure that it is defined in order for the scaler </span><span class="se">\</span>
+<span class="s">                to be useful.&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.get_electronic_energies"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.get_electronic_energies">[docs]</a>    <span class="k">def</span> <span class="nf">get_electronic_energies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;Scaler class does not contain this method. </span><span class="se">\</span>
+<span class="s">                Please ensure that it is defined in order for the scaler </span><span class="se">\</span>
+<span class="s">                to be useful.&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.get_thermodynamic_energies"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.get_thermodynamic_energies">[docs]</a>    <span class="k">def</span> <span class="nf">get_thermodynamic_energies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">thermo_dict</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">get_thermodynamic_corrections</span><span class="p">(</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">thermo_dict</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.get_free_energies"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.get_free_energies">[docs]</a>    <span class="k">def</span> <span class="nf">get_free_energies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">electronic_energy_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_electronic_energies</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_electronic_energy_dict</span> <span class="o">=</span> <span class="n">electronic_energy_dict</span>
+        <span class="n">thermodynamic_energy_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_thermodynamic_energies</span><span class="p">(</span>
+                <span class="n">descriptors</span><span class="o">=</span><span class="n">descriptors</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">free_energy_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">electronic_energy_dict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">thermodynamic_energy_dict</span><span class="p">:</span>
+                <span class="n">E_DFT</span> <span class="o">=</span> <span class="n">electronic_energy_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">G</span> <span class="o">=</span> <span class="n">thermodynamic_energy_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">G</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;No free energy for &#39;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">E_DFT</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;No formation energy for &#39;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">free_energy_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span>  <span class="n">E_DFT</span> <span class="o">+</span> <span class="n">G</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">free_energy_dict</span><span class="p">[</span><span class="n">g</span><span class="p">]</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_names</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_site_energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">free_energy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_names</span><span class="p">]</span> 
+        <span class="k">return</span> <span class="n">free_energy_dict</span>
+</div>
+<div class="viewcode-block" id="ScalerBase.summary_text"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.ScalerBase.summary_text">[docs]</a>    <span class="k">def</span> <span class="nf">summary_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&#39;</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" >catmap</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

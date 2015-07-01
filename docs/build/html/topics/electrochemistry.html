@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Electrochemistry &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../index.html" />
+    <link rel="up" title="Topics" href="index.html" />
+    <link rel="next" title="Developer Info" href="developer_info.html" />
+    <link rel="prev" title="Including Adsorbate-Adsorbate Interactions" href="including_adsorbate_adsorbate_interactions.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developer_info.html" title="Developer Info"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="including_adsorbate_adsorbate_interactions.html" title="Including Adsorbate-Adsorbate Interactions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Topics</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="electrochemistry">
+<h1>Electrochemistry<a class="headerlink" href="#electrochemistry" title="Permalink to this headline">¶</a></h1>
+<p>Electrochemistry in CatMAP is implemented as a set of thermodynamic
+corrections in the enthalpy_entropy module. To run models containing
+electrochemical reactions in CatMAP, the user needs to provide the
+following in addition to all of the typical components of a CatMAP model
+described in the tutorials:</p>
+<ul class="simple">
+<li>A fictitious gas molecule called &#8216;pe&#8217; that represents the free energy
+of a proton-electron pair at 0V vs RHE. As part of the Computational
+Hydrogen Electrode, this species should have the same free energy of
+1/2 of a molecule of H2 gas. This species&#8217;s energy (usually 0 if an
+H2 reference is used) should be defined in the input file of
+energies.</li>
+<li>In the reaction definitions, any reaction involving the use of a
+proton-electron pair should have the <code class="docutils literal"><span class="pre">pe_g</span></code> gas molecule in the
+initial (if reductive) or final (if oxidative) state. In addition, in
+the reaction definitions and input file, transition states for these
+reactions should contain <code class="docutils literal"><span class="pre">pe</span></code> in the species name. For example, the
+reduction of adsorbed oxygen to adsorbed OH can be written as
+<code class="docutils literal"><span class="pre">'O*</span> <span class="pre">+</span> <span class="pre">pe_g</span> <span class="pre">&lt;-&gt;</span> <span class="pre">O-pe*</span> <span class="pre">-&gt;</span> <span class="pre">OH*'</span></code>.</li>
+<li>A voltage (vs RHE) defined as a parameter in the .mkm file e.g.
+<code class="docutils literal"><span class="pre">voltage</span> <span class="pre">=</span> <span class="pre">-0.2</span></code></li>
+<li>A transfer coefficient defined as a parameter in the .mkm file e.g.
+<code class="docutils literal"><span class="pre">beta</span> <span class="pre">=</span> <span class="pre">0.5</span></code></li>
+<li>In the .mkm file, <code class="docutils literal"><span class="pre">electrochemical_thermo_mode</span></code> can be specified to
+one of three possible values (defaults to
+<code class="docutils literal"><span class="pre">simple_electrochemical</span></code>): <code class="docutils literal"><span class="pre">simple_electrochemical</span></code>,
+<code class="docutils literal"><span class="pre">hbond_electrochemical</span></code>, and
+<code class="docutils literal"><span class="pre">hbond_with_estimates_electrochemical</span></code>. &#8220;simple&#8221; only adds free
+energy corrections to adsorbates and transition states to account for
+voltage and beta. &#8220;hbond&#8221; will take a default or user-provided
+<code class="docutils literal"><span class="pre">hbond_dict</span></code> to correct each species for hydrogen bonding
+stabilization (see <code class="docutils literal"><span class="pre">catmap/data/hbond_data.py</span></code> for the default
+hbond_dict). &#8220;hbond_with_estimates&#8221; attempts to estimate a
+hydrogen bonding correction for a given species based on its chemical
+formula. This is a very crude process that is described in
+<code class="docutils literal"><span class="pre">catmap/thermodynamics/enthalpy_entropy.py</span></code>.</li>
+</ul>
+<p>There are two provided examples of using electrochemistry in CatMAP in
+the tutorials/electrochemistry directory. The HER example shows the
+hydrogen evolution reaction in the low-coverage limit, and the provided
+README file explains the details of the simplest of electrochemical
+reactions as done in CatMAP. The ORR example is meant to reproduce the
+results discussed in Hansen et al. (2014) DOI: 10.1021/jp4100608, which
+used a home-spun microkinetic model. The README in that directory goes
+into depth on how you can replicate some of the major features of this
+work with the provided scripts.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="including_adsorbate_adsorbate_interactions.html"
+                        title="previous chapter">Including Adsorbate-Adsorbate Interactions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="developer_info.html"
+                        title="next chapter">Developer Info</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/topics/electrochemistry.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developer_info.html" title="Developer Info"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="including_adsorbate_adsorbate_interactions.html" title="Including Adsorbate-Adsorbate Interactions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Topics</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,680 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Refining a Microkinetic Model &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials" href="index.html" />
+    <link rel="next" title="Topics" href="../topics/index.html" />
+    <link rel="prev" title="Creating a Microkinetic Model" href="creating_a_microkinetic_model.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../topics/index.html" title="Topics"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="creating_a_microkinetic_model.html" title="Creating a Microkinetic Model"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="refining-a-microkinetic-model">
+<h1>Refining a Microkinetic Model<a class="headerlink" href="#refining-a-microkinetic-model" title="Permalink to this headline">¶</a></h1>
+<p>In this tutorial we will take the simple CO oxidation model presented in
+<a class="reference internal" href="creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a> and refine it to be
+more complete. This tutorial should show some of the more powerful
+capabilities of CatMAP, and highlight the ability to dynamically make
+changes to the kinetic model with minimal programming. The tutorial will
+show several possibilities of ways to refine the model towards something
+that correctly represents the physical system:</p>
+<ul class="simple">
+<li><a class="reference external" href="#newsteps">Adding elementary steps</a> (refining the mechanism)</li>
+<li><a class="reference external" href="#newsites">Adding multiple sites</a> (refining the active site
+structure)</li>
+<li><a class="reference external" href="#ratecontrol">Sensitivity analyses</a> (refining the inputs to the
+model)</li>
+<li><a class="reference external" href="#numerical">Refining numerical accuracy</a> (resolution, tolerance,
+etc.)</li>
+</ul>
+<p>These sections do not need to be followed sequentially. For each one we
+will start with the same setup file and input file from
+<a class="reference internal" href="creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a>.  We will use a slightly more efficient
+submission script:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">ReactionModel</span>
+
+<span class="n">mkm_file</span> <span class="o">=</span> <span class="s">&#39;CO_oxidation.mkm&#39;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">(</span><span class="n">setup_file</span><span class="o">=</span><span class="n">mkm_file</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">output_variables</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;production_rate&#39;</span><span class="p">]</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">analyze</span>
+<span class="n">vm</span> <span class="o">=</span> <span class="n">analyze</span><span class="o">.</span><span class="n">VectorMap</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot_variable</span> <span class="o">=</span> <span class="s">&#39;production_rate&#39;</span> <span class="c">#tell the model which output to plot</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">log_scale</span> <span class="o">=</span> <span class="bp">True</span> <span class="c">#rates should be plotted on a log-scale</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="mf">1e-25</span> <span class="c">#minimum rate to plot</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="mf">1e3</span> <span class="c">#maximum rate to plot</span>
+
+<span class="n">vm</span><span class="o">.</span><span class="n">descriptor_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CO reactivity [eV]&#39;</span><span class="p">,</span> <span class="s">&#39;O reactivity [eV]&#39;</span><span class="p">]</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-25</span> <span class="c">#anything below this is considered to be 0</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">subplots_adjust_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;left&#39;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span><span class="s">&#39;right&#39;</span><span class="p">:</span><span class="mf">0.8</span><span class="p">,</span><span class="s">&#39;bottom&#39;</span><span class="p">:</span><span class="mf">0.15</span><span class="p">}</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;pretty_production_rate.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="adding-elementary-steps">
+<h2>Adding Elementary Steps<a class="headerlink" href="#adding-elementary-steps" title="Permalink to this headline">¶</a></h2>
+<p>One way of refining a model is to include additional steps in the
+mechanism. To demonstrate this we will add molecular adsorption of
+oxygen prior to dissociation. In order to do this we need to include the
+relevant energetics, so add the following lines to the energies.txt:</p>
+<div class="highlight-python"><div class="highlight"><pre>Ru  111 O2  3.15    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Rh  111 O2  3.63    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ni  111 O2  3.76    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Pd  111 O2  4.29    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Cu  111 O2  4.52    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Pt  111 O2  4.56    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ag  111 O2  5.1 fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+</pre></div>
+</div>
+<p>Next, we just need to define the new elementary step in the setup file
+(CO_oxidation.mkm):</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">rxn_expressions</span> <span class="o">=</span> <span class="p">[</span>
+
+                <span class="s">&#39;*_s + CO_g -&gt; CO*&#39;</span><span class="p">,</span>
+<span class="c">#               &#39;2*_s + O2_g &lt;-&gt; O-O* + *_s -&gt; 2O*&#39;,</span>
+                <span class="s">&#39;*_s + O2_g -&gt; O2_s&#39;</span><span class="p">,</span>
+                <span class="s">&#39;*_s + O2_s &lt;-&gt; O-O* + *_s -&gt; 2O*&#39;</span><span class="p">,</span>
+                <span class="s">&#39;CO* +  O* &lt;-&gt; O-CO* + * -&gt; CO2_g + 2*&#39;</span><span class="p">,</span>
+
+                    <span class="p">]</span>
+</pre></div>
+</div>
+<p>Now we can run mkm_job.py to get the output. If you run in a clean
+directory you should see something like:</p>
+<div class="code python highlight-python"><div class="highlight"><pre>mapper_iteration_0: status - 225 points do not have valid solution.
+minresid_iteration_0: success - [ 3.00, 4.00] using coverages from [ 3.00, 4.00]
+minresid_iteration_0: success - [ 3.00, 3.68] using coverages from [ 3.00, 3.68]
+minresid_iteration_0: success - [ 3.00, 3.36] using coverages from [ 3.00, 3.36]
+minresid_iteration_0: success - [ 3.00, 3.04] using coverages from [ 3.00, 3.04]
+minresid_iteration_0: success - [ 3.00, 2.71] using coverages from [ 3.00, 2.71]
+...
+minresid_iteration_1: success - [-1.00, 0.14] using coverages from [-1.00, 0.46]
+rootfinding_iteration_2: fail - stagnated or diverging (residual = 3.85907297979e-29)
+minresid_iteration_0: fail - [-1.00,-0.18] using coverages from [-1.00,-0.18]; initial residual was 8.73508143601e-21 (residual = 3.85907297979e-29)
+minresid_iteration_1: success - [-1.00,-0.18] using coverages from [-1.00, 0.14]
+minresid_iteration_0: success - [-1.00,-0.50] using coverages from [-1.00,-0.50]
+mapper_iteration_1: status - 0 points do not have valid solution.
+</pre></div>
+</div>
+<p>However, if you run in the same directory that you used for
+<a class="reference internal" href="creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a>, you will see slightly <a class="reference external" href="#initial_guess">different output</a>. Either way, the
+model should converge.</p>
+<p>If you look at &#8220;pretty_production_rate.pdf&#8221; it should look like the
+following:</p>
+<div class="figure align-center">
+<img alt="../_images/3_pretty_production_rate.png" src="../_images/3_pretty_production_rate.png" />
+</div>
+<p>If we compare this to the
+<a class="reference external" href="2%20Creating%20a%20Microkinetic%20Model#CO2rate">figure</a> from the
+previous tutorial we can see that there are a few differences, but the
+general conclusions are unchanged. If we wanted to be thorough we could
+continue refining the model by adding more elementary steps (<a class="reference external" href="http://onlinelibrary.wiley.com/doi/10.1002/anie.200801479/abstract">CO2
+molecular adsorption, O-O-CO transition state,
+etc.</a>).
+For brevity these extensions are omitted.</p>
+<div class="section" id="using-previous-results-as-initial-guesses">
+<h3>Using previous results as initial guesses<a class="headerlink" href="#using-previous-results-as-initial-guesses" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>If you ran mkm_job.py in the same directory as you had the</div></blockquote>
+<p>CO_oxidation.pkl data file from <a class="reference internal" href="creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a>, you might have
+noticed that instead of getting output about &#8220;minresid_iterations&#8221; you
+get something like:</p>
+<div class="highlight-python"><div class="highlight"><pre>Length of guess coverage vectors are shorter than the number of adsorbates. Assuming undefined coverages are 0
+initial_evaluation: success - initial guess at point [ 3.00, 4.00]
+Length of guess coverage vectors are shorter than the number of adsorbates. Assuming undefined coverages are 0
+initial_evaluation: success - initial guess at point [ 3.00, 3.68]
+Length of guess coverage vectors are shorter than the number of adsorbates. Assuming undefined coverages are 0
+initial_evaluation: success - initial guess at point [ 3.00, 3.36]
+...
+</pre></div>
+</div>
+<p>This happens because the model detects the data file (CO_oxidation.pkl)
+and loads in the coverages to use as an initial guess. However, it
+notices that there is now more adsorbates than there are coverages since
+we added O2*. In order to make the best of this, it just assumes that
+the additional coverages are 0 and uses that as an initial guess. As you
+can see, it works out okay here. One thing worth noting, however, is
+that since the code does not know what the order of adsorbates in the
+previous model was, it cannot properly assign the coverages. Adsorbates
+are parsed in the order they appear in rxn_expressions, so in this
+model the order is:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">adsorbate_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CO_s&#39;</span><span class="p">,</span><span class="s">&#39;O2_s&#39;</span><span class="p">,</span><span class="s">&#39;O_s&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>but, before adding the new elementary step the order was of course
+different ([&#8216;CO_s&#8217;,&#8217;O_s&#8217;]). Since there are so few adsorbates here it
+turned out to be a decent initial guess that the coverage of O2* was
+equal to the coverage of O* from the previous model, and that the
+coverage of O* was 0. In general, this will not be the case. If you
+want to use initial guesses from previous models it is best to add the
+new elementary steps after the old ones. Then the new adsorbates will be
+assumed to have 0 coverage at the initial guess, rather than scrambling
+all the coverages around. This is one of the best strategies for
+obtaining convergence in very complex kinetic models: start with a
+simple version of the system and slowly add more elementary steps,
+converging the model along the way and using coverages from the simpler
+model as an initial guess to the more complex one.</p>
+<p>More examples of how to add elementary steps are given in the <a class="reference external" href="#newsites">following
+section</a>.</p>
+</div>
+</div>
+<div class="section" id="adding-multiple-sites">
+<h2>Adding multiple sites<a class="headerlink" href="#adding-multiple-sites" title="Permalink to this headline">¶</a></h2>
+<p>Structure dependence is a common phenomenon is catalysis, so it is
+important to use the correct active site structure in order to obtain
+accurate kinetics. Here we will look at both the (111) and (211) facets
+for CO oxidation using the previously defined model.</p>
+<p>The first thing we will need to do is include the energetic inputs for
+(211) sites:</p>
+<div class="highlight-python"><div class="highlight"><pre>Ir  211 CO  0.673   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Re  211 CO  0.753   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ru  211 CO  0.983   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Rh  211 CO  1.073   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Pt  211 CO  1.113   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Pd  211 CO  1.223   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ni  211 CO  1.253   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Co  211 CO  1.403   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Fe  211 CO  1.413   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Cu  211 CO  2.283   fcc []   []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Au  211 CO  2.573   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ag  211 CO  2.873   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ru  211 O-CO    2.351   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Rh  211 O-CO    2.559   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Co  211 O-CO    2.732   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ni  211 O-CO    2.768   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Pt  211 O-CO    3.528   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Cu  211 O-CO    3.918   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Pd  211 O-CO    3.992   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ag  211 O-CO    5.099   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Au  211 O-CO    5.448   fcc []  []  &quot;J. Phys. Chem. C, 113 (24), 10548-10553 (2009)&quot;
+Ag  211 O-O 5.34    fcc []  []  Falsig et al (2012)
+Au  211 O-O 6.18    fcc []  []  Falsig et al (2012)
+Pt  211 O-O 4.9 fcc []  []  Falsig et al (2012)
+Pd  211 O-O 4.6 fcc []  []  Falsig et al (2012)
+Re  211 O   -1.5    fcc []  []  Falsig et al (2012)
+Co  211 O   -0.15   fcc []  []  Falsig et al (2012)
+Ru  211 O   -0.1    fcc []  []  Falsig et al (2012)
+Ni  211 O   0.18    fcc []  []  Falsig et al (2012)
+Rh  211 O   0.28    fcc []  []  Falsig et al (2012)
+Cu  211 O   0.93    fcc [] []  Falsig et al (2012)
+Pt  211 O   1.32    fcc []  []  Falsig et al (2012)
+Pd  211 O   1.58    fcc []  []  Falsig et al (2012)
+Ag  211 O   2.11    fcc []  []  Falsig et al (2012)
+Au  211 O   2.61    fcc []  []  Falsig et al (2012)
+Fe  211 O   -0.73   fcc []  []  &quot;Phys. Rev. Lett. 99, 016105 (2007)&quot;
+Ir  211 O   -0.04   fcc []  []  &quot;Phys. Rev. Lett. 99, 016105 (2007)&quot;
+</pre></div>
+</div>
+<p>We note that there is no data readily available for molecular O2
+adsorption on the (211) facet, so we need to make sure we move back to
+the simpler model from <a class="reference internal" href="creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a> for the (211)
+analysis:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">rxn_expressions</span> <span class="o">=</span> <span class="p">[</span>
+
+               <span class="s">&#39;*_s + CO_g -&gt; CO*&#39;</span><span class="p">,</span>
+               <span class="s">&#39;2*_s + O2_g &lt;-&gt; O-O* + *_s -&gt; 2O*&#39;</span><span class="p">,</span>
+<span class="c">#               &#39;*_s + O2_g -&gt; O2_s&#39;,</span>
+<span class="c">#               &#39;*_s + O2_s &lt;-&gt; O-O* + *_s -&gt; 2O*&#39;,</span>
+               <span class="s">&#39;CO* +  O* &lt;-&gt; O-CO* + * -&gt; CO2_g + 2*&#39;</span><span class="p">,</span>
+
+                   <span class="p">]</span>
+</pre></div>
+</div>
+<p>If we check the &#8220;pretty_production_rate.pdf&#8221; then we see the
+following:</p>
+<div class="figure align-center">
+<img alt="../_images/3_ugly_production_rate.png" src="../_images/3_ugly_production_rate.png" />
+</div>
+<p>which is not very pretty. The plot on the right is showing up because the
+plotter says it is not empty; however, as you can see it looks pretty
+empty. This is happening because of numerical issues - there are some
+very small (&lt;1e-50 - the tolerance) positive values for production of CO
+at some points in descriptor space. The quick way to get rid of this is
+to set a &#8220;threshold&#8221; for the plotter, so that it counts very small
+values as 0:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">descriptor_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CO reactivity [eV]&#39;</span><span class="p">,</span> <span class="s">&#39;O reactivity [eV]&#39;</span><span class="p">]</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-25</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">subplots_adjust_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;left&#39;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span><span class="s">&#39;right&#39;</span><span class="p">:</span><span class="mf">0.8</span><span class="p">,</span><span class="s">&#39;bottom&#39;</span><span class="p">:</span><span class="mf">0.15</span><span class="p">}</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;pretty_production_rate.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we get the following:</p>
+<div class="figure align-center">
+<img alt="../_images/3_211_pretty_production_rate.png" src="../_images/3_211_pretty_production_rate.png" />
+</div>
+<p>The same thing can also be achieved by tightening the numerical
+precision/tolerance, as discussed <a class="reference external" href="#numerical">later</a>. When we look
+at the plot we see the leg going out towards Ni/Ru/Rh which, based on
+the <a class="reference external" href="#newsteps">previous section</a>, we can predict will be reduced if
+molecular oxygen adsorption is considered. We also notice that the
+maximum is moved towards the nobler metals, which is roughly consistent
+with the findings of <a class="reference external" href="http://onlinelibrary.wiley.com/doi/10.1002/anie.200801479/abstract">Falsig et.
+al.</a>
+who show that nobler metals are more active when undercoordinated
+clusters are examined.</p>
+<p>Of course in a real catalyst, there will be both (111) and (211) facets
+(along with lots of others, but lets focus on these two for now). We can
+use CatMAP to examine both facets simultaneously by adding new sites.
+First, we need to define the mechanisms on both sites:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">rxn_expressions</span> <span class="o">=</span> <span class="p">[</span>
+
+               <span class="s">&#39;\*_s + CO_g -&gt; CO*&#39;</span><span class="p">,</span>
+               <span class="s">&#39;2*_s + O2_g &lt;-&gt; O-O* + \*_s -&gt; 2O*&#39;</span><span class="p">,</span>
+<span class="c">#               &#39;\*_s + O2_g -&gt; O2_s&#39;,</span>
+<span class="c">#               &#39;\*_s + O2_s &lt;-&gt; O-O* + \*_s -&gt; 2O*&#39;,</span>
+               <span class="s">&#39;CO* +  O* &lt;-&gt; O-CO* + * -&gt; CO2_g + 2*&#39;</span><span class="p">,</span>
+
+               <span class="s">&#39;\*_t + CO_g -&gt; CO_t&#39;</span><span class="p">,</span>
+<span class="c">#               &#39;2*_t + O2_g &lt;-&gt; O-O* + \*_t -&gt; 2O*&#39;,</span>
+               <span class="s">&#39;\*_t + O2_g -&gt; O2_t&#39;</span><span class="p">,</span>
+               <span class="s">&#39;\*_t + O2_t &lt;-&gt; O-O_t + \*_t -&gt; 2O_t&#39;</span><span class="p">,</span>
+               <span class="s">&#39;CO_t +  O_t &lt;-&gt; O-CO_t + \*_t -&gt; CO2_g + 2*_t&#39;</span><span class="p">,</span>
+
+               <span class="s">&#39;\*_t + CO_s -&gt; CO_t + \*_s&#39;</span><span class="p">,</span>
+               <span class="s">&#39;\*_t + O_s -&gt; O_t + \*_s&#39;</span><span class="p">,</span>
+
+
+                   <span class="p">]</span>
+</pre></div>
+</div>
+<p>Here we use _s (or just * which is equivalent to _s) to denote step
+sites, and _t to denote terrace sites. We have included molecular
+oxygen adsorption on the terrace, but not the step since we don&#8217;t have
+the energetics. Diffusion between the step and terrace sites are also
+included, and they have no activation barrier which implies that there
+should be equilibrium between CO* and O* on the step/terrace. In
+addition to the new elementary steps, we also need to include this new
+&#8220;terrace site&#8221; in the species definitions:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">species_definitions</span><span class="p">[</span><span class="s">&#39;s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;site_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;211&#39;</span><span class="p">],</span> <span class="s">&#39;total&#39;</span><span class="p">:</span><span class="mf">0.05</span><span class="p">}</span> <span class="c">#define the sites</span>
+<span class="n">species_definitions</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;site_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;111&#39;</span><span class="p">],</span> <span class="s">&#39;total&#39;</span><span class="p">:</span><span class="mf">0.95</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>We also need to decide whether we want to use the (111) or (211)
+adsorption energies as descriptors. The proper way to do this would be
+to check the quality of the scaling relations and see which shows a
+better correlation to the parameters. However, lets just stick with the
+(211) sites for now.</p>
+<p>Here we have assumed that there are 5% step sites, and 95% terrace
+sites. Now we can run mkm_job.py, and after a lot of fussing the model
+should converge. The new output looks like:</p>
+<div class="figure align-center">
+<img alt="../_images/3_dual_pretty_production_rate.png" src="../_images/3_dual_pretty_production_rate.png" />
+</div>
+<p>which clearly shows Pt and Pd as the best CO oxidation catalysts (as we
+would expect). It is a little worrying that Ag is predicted to be better
+than Rh, but this could be due to neglecting some mechanism (e.g.
+O-O-CO), neglecting zero-point and free energy contributions for
+adsorbates, lack of adsorbate-adsorbate interactions, or issues with the
+DFT input energies.</p>
+</div>
+<div class="section" id="sensitivity-analyses">
+<h2>Sensitivity Analyses<a class="headerlink" href="#sensitivity-analyses" title="Permalink to this headline">¶</a></h2>
+<p>Of course the kinetic models we are building follow the golden rule of
+mathematical modeling: garbage in, garbage out (i.e. your model is only
+as good as its inputs). Even if you have the correct mechanism and
+active site configuration, the results will not make sense if the data
+in the energy tables is inaccurate. However, in order to refine these
+inputs it is often useful to know which ones are most important. This
+can be analyzed using sensitivity analyses.</p>
+<div class="section" id="rate-control">
+<h3>Rate Control<a class="headerlink" href="#rate-control" title="Permalink to this headline">¶</a></h3>
+<p>The degree of rate control is a powerful concept in analyzing reaction
+pathways. Although many varieties exist, the version published by
+<a class="reference external" href="http://pubs.acs.org/doi/abs/10.1021/ja9000097">Stegelmann and
+Campbell</a> is the most
+general and is implemented in the micro-kinetics module. In this
+definition we have:</p>
+<p><span class="math">\(X_{ij} = \frac{\mathrm{d} \log(r_i)}{\mathrm{d} (-G_j/kT)}\)</span></p>
+<p>where <span class="math">\(X_{ij}\)</span> is the degree of rate control matrix, <span class="math">\(r_i\)</span> is the rate of
+production for product <em>i</em>, <span class="math">\(G_j\)</span> is the free energy of species <em>j</em>, <em>k</em> is
+Boltzmann&#8217;s constant, and <em>T</em> is the temperature. A positive degree of
+rate control implies that the rate will increase by making the species
+more stable, while a negative degree of rate control implies the
+opposite.</p>
+<p>In order to get the degree of rate control we need to add it as an
+output_variable in mkm_job.py:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="o">...</span>
+<span class="n">mkm_file</span> <span class="o">=</span> <span class="s">&#39;CO_oxidation.mkm&#39;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">(</span><span class="n">setup_file</span><span class="o">=</span><span class="n">mkm_file</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">output_variables</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;production_rate&#39;</span><span class="p">,</span><span class="s">&#39;rate_control&#39;</span><span class="p">]</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>We also want to make a plot to visualize the degree of rate control:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">mm</span> <span class="o">=</span> <span class="n">analyze</span><span class="o">.</span><span class="n">MatrixMap</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">mm</span><span class="o">.</span><span class="n">plot_variable</span> <span class="o">=</span> <span class="s">&#39;rate_control&#39;</span>
+<span class="n">mm</span><span class="o">.</span><span class="n">log_scale</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">mm</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+<span class="n">mm</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">mm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;rate_control.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The MatrixMap class is very similar to the VectorMap, except that it is
+designed to handle outputs which are 2-dimensional. This is true of the
+rate_control (and most other sensitivity analyses) since it will have a
+degree of rate control for each gas product/intermediate species pair.
+We set the min/max to -2/2 here since we know that degree of rate
+control is of order 1. In fact it is bounded by the number of times an
+intermediate appears on the same side of an elementary step. In this
+case that is 2, since O2* → 2O* (O* appears twice on the RHS). We
+could also just let the plotter decide the min/max automatically, but
+this is sometimes problematic due to <a class="reference external" href="#sensitivity_numerics">numerical issues with rate
+control</a>.</p>
+<p>Now we can run the code. You should see that the initial guesses are
+proving successful for each point, but you will probably notice that the
+code is executing significantly slower (factor of ~16). The reason for
+this will be discussed <a class="reference external" href="#sensitivity_numerics">later</a>. Unlike
+rates/coverages, the rate control will not converge quicker with a
+previous solution as an initial guess. In this case it may be desirable
+to load in the results of a previous simulation directly like:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">mkm_file</span> <span class="o">=</span> <span class="s">&#39;CO_oxidation.mkm&#39;</span>
+<span class="c">#model = ReactionModel(setup_file=mkm_file)</span>
+<span class="c">#model.output_variables += [&#39;production_rate&#39;,&#39;rate_control&#39;]</span>
+<span class="c">#model.run()</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">(</span><span class="n">setup_file</span><span class="o">=</span><span class="n">mkm_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;mkm&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>In general this is a good way to re-load the results of a simulation
+without recalculating it. Regardless, the rate control plot looks like:</p>
+<div class="figure align-center">
+<img alt="../_images/3_rate_control.png" src="../_images/3_rate_control.png" />
+</div>
+<p>This shows us that the rate is decreased when O* or CO* are bound more
+strongly (depending on descriptor values). Conversely, the rate can be
+increased by lowering the energy of the O-CO transition state, or
+sometimes by binding O* more strongly at the (211) site. The effect of
+lowering the O-O transition-state varies depending on where the surface
+is in descriptor space.</p>
+<p>While these types of analyses are useful, they should be used with
+caution. If the energies of other intermediates change considerably then
+it could result in those intermediates controlling the rate.
+Furthermore, as discussed by <a class="reference external" href="http://www.sciencemag.org/content/324/5935/1655">Nørskov et.
+al</a>, there are
+underlying correlations beneath the parameters, so if one wants to
+optimize a catalyst these must also be considered.</p>
+</div>
+<div class="section" id="other-sensitivity-analyses">
+<h3>Other Sensitivity Analyses<a class="headerlink" href="#other-sensitivity-analyses" title="Permalink to this headline">¶</a></h3>
+<p>Similar to the degree of rate control, the degree of selectivity control
+can also be defined:</p>
+<p><span class="math">\(X^S_{ij} = \frac{\mathrm{d}\log(s_i)}{\mathrm{d}(-G_j/kT)}\)</span></p>
+<p>where <span class="math">\(X^S_{ij}\)</span> is the degree of selectivity control, and <span class="math">\(s_i\)</span> is the
+selectivity towards species <em>i</em>. This can be included analogously to
+rate control by adding &#8216;selectivity_control&#8217; to the output variables
+and analyzing with the MatrixMap class.</p>
+<p>There is also the reaction order with respect to external pressures of
+various gasses, given mathematically by:</p>
+<p><span class="math">\(R_{ij} = \frac{\mathrm{d} \log(r_i)}{\mathrm{d} \log(pj)}\)</span></p>
+<p>where <span class="math">\(p_j\)</span> is the pressure of gas species <em>j</em>. This can also be included
+in the same way as rate_control and selectivity control by including
+&#8220;rxn_order&#8221; in the output variables.</p>
+</div>
+<div class="section" id="numerical-issues-in-sensitivity-analyses">
+<h3>Numerical Issues in Sensitivity Analyses<a class="headerlink" href="#numerical-issues-in-sensitivity-analyses" title="Permalink to this headline">¶</a></h3>
+<p>All sensitivity analyses implemented in the micro-kinetics module are
+calculated via numerical differentiation. This causes them to be very
+slow. Furthermore, the fact that numerical differentiation is
+notoriously sensitive to the &#8220;infinitesimal&#8221; number used to calculate
+the derivative, combined with the extreme stiffness of the sets of
+differential equations behind the kinetic model, can lead to issues. The
+two most common are:</p>
+<div class="section" id="jacobian-errors">
+<h4>Jacobian Errors<a class="headerlink" href="#jacobian-errors" title="Permalink to this headline">¶</a></h4>
+<p>You may sometimes notice that the model will give output like:</p>
+<div class="highlight-python"><div class="highlight"><pre>initial_evaluation: success - initial guess at point [ 2.71, 3.36]
+rootfinding_iteration_3: fail - stagnated or diverging (residual = 5.22501330063e-13)
+jacobian_evaluation: fail - stagnated or diverging (residual = 5.22501330063e-13). Assuming Jacobian is 0.
+initial_evaluation: success - initial guess at point [ 2.71, 3.04]
+</pre></div>
+</div>
+<p>This implies that the coverages for the unperturbed parameters failed
+when used as an initial guess for the perturbed parameters. Given that
+the perturbation size is, by default, 1e-14, this should only happen if
+the system is extremely stiff. However, its not impossible. Usually you
+can figure out what you need to know even when you skip the points where
+the Jacobian fails, but in the case you really need it converged at
+every point, you can decrease the &#8220;perturbation_size&#8221; attribute of the
+reaction model. When specifying perturbations below 1e-14 it is probably
+a good idea to do this using the multiple-precision representation as:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">model</span><span class="o">.</span><span class="n">perturbation_size</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="mf">1e-16</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="diverging-or-erroneous-sensitivities">
+<h4>Diverging or Erroneous sensitivities<a class="headerlink" href="#diverging-or-erroneous-sensitivities" title="Permalink to this headline">¶</a></h4>
+<p>It is also not uncommon for the sensitivities to diverge to extremely
+large numbers, or just appear to be random numbers. This generally
+happens if the perturbation size is too small so that there is no
+measurable change in the values of the function. The best thing to do
+here is to tune the perturbation size to a slightly larger number and
+hope for convergence. Sometimes this does not work, in which case it
+might also be necessary to increase the precision and decrease the
+tolerance of the model by many orders of magnitude (see <a class="reference external" href="#numerical">Refining
+Numerical Accuracy</a>).</p>
+</div>
+</div>
+</div>
+<div class="section" id="refining-numerical-accuracy">
+<h2>Refining Numerical Accuracy<a class="headerlink" href="#refining-numerical-accuracy" title="Permalink to this headline">¶</a></h2>
+<p>A final way to refine a kinetic model is via changing the numerical
+parameters used for convergence, etc. A few of these parameters will be
+briefly discussed here:</p>
+<div class="section" id="resolution">
+<h3>resolution<a class="headerlink" href="#resolution" title="Permalink to this headline">¶</a></h3>
+<p>The resolution determines the number of points between the min/max of
+the descriptor space. It can be a single number (same resolution in both
+directions) or a list the length of the number of descriptors. The
+latter case allows taking a higher resolution in one dimension vs. the
+other, which is useful if the descriptors have very different scales. It
+is also worth mentioning that a single-point calculation can be done by
+setting the resolution to 1. It is important to find a resolution that
+is fine enough to capture all the features in descriptor space, but of
+course higher resolution requires more time. It is also worth mentioning
+that if you want to refine the resolution it is good to pick a number
+like 2*old_resolution - 1 since this allows you to re-use all the
+points from the previous solution.</p>
+<p>The CO oxidation volcano is shown below at a resolution of 29 (as
+opposed to 15):</p>
+<div class="figure align-center">
+<img alt="../_images/3_hires_pretty_production_rate.png" src="../_images/3_hires_pretty_production_rate.png" />
+</div>
+<p>It looks nicer, but doesn&#8217;t give much new insight.</p>
+</div>
+<div class="section" id="decimal-precision">
+<h3>decimal_precision<a class="headerlink" href="#decimal-precision" title="Permalink to this headline">¶</a></h3>
+<p>This parameter represents the numerical accuracy of the kinetic model.
+The solutions are found using a multiple-precision representation of
+numbers, so it is possible to check them to &#8220;arbitrary accuracy&#8221;. Of
+course the model will run slower as the decimal_precision is increased,
+but if the precision is not high enough then the results will not make
+sense. Generally a decimal_precision of ~100 is sufficient, but for
+complex models, or when the sensitivity analyses do not behave well, the
+decimal_precision sometimes needs to be increased upwards of 200-300
+digits. If the solutions are correct it should be possible to increase
+this number arbitrarily and continue to quickly refine the precision of
+the solutions.</p>
+</div>
+<div class="section" id="tolerance">
+<h3>tolerance<a class="headerlink" href="#tolerance" title="Permalink to this headline">¶</a></h3>
+<p>The tolerance is the maximum rate which is considered 0 by the model.
+Thus the tolerance should be set to several orders of magnitude below
+the lowest rate which is relevant for the model. Usually something on
+the order of 1e-50 to 1e-35 is sufficient. However, when dealing with a
+model where the maximum rate is very low, or when trying to make
+sensitivity analyses more accurate, it may be necessary to decrease the
+tolerance to as low as 10-decimal_precision. Similar to the
+decimal_precision, if the solutions are correct then it should be
+possible to arbitrarily decrease the tolerance (although it should never
+be lower than 10-decimal_precision.</p>
+</div>
+<div class="section" id="max-rootfinding-iterations">
+<h3>max_rootfinding_iterations<a class="headerlink" href="#max-rootfinding-iterations" title="Permalink to this headline">¶</a></h3>
+<p>This determines the maximum number of times the Newton&#8217;s method
+rootfinding algorithm can iterate. It is generally safe to set this to a
+very high number, since if the algorithm begins to diverge (or even
+stops converging) then it will automatically exit. Usually a number
+around 100-300 is practical. This parameter does not affect the
+solutions of the model, just if/how long the model takes to converge.</p>
+</div>
+<div class="section" id="max-bisections">
+<h3>max_bisections<a class="headerlink" href="#max-bisections" title="Permalink to this headline">¶</a></h3>
+<p>This determines the number of times a distance between two points in
+descriptor space can be &#8220;bisected&#8221; when looking for a new solution. For
+example, if we know the solution at (0,0) and want the solution at (0,1)
+the first thing to try is using the (0,0) solution as an initial guess.
+If that fails, the line will be bisected, and the (0,0) solutions will
+be tried at (0,0.5). If this fails, then (0,0.25) is tried. This
+continues a maximum of max_bisections times before the module gives up.
+This is a &#8220;desperation&#8221; parameter since it is the best way to get a
+model to converge, but can be very slow. It is best to start with a
+value of 0-3, and then slowly increase until the algorithm can find a
+solution at all points. If the number goes above ~6 then it is an
+indication that there is something fundamentally wrong with the
+convergence critera (i.e. the solution oscillates) and that there is no
+steady-state solution.</p>
+<p>Like max_rootfinding_iterations, max_bisections will not change the
+overall answers to the model, but will determine if/how long it takes to
+converge.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Refining a Microkinetic Model</a><ul>
+<li><a class="reference internal" href="#adding-elementary-steps">Adding Elementary Steps</a><ul>
+<li><a class="reference internal" href="#using-previous-results-as-initial-guesses">Using previous results as initial guesses</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adding-multiple-sites">Adding multiple sites</a></li>
+<li><a class="reference internal" href="#sensitivity-analyses">Sensitivity Analyses</a><ul>
+<li><a class="reference internal" href="#rate-control">Rate Control</a></li>
+<li><a class="reference internal" href="#other-sensitivity-analyses">Other Sensitivity Analyses</a></li>
+<li><a class="reference internal" href="#numerical-issues-in-sensitivity-analyses">Numerical Issues in Sensitivity Analyses</a><ul>
+<li><a class="reference internal" href="#jacobian-errors">Jacobian Errors</a></li>
+<li><a class="reference internal" href="#diverging-or-erroneous-sensitivities">Diverging or Erroneous sensitivities</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#refining-numerical-accuracy">Refining Numerical Accuracy</a><ul>
+<li><a class="reference internal" href="#resolution">resolution</a></li>
+<li><a class="reference internal" href="#decimal-precision">decimal_precision</a></li>
+<li><a class="reference internal" href="#tolerance">tolerance</a></li>
+<li><a class="reference internal" href="#max-rootfinding-iterations">max_rootfinding_iterations</a></li>
+<li><a class="reference internal" href="#max-bisections">max_bisections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="creating_a_microkinetic_model.html"
+                        title="previous chapter">Creating a Microkinetic Model</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../topics/index.html"
+                        title="next chapter">Topics</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorials/refining_a_microkinetic_model.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../topics/index.html" title="Topics"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="creating_a_microkinetic_model.html" title="Creating a Microkinetic Model"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

@@ -51,9 +51,8 @@ and :doc:`../tutorials/refining_a_microkinetic_model`.
 We will use a reaction model similar to the simple one used in
 :doc:`../tutorials/creating_a_microkinetic_model` since this will run faster
 than the more complicated models. In order to refine this to something more
-sophisticated you can follow the strategy outlined in
-:doc:`../tutorials/refining_a_microkinetic_model`. This also means that we can
-re-use the energies.txt file from
+sophisticated you can follow the strategy outlined in :doc:`../tutorials/refining_a_microkinetic_model`. This also means that we can re-use the energies.txt file
+from
 :doc:`../tutorials/creating_a_microkinetic_model`, although we can make it even
 shorter since we only care about the Pt(111) energies:
 

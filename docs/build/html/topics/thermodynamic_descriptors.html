@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using Thermodynamic Descriptors &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../index.html" />
+    <link rel="up" title="Topics" href="index.html" />
+    <link rel="next" title="Including Adsorbate-Adsorbate Interactions" href="including_adsorbate_adsorbate_interactions.html" />
+    <link rel="prev" title="Accessing and reformatting output" href="accessing_reformatting_output.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="including_adsorbate_adsorbate_interactions.html" title="Including Adsorbate-Adsorbate Interactions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="accessing_reformatting_output.html" title="Accessing and reformatting output"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Topics</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="using-thermodynamic-descriptors">
+<h1>Using Thermodynamic Descriptors<a class="headerlink" href="#using-thermodynamic-descriptors" title="Permalink to this headline">¶</a></h1>
+<p>The previous tutorials have explained how to create a kinetic model which uses
+binding energies of key intermediates as &#8220;descriptors&#8221; in order to create a
+&#8220;map&#8221; of catalytic activity across different types of surfaces. This type of
+analysis is useful for catalyst screening, but it is also often interesting to
+take a closer look at a single catalyst surface and explore the effect of
+reaction conditions. In order to do this in CatMAP we will use the same
+framework as discussed in the [code overview](Home). The only difference is
+that instead of using energies as descriptors we will use &#8220;thermodynamic
+variables&#8221; (temperature, pressure for now) as descriptors. Naturally this also
+means that we will need to use a different &#8220;scaler&#8221; which, instead of creating
+a linear map uses some pre-defined expressions to add in the proper free energy
+contributions.</p>
+<p>To make this clearer we will continue with the CO oxidation example and examine
+CO oxidation on Pt(111) as a function of temperature and pressure. Again, the
+purpose is not to make a publishable analysis but to become familiar with the
+functionality of CatMAP. We will be able to use a &#8220;submission script&#8221;
+(mkm_job.py) very similar to the one from
+<a class="reference internal" href="../tutorials/refining_a_microkinetic_model.html"><em>Refining a Microkinetic Model</em></a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">ReactionModel</span>
+
+<span class="n">mkm_file</span> <span class="o">=</span> <span class="s">&#39;CO_oxidation.mkm&#39;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">(</span><span class="n">setup_file</span><span class="o">=</span><span class="n">mkm_file</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">output_variables</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;production_rate&#39;</span><span class="p">]</span> <span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">analyze</span>
+
+<span class="n">vm</span> <span class="o">=</span> <span class="n">analyze</span><span class="o">.</span><span class="n">VectorMap</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot_variable</span> <span class="o">=</span> <span class="s">&#39;production_rate&#39;</span>
+
+<span class="c">#tell the model which output to plot</span>
+
+<span class="n">vm</span><span class="o">.</span><span class="n">log_scale</span> <span class="o">=</span> <span class="bp">True</span> <span class="c">#rates should be plotted on a log-scale</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="mf">1e-25</span> <span class="c">#minimum rate to plot</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="mf">1e3</span> <span class="c">#maximum rate to plot</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-25</span> <span class="c">#anything below this is considered to be 0</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">subplots_adjust_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;left&#39;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span><span class="s">&#39;right&#39;</span><span class="p">:</span><span class="mf">0.8</span><span class="p">,</span><span class="s">&#39;bottom&#39;</span><span class="p">:</span><span class="mf">0.15</span><span class="p">}</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;production_rate.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For simplicity we will only look at the &#8220;production_rate&#8221; output variable in
+this tutorial. Other outputs can be calculated/analyzed as described in
+tutorials 2-3, <a class="reference internal" href="../tutorials/creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a>
+and <a class="reference internal" href="../tutorials/refining_a_microkinetic_model.html"><em>Refining a Microkinetic Model</em></a>.</p>
+<p>We will use a reaction model similar to the simple one used in
+<a class="reference internal" href="../tutorials/creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a> since this will run faster
+than the more complicated models. In order to refine this to something more
+sophisticated you can follow the strategy outlined in <a class="reference internal" href="../tutorials/refining_a_microkinetic_model.html"><em>Refining a Microkinetic Model</em></a>. This also means that we can re-use the energies.txt file
+from
+<a class="reference internal" href="../tutorials/creating_a_microkinetic_model.html"><em>Creating a Microkinetic Model</em></a>, although we can make it even
+shorter since we only care about the Pt(111) energies:</p>
+<p><code class="docutils literal"><span class="pre">`</span> <span class="pre">surface_name</span>&nbsp;&nbsp;&nbsp; <span class="pre">site_name</span>&nbsp;&nbsp; <span class="pre">species_name</span>&nbsp;&nbsp;&nbsp; <span class="pre">formation_energy</span>
+<span class="pre">bulk_structure</span>&nbsp; <span class="pre">frequencies</span> <span class="pre">other_parameters</span>&nbsp;&nbsp;&nbsp; <span class="pre">reference</span> <span class="pre">None</span>&nbsp;&nbsp;&nbsp; <span class="pre">gas</span> <span class="pre">CO2</span> <span class="pre">2.45</span>
+<span class="pre">None</span>&nbsp;&nbsp;&nbsp; <span class="pre">[1333,2349,667,667]</span> <span class="pre">[]</span>&nbsp; <span class="pre">&quot;Angew.</span> <span class="pre">Chem.</span> <span class="pre">Int.</span> <span class="pre">Ed.,</span> <span class="pre">47,</span> <span class="pre">4835</span> <span class="pre">(2008)&quot;</span> <span class="pre">None</span>
+<span class="pre">gas</span> <span class="pre">CO</span>&nbsp; <span class="pre">2.74</span>&nbsp;&nbsp;&nbsp; <span class="pre">None</span>&nbsp;&nbsp;&nbsp; <span class="pre">[2170]</span>&nbsp; <span class="pre">[]</span>&nbsp; <span class="pre">&quot;Energy</span> <span class="pre">Environ.</span> <span class="pre">Sci.,</span> <span class="pre">3,</span> <span class="pre">1311-1315</span> <span class="pre">(2010)&quot;</span>
+<span class="pre">None</span>&nbsp;&nbsp;&nbsp; <span class="pre">gas</span> <span class="pre">O2</span>&nbsp; <span class="pre">5.42</span>&nbsp;&nbsp;&nbsp; <span class="pre">None</span>&nbsp;&nbsp;&nbsp; <span class="pre">[1580]</span>&nbsp; <span class="pre">[]</span>&nbsp; <span class="pre">Falsig</span> <span class="pre">et</span> <span class="pre">al</span> <span class="pre">(2012)</span> <span class="pre">Pt</span>&nbsp; <span class="pre">111</span> <span class="pre">O</span>
+<span class="pre">1.62</span>&nbsp;&nbsp;&nbsp; <span class="pre">fcc</span> <span class="pre">[]</span>&nbsp; <span class="pre">[]</span>&nbsp; <span class="pre">Falsig</span> <span class="pre">et</span> <span class="pre">al</span> <span class="pre">(2012)</span> <span class="pre">Pt</span>&nbsp; <span class="pre">111</span> <span class="pre">CO</span>&nbsp; <span class="pre">1.7</span> <span class="pre">fcc</span> <span class="pre">[]</span>&nbsp; <span class="pre">[]</span>&nbsp; <span class="pre">&quot;Angew.</span>
+<span class="pre">Chem.</span> <span class="pre">Int.</span> <span class="pre">Ed.,</span> <span class="pre">47,</span> <span class="pre">4835</span> <span class="pre">(2008)&quot;</span> <span class="pre">Pt</span>&nbsp; <span class="pre">111</span> <span class="pre">O-CO</span>&nbsp;&nbsp;&nbsp; <span class="pre">4.04</span>&nbsp;&nbsp;&nbsp; <span class="pre">fcc</span> <span class="pre">[]</span>&nbsp; <span class="pre">[]</span>&nbsp; <span class="pre">&quot;Angew.</span>
+<span class="pre">Chem.</span> <span class="pre">Int.</span> <span class="pre">Ed.,</span> <span class="pre">47,</span> <span class="pre">4835</span> <span class="pre">(2008)&quot;</span> <span class="pre">Pt</span>&nbsp; <span class="pre">111</span> <span class="pre">O-O</span> <span class="pre">5.35</span>&nbsp;&nbsp;&nbsp; <span class="pre">fcc</span> <span class="pre">[]</span>&nbsp; <span class="pre">[]</span>&nbsp; <span class="pre">Falsig</span> <span class="pre">et</span> <span class="pre">al</span>
+<span class="pre">(2012)</span> <span class="pre">`</span></code></p>
+<p>Note that we could also leave all the other energies in since the parser will
+just ignore any lines it doesn&#8217;t need. Finally, there is the &#8220;setup file&#8221; -
+CO_oxidation.mkm. This is where all of the necessary changes must be made in
+order to use &#8220;thermodynamic descriptors&#8221;. We will start with the same setup
+file from [Tutorial 2](2 Creating a Microkinetic Model), but we need to make
+the following changes:</p>
+<p>#### Change the scaler Add the following line somewhere in the setup file
+(usually near the beginning): <code class="docutils literal"><span class="pre">`python</span> <span class="pre">scaler</span> <span class="pre">=</span> <span class="pre">'ThermodynamicScaler'</span> <span class="pre">`</span></code> As
+you can probably guess this tells CatMAP to use the &#8220;ThermodynamicScaler&#8221; class
+to move from &#8220;descriptor space&#8221; to &#8220;parameter space&#8221; (see [code
+overview](Home)). This class will use whatever &#8220;thermo modes&#8221; are defined for
+gas phase/adsorbate species in order to add free energy contributions (see
+[Tutorial 2](2 Creating a Microkinetic Model)).</p>
+<p>#### Choose the relevant surface Next we need to tell CatMAP which surface to
+use. For this example we will look at Pt(111). To do this we just need to
+change the &#8220;surface_names&#8221; variable:</p>
+<p><code class="docutils literal"><span class="pre">`python</span> <span class="pre">surface_names</span> <span class="pre">=</span> <span class="pre">['Pt']</span> <span class="pre">`</span></code> Note that the (111) surface is already
+selected due to the line:</p>
+<p><code class="docutils literal"><span class="pre">`python</span> <span class="pre">species_definitions['s']</span> <span class="pre">=</span> <span class="pre">{'site_names':</span> <span class="pre">['111'],</span> <span class="pre">'total':1}</span> <span class="pre">`</span></code></p>
+<p>#### Change the descriptors Now we need to tell the &#8220;ThermodynamicScaler&#8221; which
+two variables we will be using for descriptors, and we need to modify the
+ranges over which to vary these descriptors. Currently only temperature and
+pressure are implemented, although there is also an option to use log(pressure)
+as discussed later. For now lets look at temperatures from 400 - 1000 K and
+pressures from 1e-8 to 1000 bar:</p>
+<p><code class="docutils literal"><span class="pre">`python</span> <span class="pre">descriptor_names=</span> <span class="pre">['temperature','pressure']</span> <span class="pre">descriptor_ranges</span> <span class="pre">=</span>
+<span class="pre">[[400,1000],[1e-8,1e3]]</span> <span class="pre">`</span></code></p>
+<p>#### Modify temperature/pressure to be compatible In [Tutorial 2](2 Creating a
+Microkinetic Model) we used a model where temperature and pressure were
+explicitly specified. This doesn&#8217;t really make sense now, since we are varying
+these two variables. The temperature ends up not really mattering since it will
+be over-written as CatMAP moves through descriptor space; however, just to be
+unambiguous its good practice to delete the following line:</p>
+<p><code class="docutils literal"><span class="pre">`python</span> <span class="pre">temperature</span> <span class="pre">=</span> <span class="pre">500</span> <span class="pre">#Temperature</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">reaction</span> <span class="pre">`</span></code> Finally, we need
+to tell CatMAP how to handle the pressures. Previously we just defined &#8220;static
+pressures&#8221; for each gas-phase species, but that doesn&#8217;t make sense if the total
+pressure is varying. In order to get around this we instead specify
+&#8220;concentrations&#8221; for each gas-phase species:</p>
+<p><code class="docutils literal"><span class="pre">`python</span> <span class="pre">species_definitions['CO_g']</span> <span class="pre">=</span> <span class="pre">{'concentration':2./3.}</span>
+<span class="pre">species_definitions['O2_g']</span> <span class="pre">=</span> <span class="pre">{'concentration':1./3.}</span>
+<span class="pre">species_definitions['CO2_g']</span> <span class="pre">=</span> <span class="pre">{'concentration':0}</span> <span class="pre">`</span></code> Note that this
+&#8220;concentration&#8221; is not normalized - the total pressure of a gas at any total
+pressure will be given by concentration*P where P is the total pressure. Thus,
+if the concentrations do not sum to 1 then the  &#8220;pressure&#8221; axis will be
+incorrect.</p>
+<p>After making these changes we can run the &#8220;submission script&#8221; with:</p>
+<p><code class="docutils literal"><span class="pre">`sh</span> <span class="pre">python</span> <span class="pre">mkm_job.py</span> <span class="pre">`</span></code> which should give the usual kind of output. When it
+finishes you should see the following &#8220;production_rate.pdf&#8221; in the folder:</p>
+<p>&lt;img src=&#8221;4_production_rate.png&#8221; style=&#8221;width: 500px;&#8221;/&gt;</p>
+<p>As expected, the temperature dependence is much more drastic than the pressure
+dependence. In many cases it makes more sense to look at pressure dependence on
+a log scale. This is easily achieved by changing the descriptor names/ranges:</p>
+<p><code class="docutils literal"><span class="pre">`python</span> <span class="pre">descriptor_names=</span> <span class="pre">['temperature','logPressure']</span> <span class="pre">descriptor_ranges</span> <span class="pre">=</span>
+<span class="pre">[[400,1000],[-8,3]]</span> <span class="pre">`</span></code></p>
+<p>Note that the &#8220;log&#8221; in this notation refers to a base 10 logarithm so that the
+plot produced is the same as before, but with pressure on a log scale. If we
+now run the submission script we get the following output:</p>
+<p>&lt;img src=&#8221;4_log_production_rate.png&#8221; style=&#8221;width: 500px;&#8221;/&gt;</p>
+<p>This looks a little nicer than the previous plot since the low pressure
+behavior has higher resolution.</p>
+<p>We can see from this tutorial that it is fairly easy to move between a
+micro-kinetic model for a screening study and one for a &#8220;reaction condition&#8221;
+study (and vice-versa). Only a few lines of the &#8220;setup file&#8221; need to be
+changed. This is one advantage of CatMAP - once you setup a reaction model once
+you can re-use it for several different analyses.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="accessing_reformatting_output.html"
+                        title="previous chapter">Accessing and reformatting output</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="including_adsorbate_adsorbate_interactions.html"
+                        title="next chapter">Including Adsorbate-Adsorbate Interactions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/topics/thermodynamic_descriptors.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="including_adsorbate_adsorbate_interactions.html" title="Including Adsorbate-Adsorbate Interactions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="accessing_reformatting_output.html" title="Accessing and reformatting output"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Topics</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

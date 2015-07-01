@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Developer Info &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../index.html" />
+    <link rel="up" title="Topics" href="index.html" />
+    <link rel="next" title="Reference" href="../reference/catmap.html" />
+    <link rel="prev" title="Electrochemistry" href="electrochemistry.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../reference/catmap.html" title="Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="electrochemistry.html" title="Electrochemistry"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Topics</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="developer-info">
+<h1>Developer Info<a class="headerlink" href="#developer-info" title="Permalink to this headline">¶</a></h1>
+<p>To get started developing you obviously need git installed. You can make
+changes in your local directory, and if you make a change that you think
+is substantial and general enough that others would be interested you
+can &#8220;push&#8221; the change using git (see the <a class="reference external" href="http://git-scm.com/docs/gittutorial">git
+tutorial</a>). If you are going to
+submit a change, please update the version number in
+catmap/<strong>init</strong>.py (see <strong>version</strong> == x.x.x). The first number in the
+version is used for major changes, and a 0 represents code which is
+still not completely stable. The second number represents moderate
+changes (significant new functionality added), and the final number
+corresponds to the git submission number. The final number is the most
+annoying to update, since you need to change it every time before you
+submit. In order to make this slightly easier you can use the following
+script:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span>
+
+<span class="n">output</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">([</span><span class="s">&#39;git&#39;</span><span class="p">,</span> <span class="s">&#39;rev-list&#39;</span><span class="p">,</span> <span class="s">&#39;HEAD&#39;</span><span class="p">,</span><span class="s">&#39;--count&#39;</span><span class="p">],</span><span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+<span class="n">rev</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="n">init</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;catmap/__init__.py&#39;</span><span class="p">)</span>
+<span class="n">init_txt</span> <span class="o">=</span> <span class="n">init</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">init</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">new_txt</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">li</span> <span class="ow">in</span> <span class="n">init_txt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s">&#39;__version__&#39;</span> <span class="ow">in</span> <span class="n">li</span><span class="p">:</span>
+        <span class="n">oldversion</span> <span class="o">=</span> <span class="n">li</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">newversion</span> <span class="o">=</span> <span class="n">oldversion</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">rev</span> <span class="o">+</span> <span class="s">&#39;&quot;&#39;</span>
+        <span class="n">new_txt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newversion</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_txt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">li</span><span class="p">)</span>
+
+<span class="n">new_init</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_txt</span><span class="p">)</span>
+<span class="n">init</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;catmap/__init__.py&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="n">init</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_init</span><span class="p">)</span>
+<span class="n">init</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">message</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Submit message:&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;git commit -am &quot;&#39;</span><span class="o">+</span><span class="n">message</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;git push&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Place the script in the base directory of the project and run it with
+python. If anyone knows a better way of keeping the version number
+synchronized I am open to suggestions.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="electrochemistry.html"
+                        title="previous chapter">Electrochemistry</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../reference/catmap.html"
+                        title="next chapter">Reference</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/topics/developer_info.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../reference/catmap.html" title="Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="electrochemistry.html" title="Electrochemistry"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Topics</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

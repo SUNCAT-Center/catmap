@@ -1,0 +1,695 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Creating a Microkinetic Model &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials" href="index.html" />
+    <link rel="next" title="Refining a Microkinetic Model" href="refining_a_microkinetic_model.html" />
+    <link rel="prev" title="Generating an Input File" href="generating_an_input_file.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="refining_a_microkinetic_model.html" title="Refining a Microkinetic Model"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="generating_an_input_file.html" title="Generating an Input File"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="creating-a-microkinetic-model">
+<h1>Creating a Microkinetic Model<a class="headerlink" href="#creating-a-microkinetic-model" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial provides a walk-through of how to create a very basic
+micro-kinetic model for CO oxidation on transition-metal (111) surfaces.
+More advanced features are explored in <a class="reference external" href="3%20Refining%20a%20Microkinetic%20Model">3 Refining a Microkinetic
+Model</a> and <a class="reference external" href="4%20Advanced%20Features%20and%20Analysis">4 Advanced
+Features and Analysis</a>.</p>
+<div class="section" id="setting-up-the-model">
+<h2>Setting up the model<a class="headerlink" href="#setting-up-the-model" title="Permalink to this headline">¶</a></h2>
+<p>All micro-kinetic models require a minimum of 2 files: the &#8220;setup file&#8221;
+and the &#8220;submission script&#8221;. In addition it is almost always necessary
+to specify an &#8220;input file&#8221; which is used by the &#8220;parser&#8221; to extend the
+&#8220;setup file&#8221; (see <a class="reference external" href="Home">the overview</a>).</p>
+<div class="section" id="input-file">
+<h3>Input File<a class="headerlink" href="#input-file" title="Permalink to this headline">¶</a></h3>
+<p>We will begin by assuming that the input file has already been generated
+similar to <a class="reference external" href="1%20Generating%20an%20Input%20File">1 Generating an Input
+File</a>. In fact these energies
+were taken from <a class="reference external" href="http://suncat.slac.stanford.edu/catapp/">CatApp</a> and
+compiled into a format compatible with CatMAP:</p>
+<div class="highlight-python"><div class="highlight"><pre>surface_name    site_name   species_name    formation_energy    bulk_structure  frequencies other_parameters    reference
+None    gas CO2 2.45    None    [1333,2349,667,667] []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+None    gas CO  2.74    None    [2170]  []  &quot;Energy Environ. Sci., 3, 1311-1315 (2010)&quot;
+None    gas O2  5.42    None    [1580]  []  &quot;Falsig et al (2012)&quot;
+Ru  111 O   -0.07   fcc []  []  &quot;Falsig et al (2012)&quot;
+Ni  111 O   0.35    fcc []  []  &quot;Falsig et al (2012)&quot;
+Rh  111 O   0.55    fcc []  []  &quot;Falsig et al (2012)&quot;
+Cu  111 O   1.07    fcc []  []  &quot;Falsig et al (2012)&quot;
+Pd  111 O   1.55    fcc []  []  &quot;Falsig et al (2012)&quot;
+Pt  111 O   1.62    fcc []  []  &quot;Falsig et al (2012)&quot;
+Ag  111 O   2.05    fcc []  []  &quot;Falsig et al (2012)&quot;
+Au  111 O   2.61    fcc []  []  &quot;Falsig et al (2012)&quot;
+Ru  111 CO  1.3 fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Rh  111 CO  1.34    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Pd  111 CO  1.55    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ni  111 CO  1.63    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Pt  111 CO  1.7 fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Cu  111 CO  2.58    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ag  111 CO  2.99    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Au  111 CO  3.04    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ru  111 O-CO    2.53    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Rh  111 O-CO    3.1 fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ni  111 O-CO    3.25    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Pt  111 O-CO    4.04    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Cu  111 O-CO    4.18    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Pd  111 O-CO    4.2 fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ag  111 O-CO    5.05    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Au  111 O-CO    5.74    fcc []  []  &quot;Angew. Chem. Int. Ed., 47, 4835 (2008)&quot;
+Ag  111 O-O 5.98    fcc []  []  &quot;Falsig et al (2012)&quot;
+Au  111 O-O 7.22    fcc []  []  &quot;Falsig et al (2012)&quot;
+Cu  111 O-O 4.74    fcc []  []  &quot;Falsig et al (2012)&quot;
+Pt  111 O-O 5.35    fcc []  []  &quot;Falsig et al (2012)&quot;
+Rh  111 O-O 3.79    fcc []  []  &quot;Falsig et al (2012)&quot;
+Ru  111 O-O 3.34    fcc []  []  &quot;Falsig et al (2012)&quot;
+Pd  111 O-O 5.34    fcc []  []  &quot;Falsig et al (2012)&quot;
+</pre></div>
+</div>
+<p>For this example we will name this file &#8220;energies.txt&#8221; and place it in
+the same directory as the other files.</p>
+</div>
+<div class="section" id="setup-file">
+<h3>Setup File<a class="headerlink" href="#setup-file" title="Permalink to this headline">¶</a></h3>
+<p>Next we will create the &#8220;setup file&#8221;. Lets make a text file named
+&#8220;CO_oxidation.mkm&#8221;. The suffix &#8221;.mkm&#8221; is often used to designate a
+micro-kinetics module setup file, but it is not required.</p>
+<p>One of the most important aspects of the &#8220;setup file&#8221; is the
+&#8220;rxn_expressions&#8221; variable which defines the elementary steps in the
+model. For this simplified CO oxidation model we will specify these as:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">rxn_expressions</span> <span class="o">=</span> <span class="p">[</span>
+
+               <span class="s">&#39;*_s + CO_g -&gt; CO*&#39;</span><span class="p">,</span>
+               <span class="s">&#39;2*_s + O2_g &lt;-&gt; O-O* + *_s -&gt; 2O*&#39;</span><span class="p">,</span>
+               <span class="s">&#39;CO* +  O* &lt;-&gt; O-CO* + * -&gt; CO2_g + 2*&#39;</span><span class="p">,</span>
+
+                   <span class="p">]</span>
+</pre></div>
+</div>
+<p>The first expression includes CO adsorption without any activation
+barrier. The second includes an activated dissociative chemisorption of
+the oxygen molecule, and the final is an activated associative
+desorption of CO2. More complex models for CO oxidation could be
+imagined, but these elementary steps capture the key features. Note that
+we have only included &#8220;*&#8221; and &#8220;<a href="#id1"><span class="problematic" id="id2">*</span></a>_s&#8221; sites since this is a single-site
+model for CO oxidation. This means that all intermediates will be
+adsorbed at a site designated as &#8220;s&#8221;. These reaction expressions will be
+parsed automatically in order to define the adsorbates,
+transition-states, gasses, and surface sites in the model.</p>
+<p>Next, we need to tell the model which surfaces we are interested in.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">surface_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Pt&#39;</span><span class="p">,</span> <span class="s">&#39;Ag&#39;</span><span class="p">,</span> <span class="s">&#39;Cu&#39;</span><span class="p">,</span><span class="s">&#39;Rh&#39;</span><span class="p">,</span><span class="s">&#39;Pd&#39;</span><span class="p">,</span><span class="s">&#39;Au&#39;</span><span class="p">,</span><span class="s">&#39;Ru&#39;</span><span class="p">,</span><span class="s">&#39;Ni&#39;</span><span class="p">]</span>
+<span class="c">#surfaces to include in scaling (need to have descriptors defined for each)</span>
+</pre></div>
+</div>
+<p>Now we will tell the model which energies to use as descriptors:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">descriptor_names</span><span class="o">=</span> <span class="p">[</span><span class="s">&#39;O_s&#39;</span><span class="p">,</span><span class="s">&#39;CO_s&#39;</span><span class="p">]</span> <span class="c">#descriptor names</span>
+</pre></div>
+</div>
+<p>The model also needs to know the ranges over which to check the
+descriptors, and the resolution with which to discretize this range. It
+is generally good to use a range which includes all metals of interest,
+but doesn&#8217;t go too far beyond. For this example we will use a relatively
+low resolution (15) in order to save time.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">descriptor_ranges</span> <span class="o">=</span> <span class="p">[[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">4</span><span class="p">]]</span>
+
+<span class="n">resolution</span> <span class="o">=</span> <span class="mi">15</span>
+</pre></div>
+</div>
+<p>This means that the model will be solved for each of 15 oxygen
+adsorption energies between -1 and 3, for each of 15 CO adsorption
+energies between -0.5 and 4 (a total of 225 points in descriptor space).</p>
+<p>Next, we set the temperature of the model (in Kelvin):</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">temperature</span> <span class="o">=</span> <span class="mi">500</span>
+</pre></div>
+</div>
+<p>In the next part we will create and explicitly set some variables in the
+&#8220;species_definitions&#8221; dictionary. This dictionary is the central place
+where all species-specific information is stored, but for the most part
+it will be populated by the &#8220;parser&#8221;. However, there are a few things
+that need to be set explicitly. First, the gas pressures:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">species_definitions</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">species_definitions</span><span class="p">[</span><span class="s">&#39;CO_g&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pressure&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">}</span> <span class="c">#define the gas pressures</span>
+<span class="n">species_definitions</span><span class="p">[</span><span class="s">&#39;O2_g&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pressure&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">}</span>
+<span class="n">species_definitions</span><span class="p">[</span><span class="s">&#39;CO2_g&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pressure&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Next, we need to include some information about the surface site:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">species_definitions</span><span class="p">[</span><span class="s">&#39;s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;site_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;111&#39;</span><span class="p">],</span> <span class="s">&#39;total&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">}</span> <span class="c">#define the sites</span>
+</pre></div>
+</div>
+<p>This line tells the code that anything with &#8216;111&#8217; in the &#8220;site_name&#8221;
+column of the input file has energetics associated with an &#8220;s&#8221; site.
+This is a list because we might want to include multiple site_names as
+a single site type; for example, if we designated some sites as &#8220;fcc&#8221;
+and some as &#8220;ontop&#8221;, but both were on the (111) surface we might instead
+use: &#8216;site_name&#8217;:[&#8216;fcc&#8217;,&#8217;ontop&#8217;].</p>
+<p>We also need to tell the model where to store the output. By default it
+will create a data.pkl file which contains all the large outputs (those
+which would take more than 100 lines to represent with text). Lets make
+it store things in CO_oxidation.pkl instead.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">data_file</span> <span class="o">=</span> <span class="s">&#39;CO_oxidation.pkl&#39;</span>
+</pre></div>
+</div>
+<p>This concludes the attributes which need to be set for the ReactionModel
+itself; however, we probably want to specify a few more settings of the
+&#8220;parser&#8221;, &#8220;scaler&#8221;, &#8220;solver&#8221;, and &#8220;mapper&#8221;.</p>
+<p>For convenience, all variables are specified in the same file and same
+format. Since we did not specify a parser, the default parser
+(TableParser) will be used. This could be explicitly specified with
+parser = &#8216;TableParser&#8217; but this is not necessary. First we will tell the
+parser where to find the input table that we saved earlier:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">input_file</span> <span class="o">=</span> <span class="s">&#39;energies.txt&#39;</span>
+</pre></div>
+</div>
+<p>Next, we need to tell the model how to add free energy corrections. For
+this example we will use the Shomate equation for the gas
+thermochemistry, and assume that the adsorbates have no free energy
+contributions (since we don&#8217;t have frequencies for them).</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">gas_thermo_mode</span> <span class="o">=</span> <span class="s">&quot;shomate_gas&quot;</span>
+<span class="n">adsorbate_thermo_mode</span> <span class="o">=</span> <span class="s">&quot;frozen_adsorbate&quot;</span>
+</pre></div>
+</div>
+<p>There are a number of other approximations built into the model. For
+example, gas-phase thermochemistry can be approximated by:</p>
+<ul class="simple">
+<li>&#8216;ideal_gas&#8217; - Ideal gas approximation (assumes that atoms are in
+ase.structure.molecule and that arguments for
+ase.thermochemistry.IdealGasThermo are specified in
+catmap.data.ideal_gas_params and that frequencies are provided)</li>
+<li>&#8216;shomate_gas&#8217; - Uses Shomate equation (assumes that Shomate
+parameters are defined in catmap.data.shomate_params)</li>
+<li>&#8216;fixed_entropy_gas&#8217; - Includes zero-point energy and a static
+entropy correction (assumes that frequencies are provided and that
+gas entropy is provided in catmap.data.fixed_entropy_dict (if not
+0.002 eV/K is used))</li>
+<li>&#8216;frozen_fixed_entropy_gas&#8217; - Same as fixed_entropy_gas except
+that zero-point energy is neglected.</li>
+<li>&#8216;zero_point_gas&#8217; - Only includes zero-point energies and neglects
+entropy (assumes that frequencies are provided)</li>
+<li>&#8216;frozen_gas&#8217; - Do not include any corrections.</li>
+</ul>
+<p>Similarly, adsorbate thermochemistry can be approximated by:</p>
+<ul class="simple">
+<li>&#8216;harmonic_adsorbate&#8217; - Use the harmonic approximation and assume all
+degrees of freedom are vibrational (implemented via
+ase.thermochemistry.HarmonicThermo and assumes that frequencies are
+defined)</li>
+<li>&#8216;zero_point_adsorbate&#8217; - Only includes zero-point energies (assumes
+frequencies are defined)</li>
+<li>&#8216;frozen_adsorbate&#8217; - Do not include any corrections.</li>
+</ul>
+<p>The next thing we want to specify are some parameters for the scaler.
+Since we have not explicitly specified a scaler the default
+GeneralizedLinearScaler will be used. This scaler uses a coefficient
+matrix to map descriptor-space to parameter space and will be discussed
+in more detail in a future tutorial. By default a numerical fit will be
+made which minimizes the error by solving an over-constrained
+least-squares problem in order to map the lower-dimensional &#8220;parameter
+space&#8221; to the higher dimensional &#8220;descriptor space&#8221;. However, this fit
+is often unstable since fits are sometimes constructed with limited
+input data. In order to reduce this instability we want to place
+constraints on the coefficients so that adsorbates only scale with
+certain descriptors, and we can also force coefficients to be positive,
+negative, equal to a value, or in between certain values. We also need
+to tell the scaler how to determine transition-state energies. In this
+example we do this by:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">scaling_constraint_dict</span> <span class="o">=</span> <span class="p">{</span>
+                           <span class="s">&#39;O_s&#39;</span><span class="p">:[</span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">None</span><span class="p">],</span>
+                           <span class="s">&#39;CO_s&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">],</span>
+                           <span class="s">&#39;O-CO_s&#39;</span><span class="p">:</span><span class="s">&#39;initial_state&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;O-O_s&#39;</span><span class="p">:</span><span class="s">&#39;final_state&#39;</span><span class="p">,</span>
+                           <span class="p">}</span>
+</pre></div>
+</div>
+<p>(note that the keys here include the adsorbate name and the site label
+separated by an underscore _ ) This means that for oxygen we force a
+positive (&#8216;+&#8217;) slope for descriptor 1 (oxygen binding), a slope of 0 for
+descriptor 2 (CO binding), and we put no constraints on the constant.
+This is equivalent to saying:</p>
+<p>EO = <em>a</em>*EO + <em>c</em></p>
+<p>where <em>a</em> must be positive. Of course in this example its trivial to see
+that <em>a</em> should be 1 and <em>c</em> should be 0 since of course EO = EO. We
+could specify this explicitly using &#8216;O_s&#8217;:[1,0,0]. We could also impose
+other constraints:</p>
+<ul class="simple">
+<li>&#8216;O_s&#8217;:[&#8216;-&#8216;,0,None] would force <em>a</em> to be negative</li>
+<li>&#8216;O_s&#8217;:[&#8216;0:3&#8217;,0,None] would force <em>a</em> to be between 0 and 3</li>
+<li>&#8216;O_s&#8217;:[None,0,None] would put no constraints on <em>a</em></li>
+<li>&#8216;O_s&#8217;:[None,None,None] would let EO = <em>a</em>*EO + b*ECO + <em>c</em> with
+no constraints on <em>a</em>, <em>b</em>, or <em>c</em></li>
+</ul>
+<p>and so on. By default the constraints would be [&#8216;+&#8217;,&#8217;+&#8217;,None]. In this
+case the algorithm will find the correct solution of <em>a</em> = 1, <em>c</em> = 0
+even if the solution is unconstrained, but the constraints are still
+specified to provide an example. We use similar logic for the CO
+constraint since we know that it should depend on CO binding but not on
+O binding.</p>
+<p>We also need to tell the model how to handle the transition-state
+scaling. We have three options:</p>
+<ul class="simple">
+<li>ETS = <em>m</em>*EIS + <em>n</em> (initial_state)</li>
+<li>ETS = <em>m</em>*EFS + <em>n</em> (final_state)</li>
+<li>ETS = <em>m</em>*ΔE + <em>n</em> (BEP)</li>
+</ul>
+<p>where ETS is the transition-state formation energy, EIS is the
+intitial-state (reactant) energy, EFS is the final-state (product)
+energy for the elementary step, and ΔE is the reaction energy of the
+elementary step. By default initial_state is used, but for some
+elementary steps this might not make sense. The dissociative adsorption
+of oxygen is a great example, since the initial state energy is equal to
+the gas-phase energy of the oxygen molecule and is a constant. Thus, if
+we assumed initial_state scaling then we would be assuming a constant
+activation energy which would obviously not capture trends across
+surfaces. Instead, we scale with the &#8216;final_state&#8217;.</p>
+<p>By default the coefficients <em>m</em> and <em>n</em> are computed by a least-squares
+fit. They can be accessed by the
+&#8220;transition_state_scaling_coefficients&#8221; attribute of the
+ReactionModel after the model has been run. In some cases it may be
+necessary to specify these coefficients manually because, for example,
+the transition-state energies have not been calculated. This can be
+achieved by using the values: &#8216;initial_state:[<em>m</em>,<em>n</em>]&#8217; or
+&#8216;initial_state:[<em>m</em>]&#8217; where &#8216;initial_state&#8217; could also be
+&#8216;final_state&#8217; or &#8216;BEP&#8217;. If only <em>m</em> is specified then <em>n</em> will be
+determined by a least-squared fit. It is worth noting here that while
+<em>m</em> is independent of the reference used to compute the &#8220;generalized
+formation energies&#8221; in the input file (see <a class="reference external" href="1%20Generating%20an%20Input%20File#formation_energy">Formation Energy
+Approach</a>), <em>n</em>
+will depend on the references for &#8216;initial_state&#8217; or &#8216;final_state&#8217;
+scaling. Thus if you are using transition-state scaling values from some
+previously published work it is critical that the same reference sets be
+used.</p>
+<p>Now we need to set some parameters that will be used by the &#8220;solver&#8221;. By
+default the SteadyStateSolver is used. First, we tell the solver how
+many decimals of precision we want to use:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">decimal_precision</span> <span class="o">=</span> <span class="mi">100</span> <span class="c">#precision of numbers involved</span>
+</pre></div>
+</div>
+<p>While 100 digits of precision seems like overkill (and it actually is
+here), it is often necessary to go above 50 digits due to the extreme
+stiffness of the reaction expressions. Using 100 digits is a good rule
+of thumb, and doesn&#8217;t slow things down too much (especially if you have
+<a class="reference external" href="http://code.google.com/p/gmpy/">gmpy</a> installed).</p>
+<p>Next, we set the tolerance of the steady-state solutions:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">tolerance</span> <span class="o">=</span> <span class="mf">1e-50</span> <span class="c">#all d_theta/d_t&#39;s must be less than this at the solution</span>
+</pre></div>
+</div>
+<p>The tolerance is the maximum allowed rate of change of surface species
+coverages at the steady-state solution. This should be less than the
+smallest rate you are interested in for the problem (i.e. the lower
+bound of the rate &#8220;volcano plot&#8221;) but should be well above the machine
+epsilon at the given decimal_precision (ca. 1e-100 in this case).</p>
+<p>Finally, we set some practical variables controlling the number of
+iterations allowed by the solver:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">max_rootfinding_iterations</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="n">max_bisections</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>The maximum rootfinding iterations controls the number of times Newton&#8217;s
+method iterations can be applied in the rootfinding algorithm, while the
+maximum bisections tells the number of times the mapper can bisect
+descriptor space when trying to move from one point to another. Note
+that the maximum number of intermediate points between two points in
+descriptor space is 2<sup>max_bisections</sup> so increasing this number
+can slow the code down considerably. In this particular example
+convergence is very easy and neither of these limits will ever be
+reached, but we set them here for reference.</p>
+</div>
+<div class="section" id="submission-script">
+<h3>Submission Script<a class="headerlink" href="#submission-script" title="Permalink to this headline">¶</a></h3>
+<p>Now the hard part is done and we just need to run the model. Save the
+CO_oxidation.mkm file and create a new file called &#8220;mkm_job.py&#8221;. This
+will be the submission script.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">ReactionModel</span>
+
+<span class="n">mkm_file</span> <span class="o">=</span> <span class="s">&#39;CO_oxidation.mkm&#39;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">(</span><span class="n">setup_file</span><span class="o">=</span><span class="n">mkm_file</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If we run this file with &#8220;python mkm_job.py&#8221; then the output should
+look something like:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; mapper_iteration_0: status - 100 points do not have valid solution.
+&gt;&gt; minresid_iteration_0: success - [ 3.00, 4.00] using coverages from [ 3.00, 4.00]
+&gt;&gt; minresid_iteration_0: success - [ 3.00, 3.50] using coverages from [ 3.00, 3.50]
+&gt;&gt; ...
+&gt;&gt; ...
+&gt;&gt; ...
+&gt;&gt; minresid_iteration_0: success - [-1.00, 0.00] using coverages from [-1.00, 0.00]
+&gt;&gt; minresid_iteration_0: success - [-1.00,-0.50] using coverages from [-1.00,-0.50]
+&gt;&gt; mapper_iteration_1: status - 0 points do not have valid solution.
+</pre></div>
+</div>
+<p>These lines give information on where and how the solutions are
+converging. They are useful for debugging the model and improving
+convergence, but for now the only thing that matters is the final line
+which tells you that &#8220;0 points do not have valid solution.&#8221; In other
+words, the solver worked!</p>
+<p>We can run the file again (python mkm_job.py) and see that the solution
+is even faster this time and that the output is slightly different:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; initial_evaluation: success - initial guess at point [-1.00,-0.50]
+&gt;&gt; initial_evaluation: success - initial guess at point [-1.00, 0.00]
+&gt;&gt; initial_evaluation: success - initial guess at point [-1.00, 0.50]
+&gt;&gt; ...
+</pre></div>
+</div>
+<p>As the output suggests the solution is faster because it is using the
+solutions from the previous run as initial guesses. Since the model has
+not changed the initial guesses are right (at least within 1e-100) so
+the solution happens very fast.</p>
+</div>
+</div>
+<div class="section" id="analyzing-the-output">
+<h2>Analyzing the Output<a class="headerlink" href="#analyzing-the-output" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="accessing-output">
+<h3>Accessing Output<a class="headerlink" href="#accessing-output" title="Permalink to this headline">¶</a></h3>
+<p>If you look in the working directory you should see 5 files:</p>
+<ul class="simple">
+<li>energies.txt (input file)</li>
+<li>CO_oxidation.mkm (setup file)</li>
+<li>mkm_job.py (submission script)</li>
+<li>CO_oxidation.log (log file)</li>
+<li>CO_oxidation.pkl (data file)</li>
+</ul>
+<p>The log file and the data file contain all information about the solved
+model. The log file is human-readable. If you open it up you will notice
+that is is actually a python script which contains many of the same
+things as are found in &#8216;CO_oxidation.mkm&#8217;, but also contains a number
+of new variable definitions. You will also see that it automatically
+reads in &#8216;CO_oxidation.pkl&#8217; and stores the variables from this pickle
+file in the local namespace. Thus, the &#8220;data file&#8221; is actually just an
+extension of the log file which is stored in binary form (this saves a
+lot of time since the data is often so large). There are two interesting
+things you can do with this log file:</p>
+<div class="section" id="load-it-in-as-a-setup-file-to-a-reactionmodel">
+<h4>Load it in as a setup_file to a ReactionModel<a class="headerlink" href="#load-it-in-as-a-setup-file-to-a-reactionmodel" title="Permalink to this headline">¶</a></h4>
+<p>Make a new file called &#8220;test.py&#8221; and enter the lines:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">ReactionModel</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">(</span><span class="n">setup_file</span><span class="o">=</span><span class="s">&#39;CO_oxidation.log&#39;</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="n">model</span><span class="o">.</span><span class="n">rxn_expressions</span>
+<span class="k">print</span> <span class="n">model</span><span class="o">.</span><span class="n">coefficient_matrix</span>
+</pre></div>
+</div>
+<p>Notice that the rxn_expressions are identical to those from the setup
+file, but that the coefficient_matrix also exists even though we did
+not define it in the setup file. The coefficient_matrix was created by
+the scaler during the process of solving the model. The variable &#8220;model&#8221;
+in test.py is actually equivalent to the variable &#8220;model&#8221; in mkm_job.py
+right after the line with &#8220;model.run()&#8221;. This is a useful way to load in
+a model which is already solved for future analysis.</p>
+</div>
+<div class="section" id="view-output-in-interactive-python-mode">
+<h4>View output in interactive python mode<a class="headerlink" href="#view-output-in-interactive-python-mode" title="Permalink to this headline">¶</a></h4>
+<p>The file can be opened and viewed interactively by entering:</p>
+<div class="code bash highlight-python"><div class="highlight"><pre>python -i CO_oxidation.log
+</pre></div>
+</div>
+<p>in the command line. You will now have an interactive python prompt
+where you can view the various outputs and attributes of the solved
+model. For example we can look at the coverages or rates as a function
+of descriptor space:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">coverage_map</span>
+<span class="go">[[0.7777777777777777, 2.0], [mpf(&#39;1.553678172737489e-14&#39;), mpf(&#39;0.99999999999788455&#39;)]], [[0.33333333333333326, 1.0], [mpf(&#39;0.75379752729405923&#39;), mpf(&#39;0.246202464223187&#39;)]], [[1.2222222222222223, 3.5], [mpf(&#39;9.4245829753741903e-28&#39;), mpf(&#39;0.99999999982984852&#39;)]], [[0.7777777777777777, 0.0], [mpf(&#39;1.0&#39;), mpf(&#39;4.0785327108804121e-19&#39;)]], [[-0.11111111111111116, 3.5], [mpf(&#39;3.6157703851402e-41&#39;), mpf(&#39;1.0&#39;)]], [[0.33333333333333326, 0.5], .... ]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coverage_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">[[0.7777777777777777, 2.0], [mpf(&#39;1.553678172737489e-14&#39;), mpf(&#39;0.99999999999788455&#39;)]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rate_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">[[0.7777777777777777, 2.0], [mpf(&#39;3.0626957315361884e-11&#39;), mpf(&#39;1.5313478657680942e-11&#39;), mpf(&#39;3.0626957315361884e-11&#39;)]]</span>
+</pre></div>
+</div>
+<p>The format of the &#8220;rate_map&#8221; and &#8220;coverage_map&#8221; is a list of lists
+where the first entry of each list is the point in descriptor space and
+the second is the rate/coverage. This is not particularly useful if you
+don&#8217;t know what each number in the output corresponds to. You can find
+out by checking the &#8220;output_labels&#8221; dictionary:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;coverage&#39;</span><span class="p">]</span>
+<span class="go">(&#39;CO_s&#39;,&#39;O_s&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;rate&#39;</span><span class="p">]</span>
+<span class="go">([[&#39;s&#39;, &#39;CO_g&#39;], [&#39;CO_s&#39;]], [[&#39;s&#39;, &#39;s&#39;, &#39;O2_g&#39;], [&#39;O-O_s&#39;, &#39;s&#39;], [&#39;O_s&#39;, &#39;O_s&#39;]], [[&#39;CO_s&#39;, &#39;O_s&#39;], [&#39;O-CO_s&#39;, &#39;s&#39;], [&#39;CO2_g&#39;, &#39;s&#39;, &#39;s&#39;]])</span>
+</pre></div>
+</div>
+<p>In this case the model only outputs the rate and coverage. Information
+on how to get more outputs can be found in <a class="reference external" href="3%20Refining%20a%20Microkinetic%20Model">3 - Refining a Microkinetic
+Model</a>.</p>
+</div>
+</div>
+<div class="section" id="visualizing-output">
+<h3>Visualizing Output<a class="headerlink" href="#visualizing-output" title="Permalink to this headline">¶</a></h3>
+<p>Unless you possess extraordinary skills in raw data visualization then
+reading the raw output probably doesn&#8217;t do you much good. Of course it
+is possible to use the raw data and write your own plotting scripts, but
+some tools exist within the micro-kinetics module to get a quick look at
+the outputs. We will explore some of these tools here.</p>
+<div class="section" id="rate-volcano-and-coverage-plots">
+<h4>Rate &#8220;Volcano&#8221; and Coverage Plots<a class="headerlink" href="#rate-volcano-and-coverage-plots" title="Permalink to this headline">¶</a></h4>
+<p>Often the most interesting result from such an analysis is the so-called
+&#8220;volcano&#8221; plot of the reaction rate as a function of descriptor space.
+We can achieve this with the VectorMap plotting class (the &#8220;Vector&#8221; here
+refers to the fact that the rates are output as a 1-dimensional
+list/vector). First we instantiate the plotter using the model of
+interest by adding the following lines in mkm_job.py after model.run():</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">analyze</span>
+<span class="n">vm</span> <span class="o">=</span> <span class="n">analyze</span><span class="o">.</span><span class="n">VectorMap</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next we need to give the plotter some information on what to plot and
+how to plot it:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">plot_variable</span> <span class="o">=</span> <span class="s">&#39;rate&#39;</span> <span class="c">#tell the model which output to plot</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">log_scale</span> <span class="o">=</span> <span class="bp">True</span> <span class="c">#rates should be plotted on a log-scale</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="mf">1e-25</span> <span class="c">#minimum rate to plot</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="mf">1e3</span> <span class="c">#maximum rate to plot</span>
+</pre></div>
+</div>
+<p>Most of these attributes are self-explanatory. Finally we create the
+plot:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;rate.pdf&#39;</span><span class="p">)</span> <span class="c">#draw the plot and save it as &quot;rate.pdf&quot;</span>
+</pre></div>
+</div>
+<p>The &#8220;save&#8221; keyword tells the plotter where to save the plot. You can set
+&#8220;save=False&#8221; in order to not save the plot. The plot() function returns
+the matplotlib figure object which can be further modified if necessary.
+If we run this script with &#8220;python mkm_job.py&#8221; we get the following
+plot:</p>
+<div class="figure align-center">
+<img alt="../_images/2_rate.png" src="../_images/2_rate.png" />
+</div>
+<p>This looks pretty similar to previously published results by <a class="reference external" href="http://onlinelibrary.wiley.com/doi/10.1002/anie.200801479/abstract">Falsig et.
+al.</a>,
+with minor differences to be expected since the model and inputs used
+here are slightly different.</p>
+<p>We notice that the rates are given for CO adsorption and oxygen
+adsorption, but that associative CO2 desorption is not included. This is
+because it is identical to the plot for CO adsorption (due to the
+steady-state condition). If we want to include it we can do:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">unique_only</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s">&#39;all_rates.pdf&#39;</span><span class="p">)</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">unique_only</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>(we turn it back to unique_only right afterwards since this is
+generally less cluttered)</p>
+<p>which gives us a plot for each elementary step:</p>
+<div class="figure align-center">
+<img alt="../_images/2_all_rates.png" src="../_images/2_all_rates.png" />
+</div>
+<p>We might also be interested in the production rate of CO2 rather than
+the rates of elementary steps (it is trivial to see that they are
+equivalent here, but this is not always the case). If we want to analyze
+this we need to include the &#8220;production_rate&#8221; in the outputs, re-run
+the model, and re-plot.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">model</span><span class="o">.</span><span class="n">output_variables</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;production_rate&#39;</span><span class="p">]</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">production_rate_map</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">production_rate_map</span> <span class="c">#attach map</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-30</span> <span class="c">#do not plot rates below this</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot_variable</span> <span class="o">=</span> <span class="s">&#39;production_rate&#39;</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;production_rate.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the line commented &#8220;attach map&#8221; we point the VectorMap instance to
+the new output from the model. This line is not necessary if the output
+had been included in the original &#8220;output_variables&#8221;. We also note that
+the &#8220;threshold&#8221; variable will be discussed in the <a class="reference external" href="3%20Refining%20a%20Microkinetic%20Model">next
+tutorial</a>.</p>
+<p>Now we can see whats going on, but its not very pretty (the colorbar is
+cutoff). We can make a few aesthetic improvements fairly simply:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">descriptor_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CO reactivity [eV]&#39;</span><span class="p">,</span> <span class="s">&#39;O reactivity [eV]&#39;</span><span class="p">]</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">subplots_adjust_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;left&#39;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span><span class="s">&#39;right&#39;</span><span class="p">:</span><span class="mf">0.8</span><span class="p">,</span><span class="s">&#39;bottom&#39;</span><span class="p">:</span><span class="mf">0.15</span><span class="p">}</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;pretty_production_rate.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure align-center">
+<img alt="../_images/2_pretty_production_rate.png" src="../_images/2_pretty_production_rate.png" />
+</div>
+<p>Ok, so its still not publishable, but its better. There are ways to
+control the finer details of the plots, but that will come in a later
+tutorial.</p>
+<p>One more thing we might be interested in is the coverages of various
+intermediates. This can also be plotted with the VectorMap (since
+coverages are output as a 1-dimensional &#8220;vector&#8221;). However, we are going
+to want to make a few changes to the settings:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">plot_variable</span> <span class="o">=</span> <span class="s">&#39;coverage&#39;</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">log_scale</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;coverage.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure align-center">
+<img alt="../_images/2_coverage.png" src="../_images/2_coverage.png" />
+</div>
+<p>Not the prettiest plot ever, but you get the point. We could re-adjust
+the subplots_adjust_kwargs to make this more readable, but that is
+left as an independent exercise.</p>
+<p>Finally, we might not always be interested in seeing all of the
+coverages. If we only wanted to see the CO coverage we could specify
+this by:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">vm</span><span class="o">.</span><span class="n">include_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CO_s&#39;</span><span class="p">]</span>
+<span class="n">vm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="s">&#39;CO_coverage.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure align-center">
+<img alt="../_images/2_CO_coverage.png" src="../_images/2_CO_coverage.png" />
+</div>
+<p>Note that the strings to use in &#8220;include_labels&#8221; can be found by
+examining the &#8220;output_labels&#8221; dictionary <a class="reference external" href="#output_labels">from the log
+file</a>; alternatively you can specify
+&#8220;include_indices = [0,1,...]&#8221; where the integers correspond to the
+indices of the plots to include.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Creating a Microkinetic Model</a><ul>
+<li><a class="reference internal" href="#setting-up-the-model">Setting up the model</a><ul>
+<li><a class="reference internal" href="#input-file">Input File</a></li>
+<li><a class="reference internal" href="#setup-file">Setup File</a></li>
+<li><a class="reference internal" href="#submission-script">Submission Script</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#analyzing-the-output">Analyzing the Output</a><ul>
+<li><a class="reference internal" href="#accessing-output">Accessing Output</a><ul>
+<li><a class="reference internal" href="#load-it-in-as-a-setup-file-to-a-reactionmodel">Load it in as a setup_file to a ReactionModel</a></li>
+<li><a class="reference internal" href="#view-output-in-interactive-python-mode">View output in interactive python mode</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualizing-output">Visualizing Output</a><ul>
+<li><a class="reference internal" href="#rate-volcano-and-coverage-plots">Rate &#8220;Volcano&#8221; and Coverage Plots</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="generating_an_input_file.html"
+                        title="previous chapter">Generating an Input File</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="refining_a_microkinetic_model.html"
+                        title="next chapter">Refining a Microkinetic Model</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorials/creating_a_microkinetic_model.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="refining_a_microkinetic_model.html" title="Refining a Microkinetic Model"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="generating_an_input_file.html" title="Generating an Input File"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

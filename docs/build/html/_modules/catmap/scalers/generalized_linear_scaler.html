@@ -1,0 +1,579 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>catmap.scalers.generalized_linear_scaler &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../../../index.html" />
+    <link rel="up" title="catmap" href="../../catmap.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" accesskey="U">catmap</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for catmap.scalers.generalized_linear_scaler</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">scaler_base</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">catmap.data</span> <span class="kn">import</span> <span class="n">regular_expressions</span>
+<span class="kn">from</span> <span class="nn">catmap.functions</span> <span class="kn">import</span> <span class="n">parse_constraint</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">isnan</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<div class="viewcode-block" id="GeneralizedLinearScaler"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler">[docs]</a><span class="k">class</span> <span class="nc">GeneralizedLinearScaler</span><span class="p">(</span><span class="n">ScalerBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :TODO:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="GeneralizedLinearScaler.__init__"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span> <span class="o">=</span> <span class="n">ReactionModel</span><span class="p">()):</span>
+        <span class="n">ScalerBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span><span class="p">)</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">default_constraints</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">],</span>
+                        <span class="n">parameter_mode</span> <span class="o">=</span> <span class="s">&#39;formation_energy&#39;</span><span class="p">,</span>
+                        <span class="n">transition_state_scaling_parameters</span><span class="o">=</span><span class="p">{},</span>
+                        <span class="n">transition_state_scaling_mode</span> <span class="o">=</span> <span class="s">&#39;initial_state&#39;</span><span class="p">,</span>
+                        <span class="n">transition_state_cross_interaction_mode</span> <span class="o">=</span> <span class="s">&#39;transition_state_scaling&#39;</span><span class="p">,</span>
+                        <span class="n">max_self_interaction</span> <span class="o">=</span> <span class="s">&#39;Pd&#39;</span><span class="p">,</span>
+                        <span class="n">default_interaction_constraints</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+                        <span class="n">avoid_scaling</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                        <span class="c">#if the descriptors are equal to a metal, </span>
+                        <span class="c">#use the real values for that metal rather</span>
+                        <span class="c">#than scaled values</span>
+                        <span class="p">)</span> 
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rxm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span><span class="n">override</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_required</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;default_constraints&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span>
+                          <span class="s">&#39;parameter_mode&#39;</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span>
+                          <span class="s">&#39;avoid_scaling&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.parameterize"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.parameterize">[docs]</a>    <span class="k">def</span> <span class="nf">parameterize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#Check that descriptors are in reaction network</span>
+        <span class="n">all_ads</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="p">:</span> <span class="c">#REMOVE THIS REQUIREMENT LATER?</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_ads</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;Descriptor &#39;</span><span class="o">+</span><span class="n">d</span><span class="o">+</span><span class="s">&#39; does not appear in reaction&#39;</span><span class="o">+</span>\
+                        <span class="s">&#39; network. Add descriptor to network via &quot;dummy&quot; site, or &#39;</span><span class="o">+</span>\
+                        <span class="s">&#39;use an adsorbate from the network as a descriptor.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_dict</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dict</span><span class="p">:</span>
+            <span class="n">parameter_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">descriptor_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">:</span>
+                <span class="n">Ef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">species</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;formation_energy&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Ef</span><span class="p">,</span><span class="s">&#39;__iter__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">Ef</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_names</span><span class="p">):</span>
+                    <span class="n">parameter_dict</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ef</span>
+
+            <span class="k">for</span> <span class="n">s_id</span><span class="p">,</span> <span class="n">surf</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_names</span><span class="p">):</span>
+                <span class="n">desc_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">desc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">desc_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">desc</span><span class="p">]</span>
+                        <span class="n">desc_val</span> <span class="o">=</span> <span class="n">desc_val</span><span class="p">[</span><span class="s">&#39;formation_energy&#39;</span><span class="p">][</span><span class="n">s_id</span><span class="p">]</span>
+                        <span class="n">desc_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">desc_val</span><span class="p">)</span>
+                        <span class="n">desc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">desc_val</span><span class="p">)</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s">&#39;All surfaces must have numeric descriptor values: &#39;</span><span class="o">+</span><span class="n">surf</span><span class="p">)</span>
+                <span class="n">descriptor_dict</span><span class="p">[</span><span class="n">surf</span><span class="p">]</span> <span class="o">=</span> <span class="n">desc_list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dict</span> <span class="o">=</span> <span class="n">descriptor_dict</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameter_dict</span> <span class="o">=</span> <span class="n">parameter_dict</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameter_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span>
+
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_coefficient_matrix"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_coefficient_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">get_coefficient_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameterize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_constraints</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_constraints</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">)</span>
+
+        <span class="n">all_coeffs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_coeffs</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_adsorbate_coefficient_matrix</span><span class="p">())</span>
+        <span class="n">all_coeffs</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_transition_state_coefficient_matrix</span><span class="p">())</span>
+        <span class="c"># populate all TS rows using direct scaling with the correct coefficients</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">TS</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">TS</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">[</span><span class="n">TS</span><span class="p">],</span><span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+                    <span class="n">TS_row</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span>
+                    <span class="n">all_coeffs</span><span class="p">[</span><span class="n">TS_row</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_coefficient_dict</span><span class="p">[</span><span class="n">TS</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;ideal&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">adsorbate_interactions</span><span class="o">.</span><span class="n">parameterize_interactions</span><span class="p">()</span>
+            <span class="n">all_coeffs</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">adsorbate_interactions</span><span class="o">.</span><span class="n">get_interaction_scaling_matrix</span><span class="p">())</span>
+        
+        <span class="n">all_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_coeffs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefficient_matrix</span> <span class="o">=</span> <span class="n">all_coeffs</span>
+        <span class="k">return</span> <span class="n">all_coeffs</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_adsorbate_coefficient_matrix"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_adsorbate_coefficient_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">get_adsorbate_coefficient_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate coefficients for scaling all adsorbates and transition states</span>
+<span class="sd">            using constrained optimization.  Store results in self.total_coefficient_dict</span>
+<span class="sd">            and return the coefficient matrix for the adsorbates only.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_ads</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter_names</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">scaling_coefficient_matrix</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dict</span><span class="p">,</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">surface_names</span><span class="p">,</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameter_names</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coefficient_mins</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">coefficient_maxs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_coefficient_matrix</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">T</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">),:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_coefficient_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter_names</span><span class="p">,</span> <span class="n">C</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_coefficient_matrix</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_transition_state_coefficient_matrix"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_transition_state_coefficient_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">get_transition_state_coefficient_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_transition_state_scaling_matrix</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_matrix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_coefficient_matrix</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_adsorbate_coefficient_matrix</span><span class="p">()</span>
+
+            <span class="n">coeffs</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_matrix</span><span class="p">[:,:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_coefficient_matrix</span><span class="p">)</span>
+            <span class="n">coeffs</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_matrix</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_coefficient_matrix</span> <span class="o">=</span> <span class="n">coeffs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="k">return</span> <span class="n">coeffs</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_transition_state_scaling_matrix"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_transition_state_scaling_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">get_transition_state_scaling_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#This function is godawful and needs to be cleaned up considerably...</span>
+        <span class="c">#156 lines is unacceptable for something so simple.</span>
+        <span class="c">#HACK</span>
+        <span class="k">def</span> <span class="nf">state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">mode</span><span class="p">):</span>
+            <span class="n">coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span>
+            <span class="n">rxn_def</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elementary_rxns</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">TS</span> <span class="ow">in</span> <span class="n">rxn</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">rxn_def</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                            <span class="n">rxn_def</span> <span class="o">=</span> <span class="n">rxn</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">rxn_def</span> <span class="o">=</span> <span class="n">rxn</span>
+                            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Warning: ambiguous IS for &#39;</span><span class="o">+</span><span class="n">TS</span><span class="o">+</span>\
+                                 <span class="s">&#39;; Using&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">print_rxn</span><span class="p">(</span><span class="n">rxn</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;text&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">rxn_def</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">TS</span><span class="o">+</span><span class="s">&#39; does not appear in any reactions!&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;final_state&#39;</span><span class="p">:</span>
+                <span class="n">FS</span> <span class="o">=</span> <span class="n">rxn_def</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">IS</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;initial_state&#39;</span><span class="p">:</span>
+                <span class="n">FS</span> <span class="o">=</span> <span class="n">rxn_def</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">IS</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;BEP&#39;</span><span class="p">:</span>
+                <span class="n">IS</span> <span class="o">=</span> <span class="n">rxn_def</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">FS</span> <span class="o">=</span> <span class="n">rxn_def</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;explicit&#39;</span><span class="p">:</span>
+                <span class="n">IS</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">FS</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid Mode&#39;</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">get_energy_list</span><span class="p">(</span><span class="n">state</span><span class="p">,</span><span class="n">coeff_sign</span><span class="p">):</span>
+                <span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">:</span>
+                        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ads</span><span class="p">)</span>
+                        <span class="n">coeffs</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">coeff_sign</span>
+                    <span class="n">Ef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">ads</span><span class="p">][</span><span class="s">&#39;formation_energy&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Ef</span><span class="p">,</span><span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+                        <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Ef</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_names</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">energies</span>
+
+            <span class="n">IS_energies</span> <span class="o">=</span> <span class="n">get_energy_list</span><span class="p">(</span><span class="n">IS</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">FS_energies</span> <span class="o">=</span> <span class="n">get_energy_list</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">m</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">FS_totals</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">Evec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">FS_energies</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Evec</span><span class="p">:</span>
+                        <span class="n">FS_totals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">Evec</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">FS_totals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+                <span class="n">IS_totals</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">Evec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">IS_energies</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Evec</span><span class="p">:</span>
+                        <span class="n">IS_totals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">Evec</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">IS_totals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+                <span class="n">TS_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">[</span><span class="n">TS</span><span class="p">]</span>
+                <span class="n">valid_xy</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;initial_state&#39;</span><span class="p">,</span><span class="s">&#39;final_state&#39;</span><span class="p">,</span><span class="s">&#39;explicit&#39;</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">xy</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">FS_totals</span><span class="p">,</span><span class="n">TS_energies</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="bp">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">xy</span><span class="p">:</span>
+                            <span class="n">valid_xy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xy</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;BEP&#39;</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">I</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">T</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">IS_totals</span><span class="p">,</span><span class="n">FS_totals</span><span class="p">,</span><span class="n">TS_energies</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="bp">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">I</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">T</span><span class="p">]:</span>
+                            <span class="n">valid_xy</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">F</span><span class="o">-</span><span class="n">I</span><span class="p">,</span><span class="n">T</span><span class="p">])</span>
+                <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">valid_xy</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">m</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">params</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">m</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Invalid params&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">isnan</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Transition-state scaling failed for: &#39;</span><span class="o">+</span><span class="n">TS</span><span class="o">+</span>\
+                                    <span class="s">&#39;. Ensure that the scaling mode is set properly.&#39;</span><span class="p">)</span>
+                
+            <span class="k">return</span> <span class="p">[</span><span class="n">m</span><span class="p">,</span><span class="n">b</span><span class="p">],[</span><span class="n">m</span><span class="o">*</span><span class="n">ci</span> <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="n">coeffs</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">initial_state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="s">&#39;initial_state&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">final_state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="s">&#39;final_state&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">BEP_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="s">&#39;BEP&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">explicit_state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="s">&#39;explicit&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">echem_state_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+            <span class="c">#ugly workaround for ambiguous echem TS names in rxn definitions</span>
+            <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">direct_scaling</span><span class="p">(</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+            <span class="c"># dummy scaling parameters for direct scaling</span>
+            <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">TS_scaling_functions</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;initial_state&#39;</span><span class="p">:</span><span class="n">initial_state_scaling</span><span class="p">,</span>
+                <span class="s">&#39;final_state&#39;</span><span class="p">:</span><span class="n">final_state_scaling</span><span class="p">,</span>
+                <span class="s">&#39;BEP&#39;</span><span class="p">:</span><span class="n">BEP_scaling</span><span class="p">,</span>
+                <span class="s">&#39;TS&#39;</span><span class="p">:</span><span class="n">explicit_state_scaling</span><span class="p">,</span>
+                <span class="s">&#39;echem&#39;</span><span class="p">:</span><span class="n">echem_state_scaling</span><span class="p">,</span>
+                <span class="s">&#39;direct&#39;</span><span class="p">:</span><span class="n">direct_scaling</span><span class="p">,</span>
+                <span class="p">}</span>
+
+        <span class="n">TS_matrix</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">TS_coeffs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">TS</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">TS</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">echem_transition_state_names</span><span class="p">:</span>
+                <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;echem&#39;</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">elif</span> <span class="n">TS</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">[</span><span class="n">TS</span><span class="p">],</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;direct&#39;</span>
+                    <span class="n">params</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">elif</span> <span class="n">TS</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">:</span>
+                <span class="n">constring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">[</span><span class="n">TS</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constring</span><span class="p">,</span><span class="nb">basestring</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Constraints must be strings: &#39;</span>\
+                            <span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">constring</span><span class="p">))</span>
+                <span class="n">match_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_regex</span><span class="p">(</span><span class="n">constring</span><span class="p">,</span>
+                    <span class="o">*</span><span class="n">regular_expressions</span><span class="p">[</span>
+                        <span class="s">&#39;transition_state_scaling_constraint&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">match_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid constraint: &#39;</span><span class="o">+</span><span class="n">constring</span><span class="p">)</span>
+                <span class="n">mode</span> <span class="o">=</span> <span class="n">match_dict</span><span class="p">[</span><span class="s">&#39;mode&#39;</span><span class="p">]</span>
+                <span class="n">species_list</span> <span class="o">=</span> <span class="n">match_dict</span><span class="p">[</span><span class="s">&#39;species_list&#39;</span><span class="p">]</span>
+                <span class="n">state_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">species_list</span><span class="p">:</span>
+                    <span class="n">species_list</span> <span class="o">=</span> <span class="n">species_list</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">species_list</span><span class="p">:</span>
+                        <span class="n">sp</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="s">&#39;_&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sp</span><span class="p">:</span>
+                            <span class="n">sp</span> <span class="o">=</span> <span class="n">sp</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_default_site</span>
+                        <span class="n">state_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">match_dict</span><span class="p">[</span><span class="s">&#39;parameter_key&#39;</span><span class="p">]:</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">match_dict</span><span class="p">[</span><span class="s">&#39;parameter_key&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_parameters</span><span class="p">:</span>
+                        <span class="n">parameter_list</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_parameters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&#39;The key &#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s">&#39; must be defined &#39;</span><span class="o">+</span>\
+                                <span class="s">&#39;in transition_state_scaling_parameters&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">match_dict</span><span class="p">[</span><span class="s">&#39;parameter_list&#39;</span><span class="p">]:</span>
+                    <span class="n">parameter_list</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">match_dict</span><span class="p">[</span><span class="s">&#39;parameter_list&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parameter_list</span> <span class="o">=</span> <span class="bp">None</span>
+                                
+                <span class="k">if</span> <span class="n">state_list</span><span class="p">:</span>
+                    <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">state_list</span><span class="p">,</span><span class="n">parameter_list</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">params</span> <span class="o">=</span> <span class="n">parameter_list</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_mode</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="bp">None</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mb</span><span class="p">,</span><span class="n">coeffs</span><span class="o">=</span><span class="n">TS_scaling_functions</span><span class="p">[</span><span class="n">mode</span><span class="p">](</span><span class="n">TS</span><span class="p">,</span><span class="n">params</span><span class="p">)</span>
+                <span class="n">TS_matrix</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>
+                <span class="n">TS_coeffs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mb</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                        <span class="s">&#39;Invalid transition-state scaling mode specified&#39;</span><span class="p">)</span>
+
+        <span class="n">TS_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">TS_matrix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_matrix</span> <span class="o">=</span> <span class="n">TS_matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_coefficients</span> <span class="o">=</span> <span class="n">TS_coeffs</span>
+        <span class="k">return</span> <span class="n">TS_matrix</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_electronic_energies"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_electronic_energies">[docs]</a>    <span class="k">def</span> <span class="nf">get_electronic_energies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">E_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">full_descriptors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coefficient_matrix</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coefficient_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_coefficient_matrix</span><span class="p">()</span>
+
+        <span class="n">adsorption_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coefficient_matrix</span><span class="p">,</span><span class="n">full_descriptors</span><span class="p">)</span>
+
+        <span class="n">n_ads</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                <span class="n">E_dict</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="n">adsorption_energies</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                <span class="n">E_dict</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="n">adsorption_energies</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="n">n_ads</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;site&#39;</span><span class="p">,</span><span class="s">&#39;gas&#39;</span><span class="p">]:</span>
+                <span class="n">E_dict</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">sp</span><span class="p">][</span><span class="s">&#39;formation_energy&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">avoid_scaling</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span> <span class="c">#Check to see if the descriptors </span>
+            <span class="c">#corrsepond to a surface. If so, return all possible energies </span>
+            <span class="c">#for that surface instead of using scaling.</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_decimal_precision</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">roundvals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">roundvals</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">round</span><span class="p">(</span><span class="n">di</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">])</span>
+            <span class="k">if</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">di</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">]</span> <span class="ow">in</span> <span class="n">roundvals</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dict</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="p">([</span><span class="nb">round</span><span class="p">(</span><span class="n">di</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dict</span><span class="p">[</span><span class="n">surf</span><span class="p">]]</span> 
+                            <span class="o">==</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">di</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">]):</span>
+                        <span class="n">surf_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">surf</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">:</span>
+                    <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">][</span><span class="n">surf_id</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">E</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">E_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span> <span class="o">=</span> <span class="n">E</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span> <span class="c">#do nothing if the descriptors do not correspond to a surf</span>
+
+        <span class="k">for</span> <span class="n">dname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dname</span> <span class="ow">in</span> <span class="n">E_dict</span><span class="p">:</span>
+                <span class="n">E_dict</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">=</span> <span class="n">descriptors</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dname</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">E_dict</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_rxn_parameters"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_rxn_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_rxn_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;ideal&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">]:</span>
+            <span class="n">params</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">get_formation_energy_interaction_parameters</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_formation_energy_parameters</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_formation_energy_parameters"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_formation_energy_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_formation_energy_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">free_energy_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_free_energies</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">free_energy_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">params</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.get_formation_energy_interaction_parameters"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.get_formation_energy_interaction_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_formation_energy_interaction_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">descriptors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">E_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_formation_energy_parameters</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">adsorbate_interactions</span><span class="o">.</span><span class="n">get_interaction_matrix</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">epsilon</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">E_f</span> <span class="o">+</span> <span class="n">epsilon</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.parse_constraints"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.parse_constraints">[docs]</a>    <span class="k">def</span> <span class="nf">parse_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">constraint_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This function converts constraints which are input as a dictionary</span>
+<span class="sd">        to lists compatible with the function to obtain scaling coefficients.&quot;&quot;&quot;</span>
+        <span class="n">coefficient_mins</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">coefficient_maxs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">constraint_dict</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">constraint_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s">&#39;_&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+                    <span class="n">constraint_dict</span><span class="p">[</span><span class="n">key</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_default_site</span><span class="p">]</span> <span class="o">=</span> \
+                            <span class="n">constraint_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">del</span> <span class="n">constraint_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ads</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">constraint_dict</span><span class="p">:</span>
+                    <span class="n">constr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_constraints</span>
+                <span class="k">elif</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constraint_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">],</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+                    <span class="n">constr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_constraints</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">constr</span> <span class="o">=</span> <span class="n">constraint_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span>
+                <span class="n">minvs</span><span class="p">,</span><span class="n">maxvs</span> <span class="o">=</span> <span class="n">parse_constraint</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span><span class="n">ads</span><span class="p">)</span>
+                <span class="n">coefficient_mins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">minvs</span><span class="p">)</span>
+                <span class="n">coefficient_maxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">maxvs</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">coefficient_mins</span> <span class="o">=</span> <span class="n">coefficient_mins</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coefficient_maxs</span> <span class="o">=</span> <span class="n">coefficient_maxs</span>
+            <span class="k">return</span> <span class="n">coefficient_mins</span><span class="p">,</span> <span class="n">coefficient_maxs</span>
+</div>
+<div class="viewcode-block" id="GeneralizedLinearScaler.summary_text"><a class="viewcode-back" href="../../../reference/catmap.scalers.html#catmap.scalers.generalized_linear_scaler.GeneralizedLinearScaler.summary_text">[docs]</a>    <span class="k">def</span> <span class="nf">summary_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">str_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">labs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;E_{&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">texify</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;}&#39;</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">coeffs</span><span class="p">,</span><span class="n">ads</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_coefficient_matrix</span><span class="p">(),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ads</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="p">:</span>
+                <span class="n">scaling_txt</span> <span class="o">=</span> <span class="s">&#39;E_{&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">texify</span><span class="p">(</span><span class="n">ads</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;} = &#39;</span>
+                <span class="k">for</span> <span class="n">c</span><span class="p">,</span><span class="n">lab</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span><span class="n">labs</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">c</span><span class="p">:</span>
+                        <span class="n">scaling_txt</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="mi">3</span><span class="p">)))</span><span class="o">+</span><span class="n">lab</span><span class="o">+</span><span class="s">&#39; + &#39;</span>
+                <span class="k">if</span> <span class="n">scaling_txt</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39; + &#39;</span><span class="p">):</span>
+                    <span class="n">scaling_txt</span> <span class="o">=</span> <span class="n">scaling_txt</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">scaling_txt</span> <span class="o">=</span> <span class="n">scaling_txt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; + -&#39;</span><span class="p">,</span><span class="s">&#39; - &#39;</span><span class="p">)</span>
+                <span class="n">str_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaling_txt</span>
+        <span class="n">out_txt</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;Adsorption Scaling Parameters</span><span class="se">\\</span><span class="s">&#39;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ads</span> <span class="ow">in</span> <span class="n">str_dict</span><span class="p">:</span>
+                <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;\begin{equation}&#39;</span>
+                <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;\label{ads_scaling_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;}&#39;</span>
+                <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">str_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span>
+                <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;\end{equation}&#39;</span>
+        <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;Transition-state Scaling Parameters</span><span class="se">\\</span><span class="s">&#39;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;\begin{equation}&#39;</span>
+            <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;\label{TS_scaling_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;}&#39;</span>
+            <span class="k">if</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">:</span>
+                <span class="n">constr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_constraint_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s">&#39;TS&#39;</span> <span class="ow">in</span> <span class="n">constr</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">,</span><span class="n">par</span> <span class="o">=</span> <span class="n">constr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;TS&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;(&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;)&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+                    <span class="n">x_str</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">adsx</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">):</span>
+                        <span class="n">adsx</span> <span class="o">=</span> <span class="n">adsx</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="n">adsx_str</span> <span class="o">=</span> <span class="s">&#39;E_{&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">texify</span><span class="p">(</span><span class="n">adsx</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;}&#39;</span>
+                        <span class="n">x_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adsx_str</span><span class="p">)</span>
+                    <span class="n">x_str</span> <span class="o">=</span> <span class="s">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x_str</span><span class="p">)</span>
+                    <span class="n">x_str</span> <span class="o">=</span> <span class="s">&#39;(&#39;</span><span class="o">+</span><span class="n">x_str</span><span class="o">+</span><span class="s">&#39;)&#39;</span>
+                    <span class="k">if</span> <span class="n">par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_parameters</span><span class="p">:</span>
+                        <span class="n">ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_scaling_parameters</span><span class="p">[</span><span class="n">par</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+                        <span class="n">alpha</span><span class="p">,</span><span class="n">beta</span> <span class="o">=</span> <span class="n">ab</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">alpha</span><span class="p">,</span><span class="n">beta</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">par</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span> <span class="s">&#39;E_{&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">texify</span><span class="p">(</span><span class="n">ads</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;} = &#39;</span> <span class="o">+</span> \
+                    <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span><span class="o">+</span><span class="n">x_str</span><span class="o">+</span><span class="s">&#39; + &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+                        
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">str_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">str_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span>
+
+            <span class="n">out_txt</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">r&#39;\end{equation}&#39;</span>
+
+        <span class="k">return</span> <span class="n">out_txt</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" >catmap</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

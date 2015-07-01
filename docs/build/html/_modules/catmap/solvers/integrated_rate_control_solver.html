@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>catmap.solvers.integrated_rate_control_solver &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../../../index.html" />
+    <link rel="up" title="catmap" href="../../catmap.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" accesskey="U">catmap</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for catmap.solvers.integrated_rate_control_solver</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">solver_base</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+
+<div class="viewcode-block" id="IntegratedRateControlSolver"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.integrated_rate_control_solver.IntegratedRateControlSolver">[docs]</a><span class="k">class</span> <span class="nc">IntegratedRateControlSolver</span><span class="p">(</span><span class="n">SolverBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for estimating rates based on the degree of rate control</span>
+<span class="sd">    screening method {citation after published}&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IntegratedRateControlSolver.__init__"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.integrated_rate_control_solver.IntegratedRateControlSolver.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span><span class="o">=</span><span class="n">ReactionModel</span><span class="p">()):</span>
+        <span class="n">SolverBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span><span class="p">)</span>
+        <span class="n">valid_DRCs</span> <span class="o">=</span> <span class="p">[</span><span class="n">sp</span> <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;static_rate_control&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">include_DRCs</span> <span class="o">=</span> <span class="n">valid_DRCs</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rxm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_required</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;include_DRCs&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span>
+                <span class="s">&#39;reference_surface&#39;</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span>
+                <span class="s">&#39;reference_rate&#39;</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span>
+                <span class="p">}</span>
+
+</div>
+<div class="viewcode-block" id="IntegratedRateControlSolver.set_output_attrs"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.integrated_rate_control_solver.IntegratedRateControlSolver.set_output_attrs">[docs]</a>    <span class="k">def</span> <span class="nf">set_output_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="n">SolverBase</span><span class="o">.</span><span class="n">set_output_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;integrated_DRC_rate&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_variables</span><span class="p">:</span>
+            <span class="n">DRC_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_integrated_DRC_rate</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_integrated_DRC_rate</span> <span class="o">=</span> <span class="n">DRC_rate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_labels</span><span class="p">[</span><span class="s">&#39;integrated_DRC_rate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;rate&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="IntegratedRateControlSolver.compile"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.integrated_rate_control_solver.IntegratedRateControlSolver.compile">[docs]</a>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="IntegratedRateControlSolver.get_integrated_DRC_rate"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.integrated_rate_control_solver.IntegratedRateControlSolver.get_integrated_DRC_rate">[docs]</a>    <span class="k">def</span> <span class="nf">get_integrated_DRC_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s">&#39;_initialized&#39;</span><span class="p">):</span>
+            <span class="n">DRCs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">ref_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_surface</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_DRCs</span><span class="p">:</span>
+                <span class="n">Ef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="s">&#39;formation_energy&#39;</span><span class="p">][</span><span class="n">ref_idx</span><span class="p">]</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;static_rate_control&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;static_rate_control not specified for: &#39;</span><span class="o">+</span><span class="n">dname</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">DRCs</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span>
+
+            <span class="n">desc_energies</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">dname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_names</span><span class="p">:</span>
+                <span class="n">Ef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species_definitions</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="s">&#39;formation_energy&#39;</span><span class="p">][</span><span class="n">ref_idx</span><span class="p">]</span>
+                <span class="n">desc_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Ef</span><span class="p">)</span>
+            
+            <span class="n">ref_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">get_free_energies</span><span class="p">(</span><span class="n">desc_energies</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reference_free_energies</span> <span class="o">=</span> <span class="n">ref_dict</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_static_rate_controls</span> <span class="o">=</span> <span class="n">DRCs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="bp">True</span>
+        
+        <span class="n">Gs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">G</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+            <span class="n">Gs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">G</span>
+
+        <span class="n">dGs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_static_rate_controls</span><span class="p">:</span>
+            <span class="n">dGs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">Gs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_free_energies</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">exp_term</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dGs</span><span class="p">:</span>
+            <span class="n">Xi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_static_rate_controls</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">exp_term</span> <span class="o">+=</span> <span class="n">Xi</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">dGs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">))</span>
+
+        <span class="n">multiplier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">exp_term</span><span class="p">))</span>
+        <span class="n">DRC_rate</span> <span class="o">=</span> <span class="p">[</span><span class="n">multiplier</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_rate</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_integrated_DRC_rate</span> <span class="o">=</span> <span class="n">DRC_rate</span>
+        <span class="k">return</span> <span class="n">DRC_rate</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" >catmap</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

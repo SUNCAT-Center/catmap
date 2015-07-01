@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>catmap.parsers package &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../index.html" />
+    <link rel="up" title="Reference" href="catmap.html" />
+    <link rel="next" title="catmap.scalers package" href="catmap.scalers.html" />
+    <link rel="prev" title="catmap.mappers package" href="catmap.mappers.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="catmap.scalers.html" title="catmap.scalers package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="catmap.mappers.html" title="catmap.mappers package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="catmap.html" accesskey="U">Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="catmap-parsers-package">
+<h1>catmap.parsers package<a class="headerlink" href="#catmap-parsers-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-catmap.parsers.parser_base">
+<span id="catmap-parsers-parser-base-module"></span><h2>catmap.parsers.parser_base module<a class="headerlink" href="#module-catmap.parsers.parser_base" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="catmap.parsers.parser_base.ParserBase">
+<em class="property">class </em><code class="descclassname">catmap.parsers.parser_base.</code><code class="descname">ParserBase</code><span class="sig-paren">(</span><em>reaction_model=&lt;catmap.model.ReactionModel instance&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/parser_base.html#ParserBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="catmap.html#catmap.ReactionModelWrapper" title="catmap.ReactionModelWrapper"><code class="xref py py-class docutils literal"><span class="pre">catmap.ReactionModelWrapper</span></code></a></p>
+<dl class="method">
+<dt id="catmap.parsers.parser_base.ParserBase.__getattr__">
+<code class="descname">__getattr__</code><span class="sig-paren">(</span><em>attr</em><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase.__getattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the reaction model instance if its there. Otherwise return the instances own value (or none if the instance does not have the attribute defined and the attribute is not private)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.parser_base.ParserBase.__getattribute__">
+<code class="descname">__getattribute__</code><span class="sig-paren">(</span><em>attr</em><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase.__getattribute__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Force use of custom getattr</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.parser_base.ParserBase.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>reaction_model=&lt;catmap.model.ReactionModel instance&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/parser_base.html#ParserBase.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for <a href="#id1"><span class="problematic" id="id2">`</span></a>parsing&#8217; information from raw data 
+(databases, spreadsheets, text files, trajectories, etc.) into a 
+structure which is useful to the microkinetic model. This class acts 
+as a base class to be inherited by other parser classes, but it is 
+not functional on its own.</p>
+<p>input_file: defines the file path or object to get data from</p>
+<p>A functional derived parser class must also contain the methods:</p>
+<p>parse(input_file): a function to parse the input_file file/object and 
+return properly formatted data. The parse function should save all 
+necessary attributes to the Parser class. After parsing the parent 
+microkinetic model class will update itself from the Parser attributes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="catmap.parsers.parser_base.ParserBase.__module__">
+<code class="descname">__module__</code><em class="property"> = 'catmap.parsers.parser_base'</em><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.parser_base.ParserBase.__setattr__">
+<code class="descname">__setattr__</code><span class="sig-paren">(</span><em>attr</em>, <em>val</em><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set attribute for the instance as well as the reaction_model instance</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.parser_base.ParserBase._baseparse">
+<code class="descname">_baseparse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/parser_base.html#ParserBase._baseparse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.parser_base.ParserBase._baseparse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-catmap.parsers.table_parser">
+<span id="catmap-parsers-table-parser-module"></span><h2>catmap.parsers.table_parser module<a class="headerlink" href="#module-catmap.parsers.table_parser" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="catmap.parsers.table_parser.TableParser">
+<em class="property">class </em><code class="descclassname">catmap.parsers.table_parser.</code><code class="descname">TableParser</code><span class="sig-paren">(</span><em>reaction_model</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/table_parser.html#TableParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.table_parser.TableParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#catmap.parsers.parser_base.ParserBase" title="catmap.parsers.parser_base.ParserBase"><code class="xref py py-class docutils literal"><span class="pre">catmap.parsers.parser_base.ParserBase</span></code></a></p>
+<p>Parses attributes based on column headers and filters.</p>
+<dl class="docutils">
+<dt>Additional functionality may be added by inheriting and defining</dt>
+<dd>the parse_{header_name} function where header_name is the 
+column header for the additional variable to be parsed.</dd>
+</dl>
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.__getattr__">
+<code class="descname">__getattr__</code><span class="sig-paren">(</span><em>attr</em><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.__getattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the reaction model instance if its there. Otherwise return the instances own value (or none if the instance does not have the attribute defined and the attribute is not private)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.__getattribute__">
+<code class="descname">__getattribute__</code><span class="sig-paren">(</span><em>attr</em><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.__getattribute__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Force use of custom getattr</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>reaction_model</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/table_parser.html#TableParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="catmap.parsers.table_parser.TableParser.__module__">
+<code class="descname">__module__</code><em class="property"> = 'catmap.parsers.table_parser'</em><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.__setattr__">
+<code class="descname">__setattr__</code><span class="sig-paren">(</span><em>attr</em>, <em>val</em><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set attribute for the instance as well as the reaction_model instance</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser._baseparse">
+<code class="descname">_baseparse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#catmap.parsers.table_parser.TableParser._baseparse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.parse">
+<code class="descname">parse</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/table_parser.html#TableParser.parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.parse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.parse_coverage">
+<code class="descname">parse_coverage</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/table_parser.html#TableParser.parse_coverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.parse_coverage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.parse_formation_energy">
+<code class="descname">parse_formation_energy</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/table_parser.html#TableParser.parse_formation_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.parse_formation_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse in basic info for reaction model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="catmap.parsers.table_parser.TableParser.parse_frequencies">
+<code class="descname">parse_frequencies</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/catmap/parsers/table_parser.html#TableParser.parse_frequencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#catmap.parsers.table_parser.TableParser.parse_frequencies" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-catmap.parsers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-catmap.parsers" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">catmap.parsers package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-catmap.parsers.parser_base">catmap.parsers.parser_base module</a></li>
+<li><a class="reference internal" href="#module-catmap.parsers.table_parser">catmap.parsers.table_parser module</a></li>
+<li><a class="reference internal" href="#module-catmap.parsers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="catmap.mappers.html"
+                        title="previous chapter">catmap.mappers package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="catmap.scalers.html"
+                        title="next chapter">catmap.scalers package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/catmap.parsers.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="catmap.scalers.html" title="catmap.scalers package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="catmap.mappers.html" title="catmap.mappers package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="catmap.html" >Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

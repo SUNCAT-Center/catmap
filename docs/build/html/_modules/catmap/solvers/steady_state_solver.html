@@ -1,0 +1,637 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>catmap.solvers.steady_state_solver &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../../../index.html" />
+    <link rel="up" title="catmap" href="../../catmap.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" accesskey="U">catmap</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for catmap.solvers.steady_state_solver</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">solver_base</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">mean_field_solver</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">catmap</span> <span class="kn">import</span> <span class="n">string2symbols</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">fmin_powell</span> <span class="k">as</span> <span class="n">fmin</span>
+<span class="kn">from</span> <span class="nn">catmap.functions</span> <span class="kn">import</span> <span class="n">numerical_jacobian</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">Template</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<div class="viewcode-block" id="SteadyStateSolver"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver">[docs]</a><span class="k">class</span> <span class="nc">SteadyStateSolver</span><span class="p">(</span><span class="n">MeanFieldSolver</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SteadyStateSolver.__init__"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span><span class="o">=</span><span class="n">ReactionModel</span><span class="p">()):</span>
+        <span class="n">MeanFieldSolver</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reaction_model</span><span class="p">)</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">max_rootfinding_iterations</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+                <span class="n">internally_constrain_coverages</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                <span class="n">residual_threshold</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
+                <span class="n">analytical_jacobian</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                <span class="n">optimize_analytical_expressions</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rxm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rate_constant_memoize</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_required</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;max_rootfinding_iterations&#39;</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span>
+                          <span class="s">&#39;internally_constrain_coverages&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;residual_threshold&#39;</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span>
+                          <span class="s">&#39;analytical_jacobian&#39;</span><span class="p">:</span><span class="nb">bool</span><span class="p">,</span>
+                          <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_strings</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;rootfinding_fail&#39;</span><span class="p">:</span>
+                            <span class="s">&quot;stagnated or diverging (residual = ${resid})&quot;</span><span class="p">,</span>
+                            <span class="s">&#39;rootfinding_maxiter&#39;</span><span class="p">:</span>
+                            <span class="s">&quot;exceeded maximum iterations (residual = ${resid})&quot;</span><span class="p">,</span>
+                            <span class="s">&#39;rootfinding_cancel&#39;</span><span class="p">:</span>
+                  <span class="s">&quot;stationary point or singular jacobian (residual = ${resid})&quot;</span><span class="p">,</span>
+                            <span class="s">&#39;rootfinding_success&#39;</span><span class="p">:</span>
+                            <span class="s">&quot;found solution at point ${pt}&quot;</span><span class="p">,</span>
+                            <span class="s">&#39;rootfinding_status&#39;</span><span class="p">:</span>
+                            <span class="s">&quot;converging (residual = ${resid})&quot;</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_rate_constants"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_rate_constants">[docs]</a>    <span class="k">def</span> <span class="nf">get_rate_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">coverages</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return rate constants for given sequence of reaction parameters and coverages.</span>
+
+<span class="sd">        :param rxn_parameters: Sequence of reaction parameters.</span>
+<span class="sd">        :type rxn_parameters: [float]</span>
+<span class="sd">        :param coverages: Sequence of coverages.</span>
+<span class="sd">        :type coverages: [float]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;ideal&#39;</span><span class="p">]:</span>
+            <span class="n">memo</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">coverages</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">memo</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">memo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate_constant_memoize</span><span class="p">:</span>
+            <span class="n">kf</span><span class="p">,</span> <span class="n">kr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate_constant_memoize</span><span class="p">[</span><span class="n">memo</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kf</span> <span class="o">=</span> <span class="n">kf</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kr</span> <span class="o">=</span> <span class="n">kr</span>
+            <span class="k">return</span> <span class="n">kf</span><span class="o">+</span><span class="n">kr</span>
+        <span class="n">kfs</span><span class="p">,</span> <span class="n">krs</span><span class="p">,</span> <span class="n">dkfs</span><span class="p">,</span> <span class="n">dkrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_constants</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">coverages</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_site_energies</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_response_function</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_math</span><span class="o">.</span><span class="n">exp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kf</span> <span class="o">=</span> <span class="n">kfs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kr</span> <span class="o">=</span> <span class="n">krs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rate_constant_memoize</span><span class="p">[</span><span class="n">memo</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">kfs</span><span class="p">,</span><span class="n">krs</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">kfs</span> <span class="o">+</span> <span class="n">krs</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_coverage"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_coverage">[docs]</a>    <span class="k">def</span> <span class="nf">get_coverage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">c0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">findrootArgs</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;Return coverages for given reaction parameters and coverage constraints.</span>
+
+<span class="sd">            :param rxn_parameters: Sequence of rxn_parameters</span>
+<span class="sd">            :type rxn_parameters: [float]</span>
+<span class="sd">            :param c0: Coverage constraints.</span>
+<span class="sd">            :type c0: **TODO**</span>
+<span class="sd">            :param findrootArgs: *deprecated*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;ideal&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_strength</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ideal_coverages</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">c0</span><span class="p">,</span><span class="bp">True</span><span class="p">,</span><span class="n">findrootArgs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_interacting_coverages</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">c0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="n">findrootArgs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_steady_state_coverage"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_steady_state_coverage">[docs]</a>    <span class="k">def</span> <span class="nf">get_steady_state_coverage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">steady_state_fn</span><span class="p">,</span> <span class="n">jacobian_fn</span><span class="p">,</span>
+            <span class="n">c0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">findrootArgs</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;Return steady-state coverages using catmap.solvers.solver_base.NewtonRoot .</span>
+
+<span class="sd">        :param rxn_parameters: Sequence of reaction parameters.</span>
+<span class="sd">        :type rxn_parameters: [float]</span>
+<span class="sd">        :param steady_state_fn: **TODO**</span>
+<span class="sd">        :type steady_state_fn: **TODO**</span>
+<span class="sd">        :param jacobian_fn: **TODO**</span>
+<span class="sd">        :type jacobian_fn: **TODO**</span>
+<span class="sd">        :param c0: Coverage constraints</span>
+<span class="sd">        :type c0: **TODO**</span>
+<span class="sd">        :param findrootArgs: *deprecated*</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">n_tot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">c0</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No initial coverage supplied. Mapper must supply initial guess&quot;</span><span class="p">)</span>
+
+        <span class="n">c0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverages</span><span class="p">(</span><span class="n">c0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steady_state_function</span> <span class="o">=</span> <span class="n">steady_state_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steady_state_jacobian</span> <span class="o">=</span> <span class="n">jacobian_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">ci</span><span class="p">)</span> <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="n">c0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameters</span> <span class="o">=</span> <span class="n">rxn_parameters</span>
+
+        <span class="c">#Enter root finding algorithm</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">steady_state_fn</span>
+        <span class="n">f_resid</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_residual</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="bp">True</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_math</span><span class="o">.</span><span class="n">infnorm</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">internally_constrain_coverages</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">constraint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverages</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">constraint</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+        <span class="n">solver</span> <span class="o">=</span> <span class="n">NewtonRoot</span>
+
+        <span class="k">if</span> <span class="n">f_resid</span><span class="p">(</span><span class="n">c0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="n">c0</span>
+            <span class="k">return</span> <span class="n">c0</span>
+
+        <span class="n">solver_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">norm</span><span class="p">,</span>
+                <span class="n">verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
+                <span class="n">constraint</span> <span class="o">=</span> <span class="n">constraint</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_jacobian</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">solver_kwargs</span><span class="p">[</span><span class="s">&#39;J&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jacobian_fn</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">J</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">numerical_jacobian</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">)</span>
+            <span class="n">solver_kwargs</span><span class="p">[</span><span class="s">&#39;J&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">J</span>
+
+
+        <span class="n">iterations</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">c0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_Axb_solver</span><span class="p">,</span> <span class="o">**</span><span class="n">solver_kwargs</span><span class="p">)</span>
+        <span class="n">old_error</span> <span class="o">=</span> <span class="mf">1e99</span>
+        <span class="n">coverages</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">maxiter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_rootfinding_iterations</span>
+        <span class="n">iterations</span><span class="o">.</span><span class="n">maxiter</span> <span class="o">=</span> <span class="n">maxiter</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">c0</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span><span class="n">error</span> <span class="ow">in</span> <span class="n">iterations</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s">&#39;rootfinding_status&#39;</span><span class="p">,</span>
+                    <span class="n">n_iter</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                    <span class="n">resid</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
+                    <span class="n">coverages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverages</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s">&#39;rootfinding_success&#39;</span><span class="p">,</span>
+                            <span class="n">n_iter</span> <span class="o">=</span> <span class="n">i</span><span class="p">,</span>
+                            <span class="n">priority</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverages</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="n">error</span> <span class="o">=</span> <span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">error</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_threshold</span><span class="o">*</span><span class="n">old_error</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s">&#39;rootfinding_fail&#39;</span><span class="p">,</span>
+                        <span class="n">n_iter</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                        <span class="n">resid</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                        <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Stagnated or diverging residual (resid=&#39;</span><span class="o">+</span>\
+                        <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">)</span>
+
+            <span class="n">old_error</span> <span class="o">=</span> <span class="n">error</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">maxiter</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s">&#39;rootfinding_maxiter&#39;</span><span class="p">,</span>
+                        <span class="n">n_iter</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                        <span class="n">resid</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Out of iterations (resid=&#39;</span><span class="o">+</span>\
+                        <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_error</span> <span class="o">=</span> <span class="n">error</span>
+
+        <span class="k">if</span> <span class="n">coverages</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">coverages</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">coverages</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
+                <span class="n">coverages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverages</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s">&#39;rootfinding_cancel&#39;</span><span class="p">,</span>
+                        <span class="n">n_iter</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                        <span class="n">resid</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Solver cancellation. (resid=&#39;</span><span class="o">+</span>\
+                        <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">f_resid</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_ideal_coverages"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_ideal_coverages">[docs]</a>    <span class="k">def</span> <span class="nf">get_ideal_coverages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">c0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">refresh_rate_constants</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">findrootArgs</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;Return</span>
+
+<span class="sd">            :TODO:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">refresh_rate_constants</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_rate_constants</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">,[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_steady_state_coverage</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ideal_steady_state_function</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ideal_steady_state_jacobian</span><span class="p">,</span><span class="n">c0</span><span class="p">,</span><span class="n">findrootArgs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_interacting_coverages"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_interacting_coverages">[docs]</a>    <span class="k">def</span> <span class="nf">get_interacting_coverages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">c0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">interaction_strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">findrootArgs</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;:TODO:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c">#weight interaction parameters - useful for using non-interacting systems as guess</span>
+        <span class="n">n_tot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">)</span>
+        <span class="n">rxn_parameters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">interaction_strength</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_tot</span><span class="o">+</span><span class="n">n_tot</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">rxn_parameters</span> <span class="o">=</span> <span class="n">rxn_parameters</span><span class="p">[:</span><span class="n">n_tot</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">pi</span><span class="o">*</span><span class="n">interaction_strength</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">rxn_parameters</span><span class="p">[</span><span class="o">-</span><span class="n">n_tot</span><span class="o">**</span><span class="mi">2</span><span class="p">:]]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_tot</span> <span class="ow">and</span> <span class="n">interaction_strength</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;System does not have enough parameters for interactions&#39;</span><span class="p">)</span>
+        <span class="n">cvgs</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">get_steady_state_coverage</span><span class="p">(</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interacting_steady_state_function</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interacting_steady_state_jacobian</span><span class="p">,</span><span class="n">c0</span><span class="p">,</span><span class="n">findrootArgs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cvgs</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.bisect_interaction_strength"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.bisect_interaction_strength">[docs]</a>    <span class="k">def</span> <span class="nf">bisect_interaction_strength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">,</span><span class="n">valid_strength</span><span class="p">,</span><span class="n">valid_coverages</span><span class="p">,</span><span class="n">target_strength</span><span class="p">,</span><span class="n">max_bisections</span><span class="p">,</span><span class="n">findrootArgs</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_tot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">)</span>
+        <span class="n">bisect_iter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_bisects</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">n_bisects</span> <span class="o">&lt;=</span> <span class="n">max_bisections</span><span class="p">:</span>
+            <span class="n">new_strength</span> <span class="o">=</span> <span class="n">valid_strength</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_strength</span><span class="o">-</span><span class="n">valid_strength</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">n_bisects</span><span class="p">)</span>
+            <span class="n">new_params</span> <span class="o">=</span> <span class="n">rxn_parameters</span><span class="p">[:</span><span class="n">n_tot</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">pi</span><span class="o">*</span><span class="n">new_strength</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">rxn_parameters</span><span class="p">[</span><span class="o">-</span><span class="n">n_tot</span><span class="o">**</span><span class="mi">2</span><span class="p">:]]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">valid_coverages</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">get_steady_state_coverage</span><span class="p">(</span><span class="n">new_params</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interacting_steady_state_function</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">interacting_steady_state_jacobian</span><span class="p">,</span><span class="n">valid_coverages</span><span class="p">,</span><span class="n">findrootArgs</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;Successfully bisected with strength: &#39;</span><span class="p">,</span><span class="n">new_strength</span>
+                <span class="n">valid_strength</span> <span class="o">=</span> <span class="n">new_strength</span>
+                <span class="n">n_bisects</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">valid_strength</span> <span class="o">&gt;</span> <span class="mf">0.95</span><span class="o">*</span><span class="n">target_strength</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">valid_coverages</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Failed to bisect with strength: &#39;</span><span class="p">,</span><span class="n">new_strength</span>
+                <span class="n">n_bisects</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">valid_coverages</span>
+
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_initial_coverage"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_initial_coverage">[docs]</a>    <span class="k">def</span> <span class="nf">get_initial_coverage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return coverages based on probabilties according to the Boltzmann distribution</span>
+<span class="sd">        and the adsorption energies for a given sequence of rxn_parameters.</span>
+
+<span class="sd">        :param rxn_parameters: Sequence of reaction parameters</span>
+<span class="sd">        :type rxn_parameter: [float]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">energy_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ads</span><span class="p">,</span><span class="n">E</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">,</span><span class="n">rxn_parameters</span><span class="p">):</span>
+            <span class="n">energy_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span> <span class="o">=</span> <span class="n">E</span>
+        <span class="k">for</span> <span class="n">gas</span><span class="p">,</span><span class="n">E</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_names</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">):</span>
+            <span class="n">energy_dict</span><span class="p">[</span><span class="n">gas</span><span class="p">]</span> <span class="o">=</span> <span class="n">E</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_reservoir_dict</span><span class="p">:</span>
+            <span class="c">#check all possibilities, return min residual</span>
+            <span class="n">min_resid</span> <span class="o">=</span> <span class="mf">1e99</span>
+            <span class="n">boltz_cvgs</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">)]</span> <span class="c">#include empty coverage as possible guess</span>
+            <span class="k">for</span> <span class="n">ref_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_reservoir_list</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atomic_reservoir_dict</span> <span class="o">=</span> <span class="n">ref_dict</span>
+                <span class="n">cvgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">boltzmann_coverages</span><span class="p">(</span><span class="n">energy_dict</span><span class="p">)</span>
+                <span class="n">boltz_cvgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cvgs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">boltz_cvgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">thermodynamics</span><span class="o">.</span><span class="n">boltzmann_coverages</span><span class="p">(</span><span class="n">energy_dict</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">boltz_cvgs</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.get_residual"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.get_residual">[docs]</a>    <span class="k">def</span> <span class="nf">get_residual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coverages</span><span class="p">,</span>
+            <span class="n">validate_coverages</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">refresh_rate_constants</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">validate_coverages</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">coverages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverages</span><span class="p">(</span><span class="n">coverages</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="n">coverages</span>
+        <span class="k">if</span> <span class="n">refresh_rate_constants</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">get_rxn_parameters</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_descriptors</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_rate_constants</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameters</span><span class="p">,</span><span class="n">coverages</span><span class="p">)</span>
+<span class="c">#        cvg_rates = self.steady_state_function(None)</span>
+        <span class="n">cvg_rates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">steady_state_function</span><span class="p">(</span><span class="n">coverages</span><span class="p">)</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">cvg_rates</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">residual</span>
+
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.interacting_steady_state_function"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.interacting_steady_state_function">[docs]</a>    <span class="k">def</span> <span class="nf">interacting_steady_state_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coverages</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">memo</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameters</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">)</span> <span class="o">+</span> \
+                <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_site_energies</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">coverages</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="o">+</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">memo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span><span class="p">[</span><span class="n">memo</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interacting_mean_field_steady_state</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameters</span><span class="p">,</span><span class="n">coverages</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_site_energies</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_response_function</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_math</span><span class="o">.</span><span class="n">exp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span><span class="p">[</span><span class="n">memo</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.ideal_steady_state_function"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.ideal_steady_state_function">[docs]</a>    <span class="k">def</span> <span class="nf">ideal_steady_state_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coverages</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">memo</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kf</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kr</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">coverages</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="o">+</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">memo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span><span class="p">[</span><span class="n">memo</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_mean_field_steady_state</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_kf</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_kr</span><span class="p">,</span><span class="n">coverages</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_steady_state_memoize</span><span class="p">[</span><span class="n">memo</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.interacting_steady_state_jacobian"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.interacting_steady_state_jacobian">[docs]</a>    <span class="k">def</span> <span class="nf">interacting_steady_state_jacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coverages</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">J</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interacting_mean_field_jacobian</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_rxn_parameters</span><span class="p">,</span><span class="n">coverages</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_gas_energies</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_site_energies</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_response_function</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_math</span><span class="o">.</span><span class="n">exp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">J</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.ideal_steady_state_jacobian"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.ideal_steady_state_jacobian">[docs]</a>    <span class="k">def</span> <span class="nf">ideal_steady_state_jacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coverages</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_mean_field_jacobian</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_kf</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_kr</span><span class="p">,</span><span class="n">coverages</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">gas_pressures</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">J</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.constrain_coverages"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.constrain_coverages">[docs]</a>    <span class="k">def</span> <span class="nf">constrain_coverages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cvgs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">min_cvg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decimal_precision</span><span class="p">)))</span>
+        <span class="n">cvgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_coverage_function</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">cvgs</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span><span class="n">min_cvg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cvgs</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.compile"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.compile">[docs]</a>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            :TODO:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span><span class="p">:</span>
+            <span class="n">intermediate_subs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">substitutions_dict</span><span class="p">())</span>
+
+            <span class="c">#make 2 versions of rate-constants function</span>
+            <span class="n">energy_expressions_noderivs</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reaction_energy_equations</span><span class="p">(</span><span class="n">adsorbate_interactions</span> <span class="o">=</span> <span class="bp">False</span><span class="p">))</span>
+            <span class="n">energy_expressions_derivs</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reaction_energy_equations</span><span class="p">(</span><span class="n">adsorbate_interactions</span> <span class="o">=</span> <span class="bp">True</span><span class="p">))</span>
+
+            <span class="n">templates</span><span class="p">[</span><span class="s">&#39;rate_constants_no_derivatives&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">templates</span><span class="p">[</span><span class="s">&#39;rate_constants&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">({</span><span class="s">&#39;elementary_step_energetics&#39;</span><span class="p">:</span><span class="n">energy_expressions_noderivs</span><span class="p">})</span>
+            <span class="n">templates</span><span class="p">[</span><span class="s">&#39;rate_constants_with_derivatives&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">templates</span><span class="p">[</span><span class="s">&#39;rate_constants&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">({</span><span class="s">&#39;elementary_step_energetics&#39;</span><span class="p">:</span><span class="n">energy_expressions_derivs</span><span class="p">})</span>
+
+            <span class="c">#make steady-state expressions</span>
+            <span class="n">ss_eqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_equations</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">[</span><span class="s">&#39;steady_state_expressions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ss_eqs</span><span class="p">)</span>
+
+            <span class="c">#make jacobian expressions</span>
+            <span class="n">jac_eqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_equations</span><span class="p">(</span><span class="n">adsorbate_interactions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">[</span><span class="s">&#39;jacobian_expressions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jac_eqs</span><span class="p">)</span>
+            <span class="n">jac_eqs_nd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_equations</span><span class="p">(</span><span class="n">adsorbate_interactions</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">[</span><span class="s">&#39;jacobian_expressions_no_derivatives&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jac_eqs_nd</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">indent_string</span><span class="p">(</span><span class="n">string</span><span class="p">,</span><span class="n">levels</span><span class="p">):</span>
+                <span class="n">lines</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                <span class="n">indention</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">&#39;    &#39;</span><span class="o">*</span><span class="n">levels</span>
+                <span class="k">return</span> <span class="n">indention</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+            <span class="c">#pre-substitute the interaction function into rate_constants (needed because its nested 2 levels)</span>
+            <span class="n">indented</span> <span class="o">=</span> <span class="n">indent_string</span><span class="p">(</span><span class="n">templates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span><span class="o">+</span><span class="s">&#39;_interaction_function&#39;</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">indented</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">indented</span><span class="p">)</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">[</span><span class="s">&#39;interaction_function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">indented</span>
+
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;rate_constants_no_derivatives&#39;</span><span class="p">,</span><span class="s">&#39;rate_constants_with_derivatives&#39;</span><span class="p">]:</span>
+                <span class="n">templates</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">templates</span><span class="p">[</span><span class="n">f</span><span class="p">])</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">)</span>
+
+            <span class="c">#indent rate_constant functions because they are nested 1 level</span>
+            <span class="n">indented_funcs</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">[</span><span class="s">&#39;rate_constants_no_derivatives&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;rate_constants_with_derivatives&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">func</span><span class="p">,</span><span class="n">tempname</span> <span class="ow">in</span> <span class="n">indented_funcs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tempname</span><span class="p">:</span>
+                    <span class="n">tempname</span> <span class="o">=</span> <span class="n">func</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_function_substitutions</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="n">indent_string</span><span class="p">(</span><span class="n">templates</span><span class="p">[</span><span class="n">tempname</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">compiled_funcs</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">[</span><span class="s">&#39;rate_constants&#39;</span><span class="p">,</span><span class="s">&#39;rate_constants_with_derivatives&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;interaction_function&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span><span class="o">+</span><span class="s">&#39;_interaction_function&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;interacting_mean_field_steady_state&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;ideal_mean_field_steady_state&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;interacting_mean_field_jacobian&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;ideal_mean_field_jacobian&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;constrain_coverage_function&#39;</span><span class="p">,</span><span class="s">&#39;constrain_coverages&#39;</span><span class="p">],</span>
+                    <span class="p">[</span><span class="s">&#39;elementary_rates&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">],</span>
+                    <span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">func</span><span class="p">,</span><span class="n">tempname</span> <span class="ow">in</span> <span class="n">compiled_funcs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tempname</span><span class="p">:</span>
+                    <span class="n">tempname</span> <span class="o">=</span> <span class="n">func</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_function_templates</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="n">templates</span><span class="p">[</span><span class="n">tempname</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">generate_static_functions</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimize_analytical_expressions</span><span class="p">:</span>
+                <span class="n">test_theta</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="p">]</span>
+                <span class="n">test_params</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_names</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_state_names</span><span class="p">]</span>
+                <span class="n">test_kfs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elementary_rxns</span><span class="p">]</span>
+                <span class="n">test_krs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elementary_rxns</span><span class="p">]</span>
+                <span class="n">test_p</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_names</span><span class="p">]</span>
+                <span class="n">test_gas_E</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_names</span><span class="p">]</span>
+                <span class="n">test_site_E</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_names</span><span class="p">]</span>
+                <span class="n">test_T</span> <span class="o">=</span> <span class="mi">500</span>
+                <span class="n">test_smearing</span> <span class="o">=</span> <span class="mf">0.02</span>
+                <span class="n">arg_dict</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s">&#39;interacting_mean_field_steady_state&#39;</span><span class="p">:[</span>
+                            <span class="n">test_params</span><span class="p">,</span><span class="n">test_theta</span><span class="p">,</span><span class="n">test_p</span><span class="p">,</span><span class="n">test_gas_E</span><span class="p">,</span><span class="n">test_site_E</span><span class="p">,</span>
+                            <span class="n">test_T</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_response_function</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_math</span><span class="o">.</span><span class="n">exp</span><span class="p">],</span>
+                        <span class="s">&#39;ideal_mean_field_steady_state&#39;</span><span class="p">:[</span>
+                            <span class="n">test_kfs</span><span class="p">,</span> <span class="n">test_krs</span><span class="p">,</span> <span class="n">test_theta</span><span class="p">,</span> <span class="n">test_p</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">],</span>
+                        <span class="s">&#39;interacting_mean_field_jacobian&#39;</span><span class="p">:[</span>
+                            <span class="n">test_params</span><span class="p">,</span><span class="n">test_theta</span><span class="p">,</span><span class="n">test_p</span><span class="p">,</span><span class="n">test_gas_E</span><span class="p">,</span><span class="n">test_site_E</span><span class="p">,</span>
+                            <span class="n">test_T</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_response_function</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_math</span><span class="o">.</span><span class="n">exp</span><span class="p">],</span>
+                        <span class="s">&#39;ideal_mean_field_jacobian&#39;</span><span class="p">:[</span>
+                            <span class="n">test_kfs</span><span class="p">,</span> <span class="n">test_krs</span><span class="p">,</span> <span class="n">test_theta</span><span class="p">,</span> <span class="n">test_p</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_mpfloat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">]</span>
+                        <span class="p">}</span>
+
+                <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">:</span>
+                    <span class="n">args</span><span class="o">=</span> <span class="n">arg_dict</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+                    <span class="n">old_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_function_strings</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+                    <span class="n">insertion_line</span> <span class="o">=</span> <span class="bp">None</span>
+
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">li</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">old_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="s">&#39;    s[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site_names</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span> <span class="ow">in</span> <span class="n">li</span><span class="p">:</span>
+                            <span class="n">insertion_line</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
+
+                    <span class="k">if</span> <span class="n">insertion_line</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Could not find line for inserting optimizations&#39;</span><span class="p">)</span>
+
+                    <span class="c">#optimize string</span>
+                    <span class="n">func_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimize_analytical_function</span><span class="p">(</span><span class="n">func</span><span class="p">,</span><span class="n">old_str</span><span class="p">,</span>
+                            <span class="n">insertion_line</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+                    <span class="c">#re-compile optimized function</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_function_strings</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="n">func_string</span>
+                    <span class="n">locs</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">exec</span> <span class="n">func_string</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="n">locs</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">func</span><span class="p">,</span><span class="n">locs</span><span class="p">[</span><span class="n">func</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbate_interaction_model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;ideal&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">steady_state_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interacting_steady_state_function</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">steady_state_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_steady_state_function</span>
+</div>
+<div class="viewcode-block" id="SteadyStateSolver.optimize_analytical_function"><a class="viewcode-back" href="../../../reference/catmap.solvers.html#catmap.solvers.steady_state_solver.SteadyStateSolver.optimize_analytical_function">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_analytical_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">func_name</span><span class="p">,</span><span class="n">func_string</span><span class="p">,</span><span class="n">insertion_line</span><span class="p">,</span><span class="n">indention_level</span><span class="p">,</span><span class="o">*</span><span class="n">test_args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Replace some common multiplication terms to speed up functions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">locs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">exec</span> <span class="n">func_string</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="n">locs</span>
+        <span class="n">unoptimized</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span>
+
+        <span class="c">#replace common multiplications with substitution</span>
+        <span class="n">mult_regex</span> <span class="o">=</span> <span class="s">&#39;((?:(?:k(?:f|r)\[\d\]|theta\[\d\]|p\[\d\]|s\[\d\])\*?)+ +)&#39;</span>
+        <span class="n">opt_strs</span>   <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">mult_regex</span><span class="p">,</span><span class="n">func_string</span><span class="p">)</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&#39;*&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">func_string</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">m</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&#39;*&#39;</span><span class="p">),</span><span class="n">func_string</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="n">m</span><span class="p">))</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matches</span><span class="p">):</span>
+            <span class="n">opt_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="n">func_string</span> <span class="o">=</span> <span class="n">func_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="s">&#39;subs[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;] &#39;</span><span class="p">)</span>
+
+        <span class="n">sub_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s">&#39;&#39;</span><span class="p">:</span><span class="s">r&#39;( +1\*|\-1\*\-1\*| +0 +\+| +1\.0\*)+&#39;</span><span class="p">,</span>
+                    <span class="s">&#39; + &#39;</span><span class="p">:</span><span class="s">r&#39;( +\- *\-1\*| +\+ *1\*| +\+ *\+ +)+&#39;</span><span class="p">,</span>
+                    <span class="s">&#39; - &#39;</span><span class="p">:</span><span class="s">r&#39;( +\+ *\-1\*| +\- *1\*| +\+ *\- +| +0 +\-|\-1\*|\-1\*1\*)&#39;</span><span class="p">,</span>
+                    <span class="p">}</span>
+
+        <span class="n">opt_str</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">&#39;    &#39;</span><span class="o">*</span><span class="n">indention_level</span><span class="o">+</span><span class="s">&#39;subs = [0]*&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">opt_strs</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">op</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_strs</span><span class="p">):</span>
+            <span class="n">opt_str</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="s">&#39;    &#39;</span><span class="o">*</span><span class="n">indention_level</span><span class="o">+</span> <span class="s">&#39;subs[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;] = &#39;</span><span class="o">+</span><span class="n">op</span>
+
+        <span class="n">func_lines</span> <span class="o">=</span> <span class="n">func_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">func_lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">insertion_line</span><span class="p">,</span> <span class="n">opt_str</span><span class="p">)</span>
+        <span class="n">func_string</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">func_lines</span><span class="p">)</span>
+
+        <span class="n">mtch</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">mtch</span><span class="p">:</span>
+            <span class="n">new_fn</span> <span class="o">=</span> <span class="n">func_string</span>
+            <span class="n">mtch</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">sub_dict</span><span class="p">:</span>
+                <span class="n">rgx</span> <span class="o">=</span> <span class="n">sub_dict</span><span class="p">[</span><span class="n">sub</span><span class="p">]</span>
+                <span class="n">mtch</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">rgx</span><span class="p">,</span><span class="n">func_string</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mtch</span><span class="p">)):</span>
+                    <span class="n">func_string</span> <span class="o">=</span> <span class="n">func_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">sub</span><span class="p">)</span>
+
+        <span class="n">locs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">exec</span> <span class="n">func_string</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="n">locs</span>
+
+        <span class="n">optimized</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">optimized</span><span class="p">(</span><span class="o">*</span><span class="n">test_args</span><span class="p">)</span> <span class="o">-</span> <span class="n">unoptimized</span><span class="p">(</span><span class="o">*</span><span class="n">test_args</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">delta</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decimal_precision</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Warning: Function optimization failed for &#39;</span><span class="o">+</span>\
+                    <span class="n">func_name</span><span class="o">+</span><span class="s">&#39;. Using unoptimized functions&#39;</span><span class="p">)</span>
+            <span class="n">func_string</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">func_lines</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">func_string</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../catmap.html" >catmap</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

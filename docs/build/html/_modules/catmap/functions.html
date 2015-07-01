@@ -1,0 +1,711 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>catmap.functions &mdash; CatMAP 0.2.79 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2.79',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CatMAP 0.2.79 documentation" href="../../index.html" />
+    <link rel="up" title="catmap" href="../catmap.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../catmap.html" accesskey="U">catmap</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for catmap.functions</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">catmap</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">ase.atoms</span> <span class="kn">import</span> <span class="n">string2symbols</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<div class="viewcode-block" id="get_composition"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.get_composition">[docs]</a><span class="k">def</span> <span class="nf">get_composition</span><span class="p">(</span><span class="n">species_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert string of species into a dictionary of species and the number of each species.</span>
+
+<span class="sd">    :param species_string: A string of the reaction species. Should be a chemical formula string</span>
+<span class="sd">                           that may also contain &#39;-&#39;,&#39;&amp;&#39;,or,&#39;pe&#39;. &#39;pe&#39; is a special case corresponding</span>
+<span class="sd">                           to a proton-electron pair and has the compositon of H.</span>
+<span class="sd">    :type species: str</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">composition</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c"># clean up transition states and electrochem</span>
+    <span class="n">species_string</span> <span class="o">=</span> <span class="n">species_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">species_string</span> <span class="o">=</span> <span class="n">species_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;pe&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">)</span>
+    <span class="n">species_string</span> <span class="o">=</span> <span class="n">species_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&amp;&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">species_string</span> <span class="o">=</span> <span class="n">species_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;ele&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">symbs</span> <span class="o">=</span> <span class="n">string2symbols</span><span class="p">(</span><span class="n">species_string</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">symbs</span><span class="p">):</span>
+            <span class="n">composition</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbs</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">composition</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">return</span> <span class="n">composition</span>
+</div>
+<div class="viewcode-block" id="cartesian_product"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.cartesian_product">[docs]</a><span class="k">def</span> <span class="nf">cartesian_product</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take the Cartesian product</span>
+
+<span class="sd">    .. todo:: Explain what the args and kwds are</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># product(&#39;ABCD&#39;, &#39;xy&#39;) --&gt; Ax Ay Bx By Cx Cy Dx Dy</span>
+    <span class="c"># product(range(2), repeat=3) --&gt; 000 001 010 011 100 101 110 111</span>
+    <span class="n">pools</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">*</span> <span class="n">kwds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;repeat&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[[]]</span>
+    <span class="k">for</span> <span class="n">pool</span> <span class="ow">in</span> <span class="n">pools</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">+</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">pool</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">prod</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">prod</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="convert_formation_energies"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.convert_formation_energies">[docs]</a><span class="k">def</span> <span class="nf">convert_formation_energies</span><span class="p">(</span><span class="n">energy_dict</span><span class="p">,</span><span class="n">atomic_references</span><span class="p">,</span><span class="n">composition_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert dictionary of energies, atomic references and compositions into a dictionary of formation energies</span>
+
+<span class="sd">    :param energy_dict: Dictionary of energies for all species.</span>
+<span class="sd">                        Keys should be species names and values</span>
+<span class="sd">                        should be energies.</span>
+<span class="sd">                        </span>
+<span class="sd">    :type energy_dict: dict</span>
+
+<span class="sd">    :param atomic_references: Dictionary of atomic reference energies (?)</span>
+
+<span class="sd">    :type atomic_references: dict</span>
+
+<span class="sd">    :param composition_dict: Dictionary of compositions</span>
+
+<span class="sd">    :type composition_dict: dict</span>
+
+<span class="sd">    .. todo:: Explain the keys and values for energy_dict, atomic_references, and composition_dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atomic_references</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ref_offsets</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">atomic_references</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms</span><span class="p">):</span>
+        <span class="n">composition</span> <span class="o">=</span> <span class="n">composition_dict</span><span class="p">[</span><span class="n">atomic_references</span><span class="p">[</span><span class="n">a</span><span class="p">]]</span>
+        <span class="n">e</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energy_dict</span><span class="p">[</span><span class="n">atomic_references</span><span class="p">[</span><span class="n">a</span><span class="p">]])</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms</span><span class="p">):</span>
+            <span class="n">n_a</span> <span class="o">=</span> <span class="n">composition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_a</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n</span><span class="p">)]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Reference set is not valid.&#39;</span><span class="p">)</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">R_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Reference set is not valid.&#39;</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">R_inv</span><span class="p">,</span><span class="n">e</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">ref_offsets</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="n">new_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">energy_dict</span><span class="p">:</span>
+        <span class="n">composition</span> <span class="o">=</span> <span class="n">composition_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">energy_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">symb</span> <span class="ow">in</span> <span class="n">composition</span><span class="p">:</span>
+            <span class="n">E</span> <span class="o">-=</span> <span class="n">ref_offsets</span><span class="p">[</span><span class="n">symb</span><span class="p">]</span><span class="o">*</span><span class="n">composition</span><span class="p">[</span><span class="n">symb</span><span class="p">]</span>
+        <span class="n">new_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_data</span><span class="p">,</span><span class="n">ref_offsets</span>
+</div>
+<div class="viewcode-block" id="parse_constraint"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.parse_constraint">[docs]</a><span class="k">def</span> <span class="nf">parse_constraint</span><span class="p">(</span><span class="n">minmaxlist</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse constraints for the relation. Returns two lists of minimum and maximum constraints</span>
+
+<span class="sd">    :param minmaxlist: List of minimum and maximum constraints.</span>
+
+<span class="sd">    :type minmaxlist: list</span>
+
+<span class="sd">    :param name: Name for the list of constraints.</span>
+
+<span class="sd">    :type name: str</span>
+
+<span class="sd">    .. todo:: Explain minmaxlist and name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">minlist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">maxlist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">mm</span> <span class="ow">in</span> <span class="n">minmaxlist</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mm</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">minv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e99</span>
+                <span class="n">maxv</span> <span class="o">=</span> <span class="mf">1e99</span>
+            <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">mm</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">minv</span><span class="p">,</span><span class="n">maxv</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mm</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)]</span>
+            <span class="k">elif</span> <span class="n">mm</span> <span class="o">==</span> <span class="s">&#39;+&#39;</span><span class="p">:</span>
+                <span class="n">minv</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">maxv</span> <span class="o">=</span> <span class="mf">1e99</span>
+            <span class="k">elif</span> <span class="n">mm</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span><span class="p">:</span>
+                <span class="n">minv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e99</span>
+                <span class="n">maxv</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">minv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mm</span><span class="p">)</span>
+                <span class="n">maxv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mm</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span><span class="ne">TypeError</span><span class="p">,</span><span class="ne">AttributeError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Could not parse constraint for &#39;</span><span class="o">+</span>\
+                    <span class="n">name</span><span class="o">+</span><span class="s">&#39;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">minmaxlist</span><span class="p">))</span>
+        <span class="n">minlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">minv</span><span class="p">)</span>
+        <span class="n">maxlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">maxv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">minlist</span><span class="p">,</span><span class="n">maxlist</span>
+</div>
+<div class="viewcode-block" id="constrained_relaxation"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.constrained_relaxation">[docs]</a><span class="k">def</span> <span class="nf">constrained_relaxation</span><span class="p">(</span>
+        <span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="p">,</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">,</span><span class="n">max_iter</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">,</span><span class="n">tolerance</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve Ax=b subject to the constraints that </span>
+<span class="sd">    x_i &gt; x_min_i and x_i &lt; x_max_i. Algorithm is from Axelson 1996.</span>
+<span class="sd">    </span>
+<span class="sd">    Note that x_min/Max are both lists/arrays of length equal to x</span>
+
+<span class="sd">    :param A: A matrix.</span>
+
+<span class="sd">    :type A: numpy.array</span>
+
+<span class="sd">    :param b: b vector.</span>
+
+<span class="sd">    :type b: numpy.array</span>
+
+<span class="sd">    :param x0: x vector</span>
+
+<span class="sd">    :type x0: numpy.array</span>
+
+<span class="sd">    :param x_min: Minimum constraints.</span>
+
+<span class="sd">    :type x_min: array_like</span>
+
+<span class="sd">    :param x_max: Maximum constraints.</span>
+
+<span class="sd">    :type x_max: array_like</span>
+
+<span class="sd">    :param max_iter: Maximum number of iterations.</span>
+
+<span class="sd">    :type max_iter: int, optional</span>
+
+<span class="sd">    :param tolerance: Tolerance.</span>
+
+<span class="sd">    :type tolerance: float, optional</span>
+
+<span class="sd">    .. todo:: Check to make sure docstring is correct.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#define functional corresponding to Ax=b</span>
+    <span class="k">def</span> <span class="nf">J</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Functional of x which corresponds to Ax=b for </span>
+<span class="sd">        the relaxation method used.</span>
+<span class="sd">        </span>
+<span class="sd">        :param x: x vector.</span>
+
+<span class="sd">        :type x: array_like</span>
+
+<span class="sd">        :param A: A matrix.</span>
+
+<span class="sd">        :type A: numpy.array</span>
+
+<span class="sd">        :param b: b vector.</span>
+
+<span class="sd">        :param b: array_like</span>
+
+<span class="sd">        .. todo:: Check that docstring is correct</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">answer</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">),</span><span class="n">A</span><span class="p">),</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">A</span><span class="p">),</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">answer</span>
+
+    <span class="n">ai</span> <span class="o">=</span> <span class="n">x_min</span>
+    <span class="n">bi</span> <span class="o">=</span> <span class="n">x_max</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">find_min</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find minimum</span>
+
+<span class="sd">        .. todo:: Explain what this does in the context of constrained_relaxation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">u</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">u</span><span class="p">)</span>
+        <span class="n">num1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">num2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Aq</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="n">q</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">num2</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">Aq</span><span class="p">)</span>
+            <span class="n">num1</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">Aq</span><span class="p">)</span>
+            <span class="n">denom</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Aq</span><span class="p">,</span><span class="n">Aq</span><span class="p">)</span>
+        <span class="n">zeta</span> <span class="o">=</span> <span class="p">(</span><span class="n">num1</span><span class="o">-</span><span class="n">num2</span><span class="p">)</span><span class="o">/</span><span class="n">denom</span>
+        <span class="k">if</span> <span class="n">zeta</span> <span class="o">&gt;</span> <span class="n">bi</span><span class="p">[</span><span class="n">q</span><span class="p">]:</span> <span class="n">zeta</span> <span class="o">=</span> <span class="n">bi</span><span class="p">[</span><span class="n">q</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">zeta</span> <span class="o">&lt;</span> <span class="n">ai</span><span class="p">[</span><span class="n">q</span><span class="p">]:</span> <span class="n">zeta</span> <span class="o">=</span> <span class="n">ai</span><span class="p">[</span><span class="n">q</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">zeta</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+    <span class="n">nIter</span> <span class="o">=</span><span class="mi">0</span>
+    <span class="n">converged</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">while</span> <span class="n">nIter</span> <span class="o">&lt;</span> <span class="n">max_iter</span> <span class="ow">and</span> <span class="n">converged</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">nIter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">fOld</span> <span class="o">=</span> <span class="n">J</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">u</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_min</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">fNew</span> <span class="o">=</span> <span class="n">J</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">fDiff</span> <span class="o">=</span> <span class="n">fOld</span> <span class="o">-</span> <span class="n">fNew</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fDiff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">converged</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">if</span> <span class="n">converged</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">u</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Constrained relaxation did not converge.&#39;</span><span class="o">+</span>
+                <span class="s">&#39;Residual was &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fDiff</span><span class="p">)))</span>
+</div>
+<div class="viewcode-block" id="scaling_coefficient_matrix"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.scaling_coefficient_matrix">[docs]</a><span class="k">def</span> <span class="nf">scaling_coefficient_matrix</span><span class="p">(</span>
+        <span class="n">parameter_dict</span><span class="p">,</span> <span class="n">descriptor_dict</span><span class="p">,</span> <span class="n">surface_names</span><span class="p">,</span> 
+        <span class="n">parameter_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">coeff_mins</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">coeff_maxs</span> <span class="o">=</span> <span class="mf">1e99</span><span class="p">,</span> 
+        <span class="n">return_error_dict</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for determining adsorption and transition-state energies</span>
+<span class="sd">    as a linear function of descriptors. </span>
+
+<span class="sd">    :param parameter_dict: Dictionary where the key is adsorbate name </span>
+<span class="sd">                           and the value is a list of adsorption energies for each surface. </span>
+<span class="sd">                           If some surfaces do not have an adsorption energy use None</span>
+<span class="sd">                           as a placeholder.</span>
+
+<span class="sd">    :type parameter_dict: dict</span>
+<span class="sd">    </span>
+<span class="sd">    :param descriptor_dict: Dictionary where the key is surface name and the </span>
+<span class="sd">                            value is a list of descriptor values for each surface.</span>
+<span class="sd">    </span>
+<span class="sd">    :type descriptor_dict: dict</span>
+
+<span class="sd">    :param surface_names: List of surfaces which defines the order of </span>
+<span class="sd">                          surface adsorption energies in parameter_dict.</span>
+
+<span class="sd">    :type surface_names: list</span>
+<span class="sd">    </span>
+<span class="sd">    :param parameter_names: List of adsorbates which defines the order </span>
+<span class="sd">                            of adsorption coefficients in the output. Default is the </span>
+<span class="sd">                            order of parameter_dict.keys().</span>
+
+<span class="sd">    :type parameter_names: list, optional</span>
+
+<span class="sd">    :param coeff_mins: Defines the minimum value of the coefficient </span>
+<span class="sd">                       for each descriptor. Should be a matrix/array/list of lists</span>
+<span class="sd">                       which matches the shape of the expected output.</span>
+
+<span class="sd">    :type coeff_mins: float, optional</span>
+
+<span class="sd">    :param coeff_maxs: Same as coeff_mins but for the maximum value of the coefficient.</span>
+
+<span class="sd">    :type coeff_maxs: float, optional</span>
+
+<span class="sd">    :param return_error_dict: Specify whether or not to return a dictionary of the errors.</span>
+
+<span class="sd">    :type return_error_dict: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#Define adsorbate order if it isn&#39;t</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">parameter_names</span><span class="p">:</span> <span class="n">parameter_names</span> <span class="o">=</span> <span class="n">parameter_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="c">#Check that input dictionaries are valid.</span>
+    <span class="k">def</span> <span class="nf">check_lengths</span><span class="p">(</span><span class="n">dictionary</span><span class="p">,</span><span class="n">force_numeric</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the input dictionaries are valid.</span>
+
+<span class="sd">        :param dictionary: Input dictionary.</span>
+
+<span class="sd">        :type dictionary: dict</span>
+
+<span class="sd">        :param force_numeric: Ensure that all values in the dictionary are numeric.</span>
+
+<span class="sd">        :type force_numeric: bool, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dictionary</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">key_len</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">key</span><span class="o">+</span><span class="s">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span> 
+                    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="p">])</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;All values must be lists of same length.&#39;</span><span class="o">+</span>
+                         <span class="s">&#39;Use None as placeholder. </span><span class="se">\n</span><span class="s">Key:Length</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="n">key_len</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">force_numeric</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">num</span><span class="p">)</span> <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;All values must be numeric. &#39;</span><span class="o">+</span>
+                            <span class="s">&#39;Error when parsing &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+
+    <span class="n">check_lengths</span><span class="p">(</span><span class="n">parameter_dict</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span> 
+    <span class="n">check_lengths</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span> 
+
+    <span class="c">#initialize coefficient matrix that will be returned.</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">parameter_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+
+    <span class="c">#initialize error dictionary that will be returned </span>
+    <span class="c">#(if return_error_dict=True)</span>
+    <span class="n">error_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">parameter_dict</span><span class="p">:</span>
+        <span class="n">error_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">surface_names</span><span class="p">)</span>
+
+    <span class="c">#initialize descriptor matrix that will be used if </span>
+    <span class="c">#all surfaces are present for a given adsorbate</span>
+    <span class="n">Dtotal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">surface_names</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">Dsurf</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">surface_names</span><span class="p">):</span>
+        <span class="n">Dtotal</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="c">#constant term.</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">DE</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="p">[</span><span class="n">Dsurf</span><span class="p">]):</span>
+            <span class="n">Dtotal</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">DE</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">Nads</span><span class="p">,</span><span class="n">ads</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameter_names</span><span class="p">):</span>
+        <span class="c">#construct vectors for relaxation method.</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c">#if mins and maxs are equal then the system is fully constrained and</span>
+        <span class="c">#there is no reason to solve for the parameters. However, in order to </span>
+        <span class="c">#preserve ordering we use the known coeffs to put in &quot;scaled&quot; parameter</span>
+        <span class="c">#energy values and solve for the coefficients which, by definition, will</span>
+        <span class="c">#come out to be the same as the constraints.</span>
+        <span class="k">if</span> <span class="n">coeff_mins</span><span class="p">[</span><span class="n">Nads</span><span class="p">]</span> <span class="o">==</span> <span class="n">coeff_maxs</span><span class="p">[</span><span class="n">Nads</span><span class="p">]:</span>
+            <span class="n">coeffs</span> <span class="o">=</span> <span class="n">coeff_mins</span><span class="p">[</span><span class="n">Nads</span><span class="p">]</span>
+            <span class="n">surfs</span> <span class="o">=</span> <span class="n">surface_names</span>
+            <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surfs</span><span class="p">:</span>
+                <span class="n">descriptors_i</span> <span class="o">=</span> <span class="n">descriptor_dict</span><span class="p">[</span><span class="n">surf</span><span class="p">]</span>
+                <span class="n">ads_i</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">ci</span><span class="o">*</span><span class="n">di</span> 
+                    <span class="k">for</span> <span class="n">ci</span><span class="p">,</span><span class="n">di</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span><span class="n">descriptors_i</span><span class="p">)])</span> <span class="o">+</span> <span class="n">coeffs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ads_i</span><span class="p">)</span>
+
+        <span class="c">#construct parameter vector A from parameters</span>
+        <span class="c">#if coefficients are not totally constrained</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="p">[</span><span class="n">val</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">parameter_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">]</span> <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">]</span>
+            <span class="n">surfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">surface_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameter_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">])</span> 
+                    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">]</span> <span class="c">#determine the surfaces which have </span>
+                          <span class="c">#parameter energy values for this adsorbate</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">A</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Non-numeric value for the &#39;</span>
+                    <span class="s">&#39;parameters of &#39;</span><span class="o">+</span><span class="n">ads</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
+
+        <span class="c">#construct &quot;descriptor&quot; matrix (note that this is done inside the </span>
+        <span class="c">#for loop to allow different parameters to have different number </span>
+        <span class="c">#of surfaces)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">surfs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Number of energies specified is less than the number&#39;</span>
+                          <span class="s">&#39;of free parameters for &#39;</span><span class="o">+</span><span class="n">ads</span><span class="o">+</span><span class="s">&#39;. Scaling is not reliable&#39;</span>
+                          <span class="s">&#39;unless parameters are explicitly specified in &#39;</span>
+                          <span class="s">&#39; constraints_dict.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">surfs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">surface_names</span><span class="p">):</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">Dtotal</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">surfs</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">Dsurf</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">surfs</span><span class="p">):</span>
+                <span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="c">#constant term.</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">DE</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">descriptor_dict</span><span class="p">[</span><span class="n">Dsurf</span><span class="p">]):</span>
+                    <span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">DE</span><span class="p">)</span>
+
+        <span class="c">#find initial guess for the &quot;coefficient&quot; matrix by solving the </span>
+        <span class="c">#unconstrained least-squares problem Dc=A using psuedo-inverse </span>
+        <span class="c">#of D (note that this is not efficient, but it doesn&#39;t matter </span>
+        <span class="c">#for such small matrices)</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">Dinv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">c0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Dinv</span><span class="p">,</span><span class="n">A</span><span class="p">)</span>
+
+            <span class="c">#use relaxation method to solve the problem subject to the </span>
+            <span class="c">#constraints specified by coeff_mins/Maxs.</span>
+
+            <span class="n">cMin</span> <span class="o">=</span> <span class="n">coeff_mins</span><span class="p">[</span><span class="n">Nads</span><span class="p">]</span>
+            <span class="n">cMax</span> <span class="o">=</span> <span class="n">coeff_maxs</span><span class="p">[</span><span class="n">Nads</span><span class="p">]</span>
+
+            <span class="n">c</span> <span class="o">=</span> <span class="n">constrained_relaxation</span><span class="p">(</span>
+                    <span class="n">D</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">c0</span><span class="p">,</span><span class="n">cMin</span><span class="p">,</span><span class="n">cMax</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">coeff_mins</span><span class="p">[</span><span class="n">Nads</span><span class="p">]</span> <span class="o">==</span> <span class="n">coeff_maxs</span><span class="p">[</span><span class="n">Nads</span><span class="p">]:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">coeff_mins</span><span class="p">[</span><span class="n">Nads</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#If there is only one data point, assume constant.</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Assuming constant value for: &#39;</span><span class="o">+</span><span class="n">ads</span><span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">Dtotal</span><span class="p">[</span><span class="n">i</span><span class="p">,:])</span>
+            <span class="n">c</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">Ndesc</span><span class="p">,</span><span class="n">coeff</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="n">C</span><span class="p">[</span><span class="n">Ndesc</span><span class="p">,</span><span class="n">Nads</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">return_error_dict</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">D</span><span class="p">,</span><span class="n">c</span><span class="p">)</span> <span class="o">-</span> <span class="n">A</span>
+            <span class="k">for</span> <span class="n">surf</span><span class="p">,</span><span class="n">errVal</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">surfs</span><span class="p">,</span><span class="n">err</span><span class="p">):</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">surface_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">surf</span><span class="p">)</span>
+                <span class="n">error_dict</span><span class="p">[</span><span class="n">ads</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">errVal</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_error_dict</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">C</span><span class="p">,</span> <span class="n">error_dict</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">C</span>
+</div>
+<div class="viewcode-block" id="linear_regression"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.linear_regression">[docs]</a><span class="k">def</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">constrain_slope</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform linear regression on x and y and return the slope and intercept.</span>
+
+<span class="sd">    :param x: x-coordinates.</span>
+
+<span class="sd">    :type x: array_like</span>
+
+<span class="sd">    :param y: y-coordinates.</span>
+
+<span class="sd">    :type y: array_like</span>
+
+<span class="sd">    :param constrain_slope: Slope constraint</span>
+
+<span class="sd">    :type constrain_slope: float, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">constrain_slope</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">m</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">catmap</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">constrain_slope</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">yi</span><span class="o">-</span><span class="n">m</span><span class="o">*</span><span class="n">xi</span> <span class="k">for</span> <span class="n">xi</span><span class="p">,</span><span class="n">yi</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)])</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">m</span><span class="p">,</span><span class="n">b</span>
+</div>
+<div class="viewcode-block" id="match_regex"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.match_regex">[docs]</a><span class="k">def</span> <span class="nf">match_regex</span><span class="p">(</span><span class="n">string</span><span class="p">,</span><span class="n">regex</span><span class="p">,</span><span class="n">group_names</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find matching regular expression in string and return a dictionary of the matched expressions.</span>
+
+<span class="sd">    :param string: String.</span>
+
+<span class="sd">    :type string: str</span>
+
+<span class="sd">    :param regex: Regular expression.</span>
+
+<span class="sd">    :type regex: str</span>
+
+<span class="sd">    :param group_names: Corresponding names for each matched group.</span>
+
+<span class="sd">    :type group_names: list</span>
+
+<span class="sd">    .. todo:: Check that this docstring is correct.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span><span class="n">string</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">group_names</span><span class="p">,</span><span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()):</span>
+            <span class="n">match_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">match_dict</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+            </div>
+<div class="viewcode-block" id="numerical_jacobian"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.numerical_jacobian">[docs]</a><span class="k">def</span> <span class="nf">numerical_jacobian</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">,</span><span class="n">diff_idxs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Jacobian matrix of a function at the point x0.</span>
+
+<span class="sd">    This is the first derivative of a vectorial function:</span>
+
+<span class="sd">        f : R^m -&gt; R^n with m &gt;= n</span>
+
+<span class="sd">    Hacked from mpmath.calculus.optimize</span>
+
+<span class="sd">    :param f: Function.</span>
+
+<span class="sd">    :type f: callable</span>
+
+<span class="sd">    :param x:</span>
+
+<span class="sd">    :type x:</span>
+
+<span class="sd">    :param matrix:</span>
+
+<span class="sd">    :type matrix: </span>
+
+<span class="sd">    :param h:</span>
+
+<span class="sd">    :type h: float, optional</span>
+
+<span class="sd">    .. todo:: Fill in the descriptions for f, x, matrix, and h</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">fx</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">diff_idxs</span><span class="p">:</span>
+        <span class="n">diff_idxs</span> <span class="o">=</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">diff_idxs</span><span class="p">:</span>
+        <span class="n">xj</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">h</span><span class="o">*</span><span class="n">xj</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span><span class="n">h</span><span class="p">)</span>
+        <span class="c">#using delta proportional to xj is more stable</span>
+        <span class="c">#for very small numbers.</span>
+        <span class="n">xj</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+        <span class="n">Jj</span> <span class="o">=</span> <span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">xj</span><span class="p">))</span> <span class="o">-</span> <span class="n">fx</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+            <span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">Jj</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">J</span>
+</div>
+<div class="viewcode-block" id="smooth_piecewise_linear"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.smooth_piecewise_linear">[docs]</a><span class="k">def</span> <span class="nf">smooth_piecewise_linear</span><span class="p">(</span><span class="n">theta_tot</span><span class="p">,</span><span class="n">slope</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span><span class="n">smoothing</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smooth piecewise linear function.</span>
+
+<span class="sd">    :param theta_tot:</span>
+
+<span class="sd">    :type theta_tot:</span>
+
+<span class="sd">    :param slope: slope of line</span>
+
+<span class="sd">    :type slope: float, optional</span>
+
+<span class="sd">    :param cutoff: Cutoff.</span>
+
+<span class="sd">    :type cutoff: float, optional</span>
+
+<span class="sd">    :param smoothing: Amount of smoothing.</span>
+
+<span class="sd">    :type smoothing: float, optional</span>
+
+<span class="sd">    .. todo:: Fill in descriptions and types for theta_tot</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">cutoff</span> <span class="o">+</span> <span class="n">smoothing</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">cutoff</span> <span class="o">-</span> <span class="n">smoothing</span>
+    <span class="k">if</span> <span class="n">theta_tot</span> <span class="o">&lt;=</span> <span class="n">x0</span><span class="p">:</span>
+        <span class="n">c_0</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dC</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">d2C</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">elif</span> <span class="n">theta_tot</span> <span class="o">&lt;=</span> <span class="n">x1</span><span class="p">:</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">slope</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">))</span>
+        <span class="n">c_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span><span class="o">*</span><span class="p">(</span><span class="n">theta_tot</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">theta_tot</span>
+        <span class="n">dC</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="p">(</span><span class="n">x0</span><span class="o">/</span><span class="n">theta_tot</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">d2C</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">alpha</span><span class="o">*</span><span class="n">x0</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">theta_tot</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c_0</span> <span class="o">=</span> <span class="n">slope</span><span class="o">*</span><span class="p">(</span><span class="n">theta_tot</span> <span class="o">-</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">/</span><span class="n">theta_tot</span>
+        <span class="n">dC</span> <span class="o">=</span> <span class="n">slope</span><span class="o">*</span><span class="p">(</span><span class="n">cutoff</span><span class="o">/</span><span class="p">(</span><span class="n">theta_tot</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">d2C</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">slope</span><span class="o">*</span><span class="n">cutoff</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">theta_tot</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">c_0</span><span class="p">,</span> <span class="n">dC</span><span class="p">,</span> <span class="n">d2C</span>
+</div>
+<div class="viewcode-block" id="offset_smooth_piecewise_linear"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.offset_smooth_piecewise_linear">[docs]</a><span class="k">def</span> <span class="nf">offset_smooth_piecewise_linear</span><span class="p">(</span><span class="n">theta_tot</span><span class="p">,</span><span class="n">slope</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Piecewise linear function with an offset. Not equivalent to piecewise linear</span>
+<span class="sd">    for second-order interactions</span>
+
+<span class="sd">    :param theta_tot:</span>
+
+<span class="sd">    :type theta_tot:</span>
+
+<span class="sd">    :param max_coverage: Maximum coverage.</span>
+
+<span class="sd">    :type max_coverage: int, optional</span>
+
+<span class="sd">    :param cutoff: Cutoff.</span>
+
+<span class="sd">    :type cutoff: float, optional</span>
+
+<span class="sd">    :param smoothing: Smoothing.</span>
+
+<span class="sd">    :type smoothing: smoothing, optional</span>
+
+<span class="sd">    :param offset: Offset.</span>
+
+<span class="sd">    :type offset: float, optional</span>
+
+<span class="sd">    .. todo:: Fill in description for theta_tot</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c_0</span><span class="p">,</span> <span class="n">dC</span><span class="p">,</span> <span class="n">d2C</span> <span class="o">=</span> <span class="n">smooth_piecewise_linear</span><span class="p">(</span><span class="n">theta_tot</span><span class="p">,</span><span class="n">slope</span><span class="p">,</span><span class="n">cutoff</span><span class="p">,</span><span class="n">smoothing</span><span class="p">)</span>
+    <span class="n">c_0</span> <span class="o">+=</span> <span class="n">offset</span>
+    <span class="k">return</span> <span class="n">c_0</span><span class="p">,</span> <span class="n">dC</span><span class="p">,</span> <span class="n">d2C</span>
+</div>
+<div class="viewcode-block" id="add_dict_in_place"><a class="viewcode-back" href="../../reference/catmap.html#catmap.functions.add_dict_in_place">[docs]</a><span class="k">def</span> <span class="nf">add_dict_in_place</span><span class="p">(</span><span class="n">dict1</span><span class="p">,</span> <span class="n">dict2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates dict1 with elements in dict2 if they do not exist.  otherwise,</span>
+<span class="sd">    add the value for key in dict2 to the value for that key in dict1</span>
+
+<span class="sd">    :param dict1: Dictionary.</span>
+
+<span class="sd">    :type dict1: dict</span>
+
+<span class="sd">    :param dict2: Dictionary.</span>
+
+<span class="sd">    :type dict2: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict2</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dict1</span><span class="p">:</span>
+            <span class="n">dict1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dict2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dict1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">dict2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CatMAP 0.2.79 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../catmap.html" >catmap</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Andrew J. Medford.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>
