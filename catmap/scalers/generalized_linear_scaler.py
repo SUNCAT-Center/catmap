@@ -224,9 +224,9 @@ class GeneralizedLinearScaler(ScalerBase):
                 for k,ck in enumerate(coeffs):
                     ads = self.adsorbate_names[k]
                     if ads in IS:
-                        coeff_vals.append((1.-m)*ck)
+                        coeff_vals.append((1.-m)*abs(ck))
                     elif ads in FS:
-                        coeff_vals.append(m*ck)
+                        coeff_vals.append(m*abs(ck))
                     else:
                         coeff_vals.append(ck)
                 coeff_vals.append(b)
