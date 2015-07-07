@@ -3,9 +3,8 @@ Creating a Microkinetic Model
 
 This tutorial provides a walk-through of how to create a very basic
 micro-kinetic model for CO oxidation on transition-metal (111) surfaces.
-More advanced features are explored in `3 Refining a Microkinetic
-Model <3%20Refining%20a%20Microkinetic%20Model>`__ and `4 Advanced
-Features and Analysis <4%20Advanced%20Features%20and%20Analysis>`__.
+More advanced features are explored in :doc:`refining_a_microkinetic_model`
+and the :doc:`../topics/index` section.
 
 Setting up the model
 --------------------
@@ -13,15 +12,14 @@ Setting up the model
 All micro-kinetic models require a minimum of 2 files: the "setup file"
 and the "submission script". In addition it is almost always necessary
 to specify an "input file" which is used by the "parser" to extend the
-"setup file" (see `the overview <Home>`__).
+"setup file" (see :doc:`generating_an_input_file`).
 
 Input File
 ~~~~~~~~~~
 
 We will begin by assuming that the input file has already been generated
-similar to `1 Generating an Input
-File <1%20Generating%20an%20Input%20File>`__. In fact these energies
-were taken from `CatApp <http://suncat.slac.stanford.edu/catapp/>`__ and
+similar to :doc:`generating_an_input_file`. In fact these energies
+were taken from `CatApp <http://suncat.stanford.edu/#/theory/outreach/catapp/>`__ and
 compiled into a format compatible with CatMAP:
 
 ::
@@ -92,9 +90,9 @@ barrier. The second includes an activated dissociative chemisorption of
 the oxygen molecule, and the final is an activated associative
 desorption of CO2. More complex models for CO oxidation could be
 imagined, but these elementary steps capture the key features. Note that
-we have only included "*" and "*\ \_s" sites since this is a single-site
+we have only included ":code:`*`" and ":code:`*_s`" sites since this is a single-site
 model for CO oxidation. This means that all intermediates will be
-adsorbed at a site designated as "s". These reaction expressions will be
+adsorbed at a site designated as ":code:`s`". These reaction expressions will be
 parsed automatically in order to define the adsorbates,
 transition-states, gasses, and surface sites in the model.
 
@@ -134,7 +132,7 @@ Next, we set the temperature of the model (in Kelvin):
     temperature = 500
 
 In the next part we will create and explicitly set some variables in the
-"species\_definitions" dictionary. This dictionary is the central place
+":code:`species_definitions`" dictionary. This dictionary is the central place
 where all species-specific information is stored, but for the most part
 it will be populated by the "parser". However, there are a few things
 that need to be set explicitly. First, the gas pressures:
@@ -152,17 +150,17 @@ Next, we need to include some information about the surface site:
 
     species_definitions['s'] = {'site_names': ['111'], 'total':1} #define the sites
 
-This line tells the code that anything with '111' in the "site\_name"
+This line tells the code that anything with ":code:`111`" in the ":code:`site_name`"
 column of the input file has energetics associated with an "s" site.
 This is a list because we might want to include multiple site\_names as
-a single site type; for example, if we designated some sites as "fcc"
-and some as "ontop", but both were on the (111) surface we might instead
-use: 'site\_name':['fcc','ontop'].
+a single site type; for example, if we designated some sites as ":code:`fcc`"
+and some as ":code:`ontop`", but both were on the (111) surface we might instead
+use: ":code:`site_name:['fcc','ontop']`".
 
 We also need to tell the model where to store the output. By default it
 will create a data.pkl file which contains all the large outputs (those
 which would take more than 100 lines to represent with text). Lets make
-it store things in CO\_oxidation.pkl instead.
+it store things in :code:`CO_oxidation.pkl` instead.
 
 .. code:: python
 
@@ -195,38 +193,38 @@ contributions (since we don't have frequencies for them).
 There are a number of other approximations built into the model. For
 example, gas-phase thermochemistry can be approximated by:
 
--  'ideal\_gas' - Ideal gas approximation (assumes that atoms are in
+-  :code:`ideal_gas` - Ideal gas approximation (assumes that atoms are in
    ase.structure.molecule and that arguments for
    ase.thermochemistry.IdealGasThermo are specified in
-   catmap.data.ideal\_gas\_params and that frequencies are provided)
--  'shomate\_gas' - Uses Shomate equation (assumes that Shomate
-   parameters are defined in catmap.data.shomate\_params)
--  'fixed\_entropy\_gas' - Includes zero-point energy and a static
+   catmap.data.ideal_gas_params and that frequencies are provided)
+-  :code:`shomate_gas` - Uses Shomate equation (assumes that Shomate
+   parameters are defined in catmap.data.shomate_params)
+-  :code:`fixed_entropy_gas` - Includes zero-point energy and a static
    entropy correction (assumes that frequencies are provided and that
-   gas entropy is provided in catmap.data.fixed\_entropy\_dict (if not
+   gas entropy is provided in catmap.data.fixed_entropy_dict (if not
    0.002 eV/K is used))
--  'frozen\_fixed\_entropy\_gas' - Same as fixed\_entropy\_gas except
+-  :code:`frozen_fixed_entropy_gas` - Same as :code:`fixed_entropy_gas` except
    that zero-point energy is neglected.
--  'zero\_point\_gas' - Only includes zero-point energies and neglects
+-  :code:`zero_point_gas` - Only includes zero-point energies and neglects
    entropy (assumes that frequencies are provided)
--  'frozen\_gas' - Do not include any corrections.
+-  :code:`frozen_gas` - Do not include any corrections.
 
 Similarly, adsorbate thermochemistry can be approximated by:
 
--  'harmonic\_adsorbate' - Use the harmonic approximation and assume all
+-  :code:`harmonic_adsorbate` - Use the harmonic approximation and assume all
    degrees of freedom are vibrational (implemented via
    ase.thermochemistry.HarmonicThermo and assumes that frequencies are
    defined)
--  'zero\_point\_adsorbate' - Only includes zero-point energies (assumes
+-  :code:`zero_point_adsorbate` - Only includes zero-point energies (assumes
    frequencies are defined)
--  'frozen\_adsorbate' - Do not include any corrections.
+-  :code:`frozen_adsorbate` - Do not include any corrections.
 
 The next thing we want to specify are some parameters for the scaler.
 Since we have not explicitly specified a scaler the default
-GeneralizedLinearScaler will be used. This scaler uses a coefficient
-matrix to map descriptor-space to parameter space and will be discussed
-in more detail in a future tutorial. By default a numerical fit will be
-made which minimizes the error by solving an over-constrained
+:doc:`GeneralizedLinearScaler <../reference/catmap.scalers>` will be used. This
+scaler uses a coefficient matrix to map descriptor-space to parameter space and
+will be discussed in more detail in a future tutorial. By default a numerical
+fit will be made which minimizes the error by solving an over-constrained
 least-squares problem in order to map the lower-dimensional "parameter
 space" to the higher dimensional "descriptor space". However, this fit
 is often unstable since fits are sometimes constructed with limited
@@ -252,21 +250,21 @@ positive ('+') slope for descriptor 1 (oxygen binding), a slope of 0 for
 descriptor 2 (CO binding), and we put no constraints on the constant.
 This is equivalent to saying:
 
-EO = *a*\ \*EO + *c*
+:math:`E_O = a * E_O + c`
 
-where *a* must be positive. Of course in this example its trivial to see
-that *a* should be 1 and *c* should be 0 since of course EO = EO. We
-could specify this explicitly using 'O\_s':[1,0,0]. We could also impose
+where :math:`a` must be positive. Of course in this example its trivial to see
+that :math:`a` should be 1 and :math:`c` should be 0 since of course :math:`E_O = E_O`. We
+could specify this explicitly using :code:`'O_s':[1,0,0]`. We could also impose
 other constraints:
 
--  'O\_s':['-',0,None] would force *a* to be negative
--  'O\_s':['0:3',0,None] would force *a* to be between 0 and 3
--  'O\_s':[None,0,None] would put no constraints on *a*
--  'O\_s':[None,None,None] would let EO = *a*\ \*EO + b\*ECO + *c* with
-   no constraints on *a*, *b*, or *c*
+-  :code:`'O_s':['-',0,None]` would force :math:`a` to be negative
+-  :code:`'O_s':['0:3',0,None]` would force :math:`a` to be between 0 and 3
+-  :code:`'O_s':[None,0,None]` would put no constraints on :math:`a`
+-  :code:`'O_s':[None,None,None]` would let :math:`E_O = a*E_O + b*E_{CO} + c` with
+   no constraints on :math:`a`, :math:`b`, or :math:`c`
 
-and so on. By default the constraints would be ['+','+',None]. In this
-case the algorithm will find the correct solution of *a* = 1, *c* = 0
+and so on. By default the constraints would be :code:`['+','+',None]`. In this
+case the algorithm will find the correct solution of :math:`a` = 1, :math:`c` = 0
 even if the solution is unconstrained, but the constraints are still
 specified to provide an example. We use similar logic for the CO
 constraint since we know that it should depend on CO binding but not on
@@ -275,20 +273,20 @@ O binding.
 We also need to tell the model how to handle the transition-state
 scaling. We have three options:
 
--  ETS = *m*\ \*EIS + *n* (initial\_state)
--  ETS = *m*\ \*EFS + *n* (final\_state)
--  ETS = *m*\ \*ΔE + *n* (BEP)
+-  :math:`E_{TS} = m*E_{IS}+n` (:code:`initial_state`)
+-  :math:`E_{TS} = m*E_{FS} + n` (:code:`final_state`)
+-  :math:`E_{TS} = m*\Delta E + n` (:code:`BEP`)
 
-where ETS is the transition-state formation energy, EIS is the
-intitial-state (reactant) energy, EFS is the final-state (product)
-energy for the elementary step, and ΔE is the reaction energy of the
-elementary step. By default initial\_state is used, but for some
+where :math:`E_{TS}` is the transition-state formation energy, :math:`E_{IS}` is the
+intitial-state (reactant) energy, :math:`E_{FS}` is the final-state (product)
+energy for the elementary step, and :math:`\Delta E` is the reaction energy of the
+elementary step. By default :code:`initial_state` is used, but for some
 elementary steps this might not make sense. The dissociative adsorption
 of oxygen is a great example, since the initial state energy is equal to
 the gas-phase energy of the oxygen molecule and is a constant. Thus, if
-we assumed initial\_state scaling then we would be assuming a constant
+we assumed :code:`initial_state` scaling then we would be assuming a constant
 activation energy which would obviously not capture trends across
-surfaces. Instead, we scale with the 'final\_state'.
+surfaces. Instead, we scale with the ':code:`final_state`'.
 
 By default the coefficients *m* and *n* are computed by a least-squares
 fit. They can be accessed by the
@@ -297,13 +295,12 @@ ReactionModel after the model has been run. In some cases it may be
 necessary to specify these coefficients manually because, for example,
 the transition-state energies have not been calculated. This can be
 achieved by using the values: 'initial\_state:[*m*,\ *n*]' or
-'initial\_state:[*m*\ ]' where 'initial\_state' could also be
-'final\_state' or 'BEP'. If only *m* is specified then *n* will be
+:code:`initial_state:[m]` where ':code:`initial_state`' could also be
+':code:`final_state`' or 'BEP'. If only *m* is specified then *n* will be
 determined by a least-squared fit. It is worth noting here that while
 *m* is independent of the reference used to compute the "generalized
-formation energies" in the input file (see `Formation Energy
-Approach <1%20Generating%20an%20Input%20File#formation_energy>`__), *n*
-will depend on the references for 'initial\_state' or 'final\_state'
+formation energies" in the input file (see :ref:`formation_energy`), *n*
+will depend on the references for ':code:`initial_state`' or ':code:`final_state`'
 scaling. Thus if you are using transition-state scaling values from some
 previously published work it is critical that the same reference sets be
 used.
@@ -488,8 +485,7 @@ out by checking the "output\_labels" dictionary:
     ([['s', 'CO_g'], ['CO_s']], [['s', 's', 'O2_g'], ['O-O_s', 's'], ['O_s', 'O_s']], [['CO_s', 'O_s'], ['O-CO_s', 's'], ['CO2_g', 's', 's']])
 
 In this case the model only outputs the rate and coverage. Information
-on how to get more outputs can be found in `3 - Refining a Microkinetic
-Model <3%20Refining%20a%20Microkinetic%20Model>`__.
+on how to get more outputs can be found in :doc:`refining_a_microkinetic_model`.
 
 Visualizing Output
 ~~~~~~~~~~~~~~~~~~
@@ -532,11 +528,13 @@ plot:
 
     vm.plot(save='rate.pdf') #draw the plot and save it as "rate.pdf"
 
-The "save" keyword tells the plotter where to save the plot. You can set
-"save=False" in order to not save the plot. The plot() function returns
+The ":code:`save`" keyword tells the plotter where to save the plot. You can set
+":code:`save=False`" in order to not save the plot. The plot() function returns
 the matplotlib figure object which can be further modified if necessary.
 If we run this script with "python mkm\_job.py" we get the following
 plot:
+
+.. _CO2rate:
 
 .. figure:: ../_static/2_rate.png
   :align: center
@@ -557,7 +555,7 @@ steady-state condition). If we want to include it we can do:
     vm.plot('all_rates.pdf')
     vm.unique_only = True
 
-(we turn it back to unique\_only right afterwards since this is
+(we turn it back to :code:`unique_only` right afterwards since this is
 generally less cluttered)
 
 which gives us a plot for each elementary step:
@@ -568,7 +566,7 @@ which gives us a plot for each elementary step:
 We might also be interested in the production rate of CO2 rather than
 the rates of elementary steps (it is trivial to see that they are
 equivalent here, but this is not always the case). If we want to analyze
-this we need to include the "production\_rate" in the outputs, re-run
+this we need to include the ":code:`production_rate`" in the outputs, re-run
 the model, and re-plot.
 
 .. code:: python
@@ -583,8 +581,8 @@ the model, and re-plot.
 In the line commented "attach map" we point the VectorMap instance to
 the new output from the model. This line is not necessary if the output
 had been included in the original "output\_variables". We also note that
-the "threshold" variable will be discussed in the `next
-tutorial <3%20Refining%20a%20Microkinetic%20Model>`__.
+the "threshold" variable will be discussed in the :doc:`next
+tutorial <refining_a_microkinetic_model>`.
 
 Now we can see whats going on, but its not very pretty (the colorbar is
 cutoff). We can make a few aesthetic improvements fairly simply:
@@ -634,10 +632,10 @@ this by:
 .. figure:: ../_static/2_CO_coverage.png
   :align: center
 
-Note that the strings to use in "include\_labels" can be found by
-examining the "output\_labels" dictionary `from the log
-file <#output_labels>`__; alternatively you can specify
-"include\_indices = [0,1,...]" where the integers correspond to the
+Note that the strings to use in ":code:`include_labels`" can be found by
+examining the ":code:`output_labels`" dictionary :doc:`from the log
+file <../topics/accessing_reformatting_output>`; alternatively you can specify
+":code:`include_indices = [0,1,...]`" where the integers correspond to the
 indices of the plots to include.
 
 .. Free Energy Diagrams

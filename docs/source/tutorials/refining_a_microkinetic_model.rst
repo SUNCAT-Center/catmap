@@ -9,12 +9,12 @@ changes to the kinetic model with minimal programming. The tutorial will
 show several possibilities of ways to refine the model towards something
 that correctly represents the physical system:
 
--  `Adding elementary steps <#newsteps>`__ (refining the mechanism)
--  `Adding multiple sites <#newsites>`__ (refining the active site
+-  :ref:`Adding elementary steps <newsteps>` (refining the mechanism)
+-  :ref:`Adding multiple sites <newsites>` (refining the active site
    structure)
--  `Sensitivity analyses <#ratecontrol>`__ (refining the inputs to the
+-  :ref:`Sensitivity analyses <ratecontrol>` (refining the inputs to the
    model)
--  `Refining numerical accuracy <#numerical>`__ (resolution, tolerance,
+-  :ref:`Refining numerical accuracy <numerical>` (resolution, tolerance,
    etc.)
 
 These sections do not need to be followed sequentially. For each one we
@@ -42,6 +42,8 @@ submission script:
     vm.threshold = 1e-25 #anything below this is considered to be 0
     vm.subplots_adjust_kwargs = {'left':0.2,'right':0.8,'bottom':0.15}
     vm.plot(save='pretty_production_rate.pdf')
+
+.. _newsteps:
 
 Adding Elementary Steps
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,6 +97,7 @@ directory you should see something like:
     minresid_iteration_0: success - [-1.00,-0.50] using coverages from [-1.00,-0.50]
     mapper_iteration_1: status - 0 points do not have valid solution.
 
+
 However, if you run in the same directory that you used for
 :doc:`creating_a_microkinetic_model`, you will see slightly `different output
 <#initial_guess>`__. Either way, the
@@ -107,7 +110,7 @@ following:
   :align: center
 
 If we compare this to the
-`figure <2%20Creating%20a%20Microkinetic%20Model#CO2rate>`__ from the
+:ref:`figure <CO2rate>` from the
 previous tutorial we can see that there are a few differences, but the
 general conclusions are unchanged. If we wanted to be thorough we could
 continue refining the model by adding more elementary steps (`CO2
@@ -132,6 +135,7 @@ get something like:
     Length of guess coverage vectors are shorter than the number of adsorbates. Assuming undefined coverages are 0
     initial_evaluation: success - initial guess at point [ 3.00, 3.36]
     ...
+
 
 This happens because the model detects the data file (CO\_oxidation.pkl)
 and loads in the coverages to use as an initial guess. However, it
@@ -162,8 +166,10 @@ simple version of the system and slowly add more elementary steps,
 converging the model along the way and using coverages from the simpler
 model as an initial guess to the more complex one.
 
-More examples of how to add elementary steps are given in the `following
-section <#newsites>`__.
+More examples of how to add elementary steps are given in the :ref:`following
+section <newsites>`.
+
+.. _newsites:
 
 Adding multiple sites
 ~~~~~~~~~~~~~~~~~~~~~
@@ -260,9 +266,9 @@ Now we get the following:
   :align: center
 
 The same thing can also be achieved by tightening the numerical
-precision/tolerance, as discussed `later <#numerical>`__. When we look
+precision/tolerance, as discussed :ref:`later <numerical>`. When we look
 at the plot we see the leg going out towards Ni/Ru/Rh which, based on
-the `previous section <#newsteps>`__, we can predict will be reduced if
+the :ref:`previous section <newsteps>`, we can predict will be reduced if
 molecular oxygen adsorption is considered. We also notice that the
 maximum is moved towards the nobler metals, which is roughly consistent
 with the findings of `Falsig et.
@@ -331,6 +337,8 @@ O-O-CO), neglecting zero-point and free energy contributions for
 adsorbates, lack of adsorbate-adsorbate interactions, or issues with the
 DFT input energies.
 
+.. _ratecontrol:
+
 Sensitivity Analyses
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -393,13 +401,13 @@ control is of order 1. In fact it is bounded by the number of times an
 intermediate appears on the same side of an elementary step. In this
 case that is 2, since O2\* → 2O\* (O\* appears twice on the RHS). We
 could also just let the plotter decide the min/max automatically, but
-this is sometimes problematic due to `numerical issues with rate
-control <#sensitivity_numerics>`__.
+this is sometimes problematic due to :ref:`numerical issues with rate
+control <sensitivity_numerics>`.
 
 Now we can run the code. You should see that the initial guesses are
 proving successful for each point, but you will probably notice that the
 code is executing significantly slower (factor of ~16). The reason for
-this will be discussed `later <#sensitivity_numerics>`__. Unlike
+this will be discussed :ref:`later <sensitivity_numerics>`. Unlike
 rates/coverages, the rate control will not converge quicker with a
 previous solution as an initial guess. In this case it may be desirable
 to load in the results of a previous simulation directly like:
@@ -457,6 +465,8 @@ where :math:`p_j` is the pressure of gas species *j*. This can also be included
 in the same way as rate\_control and selectivity control by including
 "rxn\_order" in the output variables.
 
+.. _sensitivity_numerics:
+
 Numerical Issues in Sensitivity Analyses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -504,8 +514,10 @@ measurable change in the values of the function. The best thing to do
 here is to tune the perturbation size to a slightly larger number and
 hope for convergence. Sometimes this does not work, in which case it
 might also be necessary to increase the precision and decrease the
-tolerance of the model by many orders of magnitude (see `Refining
-Numerical Accuracy <#numerical>`__).
+tolerance of the model by many orders of magnitude (see :ref:`Refining
+Numerical Accuracy <numerical>`).
+
+.. _numerical:
 
 Refining Numerical Accuracy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -562,10 +574,10 @@ the lowest rate which is relevant for the model. Usually something on
 the order of 1e-50 to 1e-35 is sufficient. However, when dealing with a
 model where the maximum rate is very low, or when trying to make
 sensitivity analyses more accurate, it may be necessary to decrease the
-tolerance to as low as 10-decimal\_precision. Similar to the
+tolerance to as low as 1e-decimal\_precision. Similar to the
 decimal\_precision, if the solutions are correct then it should be
 possible to arbitrarily decrease the tolerance (although it should never
-be lower than 10-decimal\_precision.
+be lower than 1e-decimal\_precision).
 
 max\_rootfinding\_iterations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -595,6 +607,6 @@ indication that there is something fundamentally wrong with the
 convergence critera (i.e. the solution oscillates) and that there is no
 steady-state solution.
 
-Like max\_rootfinding\_iterations, max\_bisections will not change the
+Like :code:`max_rootfinding_iterations`, :code:`max_bisections` will not change the
 overall answers to the model, but will determine if/how long it takes to
 converge.
