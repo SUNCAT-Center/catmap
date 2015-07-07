@@ -6,6 +6,8 @@
 .. |CO2| replace:: :math:`{\rm{CO}}_2`\
 .. |O2| replace:: :math:`{\rm{O}}_2`\
 .. |CO| replace:: :math:`{\rm{CO}}`\
+.. |CH| replace:: :math:`{\rm{CH}}`\
+.. |OH| replace:: :math:`{\rm{OH}}`\
 .. |O| replace:: :math:`{\rm{O}}`\
 .. |H| replace:: :math:`{\rm{H}}`\
 .. |C| replace:: :math:`{\rm{C}}`\
@@ -26,9 +28,11 @@ inputs in some other format then it is also possible to design custom
 "parser" classes, but this is advanced and will not be discussed further
 here.
 
-The tutorial is broken into two parts: an `overview <#overview>`__ of
-input file structure and an `example <#example>`__ of how to create an
+The tutorial is broken into two parts: an :ref:`overview <overview>` of
+input file structure and an :ref:`example <example>` of how to create an
 input file for methane synthesis on :math:`{\rm{Rh}}(111)` from DFT.
+
+.. _overview:
 
 Input File Overview
 -------------------
@@ -113,9 +117,8 @@ it is often practical to use a chemical formula (e.g. CH3O) since the
 composition of such strings can be automatically determined (the ASE
 function ase.atoms.strings2symbols is used). If the name cannot be
 parsed by ase.atoms.strings2symbols then the atomic composition must be
-manually specified in the {
-{species\_definitions[species\_name]['composition']}} dictionary. For
-example:
+manually specified in the {species\_definitions[species\_name]['composition']}
+dictionary. For example:
 
 ``species_definitions['methoxy']['composition'] = {'C':1,'H':3,'O':1}``
 
@@ -132,13 +135,13 @@ formation\_energy
 
 This is the core of the input file since it defines the energetics of
 the system. It should be the "generalized formation energy" (see
-`Formation Energy Approach <#formation_energy>`__) of the
-"species\_name" on the "surface\_name" and "site\_name". These energies
-are usually very hard to come by, and must be computed by an electronic
-structure method such as DFT, or in some cases they can be measured
-experimentally. It is extremely important that all energies share a
-common thermodynamic reservoir for each atomic constituent (see
-`Formation Energy Approach <#formation_energy>`__).
+:ref:`Formation Energy Approach <formation_energy>`) of the "species\_name" on the "surface\_name" and
+"site\_name". These energies are usually very hard to come by, and must be
+computed by an electronic structure method such as DFT, or in some cases they
+can be measured experimentally. It is extremely important that all energies
+share a
+common thermodynamic reservoir for each atomic constituent (see :ref:`Formation
+Energy Approach <formation_energy>`).
 
 frequencies
 ^^^^^^^^^^^
@@ -192,6 +195,8 @@ or for your own input you could use "Unpublished", "This work",
 "DFT/GPAW/RPBE", etc. This is used when generating a summary file for
 the model, and it is always good practice to note the source of inputs.
 
+.. _formation_energy:
+
 Formation Energy Approach
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -212,9 +217,10 @@ compute the reference energies (:math:`\left|R_j\right|`) for each atomic specie
 
 
 .. math::
+
     R_{\rm{H}} &= 0.5(U_{\rm{H}_2}) \\
-    R_{\rm{C} &= U_{CH_4} - 4R_{\rm{H}} \\
-    R_{\rm{O}} &= U_{{\rm{H}}_{\rm{2O}}} - 2R_{\rm{H}} \\
+    R_{\rm{C}} &= U_{\rm{CH_4}} - 4R_{\rm{H}} \\
+    R_{\rm{O}} &= U_{\rm{H_2O}} - 2R_{\rm{H}} \\
 
 (where again U is a "raw" energy from an ab-initio calculation, or a
 "regular" formation energy from NIST).
@@ -255,7 +261,9 @@ energies :math:`|R_j|`.
 It is also worth re-iterating that the *same reference energies* :math:`|R_j|` *must
 be used for all energies in a given input file*. One can usually see
 which gas-phase species are used as references since their formation
-energies will be 0 by definition (see `above <#input_text>`__).
+energies will be 0 by definition (see :ref:`overview <overview>`).
+
+.. _example:
 
 Example
 -------
@@ -510,10 +518,9 @@ header names right!).
 In case we want to check that the input can be parsed correctly, we
 could create a "dummy" ReactionModel and ask it to parse everything in.
 Normally this won't be necessary since you will have an actual
-ReactionModel that you want to use to test the parser (see the `2 -
-Creating a Microkinetic
-Model <2%20Creating%20a%20Microkinetic%20Model>`__ tutorial), but it is
-included here for reference.
+ReactionModel that you want to use to test the parser (see the
+:doc:`creating_a_microkinetic_model` tutorial), but it is included here for
+reference.
 
 .. code:: python
 
