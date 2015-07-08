@@ -782,6 +782,7 @@ class ThermoCorrections(ReactionModelWrapper):
             set_product_pressures(gi,G_dict,gamma_i,gas_pressures,product_pressures)
 
         self.gas_pressures = [gas_pressures[gi] for gi in self.gas_names] 
+        print [float(i) for i in self.gas_pressures]
 
     def get_frequency_cutoff(self,kB_multiplier,temperature=None):
         kB = float(self._kB)
