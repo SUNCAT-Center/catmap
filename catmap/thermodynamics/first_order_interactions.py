@@ -34,7 +34,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 'interaction_fitting_mode':None
                 }
         self._log_strings = {'interaction_fitting_success':
-                "interaction parameter ${param} = ${paramval} (avg_error=${error})"}
+                "interaction parameter ${param}@${surface} = ${paramval} (avg_error=${error})"}
 
     def parameterize_interactions(self):
         self._parameterized = True
@@ -174,6 +174,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
                 param = param_name,
                 paramval = str(eps_ij),
                 error = str(round(err,2)),
+                surface = surf_name
                 )
         return eps_ij
 
@@ -241,7 +242,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
             all_cvgs = []
             for key in self.species_definitions:
                 info = self.species_definitions[key]
-                if 'coverage_dependent_energy' in info:
+                if info.get('coverage_dependent_energy',[None]*(surf_id+1))[surf_id]:
                     for cvg_i in info['coverage_dependent_energy'][surf_id]:
                         cvg,Ediff,Eint= cvg_i
                         Ediff = [Ediff,key]

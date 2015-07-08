@@ -20,6 +20,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     'energy_type':'free_energy',
                     'include_labels':False,
                     'subplots_adjust_kwargs':{},
+                    'line_offset':0,
                     'kwarg_dict':{}}
         self._rxm.update(defaults)
         self.data_dict = {}
@@ -123,9 +124,6 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 energy_dict[key] += self._kB*self.temperature*log(P)
                    
                     if self.coverage_correction == True:
-                        if not self.energy_type == 'interacting_energy':
-                            raise UserWarning('Coverage correction can only be used with'
-                                    ' "energy_type=interacting_energy"')
                         if not self.coverage_map:
                             raise UserWarning('No coverage map found.')
                         cvg_labels = self.output_labels['interacting_energy']
@@ -196,7 +194,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     kwargs = self.kwarg_list[n]
                     for key in kwargs:
                         setattr(self,key,kwargs[key])
-
+                    
+                    self.initial_energy += self.line_offset
                     self.draw(ax)
 
         if self.energy_type == 'free_energy':
