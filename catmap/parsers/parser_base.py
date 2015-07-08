@@ -34,6 +34,7 @@ class ParserBase(ReactionModelWrapper):
         #Make dictionary of useful information about species in model
         if not self.species_definitions:
             self.species_definitions = {}
+        
         for species in (self.gas_names+self.adsorbate_names+
                 self.transition_state_names+self.site_names+tuple(self._gas_sites)):
             

@@ -106,18 +106,18 @@ class MeanFieldSolver(SolverBase):
         if self.reactants is None:
             self.reactants = [g for g,r in zip(self.gas_names,tofs) if r <=0]
 
-        prod_rate = sum([max(r,0)
+        prod_rate = sum([max(r*w,0)
             for g,r,w in zip(self.gas_names,tofs,weights) if g in self.products])
-        reac_rate = sum([max(-r,0)
+        reac_rate = sum([max(-r*w,0)
             for g,r,w in zip(self.gas_names,tofs,weights) if g in self.reactants])
 
         selectivities = []
         for g,r,w in zip(self.gas_names,tofs,weights):
             if g in self.products and prod_rate:
-                sel = max(r,0)*w/prod_rate
+                sel = max(r*w,0)/prod_rate
 
             elif g in self.reactants and reac_rate:
-                sel = max(-r,0)*w/reac_rate
+                sel = max(-r*w,0)*w/reac_rate
             else:
                 sel = 0
             selectivities.append(sel)

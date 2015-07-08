@@ -3,6 +3,9 @@ from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import get_composition, add_dict_in_place
 from scipy.optimize import fmin_powell
+import warnings
+from mpmath import mpf
+from math import exp, log
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
 molecule = catmap.molecule
@@ -150,13 +153,14 @@ class ThermoCorrections(ReactionModelWrapper):
             dl_species = [spec for spec in self.species_definitions.keys()
                             if '_dl' in spec and '*' not in spec]
             for spec in dl_species:
-                gas_spec = spec.replace('_dl', '_g')
-                C_H2O = 55.
-                KH_gas = self.species_definitions[spec]['kH']
-                P_gas = C_H2O / KH_gas
-                P_corr = np.log(P_gas) * self._kB * self.temperature
-                correction_dict[spec] = correction_dict[gas_spec] + P_corr
-
+            	tempname = spec.split('_')[0]
+            	gas_spec = tempname+'_g'
+            	C_H2O = 55.
+            	KH_gas = self.species_definitions[spec]['kH']
+            	P_gas = C_H2O / KH_gas
+            	P_corr = np.log(P_gas) * self._kB * self.temperature
+            	correction_dict[spec] = correction_dict[gas_spec] + P_corr
+            	
         return correction_dict
 
     def ideal_gas(self):
@@ -440,8 +444,14 @@ class ThermoCorrections(ReactionModelWrapper):
 
                     frequencies = [max(nu,nu_min) for nu in frequencies]
                 therm = HarmonicThermo(frequencies)
-                free_energy = therm.get_gibbs_energy(
-                        temperature,verbose=False)
+                try:
+                    free_energy = therm.get_gibbs_energy(
+                            temperature,verbose=False)
+                except AttributeError:
+                    warnings.warn('HarmonicThermo.get_free_energy is deprecated.'
+                                   'Update your ASE version.')
+                    free_energy = therm.get_free_energy(
+                            temperature,verbose=False)
                 ZPE = sum(frequencies)/2.0 
                 dS = therm.get_entropy(temperature,verbose=False)
                 dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
@@ -499,13 +509,13 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_enthalpy_entropy_adsorbate(self):
 	"""
-	TO DO
+	Return free energy corrections based on input enthalpy, entropy, ZPE
 	"""
         return self.fixed_enthalpy_entropy_gas(self.adsorbate_names+self.transition_state_names)
 
     def average_transition_state(self,thermo_dict,transition_state_list = []):
         """
-	TO DO
+	Return transition state thermochemical corrections as average of IS and FS corrections 
 	"""
 	if transition_state_list is None:
             transition_state_list = self.transition_state_names
@@ -564,7 +574,8 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def get_rxn_index_from_TS(self, TS):
-        """ Take in the name of a transition state and return the reaction index of
+        """ 
+	Take in the name of a transition state and return the reaction index of
         the elementary rxn from which it belongs
         """
 	for rxn_index, eq in enumerate(self.elementary_rxns):
@@ -640,6 +651,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return corr
 
     def hbond_with_estimates_electrochemical(self):
+	"""
+	Add hbond corrections to transition states involving pe and ele (coupled proton-electron transfers and electron transfers)
+	"""
         thermo_dict = self.hbond_electrochemical()
         TS_names = [TS for TS in self.transition_state_names if
             'pe' in TS.split('_')[0] or 'ele' in TS.split('_')[0]]
@@ -654,6 +668,9 @@ class ThermoCorrections(ReactionModelWrapper):
         return thermo_dict
 
     def boltzmann_coverages(self,energy_dict):
+	"""
+	Return coverages based on Boltzmann distribution
+	"""
         #change the reference
         reservoirs = getattr(self,'atomic_reservoir_dict',None)
         if reservoirs:
@@ -696,11 +713,9 @@ class ThermoCorrections(ReactionModelWrapper):
     def approach_to_equilibrium_pressure(self):
         """Set product pressures based on approach to equilibrium. Requires the following attributes
         to be set:
-
         global_reactions - a list of global reactions in the same syntax as elementary expressions,
             with each one followed by its respective approach to equilibrium.
         pressure_mode - must be set to 'approach_to_equilibrium'
-
         Note that this function is not well-tested and should be used with caution.
         """
 
@@ -714,15 +729,15 @@ class ThermoCorrections(ReactionModelWrapper):
 
         def set_product_pressures(rxn,G_dict,gamma,gas_pressures,product_pressures={}):
 
-            dG = float(self.get_rxn_energy(rxn,G_dict)[0])
-            K_eq = np.exp(-dG/float(self._kB*self.temperature))
-            K_eq *= gamma
+            dG = mpf(self.get_rxn_energy(rxn,G_dict)[0])
+            K_eq = exp(-dG/(self._kB*self.temperature))
+            K_eq *= mpf(gamma)
             PK = K_eq
 
             for g in gas_pressures:
-                n_g = rxn[0].count(g)
-                p_g = gas_pressures[g]
-                PK *= p_g**(n_g)
+                n_g = mpf(rxn[0].count(g))
+                p_g = mpf(gas_pressures[g])
+                PK *= pow(p_g,n_g)
 
             #remove any products that have pressures specified
             products = rxn[-1]
@@ -730,11 +745,11 @@ class ThermoCorrections(ReactionModelWrapper):
                 if sp in product_pressures:
                     gas_pressures[sp] = product_pressures[sp]
                     n_prod = products.count(sp)
-                    PK /= product_pressures[sp]**(n_prod)
+                    PK /= pow(mpf(product_pressures[sp]),n_prod)
                     products = [p for p in products if p != sp]
 
             N_products = len(products)
-            P_i = PK**(float(1./float(N_products)))
+            P_i = pow(PK,(mpf(1.)/mpf(N_products)))
             for gi in set(products):
                 gas_pressures[gi] += P_i
 
