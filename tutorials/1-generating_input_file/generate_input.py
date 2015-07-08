@@ -113,9 +113,10 @@ rxm = ReactionModel()
 #The following lines are normally assigned by the setup_file
 #and are thus not usually necessary.
 rxm.surface_names = ['Rh']
-rxm.adsorbate_names = ['CO','C','O','H','CH','OH','CH2','CH3'] 
-rxm.transition_state_names = ['C-O','H-OH','H-C']
-rxm.gas_names = ['CO_g','H2_g','CH4_g','H2O_g']
+rxm.adsorbate_names = ('CO','C','O','H','CH','OH','CH2','CH3') 
+rxm.transition_state_names = ('C-O','H-OH','H-C')
+rxm.gas_names = ('CO_g','H2_g','CH4_g','H2O_g')
+rxm.site_names = ('s',)
 rxm.species_definitions = {'s':{'site_names':['111']}}
 #Now we initialize a parser instance (also normally done by setup_file)
 parser = TableParser(rxm)

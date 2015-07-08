@@ -394,8 +394,8 @@ def scaling_coefficient_matrix(
         #for such small matrices)
         D = np.array(D)
         A = np.array(A)
-        Dinv = np.linalg.pinv(D)
         if len(A) > 1:
+            Dinv = np.linalg.pinv(D)
             c0 = np.dot(Dinv,A)
 
             #use relaxation method to solve the problem subject to the 
@@ -410,12 +410,15 @@ def scaling_coefficient_matrix(
         elif coeff_mins[Nads] == coeff_maxs[Nads]:
             c = coeff_mins[Nads]
 
-        else:
+        elif A:
             #If there is only one data point, assume constant.
             warnings.warn('Assuming constant value for: '+ads)
             c = [0]*len(Dtotal[i,:])
             c[-1] = A[0]
-        
+        else:
+            warnings.warn('No data found for : '+ads+', assuming scaling parameters are 0.')
+            c = [0]*len(Dtotal[i,:])
+
         for Ndesc,coeff in enumerate(c):
             C[Ndesc,Nads] = np.round(coeff,5)
 

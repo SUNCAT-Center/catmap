@@ -1,11 +1,17 @@
-.. |H2O| replace:: H\ :sub:`2`\ O
-.. |CH2| replace:: CH\ :sub:`2`\ 
-.. |CH3| replace:: CH\ :sub:`3`\ 
-.. |CH4| replace:: CH\ :sub:`4`\ 
-.. |H2| replace:: H\ :sub:`2`\ 
-.. |CO2| replace:: CO\ :sub:`2`\ 
-.. |O2| replace:: O\ :sub:`2`\ 
-.. |Rj| replace:: R\ :sub:`j`\ 
+.. |H2O| replace:: :math:`{\rm{H}}_2{\rm{O}}`\
+.. |CH2| replace:: :math:`{\rm{CH}}_2`\
+.. |CH3| replace:: :math:`{\rm{CH}}_3`\
+.. |CH4| replace:: :math:`{\rm{CH}}_4`\
+.. |H2| replace:: :math:`{\rm{H}}_2`\
+.. |CO2| replace:: :math:`{\rm{CO}}_2`\
+.. |O2| replace:: :math:`{\rm{O}}_2`\
+.. |CO| replace:: :math:`{\rm{CO}}`\
+.. |CH| replace:: :math:`{\rm{CH}}`\
+.. |OH| replace:: :math:`{\rm{OH}}`\
+.. |O| replace:: :math:`{\rm{O}}`\
+.. |H| replace:: :math:`{\rm{H}}`\
+.. |C| replace:: :math:`{\rm{C}}`\
+.. |Rj| replace:: :math:`R_j`\
 
 Generating an Input File
 ========================
@@ -22,9 +28,11 @@ inputs in some other format then it is also possible to design custom
 "parser" classes, but this is advanced and will not be discussed further
 here.
 
-The tutorial is broken into two parts: an `overview <#overview>`__ of
-input file structure and an `example <#example>`__ of how to create an
-input file for methane synthesis on Rh(111) from DFT.
+The tutorial is broken into two parts: an :ref:`overview <overview>` of
+input file structure and an :ref:`example <example>` of how to create an
+input file for methane synthesis on :math:`{\rm{Rh}}(111)` from DFT.
+
+.. _overview:
 
 Input File Overview
 -------------------
@@ -109,9 +117,8 @@ it is often practical to use a chemical formula (e.g. CH3O) since the
 composition of such strings can be automatically determined (the ASE
 function ase.atoms.strings2symbols is used). If the name cannot be
 parsed by ase.atoms.strings2symbols then the atomic composition must be
-manually specified in the {
-{species\_definitions[species\_name]['compostion']}} dictionary. For
-example:
+manually specified in the {species\_definitions[species\_name]['composition']}
+dictionary. For example:
 
 ``species_definitions['methoxy']['composition'] = {'C':1,'H':3,'O':1}``
 
@@ -128,13 +135,13 @@ formation\_energy
 
 This is the core of the input file since it defines the energetics of
 the system. It should be the "generalized formation energy" (see
-`Formation Energy Approach <#formation_energy>`__) of the
-"species\_name" on the "surface\_name" and "site\_name". These energies
-are usually very hard to come by, and must be computed by an electronic
-structure method such as DFT, or in some cases they can be measured
-experimentally. It is extremely important that all energies share a
-common thermodynamic reservoir for each atomic constituent (see
-`Formation Energy Approach <#formation_energy>`__).
+:ref:`Formation Energy Approach <formation_energy>`) of the "species\_name" on the "surface\_name" and
+"site\_name". These energies are usually very hard to come by, and must be
+computed by an electronic structure method such as DFT, or in some cases they
+can be measured experimentally. It is extremely important that all energies
+share a
+common thermodynamic reservoir for each atomic constituent (see :ref:`Formation
+Energy Approach <formation_energy>`).
 
 frequencies
 ^^^^^^^^^^^
@@ -188,6 +195,8 @@ or for your own input you could use "Unpublished", "This work",
 "DFT/GPAW/RPBE", etc. This is used when generating a summary file for
 the model, and it is always good practice to note the source of inputs.
 
+.. _formation_energy:
+
 Formation Energy Approach
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -197,100 +206,102 @@ reference*:
 
 :math:`E_i = U_i - \sum_j (n_j R_j)`
 
-where Ei is the "generalized formation energy" of species i, Ui is the
-raw/DFT energy of species i, nj is the number of atomic species j in i,
-and |Rj| is the reference energy of that atomic species. Mathematically
+where :math:`E_i` is the "generalized formation energy" of species :math:`i`, :math:`U_i` is the
+raw/DFT energy of species :math:`i`, :math:`nj` is the number of atomic species :math:`j` in :math:`i`,
+and :math:`\left|R_j\right|` is the reference energy of that atomic species. Mathematically
 this looks a little confusing (especially with such crude notation) but
 in practice it is pretty easy. For example, say we want to find the
 energy of gas-phase CO relative to carbon (C) in methane (|CH4|), oxygen
 (O) in |H2O|, and hydrogen (H) in molecular hydrogen (|H2|). We first
-compute the reference energies (|Rj|) for each atomic species:
+compute the reference energies (:math:`\left|R_j\right|`) for each atomic species:
 
 
 .. math::
-    R_H &= 0.5(U_{H_2}) \\
-    R_C &= U_{CH_4} - 4R_H \\
-    R_O &= U_{H_2O} - 2R_H \\
+
+    R_{\rm{H}} &= 0.5(U_{\rm{H}_2}) \\
+    R_{\rm{C}} &= U_{\rm{CH_4}} - 4R_{\rm{H}} \\
+    R_{\rm{O}} &= U_{\rm{H_2O}} - 2R_{\rm{H}} \\
 
 (where again U is a "raw" energy from an ab-initio calculation, or a
 "regular" formation energy from NIST).
 
 Now we can compute the "generalized formation energy" of CO as:
 
-:math:`E_{CO} = U_{CO} - R_C - R_O`
+:math:`E_{\rm{CO}} = U_{\rm{CO}} - R_{\rm{C}} - R_{\rm{O}}`
 
 In the case where CO is adsorbed to a surface, say Pt(211), we can
 compute a "generalized" formation energy relative to the clean surface:
 
-:math:`E_{CO*@Pt(211)} = U_{Pt(211)+CO*} - U_{Pt(211)} - R_C - R_O`
+:math:`E_{{\rm{CO}}*@{\rm{Pt}}(211)} = U_{{\rm{Pt}}(211)+{\rm{CO}}*} - U_{{\rm{Pt}}(211)} - R_{\rm{C}} - R_{\rm{O}}`
 
 One nice thing about the formation energy approach is that it does not
 distinguish between thermodynamic minima (adsorbed states) and saddle
 points (transition-states). Thus, it is possible to compute a formation
-energy of the C-O dissociation transition-state on Pt(211) as:
+energy of the :math:`{\rm{C-O}}` dissociation transition-state on :math:`{\rm{Pt}}(211)` as:
 
-:math:`E_{C-O@Pt(211)} = U_{Pt(211)+C-O} - U_{Pt(211)} - R_C - R_O`
+:math:`E_{{\rm{C-O}}@{\rm{Pt}}(211)} = U_{{\rm{Pt}}(211)+{\rm{C-O}}} - U_{{\rm{Pt}}(211)} - R_{\rm{C}} - R_{\rm{O}}`
 
-Then one could compute the barrier for C-O dissociation as:
+Then one could compute the barrier for :math:`{\rm{C-O}}` dissociation as:
 
-:math:`E_{C-O@Pt(211)} - E_{CO*@Pt(211)}`
+:math:`E_{{\rm{C-O}}@{\rm{Pt}}(211)} - E_{{\rm{CO}}*@{\rm{Pt}}(211)}`
 
 If this still doesn't make sense, try working through the
 `example <#example>`__ below.
 
 In principle the choice of reference species is arbitrary since the
-reference energies |Rj| cancel out in any relative quantities. However, in
+reference energies :math:`|R_j|` cancel out in any relative quantities. However, in
 many cases it is necessary to use some correction scheme for the
 gas-phase energies if they are poorly described by the level of theory
 used (e.g. DFT). In this case it is best to select a reference set for
 which the reference species are well-described by the level of theory.
 For example, it is well-known that |O2| and |CO2| are not properly described
 by DFT, so it would not make sense to use these to compute the reference
-energies |Rj|.
+energies :math:`|R_j|`.
 
-It is also worth re-iterating that the *same reference energies* |Rj| *must
+It is also worth re-iterating that the *same reference energies* :math:`|R_j|` *must
 be used for all energies in a given input file*. One can usually see
 which gas-phase species are used as references since their formation
-energies will be 0 by definition (see `above <#input_text>`__).
+energies will be 0 by definition (see :ref:`overview <overview>`).
+
+.. _example:
 
 Example
 -------
 
 In this example we will generate an input file for methane synthesis
-from CO and |H2| (methanation) on Rh(111) using some previously computed
+from :math:`{\rm{CO}}` and |H2| (methanation) on Rh(111) using some previously computed
 DFT values and a Python script. You can copy-paste the code as you go
-along, or find the whole script at
-catmap/tutorials/generating\_input\_file/generate\_input.py.
+along, or find the whole script at `GitHub <https://github.com/ajmedford/catmap/blob/master/tutorials/1-generating_input_file/generate_input.py>`_.
 
 Take the simplified methanation reaction mechanism:
 
--  CO(g) + \* → CO\*
--  CO\* + \* → C\* + O\*
--  O\* + H\* ↔ OH\* (quasi-equilibrated)
--  OH\* + H\* → |H2O|\ (g) + 2\*
--  C\* + H\* → CH\* + \*
--  CH\* + H\* ↔ |CH2|\* + \* (quasi-equilibrated)
--  |CH2|\* + H\* ↔ |CH3|\* + \* (quasi-equilibrated)
--  |CH3|\* + H\* ↔ |CH4|\ (g) + 2\* (quasi-equilibrated)
+-  :math:`{\rm{CO}}_{\rm{gas}} + * \rightarrow {\rm{CO}}*`
+-  :math:`{\rm{CO}}* + * \rightarrow {\rm{C}}* + {\rm{O}}*`
+-  :math:`{\rm{O}}* + {\rm{H}}* \leftrightarrow {\rm{OH}}*` (quasi-equilibrated)
+-  :math:`{\rm{OH}}* + {\rm{H}}* \rightarrow {\rm{H}}_2{\rm{O}}_{\rm{gas}} + 2*`
+-  :math:`{\rm{C}}* + {\rm{H}}* \rightarrow {\rm{CH}}* + *`
+-  :math:`{\rm{CH}}* + {\rm{H}}* \leftrightarrow {\rm{CH}}_2* + *` (quasi-equilibrated)
+-  :math:`{\rm{CH}}_2* + {\rm{H}}* \leftrightarrow {\rm{CH}}_3* + *` (quasi-equilibrated)
+-  :math:`{\rm{CH}}_3* + {\rm{H}}* \leftrightarrow {\rm{CH}}_{4,{\rm{gas}}} + 2*` (quasi-equilibrated)
 
 Where \* denotes a Rh(111) site. For this example we need energies of
 the following species:
 
--  CO (gas)
+-  |CO| (gas)
 -  |H2| (gas)
 -  |CH4| (gas)
 -  |H2O| (gas)
--  CO (adsorbed)
--  O (adsorbed)
--  C (adsorbed)
--  H (adsorbed)
--  CH (adsorbed)
--  OH (adsorbed)
+-  |CO| (adsorbed)
+-  |O| (adsorbed)
+-  |C| (adsorbed)
+-  |H| (adsorbed)
+-  |CH| (adsorbed)
+-  |OH| (adsorbed)
 -  |CH2| (adsorbed)
 -  |CH3| (adsorbed)
--  C-O (transition-state)
--  H-OH (transition-state)
--  H-C (transition-state)
+-  :math:`{\rm{C}}-{\rm{O}}` (transition-state)
+-  :math:`{\rm{H}}-{\rm{OH}}` (transition-state)
+-  :math:`{\rm{H}}-{\rm{C}}` (transition-state)
 -  (111 slab)
 
 Let's assume that we have computed the energies of these species on a
@@ -323,7 +334,7 @@ dictionary:
 Next, we need to decide on a choice of reference molecules. One simple
 option for this system is to take hydrogen relative to |H2|, carbon
 relative to |CH4|, and water relative to |H2O|. We will take all adsorption
-energies relative to the clean (111) Rh slab.
+energies relative to the clean (111) :math:`{\rm{Rh}}` slab.
 
 .. code:: python
 
@@ -335,7 +346,7 @@ energies relative to the clean (111) Rh slab.
 
 Now we can write a function to convert these "raw" energies to
 "reference" energies. Note that we use the function
-ase.atoms.string2symbols as a convenient way to get the composition from
+`ase.atoms.string2symbols` as a convenient way to get the composition from
 the chemical formula.
 
 .. code:: python
@@ -390,11 +401,11 @@ eV):
     >> H-C_111 2.17
     >>
 
-This looks pretty good. The energies of our reference species (H2\_gas,
-CH4\_gas, and H2O\_gas) are all 0 as expected, and all the numbers are
+This looks pretty good. The energies of our reference species (:math:`{\rm{H}}_{2,\rm{gas}}`,
+:math:`{\rm{CH}}_{4,\rm{gas}}`, and :math:`{\rm{H}}2{\rm{O}}_{\rm{gas}}`) are all 0 as expected, and all the numbers are
 of order 1. Usually if something goes wrong then the numbers will be
 similar to the raw DFT numbers (i.e. > 100 eV). We can also compute the
-CO dissociation barrier as EC-O - ECO = 3.68 eV. This is pretty high,
+CO dissociation barrier as :math:`{\rm{E}}_{\rm{C-O}} - E_{\rm{CO}} = 3.68\,{\rm{eV}}`. This is pretty high,
 but the surface is a close-packed (111) facet so this is not too
 surprising.
 
@@ -404,22 +415,22 @@ calculated by DFT and are stored in a Python dictionary as:
 
 .. code:: python
 
-    frequency_dict = {                
+    frequency_dict = {
                     'CO_gas': [2170],
-                    'H2_gas': [4401],                                                                       
-                    'CH4_gas':[2917,1534,1534,3019,3019,3019,1306,                                                                               
+                    'H2_gas': [4401],
+                    'CH4_gas':[2917,1534,1534,3019,3019,3019,1306,
                                1306,1306],
-                    'H2O_gas': [3657, 1595, 3756],                                                                              
-                    'CO_111': [60.8, 230.9, 256.0, 302.9, 469.9, 1747.3],                                   
-                    'C_111': [464.9, 490.0, 535.9],                                                         
-                    'O_111': [359.5, 393.3, 507.0],                                                         
+                    'H2O_gas': [3657, 1595, 3756],
+                    'CO_111': [60.8, 230.9, 256.0, 302.9, 469.9, 1747.3],
+                    'C_111': [464.9, 490.0, 535.9],
+                    'O_111': [359.5, 393.3, 507.0],
                     'H_111': [462.8, 715.9, 982.5],
-                    'CH_111': [413.3, 437.5, 487.6, 709.6, 735.1, 3045.0],                                  
-                    'OH_111': [55, 340.9, 396.1, 670.3, 718.0, 3681.7],                                     
-                    'CH2_111': [55, 305.5, 381.3, 468.0, 663.4, 790.2, 1356.1,                              
-                                2737.7, 3003.9],                                                            
-                    'CH3_111': [55, 113.5, 167.4, 621.8, 686.0, 702.5, 1381.3,                              
-                                1417.5, 1575.8, 3026.6, 3093.2, 3098.9],                                    
+                    'CH_111': [413.3, 437.5, 487.6, 709.6, 735.1, 3045.0],
+                    'OH_111': [55, 340.9, 396.1, 670.3, 718.0, 3681.7],
+                    'CH2_111': [55, 305.5, 381.3, 468.0, 663.4, 790.2, 1356.1,
+                                2737.7, 3003.9],
+                    'CH3_111': [55, 113.5, 167.4, 621.8, 686.0, 702.5, 1381.3,
+                                1417.5, 1575.8, 3026.6, 3093.2, 3098.9],
                     'C-O_111': [],
                     'H-OH_111': [],
                     'H-C_111': []
@@ -507,10 +518,9 @@ header names right!).
 In case we want to check that the input can be parsed correctly, we
 could create a "dummy" ReactionModel and ask it to parse everything in.
 Normally this won't be necessary since you will have an actual
-ReactionModel that you want to use to test the parser (see the `2 -
-Creating a Microkinetic
-Model <2%20Creating%20a%20Microkinetic%20Model>`__ tutorial), but it is
-included here for reference.
+ReactionModel that you want to use to test the parser (see the
+:doc:`creating_a_microkinetic_model` tutorial), but it is included here for
+reference.
 
 .. code:: python
 
@@ -520,8 +530,8 @@ included here for reference.
     rxm = ReactionModel()
     #The following lines are normally assigned by the setup_file
     #and are thus not usually necessary.
-    rxm.surface_names = ['Rh'] 
-    rxm.adsorbate_names = ['CO','C','O','H','CH','OH','CH2','CH3'] 
+    rxm.surface_names = ['Rh']
+    rxm.adsorbate_names = ['CO','C','O','H','CH','OH','CH2','CH3']
     rxm.transition_state_names = ['C-O','H-OH','H-C']
     rxm.gas_names = ['CO_g','H2_g','CH4_g','H2O_g']
     rxm.species_definitions = {'s':{'site_names':['111']}}
