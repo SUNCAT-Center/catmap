@@ -62,6 +62,6 @@ CatMAP module:
     $ python >>>import catmap
 
 Documentation (this wiki) is located in the catmap/docs folder, and
-is available online at https://github.com/ajmedford/catmap/wiki.
+is available online at http://catmap.readthedocs.org/.
 The best place to start learning how to use the code is the
 :doc:`tutorials/index`.
