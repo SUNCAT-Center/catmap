@@ -1,11 +1,3 @@
-Welcome to the CatMAP wiki! A brief overview of the purpose of this tool
-is provided below. For more information on how to use CatMAP have a look
-at `Installation <wiki/Installation>`__ and
-`Tutorials <wiki/Tutorials>`__. If you are interested in developing see
-the `Developer Info <wiki/Developer%20Info>`__ page, and sign up for the
-`mailing
-list <https://mailman.stanford.edu/mailman/listinfo/mkm-developers>`__.
-
 Code Overview
 -------------
 
