@@ -11,7 +11,7 @@ def get_composition(species_string):
 
     :param species_string: A string of the reaction species. Should be a chemical formula string
                            that may also contain '-','&',or,'pe'. 'pe' is a special case corresponding
-                           to a proton-electron pair and has the compositon of H.
+                           to a proton-electron pair and has the compositon of H, while ele corresponds to an electron and has no associated atoms.
     :type species: str
 
     """
