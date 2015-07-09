@@ -34,6 +34,14 @@ import data
 
 __version__ = "0.2.270"
 
+def griddata(*args, **kwargs):
+    """Wrapper function to avoid annoying griddata errors"""
+    try:
+        return mlab_griddata(*args, **kwargs)
+    except RuntimeError:
+        kwargs['interp'] = 'linear'
+        return mlab_griddata(*args, **kwargs)
+
 def load(setup_file):
     rxm = ReactionModel(setup_file = setup_file)
     return rxm

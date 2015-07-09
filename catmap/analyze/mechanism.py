@@ -150,6 +150,13 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 self.barrier_line_args['color'] = \
                                 self.plot_variant_colors[n]
                     for step in mech:
+
+                        if str(step).startswith('half'):
+                            step = int(step.replace('half',''))
+                            split = True
+                        else:
+                            split = False
+
                         if step < 0:
                             reverse = True
                             step = step*-1
@@ -170,10 +177,21 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                             species = self.elementary_rxns[step-1][-1]
                             L = self.label_maker(species)
+                            if split:
+                                L = L.strip()
+                                if L.startswith('2'):
+                                    L = L[1:]
+                                else:
+                                    L = r'$\frac{1}{2}$'+L
+                                L = ' '+L #add padding back.
                             self.labels.append(L)
 
-                        self.energies.append(nrg)
-                        self.barriers.append(bar)
+                        if split == False:
+                            self.energies.append(nrg)
+                            self.barriers.append(bar)
+                        elif split == True:
+                            self.energies.append(0.5*nrg)
+                            self.barriers.append(0) #split steps cannot have barriers.
 
                     if labels and self.include_labels:
                         self.labels = labels
