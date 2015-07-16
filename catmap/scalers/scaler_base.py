@@ -41,7 +41,7 @@ class ScalerBase(ReactionModelWrapper):
             length N (number of elementary reactions): 
             [[E_rxn1,E_a1],[E_rxn2,E_a2],...[E_rxnN,E_aN]]
         get_rxn_parameters(descriptors): a function to obtain all necessary 
-            reaction parameters frm the descriptors. Should return a list of 
+            reaction parameters from the descriptors. Should return a list of 
             length N (number of elementary reactions): 
             [[param1_rxn1,param2_rxn1...]...[param1_rxnN,param2_rxnN...]]. 
             For a simple model this could be the same as get_energetics, 
