@@ -44,8 +44,7 @@ followed sequentially:
 -  `Coverage dependent adsorption energies <#interactions>`__
 
 For both sections we will use a submission script (mkm\_job.py) similar
-to the one in the `thermodynamic
-descriptors <Using%20Thermodynamic%20Descriptors>`__ tutorial:
+to the one in the :doc:`thermodynamic_descriptors` tutorial:
 
 .. code:: python
 
@@ -74,10 +73,9 @@ descriptors <Using%20Thermodynamic%20Descriptors>`__ tutorial:
     vm.plot(save='coverage.pdf')
 
 We use the same input file (energies.txt) and start with the same setup
-file (CO\_oxidation.mkm) from `Tutorial
-2 <../tutorials/2%20Creating%20a%20Microkinetic%20Model>`__. Note that each section
+file (CO\_oxidation.mkm) from :doc:`Tutorial 2 <../tutorials/creating_a_microkinetic_model>` . Note that each section
 assumes you are starting with the "fresh" CO\_oxidation.mkm file from
-`Tutorial 2 <../tutorials/2%20Creating%20a%20Microkinetic%20Model>`__.
+:doc:`Tutorial 2 <../tutorials/creating_a_microkinetic_model>`.
 
 Multi-site adsorbates and maximum coverages
 -------------------------------------------
@@ -127,8 +125,7 @@ and rate:
   :align: center
 
 
-If we compare these to `Tutorial
-2 <2%20Creating%20a%20Microkinetic%20Model>`__ then we can see that the
+If we compare these to :doc:`Tutorial 2 <../tutorials/creating_a_microkinetic_model>` then we can see that the
 CO\* coverage is suppressed and there is more O\* in the bottom left of
 the plot. This is what we would expect to happen when we require an
 adsorbate to have an extra free site to adsorb.
@@ -166,8 +163,8 @@ following:
 
 This is the first time we have encountered a model that will not
 converge. Normally we would try to get convergence by increasing
-"max\_bisections" or other parameters as discussed in `Tutorial
-3 <3%20Refining%20a%20Microkinetic%20Model>`__. However, in this case it
+"max\_bisections" or other parameters as discussed in :doc:`Tutorial
+3 <../tutorials/refining_a_microkinetic_model>`. However, in this case it
 is hopeless. This is probably because there is no solution within the
 bounds we have defined (which means they are not physical). This isn't
 too surprising since we just made the constraint up. We can still take a
@@ -189,7 +186,7 @@ could have CO coverage of 0.5 and O coverage of 0.5).
 Coverage dependent adsorption eneriges
 --------------------------------------
 
- A more powerful method for including adsorbate-adsorbate interactions
+A more powerful method for including adsorbate-adsorbate interactions
 is to allow adsorption energies to depend on the coverages the
 adsorbates. This is still relatively crude compared to an explicit
 lattice method like kinetic Monte Carlo, but it should provide a good
@@ -203,7 +200,7 @@ oxidation example.
 First order adsorption energy model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- In this model we assume that adsorption energies follow the following
+In this model we assume that adsorption energies follow the following
 relationship:
 
 .. math::
@@ -431,7 +428,7 @@ model:
        interaction_scaling_constraint_dict['O_s&CO_s'] = [None,0,None]
 
    Defining the constraint for 'CO\_s&O\_s' would be equivalent. See
-   `Tutorial 2 <2%20Creating%20a%20Microkinetic%20model>`__ for a
+   :doc:`Tutorial 2 <../tutorials/creating_a_microkinetic_model>` for a
    refresher on the syntax of constraint definitions.
 -  non\_interacting\_site\_pairs: Pairs of site names which are not
    interacting. All cross interactions between adsorbates on these sites
@@ -458,7 +455,7 @@ In addition, the interaction matrix can be included as an output for
 error-checking (this is recommended since the interaction model is still
 relatively new). Simply include "interaction\_matrix" in the
 "output\_variables" and analyze the output as described in `Tutorial
-2 <2%20Creating%20a%20Microkinetic%20model>`__.
+2 <../tutorials/creating_a_microkinetic_model>`.
 
 CO Oxidation Example
 ~~~~~~~~~~~~~~~~~~~~
@@ -468,9 +465,9 @@ Including coverage-dependent interactions
 
 First, lets assume that we already know the self-interaction parameters
 and want to include coverage dependent adsorbate interactions on top of
-the model discussed in `Tutorial
-2 <2%20Creating%20a%20Microkinetic%20Model>`__. In order to do this we
-need to add the following to the CO\_oxidation.mkm setup file:
+the model discussed in :doc:`Tutorial 2
+<../tutorials/creating_a_microkinetic_model>`. In order to do this we need to
+add the following to the CO\_oxidation.mkm setup file:
 
 .. code:: python
 
