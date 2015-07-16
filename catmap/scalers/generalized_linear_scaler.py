@@ -206,7 +206,7 @@ class GeneralizedLinearScaler(ScalerBase):
                 elif mode in ['BEP']:
                     for I,F,T in zip(IS_totals,FS_totals,TS_energies):
                         if None not in [I,F,T]:
-                            valid_xy.append([F-I,T])
+                            valid_xy.append([F-I,T-I])
                 x,y = zip(*valid_xy)
                 if params and len(params) == 1:
                     m,b = catmap.functions.linear_regression(x,y,params[0])
@@ -218,8 +218,22 @@ class GeneralizedLinearScaler(ScalerBase):
                 if isnan(m) or isnan(b):
                     raise UserWarning('Transition-state scaling failed for: '+TS+\
                                     '. Ensure that the scaling mode is set properly.')
-                
-            return [m,b],[m*ci for ci in coeffs] + [b]
+               
+            if mode == 'BEP':
+                coeff_vals = []
+                for k,ck in enumerate(coeffs):
+                    ads = self.adsorbate_names[k]
+                    if ads in IS:
+                        coeff_vals.append((1.-m)*abs(ck))
+                    elif ads in FS:
+                        coeff_vals.append(m*abs(ck))
+                    else:
+                        coeff_vals.append(ck)
+                coeff_vals.append(b)
+            else:
+                coeff_vals = [m*ci for ci in coeffs] + [b]
+
+            return [m,b],coeff_vals
 
         def initial_state_scaling(TS,params):
             return state_scaling(TS,params,'initial_state')

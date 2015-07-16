@@ -834,12 +834,12 @@ class ReactionModel:
                 frequencies += ', '.join(freq_subset)+r'\\'
             frequencies = frequencies[:-2] + '}'
             def cleanstring(string):
-                return string.replace('\r','').replace('"','').replace("'",'')
+                return string.replace('\r','').replace('"','').replace("'",'').replace('_','\_').replace('#','\#')
             ads,site = spec.rsplit('_',1)
             facet = 'gas'
             surf = 'None'
             ref_tag = '_'.join([surf,facet,ads])
-            reference = '\parbox[t]{4cm}{'+self.species_definitions[spec]['formation_energy_source']+'}'
+            reference = '\parbox[t]{4cm}{'+cleanstring(self.species_definitions[spec]['formation_energy_source'])+'}'
             spec_tex = '$'+self.texify(spec)+'$'
             tabrow = '&'.join(
                     [spec_tex,'gas',str(
@@ -847,9 +847,10 @@ class ReactionModel:
             longtable_txt += tabrow + '\n'
 
         for spec in self.adsorbate_names + self.transition_state_names:
-            energy = self.parameter_dict[spec]
-            for e,surf in zip(energy,self.surface_names):
-                if e and e != '-':
+            energy = self.species_definitions[spec]['formation_energy']
+            refs = self.species_definitions[spec]['formation_energy_source']
+            for e,surf,ref in zip(energy,self.surface_names,refs):
+                if e is not None:
                     e = str(round(e,2))
                     if self.species_definitions[spec].get('frequencies',[]):
                         freqs = [str(round(v*1e3,1))
@@ -870,16 +871,13 @@ class ReactionModel:
                     facet = self.species_definitions[site]['site_names']
                     if str(facet) != facet:
                         facet = ' or '.join(facet)
-                    ref_tag = '_'.join([surf,facet,ads])
-#                    if ref_tag in self.reference_dict:
-#                        reference = '\parbox[t]{4cm}{'+ \
-#                               r';\\'.join(
-#                               [ref.replace('\r','').replace('"','').replace("'",'')
-#                               for ref in [self.reference_dict[ref_tag]]])+'}'
-#                        spec_tex = '$'+self.texify(spec)+'$'
-#                        tabrow = '& '.join(
-#                                [spec_tex,surf,e,frequencies,reference]) + r'\\'
-#                        longtable_txt += tabrow + '\n'
+
+                    reference = '\parbox[t]{4cm}{'+ \
+                            cleanstring(ref) + '}'
+                    spec_tex = '$'+self.texify(spec)+'$'
+                    tabrow = '& '.join(
+                            [spec_tex,surf,e,frequencies,reference]) + r'\\'
+                    longtable_txt += tabrow + '\n'
 
         subs_dict['longtable_txt'] = longtable_txt
 
