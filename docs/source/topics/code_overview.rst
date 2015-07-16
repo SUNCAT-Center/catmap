@@ -101,7 +101,7 @@ scaler projects descriptor space to parameter space.
 
 **Using the code:**
 
-Some examples can be found in the `Tutorials <wiki/Tutorials>`__, and
+Some examples can be found in the :doc:`../tutorials/index`, and
 these should explain the syntax necessary and serve as a good starting
 point. The currently implemented features are also briefly described
 below in order to allow a better understanding of the demos and creating
@@ -117,8 +117,7 @@ this is not required) while submission scripts end in .py since they are
 just python scripts. In addition it is very useful to also have an
 "input file" which contains the raw data about the energetics of the
 reaction model. An example of how to create an input file based on a
-table-like format is given in the `1 - Generating an Input
-File <wiki/1%20Generating%20an%20Input%20File>`__ tutorial.
+table-like format is given in the :doc:`../tutorials/generating_an_input_file` tutorial.
 
 Each class described in the **Code Structure** section will require some
 specialized parameters. Some of these parameters are common to all
@@ -242,8 +241,7 @@ variants of each class are listed below. Required attributes are
 -  *Parser:*
 
    -  input\_file - file where input data is stored. File must be in the
-      correct format for the parser used. See `1 - Generating an Input
-      File <wiki/1%20Generating%20an%20Input%20File>`__ for more
+      correct format for the parser used. See :doc:`../tutorials/generating_an_input_file` for more
       information.
 
 -  *Scaler:*
