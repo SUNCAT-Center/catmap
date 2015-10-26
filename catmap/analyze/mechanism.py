@@ -35,7 +35,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
         :param plot_variants: Which PEDs to plot. Defaults to all surfaces
                               or all applied voltages
-        :param plot_variants: list
+        :param plot_variants: list of voltages (if electrochemical) or
+                              descriptor tuples to plot
 
         :param mechanisms: Which reaction pathways to plot.  Each integer
                            corresponds to an elementary step. Elementary
@@ -80,6 +81,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     xy = [0, 0]
                     xy[voltage_idx] = variant
                     xy[1-voltage_idx] = self.descriptor_ranges[1-voltage_idx][0]
+                else:
+                    xy = variant
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
                     self._rxm._descriptors = xy
