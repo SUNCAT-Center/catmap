@@ -146,11 +146,6 @@ class ThermoCorrections(ReactionModelWrapper):
             correction_dict['H_g'] = G_H
             correction_dict['OH_g'] = G_OH
 
-        # Generate energy for fake echem transition states after all other corrections
-        if len(self.echem_transition_state_names) > 0:
-            echem_thermo_dict = self.generate_echem_TS_energies()
-            add_dict_in_place(correction_dict, echem_thermo_dict)
-
         # pressure corrections to species in the echem double layer based on kH
         if 'dl' in self.species_definitions.keys():
             dl_species = [spec for spec in self.species_definitions.keys()
@@ -163,6 +158,11 @@ class ThermoCorrections(ReactionModelWrapper):
                 P_gas = C_H2O / KH_gas
                 P_corr = np.log(P_gas) * self._kB * self.temperature
                 correction_dict[spec] = correction_dict[gas_spec] + P_corr
+
+        # Generate energy for fake echem transition states after all other corrections
+        if len(self.echem_transition_state_names) > 0:
+            echem_thermo_dict = self.generate_echem_TS_energies()
+            add_dict_in_place(correction_dict, echem_thermo_dict)
 
         return correction_dict
 
