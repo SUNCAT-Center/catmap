@@ -102,6 +102,8 @@ class TableParser(ParserBase):
                    if self.species_definitions[k].get('type',None) != 'site']
 
         for adsdef in all_ads:
+            if adsdef in ['ele_g', 'H_g', 'OH_g']:
+                continue  # Ignore electrochemical species that should not be manually defined.
             ads = self.species_definitions[adsdef].get('name',None)
             if ads is None:
                 del self.species_definitions[adsdef]

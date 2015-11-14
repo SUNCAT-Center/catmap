@@ -136,17 +136,20 @@ class ThermoCorrections(ReactionModelWrapper):
         Perform the thermodynamic corrections relevant to electrochemistry but
         are not specific to any particular mode.
         """
+        # pH corrections to proton and hydroxide species
+        if self.pH:
+            G_H2 = self._electronic_energy_dict['H2_g'] + self._correction_dict['H2_g']
+            G_H = 0.5*G_H2 - .0592*self.pH
+            G_H2O = self._electronic_energy_dict['H2O_g'] + self._correction_dict['H2O_g']
+            H2O_index = self.gas_names.index('H2O_g')
+            G_OH = G_H2O - G_H + self._kB*self.temperature*np.log(self.gas_pressures[H2O_index]*1.e14)
+            correction_dict['H_g'] = G_H
+            correction_dict['OH_g'] = G_OH
+
         # Generate energy for fake echem transition states after all other corrections
         if len(self.echem_transition_state_names) > 0:
             echem_thermo_dict = self.generate_echem_TS_energies()
             add_dict_in_place(correction_dict, echem_thermo_dict)
-
-        # pH corrections to proton and hydroxide species
-        if self.pH:
-            proton_index = self.gas_names.index(self.proton_species or 'H_g')
-            hydroxide_index = self.gas_names.index(self.hydroxide_species or 'OH_g')
-            self.gas_pressures[proton_index] = 1. / 10**self.pH
-            self.gas_pressures[hydroxide_index] = 1e-14 * 10**self.pH
 
         # pressure corrections to species in the echem double layer based on kH
         if 'dl' in self.species_definitions.keys():
