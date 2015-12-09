@@ -229,7 +229,16 @@ class GeneralizedLinearScaler(ScalerBase):
                         coeff_vals.append(m*abs(ck))
                     else:
                         coeff_vals.append(ck)
-                coeff_vals.append(b)
+                offset = 0.
+                if params and len(params) == 2:
+                    for gas in self.gas_names:
+                        if gas in IS:
+                            offset += (1.-m)*self.species_definitions[gas]['formation_energy']
+                        elif gas in FS:
+                            offset += m*self.species_definitions[gas]['formation_energy']
+                        else:
+                            continue
+                coeff_vals.append(b+offset)
             else:
                 coeff_vals = [m*ci for ci in coeffs] + [b]
 
