@@ -94,6 +94,10 @@ class SolverBase(ReactionModelWrapper):
                 self._interacting_energy = self.get_interacting_energies(rxn_parameters)
             self.output_labels['interacting_energy'] = self.adsorbate_names+self.transition_state_names
 
+        if 'directional_rates' in self.output_variables:
+            self._directional_rates = self.get_directional_rates(rxn_parameters)
+            self.output_labels['directional_rates'] = self.elementary_rxns + self.elementary_rxns
+
         for out in self.output_variables:
             if out == 'production_rate':
                 self._production_rate = [max(0,r) 
