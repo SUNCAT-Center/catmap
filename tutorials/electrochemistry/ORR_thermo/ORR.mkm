@@ -1,23 +1,21 @@
 scaler = 'ThermodynamicScaler'
 
 rxn_expressions = [
-    'O2_g  + *_dl <-> O2_dl',                       # rxn 1 - O2 to O2 in double layer
-    '*_a + O2_dl -> O2_a + *_dl',                   # rxn 2  - O2 double layer adsorption to a
-    'O2_a + pe_g -> ^0.26eV_a -> OOH_a',              # rxn 3  - O2 -> OOH on a
-    'OOH_a + pe_g -> ^0.26eV_a -> O_a + H2O_g',      # rxn 4  - OOH -> O + H2O on a
-    'O_a + pe_g -> ^0.26eV_a -> OH_a',                 # rxn 5  - O -> OH on a
-    'OH_a + pe_g -> ^0.26eV_a -> *_a + H2O_g',        # rxn 6  - OH -> H2O on a
-    'O2_a + *_b -> O-O_a + *_b -> O_a + O_b',       # rxn 7  - O2 dissociation
-    'O_b + pe_g -> ^0.26eV_b -> OH_b',                 # rxn 8  - O -> OH on b
-    'OH_b + pe_g -> ^0.26eV_b -> *_b + H2O_g',        # rxn 9  - OH -> H2O on b
-    'OOH_a + *_b -> OH-O_a + *_b -> OH_a + O_b',    # rxn 10 - OOH dissociation
-    'OOH_a + pe_g -> ^0.26eV_a -> H2O2_a',           # rxn 11 - OOH -> H2O2 on a
-    'H2O2_a + *_b -> OH-OH_a + *_b -> OH_a + OH_b', # rxn 12 - H2O2 dissociation
-    'H2O2_a -> H2O2_g + *_a',                       # rxn 13 - H2O2 desorption
-    'pe_g + *_a -> H_a',
+    'O2_g  + *_dl <-> O2_dl; prefactor=8e5',                        # rxn 1 - O2 to O2 in double layer
+    '*_a + O2_dl -> O2_a + *_dl; prefactor=1e8',                    # rxn 2  - O2 double layer adsorption to a
+    'O2_a + pe_g -> ^0.26eV_a -> OOH_a; prefactor=1e9',             # rxn 3  - O2 -> OOH on a
+    'OOH_a + pe_g -> ^0.26eV_a -> O_a + H2O_g; prefactor=1e9',      # rxn 4  - OOH -> O + H2O on a
+    'O_a + pe_g -> ^0.26eV_a -> OH_a; prefactor=1e9',               # rxn 5  - O -> OH on a
+    'OH_a + pe_g -> ^0.26eV_a -> *_a + H2O_g; prefactor=1e9',       # rxn 6  - OH -> H2O on a
+    'O2_a + *_b -> O-O_a + *_b -> O_a + O_b; prefactor=None',       # rxn 7  - O2 dissociation
+    'O_b + pe_g -> ^0.26eV_b -> OH_b; prefactor=1e9',               # rxn 8  - O -> OH on b
+    'OH_b + pe_g -> ^0.26eV_b -> *_b + H2O_g; prefactor=1e9',       # rxn 9  - OH -> H2O on b
+    'OOH_a + *_b -> OH-O_a + *_b -> OH_a + O_b; prefactor=None',    # rxn 10 - OOH dissociation
+    'OOH_a + pe_g -> ^0.26eV_a -> H2O2_a; prefactor=1e9',           # rxn 11 - OOH -> H2O2 on a
+    'H2O2_a + *_b -> OH-OH_a + *_b -> OH_a + OH_b; prefactor=None', # rxn 12 - H2O2 dissociation
+    'H2O2_a -> H2O2_g + *_a; prefactor=1e8',                        # rxn 13 - H2O2 desorption
+    'pe_g + *_a -> H_a; prefactor=1e9',                             # dummy reaction for CatMAP
 ]
-
-prefactor_list = [8e5, 1e8, 1e9, 1e9, 1e9, 1e9, None, 1e9, 1e9, None, 1e9, None, 1e8, 1e9]
 
 surface_names = ['Pt']
 

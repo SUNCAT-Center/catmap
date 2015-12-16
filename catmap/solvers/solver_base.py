@@ -96,7 +96,8 @@ class SolverBase(ReactionModelWrapper):
 
         if 'directional_rates' in self.output_variables:
             self._directional_rates = self.get_directional_rates(rxn_parameters)
-            self.output_labels['directional_rates'] = self.elementary_rxns + self.elementary_rxns
+            self.output_labels['directional_rates'] = [str(rxn) + ' forward' for rxn in self.elementary_rxns] + \
+                [str(rxn) + ' reverse' for rxn in self.elementary_rxns]
 
         for out in self.output_variables:
             if out == 'production_rate':
