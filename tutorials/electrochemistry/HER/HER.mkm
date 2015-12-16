@@ -1,0 +1,52 @@
+rxn_expressions = [
+    'O* + pe_g <-> O-pe* -> OH*',
+    'OH* + pe_g <-> pe-OH* <-> H2O_g+*',
+    'pe_g + *_s <-> H*',                          # Volmer
+    'pe_g + H* <-> pe-H* <-> H2_g + *_s',         # Heyrovsky
+    'H* + H* <-> H-H* + *_s <-> H2_g + 2*_s',     # Tafel
+]
+
+surface_names = ['Au', 'Ag', 'Cu','Rh','Ni','Pt','Pd']
+
+descriptor_names = ['H_s','OH_s']
+
+descriptor_ranges = [[-1,1],[-2,3]]
+
+resolution = [15, 15]
+
+temperature = 300
+
+voltage = -0.1
+
+beta = 0.5
+
+species_definitions = {}
+species_definitions['H2O_g'] = {'pressure':0.03}
+species_definitions['H2_g'] = {'pressure':0.01}
+species_definitions['pe_g'] = {'pressure':1.0}
+
+species_definitions['s'] = {'site_names': ['111'], 'total':1}
+
+data_file = 'HER.pkl'
+input_file = 'HER_input.txt'
+
+gas_thermo_mode = 'ideal_gas'
+adsorbate_thermo_mode = 'harmonic_adsorbate'
+electrochemical_thermo_mode = 'hbond_electrochemical'
+
+# scale by [CO, OH, constant]
+scaling_constraint_dict = {'CO_s':[None,0.,None],
+                           'H_s':[None,0.,None],
+                           'O_s':[0.,None,None],
+                           'OH_s':[0.,None,None],                      
+                           'H-H_s':'initial_state',
+                           'pe-H_s':'initial_state',
+                           'O-pe_s':'initial_state',
+                           'pe-OH_s':'initial_state',
+                          }
+
+
+decimal_precision = 100
+tolerance = 1e-50
+max_rootfinding_iterations = 100
+max_bisections = 3
