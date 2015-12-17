@@ -209,8 +209,7 @@ class MeanFieldSolver(SolverBase):
         for i,p in enumerate(current_Ps):
             new_p = copy(current_Ps)
             new_p[i] = current_Ps[i]*(1+epsilon)
-            self._rxm.gas_pressures = new_p ##HACK
-            #setting self.gas_pressures = new_p inexplicably breaks the solver.
+            self.gas_pressures = new_p
             new_tofs = self.get_turnover_frequency(rxn_parameters)
             DRC_i = []
             for j,old_tof,new_tof,gas in zip(
@@ -225,8 +224,7 @@ class MeanFieldSolver(SolverBase):
                 dP = (new_p[i] - current_Ps[i])/current_Ps[i]
                 DRC_i.append(float(dTOF/dP))
             DRC.append(DRC_i)
-        self._rxm.gas_pressures = current_Ps ##HACK
-        #setting self.gas_pressures = current_Ps inexplicably breaks the solver.
+        self.gas_pressures = current_Ps 
         self._rxn_order = DRC
         return DRC
 
