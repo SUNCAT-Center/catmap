@@ -4,7 +4,8 @@ python:
   
 notifications:
   email: false
- 
+  slack: slac-suncat:uMRwgQgYaSJFNr48PlZ1vtuf
+
 # Setup anaconda
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
