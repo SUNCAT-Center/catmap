@@ -102,22 +102,7 @@ class MapperBase(ReactionModelWrapper):
                 ismapped = True
 
         if ismapped == False:
-            #HACK - the following code is copy-pasted from min_resid_mapper.
-            #need to abstract it out.
-            resolution = np.array(resolution)
-            if resolution.size == 1:
-                resx = resy = float(resolution)
-            elif resolution.size == 2:
-                resx = resolution[0]
-                resy = resolution[1]
-            else:
-                raise ValueError('Resolution is not the correct shape')
-
-            d1min,d1max = descriptor_ranges[0]
-            d2min,d2max = descriptor_ranges[1]
-            d1Vals = np.linspace(d1min,d1max,resx)
-            d2Vals = np.linspace(d2min,d2max,resy)
-            #ENDHACK
+            d1Vals, d2Vals = self.process_resolution()
             for d1V in d1Vals:
                 for d2V in d2Vals:
                     self._descriptors = [d1V,d2V]
@@ -136,3 +121,24 @@ class MapperBase(ReactionModelWrapper):
             if getattr(self,out+'_map_file'):
                 outfile = getattr(self,out+'_map_file')
                 self.save_map(mapp,outfile)
+    
+    def process_resolution(self, descriptor_ranges = None, resolution = None):
+        if not descriptor_ranges:
+            descriptor_ranges = self.descriptor_ranges
+        if resolution is None:
+            resolution = self.resolution
+        resolution = np.array(resolution)
+        if resolution.size == 1:
+            resx = resy = float(resolution)
+        elif resolution.size ==2:
+            resx = resolution[0]
+            resy = resolution[1]
+        else:
+            raise ValueError('Resolution is not the correct shape')
+
+        d1min, d1max = descriptor_ranges[0]
+        d2min, d2max = descriptor_ranges[1]
+        d1Vals = np.linspace(d1min, d1max, resx)
+        d2Vals = np.linspace(d2min, d2max, resy)
+        return d1Vals, d2Vals
+

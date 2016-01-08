@@ -20,6 +20,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     'energy_type':'free_energy',
                     'include_labels':False,
                     'subplots_adjust_kwargs':{},
+                    'line_offset':0,
                     'kwarg_dict':{}}
         self._rxm.update(defaults)
         self.data_dict = {}
@@ -34,7 +35,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
         :param plot_variants: Which PEDs to plot. Defaults to all surfaces
                               or all applied voltages
-        :param plot_variants: list
+        :param plot_variants: list of voltages (if electrochemical) or
+                              descriptor tuples to plot
 
         :param mechanisms: Which reaction pathways to plot.  Each integer
                            corresponds to an elementary step. Elementary
@@ -79,6 +81,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     xy = [0, 0]
                     xy[voltage_idx] = variant
                     xy[1-voltage_idx] = self.descriptor_ranges[1-voltage_idx][0]
+                else:
+                    xy = variant
                 if '-' not in xy:
                     self.thermodynamics.current_state = None #force recalculation
                     self._rxm._descriptors = xy
@@ -123,9 +127,6 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 energy_dict[key] += self._kB*self.temperature*log(P)
                    
                     if self.coverage_correction == True:
-                        if not self.energy_type == 'interacting_energy':
-                            raise UserWarning('Coverage correction can only be used with'
-                                    ' "energy_type=interacting_energy"')
                         if not self.coverage_map:
                             raise UserWarning('No coverage map found.')
                         cvg_labels = self.output_labels['interacting_energy']
@@ -152,6 +153,13 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                                 self.barrier_line_args['color'] = \
                                 self.plot_variant_colors[n]
                     for step in mech:
+
+                        if str(step).startswith('half'):
+                            step = int(step.replace('half',''))
+                            split = True
+                        else:
+                            split = False
+
                         if step < 0:
                             reverse = True
                             step = step*-1
@@ -172,10 +180,21 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                             species = self.elementary_rxns[step-1][-1]
                             L = self.label_maker(species)
+                            if split:
+                                L = L.strip()
+                                if L.startswith('2'):
+                                    L = L[1:]
+                                else:
+                                    L = r'$\frac{1}{2}$'+L
+                                L = ' '+L #add padding back.
                             self.labels.append(L)
 
-                        self.energies.append(nrg)
-                        self.barriers.append(bar)
+                        if split == False:
+                            self.energies.append(nrg)
+                            self.barriers.append(bar)
+                        elif split == True:
+                            self.energies.append(0.5*nrg)
+                            self.barriers.append(0) #split steps cannot have barriers.
 
                     if labels and self.include_labels:
                         self.labels = labels
@@ -196,7 +215,8 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                     kwargs = self.kwarg_list[n]
                     for key in kwargs:
                         setattr(self,key,kwargs[key])
-
+                    
+                    self.initial_energy += self.line_offset
                     self.draw(ax)
 
         if self.energy_type == 'free_energy':

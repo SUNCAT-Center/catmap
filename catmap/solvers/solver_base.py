@@ -7,7 +7,8 @@ from ase.atoms import string2symbols
 
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=ReactionModel()):
-        """Class for `solving' for equilibrium coverages and rates as a 
+        """
+        Class for `solving' for equilibrium coverages and rates as a 
         function of reaction parameters. This class acts as a base class 
         to be inherited by other solver classes, but is not 
         functional on its own. 
@@ -34,6 +35,10 @@ class SolverBase(ReactionModelWrapper):
         self._compiled = False
 
     def set_output_attrs(self,rxn_parameters):
+        """
+        :param rxn_parameters: Reaction parameters.
+        :type rxn_parameters: list
+        """
         if True in [v in self.mapper._solver_output 
                 for v in self.output_variables]:
             cvgs = self._coverage
@@ -88,6 +93,11 @@ class SolverBase(ReactionModelWrapper):
             else:
                 self._interacting_energy = self.get_interacting_energies(rxn_parameters)
             self.output_labels['interacting_energy'] = self.adsorbate_names+self.transition_state_names
+
+        if 'directional_rates' in self.output_variables:
+            self._directional_rates = self.get_directional_rates(rxn_parameters)
+            self.output_labels['directional_rates'] = [str(rxn) + ' forward' for rxn in self.elementary_rxns] + \
+                [str(rxn) + ' reverse' for rxn in self.elementary_rxns]
 
         for out in self.output_variables:
             if out == 'production_rate':

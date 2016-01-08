@@ -1,11 +1,3 @@
-Welcome to the CatMAP wiki! A brief overview of the purpose of this tool
-is provided below. For more information on how to use CatMAP have a look
-at `Installation <wiki/Installation>`__ and
-`Tutorials <wiki/Tutorials>`__. If you are interested in developing see
-the `Developer Info <wiki/Developer%20Info>`__ page, and sign up for the
-`mailing
-list <https://mailman.stanford.edu/mailman/listinfo/mkm-developers>`__.
-
 Code Overview
 -------------
 
@@ -35,27 +27,31 @@ more complex. The purpose of this guide is to explain the general
 structure of the code, as well as its specific functions and how to
 begin using it.
 
-**Useful Definitions: (Note symbols may not appear in Safari/IE)** \*
-descriptor - variable used to describe reaction kinetics at a high
-level. Most commonly these are the binding energies of atomic
-constituents in the adsorbates (e.g. carbon/nitrogen/oxygen adsorption
-energies) or other intermediates. However, in the general sense other
-variables such as electronic structure parameters (e.g. d-band center)
-or thermodynamic parameters (e.g. temperature/pressure) could also be
-descriptors. \* descriptor space ( *D* ) - the space spanned by the
-descriptors. Usually ℝ2. \* parameter space ( *P* ) - the space spanned
-by the full reaction parameters for the reaction model. Usually ℝ2n
-where n is the number of elementary steps (one reaction energy and one
-reaction barrier per elementary step). \* reaction rates ( *r* ) - an
-n-vector of rates corresponding to each of the n elementary reactions.
-\* descriptor map - a map of some variable (rates,coverages,etc.) as a
-function of descriptor space. \* reaction model - a set of elementary
-steps and conditions which define the physics of the kinetic system,
-along with the mathematical methods and assumptions used to move from
-"descriptor space" to reaction rates. \* setup file - a file used to
-define the reaction model \* input file - a file used to store other
-data which is likely common to many reaction models (e.g. energetics
-data)
+**Useful Definitions: (Note symbols may not appear in Safari/IE)**
+
+- descriptor - variable used to describe reaction kinetics at a high
+  level. Most commonly these are the binding energies of atomic
+  constituents in the adsorbates (e.g. carbon/nitrogen/oxygen adsorption
+  energies) or other intermediates. However, in the general sense other
+  variables such as electronic structure parameters (e.g. d-band center)
+  or thermodynamic parameters (e.g. temperature/pressure) could also be
+  descriptors.
+- descriptor space ( :math:`D` ) - the space spanned by the
+  descriptors. Usually :math:`\mathbb{R}^2`.
+- parameter space ( :math:`P` ) - the space spanned
+  by the full reaction parameters for the reaction model. Usually :math:`\mathbb{R}^{2n}`
+  where n is the number of elementary steps (one reaction energy and one
+  reaction barrier per elementary step).
+- reaction rates ( :math:`r` ) - an n-vector of rates corresponding to each of the n
+  elementary reactions.  
+- descriptor map - a map of some variable (rates,coverages,etc.) as a
+  function of descriptor space. 
+- reaction model - a set of elementary steps and conditions which define the
+  physics of the kinetic system, along with the mathematical methods and
+  assumptions used to move from "descriptor space" to reaction rates. 
+- setup file - a file used to define the reaction model 
+- input file - a file used to store other data which is likely common to many
+  reaction models (e.g. energetics data)
 
 **Code Structure:**
 
@@ -69,11 +65,11 @@ data)
    *ReactionModel* as a "toolbox" where all the necessary information
    and common functions are stored.
 
-The *Parser* class serves to extend the "setup file" by reading in
-various quantities from an "input file". Technically the use of a parser
-is optional, but in practice it is extremely helpful for reading in
-common data such as adsorption energies or vibrational frequencies
-rather than re-typing them for every reaction model.
+-   The *Parser* class serves to extend the "setup file" by reading in
+    various quantities from an "input file". Technically the use of a parser
+    is optional, but in practice it is extremely helpful for reading in
+    common data such as adsorption energies or vibrational frequencies
+    rather than re-typing them for every reaction model.
 
 The process of creating a "descriptor map" is abstracted into three
 general processes, which are handled by the following classes within the
@@ -105,7 +101,7 @@ scaler projects descriptor space to parameter space.
 
 **Using the code:**
 
-Some examples can be found in the `Tutorials <wiki/Tutorials>`__, and
+Some examples can be found in the :doc:`../tutorials/index`, and
 these should explain the syntax necessary and serve as a good starting
 point. The currently implemented features are also briefly described
 below in order to allow a better understanding of the demos and creating
@@ -121,8 +117,7 @@ this is not required) while submission scripts end in .py since they are
 just python scripts. In addition it is very useful to also have an
 "input file" which contains the raw data about the energetics of the
 reaction model. An example of how to create an input file based on a
-table-like format is given in the `1 - Generating an Input
-File <wiki/1%20Generating%20an%20Input%20File>`__ tutorial.
+table-like format is given in the :doc:`../tutorials/generating_an_input_file` tutorial.
 
 Each class described in the **Code Structure** section will require some
 specialized parameters. Some of these parameters are common to all
@@ -246,8 +241,7 @@ variants of each class are listed below. Required attributes are
 -  *Parser:*
 
    -  input\_file - file where input data is stored. File must be in the
-      correct format for the parser used. See `1 - Generating an Input
-      File <wiki/1%20Generating%20an%20Input%20File>`__ for more
+      correct format for the parser used. See :doc:`../tutorials/generating_an_input_file` for more
       information.
 
 -  *Scaler:*

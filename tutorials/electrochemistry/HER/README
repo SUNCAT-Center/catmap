@@ -1,14 +1,12 @@
-to run this tutorial, run:
+To run this tutorial, run:
 
-python mkm_job.py -0.1
+python mkm_job.py
 
-where you can replace -0.1 with any desired voltage (vs RHE) to generate rate/coverage plots 
-at that potential.
+The voltage (in RHE) of this model is specified as a model parameter in HER.mkm much like
+temperature and total pressure.
 
-The script mkm_job.py acts like a standard catmap job script except that it modifies a .mkm 
-file template with the desired voltage parameter and saves it as "HER.mkm".  This resulting 
-file is what is used as an input into the model.  If you wish to modify other model 
-parameters, please modify "HER_template.mkm".
+In addition to the standard production rate and coverage plots, we also plot the directional rates,
+which can be used to calculate exchange current densities for electrochemical products.
 
 Data contained in HER_input.txt was generated calculations performed by Andrew A. Peterson 
 and Joseph H. Montoya.  The ORR tutorial goes into more detail about how one might 

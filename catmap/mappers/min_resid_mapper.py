@@ -240,34 +240,15 @@ class MinResidMapper(MapperBase):
 
     def get_coverage_map(self, descriptor_ranges=None, resolution = None,
             initial_guess_adsorbate_names=None):
-        """Creates coverage map by computing residuals from nearby points
-        and trying points with lowest residuals first"""
-        if not descriptor_ranges:
-            descriptor_ranges = self.descriptor_ranges
-        if resolution is None:
-            resolution = self.resolution
+        """
+        Creates coverage map by computing residuals from nearby points
+        and trying points with lowest residuals first
+        """
+        d1Vals, d2Vals = self.process_resolution(descriptor_ranges, resolution)
+        d1Vals = d1Vals[::-1]
+        d2Vals = d2Vals[::-1]
 
-        resolution = np.array(resolution)
-        if resolution.size == 1:
-            resx = resy = float(resolution)
-        elif resolution.size == 2:
-            resx = resolution[0]
-            resy = resolution[1]
-        else:
-            raise ValueError('Resolution is not the correct shape')
-
-        d1min,d1max = descriptor_ranges[0]
-        d2min,d2max = descriptor_ranges[1]
-        d1Vals = np.linspace(d1min,d1max,resx)
-        d2Vals = np.linspace(d2min,d2max,resy)
-        def rev_nparray(nparray):
-            nparray = list(nparray)
-            nparray.reverse()
-            return np.array(nparray)
-        d1Vals = rev_nparray(d1Vals)
-        d2Vals = rev_nparray(d2Vals)
-
-        isMapped = np.zeros((resx,resy)) #matrix to track which
+        isMapped = np.zeros((len(d1Vals),len(d2Vals))) #matrix to track which
         #values have been checked/which directions have been searched
         maxNum = int('1'*len(self.search_directions),2) #if number is higher
         #than this then the point should not be checked

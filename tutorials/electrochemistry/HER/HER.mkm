@@ -16,7 +16,7 @@ resolution = [15, 15]
 
 temperature = 300
 
-voltage = $voltage
+voltage = -0.1
 
 beta = 0.5
 

@@ -6,6 +6,16 @@
 Welcome to CatMAP's documentation!
 ==================================
 
+A brief overview of the purpose of this tool
+is provided in :doc:`topics/code_overview`. For more information on how to use CatMAP have a look
+at :doc:`installation` and
+:doc:`tutorials/index`. If you are interested in developing see
+the :doc:`topics/developer_info` page, and sign up for the
+`mailing
+list <https://mailman.stanford.edu/mailman/listinfo/mkm-developers>`__.
+
+
+
 .. toctree::
    :maxdepth: 2
 

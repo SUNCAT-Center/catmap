@@ -14,7 +14,7 @@ object if you are brave enough to directly edit the figure in python.
 The simplest approach to post-processing is to convert the CatMAP output
 into a data table and use methods you are familiar with. We will use the
 CO oxidation example from tutorial 3 to provide some concrete context.
-If you have run Tutorial 3 you should have the file "CO\_oxidation.log"
+If you have run :doc:`Tutorial 3 <../tutorials/refining_a_microkinetic_model>` you should have the file "CO\_oxidation.log"
 in the tutorial 3 directory. Assuming you finished the tutorial, this
 file should have outputs for the coverage, rate, production\_rate, and
 rate\_control. We will look at how to read in each of these and convert
