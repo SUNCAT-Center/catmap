@@ -4,7 +4,7 @@ python:
   
 notifications:
   email: false
-  slack: slac-suncat:$SLACK_TOKEN
+  slack: slac-suncat:uMRwgQgYaSJFNr48PlZ1vtuf
 
 # Setup anaconda
 before_install:
