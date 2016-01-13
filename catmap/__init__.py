@@ -10,7 +10,11 @@ from string import Template
 
 #Non-standard dependencies
 import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline as spline
+try:
+    from scipy.interpolate import InterpolatedUnivariateSpline as spline
+except ImportError:
+    spline = None
+    
 import matplotlib as mpl
 mpl.use('Agg')
 import pylab as plt
