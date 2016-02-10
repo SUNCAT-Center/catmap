@@ -14,7 +14,7 @@ vm.log_scale = True #rates should be plotted on a log-scale
 vm.min = 1e-25 #minimum rate to plot
 vm.max = 1e3 #maximum rate to plot
 
-vm.descriptor_labels = ['CO reactivity [eV]', 'O reactivity [eV]']
+vm.descriptor_labels = ['O reactivity [eV]', 'CO reactivity [eV]', ]
 vm.threshold = 1e-25 #anything below this is considered to be 0
 vm.subplots_adjust_kwargs = {'left':0.2,'right':0.8,'bottom':0.15}
 vm.plot(save='pretty_production_rate.pdf')
