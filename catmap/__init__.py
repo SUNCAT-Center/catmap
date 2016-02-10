@@ -67,7 +67,7 @@ class ReactionModelWrapper:
                 setattr(self._rxm,attr,val)
                 return val
             elif attr.startswith('_'):
-                raise AttributeError()
+                raise AttributeError("Attribute {attr} in invalid".format(**locals()))
             else:
                 return None
 
