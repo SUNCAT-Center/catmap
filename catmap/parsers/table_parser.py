@@ -72,6 +72,9 @@ class TableParser(ParserBase):
             for k, v in zip(headers, 
                     L.split(self._separator, len(headers))):
                 linedict[k] = v
+            if len(linedict) != len(headers):
+                print("Input line " + str(linedict) + " does not have all required fields.  Ignoring.")
+                continue
             sites = [s for s in self.species_definitions if
                     self.species_definitions[s].get('type',None) == 'site' and 
                     linedict['site_name'] in 
