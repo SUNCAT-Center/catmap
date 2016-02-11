@@ -13,8 +13,13 @@ import numpy as np
 try:
     from scipy.interpolate import InterpolatedUnivariateSpline as spline
 except ImportError:
-    spline = None
-    
+    def spline_wrapper(x_data, y_data, k=3):  # input kwarg k is intentionally ignored
+        # behaves like scipy.interpolate.InterpolatedUnivariateSpline for k=1
+        def spline_func(x):
+            return np.interp(x, map(float,x_data), map(float,y_data))  # loss of precision here
+        return spline_func
+    spline = spline_wrapper
+
 import matplotlib as mpl
 mpl.use('Agg')
 import pylab as plt
@@ -66,7 +71,7 @@ class ReactionModelWrapper:
         else:
             if attr in self.__dict__:
                 val =  object.__getattribute__(self,attr)
-                del self.__dict__[attr] 
+                del self.__dict__[attr]
                 #this makes sure that the attr is read from _rxm
                 setattr(self._rxm,attr,val)
                 return val
