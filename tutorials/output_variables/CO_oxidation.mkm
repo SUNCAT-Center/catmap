@@ -1,0 +1,84 @@
+#
+#Microkinetic model parameters
+#
+
+rxn_expressions = [
+
+               '*_s + CO_g -> CO*',
+               '2*_s + O2_g <-> O-O* + *_s -> 2O*',
+#               '*_s + O2_g -> O2_s',
+#               '*_s + O2_s <-> O-O* + *_s -> 2O*',
+               'CO* +  O* <-> O-CO* + * -> CO2_g + 2*',
+
+#               '*_t + CO_g -> CO_t',
+#               '2*_t + O2_g <-> O-O* + *_t -> 2O*',
+#               '*_t + O2_g -> O2_t',
+#               '*_t + O2_t <-> O-O_t + *_t -> 2O_t',
+#               'CO_t +  O_t <-> O-CO_t + *_t -> CO2_g + 2*_t',
+
+#               '*_t + CO_s -> CO_t + *_s',
+#               '*_t + O_s -> O_t + *_s',
+
+                   ]
+
+
+surface_names = ['Pt', 'Ag', 'Cu','Rh','Pd','Au','Ru','Ni'] #surfaces to include in scaling (need to have descriptors defined for each)
+
+descriptor_names= ['O_s','CO_s'] #descriptor names
+
+descriptor_ranges = [[-0.5,3],[0.5,4]]
+
+resolution = 15
+
+temperature = 500 #Temperature of the reaction
+
+species_definitions = {}
+species_definitions['CO_g'] = {'pressure':1.} #define the gas pressures
+species_definitions['O2_g'] = {'pressure':1./3.}
+species_definitions['CO2_g'] = {'pressure':1e-50} # some parts of catmap don't play nicely with exactly 0 pressure
+
+species_definitions['s'] = {'site_names': ['211'], 'total':0.05} #define the sites
+# species_definitions['t'] = {'site_names': ['111'], 'total':0.95}
+
+data_file = 'CO_oxidation.pkl'
+
+#
+#Parser parameters
+#
+
+input_file = 'energies.txt' #input data
+
+#
+#Scaler parameters
+#
+
+gas_thermo_mode = "shomate_gas"
+#gas_thermo_mode = "ideal_gas" #Ideal gas approximation
+#gas_thermo_mode = "zero_point_gas" #uses zero-point corrections only
+#gas_thermo_mode = "fixed_entropy_gas" #assumes entropy of 0.002 eV/K for all gasses except H2 (H2 is 0.00135 eV/K)
+#gas_thermo_mode = "frozen_gas" #neglect thermal contributions
+
+adsorbate_thermo_mode = "frozen_adsorbate"
+#adsorbate_thermo_mode = "harmonic_adsorbate"
+#adsorbate_thermo_mode = "zero_point_adsorbate"
+
+scaling_constraint_dict = {
+                           'O_s':['+',0,None],
+                           'CO_s':[0,'+',None],
+                           'O-CO_s':'initial_state',
+                           'O-O_s':'final_state',
+                           }
+
+
+#
+#Solver parameters
+#
+
+decimal_precision = 100 #precision of numbers involved
+
+tolerance = 1e-70 #all d_theta/d_t's must be less than this at the solution
+
+max_rootfinding_iterations = 100
+
+max_bisections = 4
+

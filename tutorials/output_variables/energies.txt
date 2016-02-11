@@ -1,0 +1,81 @@
+surface_name	site_name	species_name	formation_energy	bulk_structure	frequencies	other_parameters	reference
+None	gas	CO2	2.45	None	[1333,2349,667,667]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+None	gas	CO	2.74	None	[2170]	[]	"Energy Environ. Sci., 3, 1311-1315 (2010)"
+None	gas	O2	5.42	None	[1580]	[]	Falsig et al (2012)
+Re	111	O	-1.15	fcc	[]	[]	Falsig et al (2012)
+Ru	111	O	-0.07	fcc	[]	[]	Falsig et al (2012)
+Co	111	O	0.15	fcc	[]	[]	Falsig et al (2012)
+Ni	111	O	0.35	fcc	[]	[]	Falsig et al (2012)
+Rh	111	O	0.55	fcc	[]	[]	Falsig et al (2012)
+Cu	111	O	1.07	fcc	[]	[]	Falsig et al (2012)
+Pd	111	O	1.55	fcc	[]	[]	Falsig et al (2012)
+Pt	111	O	1.62	fcc	[]	[]	Falsig et al (2012)
+Ag	111	O	2.05	fcc	[]	[]	Falsig et al (2012)
+Au	111	O	2.61	fcc	[]	[]	Falsig et al (2012)
+Ru	111	CO	1.3	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Rh	111	CO	1.34	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pd	111	CO	1.55	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ni	111	CO	1.63	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pt	111	CO	1.7	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Cu	111	CO	2.58	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ag	111	CO	2.99	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Au	111	CO	3.04	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ru	111	O-CO	2.53	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Rh	111	O-CO	3.1	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ni	111	O-CO	3.25	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pt	111	O-CO	4.04	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Cu	111	O-CO	4.18	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pd	111	O-CO	4.2	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ag	111	O-CO	5.05	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Au	111	O-CO	5.74	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ag	111	O-O	5.98	fcc	[]	[]	Falsig et al (2012)
+Au	111	O-O	7.22	fcc	[]	[]	Falsig et al (2012)
+Cu	111	O-O	4.74	fcc	[]	[]	Falsig et al (2012)
+Pt	111	O-O	5.35	fcc	[]	[]	Falsig et al (2012)
+Rh	111	O-O	3.79	fcc	[]	[]	Falsig et al (2012)
+Ru	111	O-O	3.34	fcc	[]	[]	Falsig et al (2012)
+Pd	111	O-O	5.34	fcc	[]	[]	Falsig et al (2012)
+Ru	111	O2	3.15	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Rh	111	O2	3.63	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ni	111	O2	3.76	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pd	111	O2	4.29	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Cu	111	O2	4.52	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pt	111	O2	4.56	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ag	111	O2	5.1	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ir	211	CO	0.673	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Re	211	CO	0.753	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ru	211	CO	0.983	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Rh	211	CO	1.073	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Pt	211	CO	1.113	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Pd	211	CO	1.223	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ni	211	CO	1.253	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Co	211	CO	1.403	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Fe	211	CO	1.413	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Cu	211	CO	2.283	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Au	211	CO	2.573	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ag	211	CO	2.873	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ru	211	O-CO	2.351	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Rh	211	O-CO	2.559	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Co	211	O-CO	2.732	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ni	211	O-CO	2.768	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Pt	211	O-CO	3.528	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Cu	211	O-CO	3.918	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Pd	211	O-CO	3.992	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ag	211	O-CO	5.099	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Au	211	O-CO	5.448	fcc	[]	[]	"J. Phys. Chem. C, 113 (24), 10548-10553 (2009)"
+Ag	211	O-O	5.34	fcc	[]	[]	Falsig et al (2012)
+Au	211	O-O	6.18	fcc	[]	[]	Falsig et al (2012)
+Pt	211	O-O	4.9	fcc	[]	[]	Falsig et al (2012)
+Pd	211	O-O	4.6	fcc	[]	[]	Falsig et al (2012)
+Re	211	O	-1.5	fcc	[]	[]	Falsig et al (2012)
+Co	211	O	-0.15	fcc	[]	[]	Falsig et al (2012)
+Ru	211	O	-0.1	fcc	[]	[]	Falsig et al (2012)
+Ni	211	O	0.18	fcc	[]	[]	Falsig et al (2012)
+Rh	211	O	0.28	fcc	[]	[]	Falsig et al (2012)
+Cu	211	O	0.93	fcc	[]	[]	Falsig et al (2012)
+Pt	211	O	1.32	fcc	[]	[]	Falsig et al (2012)
+Pd	211	O	1.58	fcc	[]	[]	Falsig et al (2012)
+Ag	211	O	2.11	fcc	[]	[]	Falsig et al (2012)
+Au	211	O	2.61	fcc	[]	[]	Falsig et al (2012)
+Fe	211	O	-0.73	fcc	[]	[]	"Phys. Rev. Lett. 99, 016105 (2007)"
+Ir	211	O	-0.04	fcc	[]	[]	"Phys. Rev. Lett. 99, 016105 (2007)"
