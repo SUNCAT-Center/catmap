@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/SUNCAT-Center/catmap.svg)](https://travis-ci.org/SUNCAT-Center/catmap)
 [![Software License](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat-square)](COPYING.txt)
+[![Documentation Status](https://readthedocs.org/projects/catmap/badge/?version=latest)](http://catmap.readthedocs.org/en/latest/?badge=latest)
 
 # CatMAP
 
