@@ -6,6 +6,11 @@ notifications:
   email: false
   slack: slac-suncat:uMRwgQgYaSJFNr48PlZ1vtuf
 
+env:
+    matrix:
+      - WITH_SCIPY=true
+      - WITH_SCIPY=false
+
 # Setup anaconda
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -21,7 +26,7 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose
+  - if [ "x${WITH_SCIPY}" == "xtrue" ]; then conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose; else conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy matplotlib nose; fi
   - pip install mpmath
   - pip install python-ase
   - python setup.py install #install catmap

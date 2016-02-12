@@ -1,7 +1,11 @@
 from solver_base import *
 from mean_field_solver import *
 from catmap import string2symbols
-from scipy.optimize import fmin_powell as fmin
+try:
+    from scipy.optimize import fmin_powell as fmin
+except ImportError:
+    fmin = None
+
 from catmap.functions import numerical_jacobian
 import math
 from string import Template

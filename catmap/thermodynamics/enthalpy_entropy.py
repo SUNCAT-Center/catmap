@@ -2,7 +2,11 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 from catmap.functions import get_composition, add_dict_in_place
-from scipy.optimize import fmin_powell
+try:
+    from scipy.optimize import fmin_powell
+except ImportError:
+    fmin_powell = None
+
 import warnings
 from mpmath import mpf
 from math import exp, log
@@ -818,7 +822,11 @@ class ThermoCorrections(ReactionModelWrapper):
 
 
 def fit_shomate(Ts, Cps, Hs, Ss, params0,plot_file = None):
-    from scipy.optimize import leastsq
+    try:
+        from scipy.optimize import leastsq
+    except ImportError:
+        leastsq = None
+
     def H(t,A,B,C,D,E,F,H_c):
         H = A*t + (B/2.0)*t**2 + (C/3.0)*t**3 + (D/4.0)*t**4 - E/t + F - H_c 
         #kJ/mol
