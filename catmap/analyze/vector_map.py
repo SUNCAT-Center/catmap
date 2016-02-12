@@ -13,7 +13,7 @@ class VectorMap(MapPlot, ReactionModelWrapper):
         self.plot_variable = 'coverage'
         self.plot_mode = 'separate'
         self.include_empty = False
-        self.unique_only = True
+        self.unique_only = False
         self.include_indices = None
         self.include_labels = None
         self.threshold = 0 #count anything less than this as 0

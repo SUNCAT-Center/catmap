@@ -86,14 +86,13 @@ class ReactionModel:
         #dictionary of strings corresponding to all functions generated
         self._function_strings = {}
 
-        #Possible outputs:
+        #Some possible outputs, see scaler.set_output_attrs and solver.set_output_attrs:
 
         ##Solver level
         #coverage
         #rate
         #production_rate
         #consumption_rate
-        #turnover_frequency
         #rxn_direction
         #selectivity
         #rate_control

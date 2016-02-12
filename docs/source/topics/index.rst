@@ -9,4 +9,5 @@ Topics
   thermodynamic_descriptors
   including_adsorbate_adsorbate_interactions
   electrochemistry
+  output_variables
   developer_info

@@ -70,7 +70,7 @@ class ScalerBase(ReactionModelWrapper):
                 if len(f) > max_len:
                     max_len = len(f)
             nu_labels = ['nu_'+str(i+1) for i in range(max_len)]
-            self.output_labels = [ads,nu_labels]
+            self.output_labels['frequency'] = [ads,nu_labels]
 
         if 'electronic_energy' in self.output_variables:
             electronic_energy_dict = self.get_electronic_energies(descriptors)
@@ -100,7 +100,7 @@ class ScalerBase(ReactionModelWrapper):
             self._enthalpy = [self._enthalpy_dict[a] for a in ads]
             self._entropy = [self._entropy_dict[a] for a in ads]
             self.output_labels['enthalpy'] = ads
-            self.output_labels['entroy'] = ads
+            self.output_labels['entropy'] = ads
             self.output_labels['zero_point_energy'] = ads
 
         if 'interaction_matrix' in self.output_variables:
