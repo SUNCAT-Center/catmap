@@ -53,3 +53,5 @@ script:
   - cd ../ORR_thermo
   - python make_input.py
   - python mkm_job.py
+  - cd ../electrons
+  - python mkm_job.py
