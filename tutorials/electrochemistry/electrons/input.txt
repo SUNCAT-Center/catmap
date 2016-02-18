@@ -1,0 +1,8 @@
+surface_name	site_name	species_name	formation_energy	bulk_structure	frequencies	other_parameters	reference
+None	gas	H2O	0.0	None	[3950.66147227,3834.50307382,1570.73801788]	[]	gas phase calcs
+None	gas	H2	0.0	None	[4424.26845539]	[]	gas phase calcs
+None	gas	H2e	0.0	None	[4424.26845539]	[]	gas phase calcs
+None	gas	H	0.0	None	[]	[]	gas phase calcs
+Pt	111	H	-0.34	fcc	[1041.56374618,895.13059802,651.876743135]	[]	my ads calcs
+Pt	111	H-ele	0.3	fcc	[]	[]	my ads calcs
+Pt	111	H-H	0.19	fcc	[]	[]	CatApp
