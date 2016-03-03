@@ -108,15 +108,12 @@ class VectorMap(MapPlot, ReactionModelWrapper):
         include_indices = self.get_included_indices(pts,cols)
         datas = zip(*cols)
         mapp = zip(pts,datas)
-
-
         if not self.labels:
             self.map_plot_labels = self.get_labels()
         if not self.descriptor_labels:
             self.descriptor_labels = self.descriptor_names
-
         if self.plot_mode == 'separate':
-            fig = self.plot_separate(mapp, ax_list,indices=include_indices)
+            fig = self.plot_separate(mapp,ax_list,indices=include_indices)
         elif self.plot_mode == 'single':
             if ax_list:
                 ax = ax_list[0]
@@ -124,10 +121,8 @@ class VectorMap(MapPlot, ReactionModelWrapper):
                 ax = None
             fig = self.plot_weighted(mapp,ax=ax,indices=idxs)
 
-
-        if save:
-            self.save(fig,save=save,
-                    default_name = self.model_name+'_'+self.plot_variable+'.pdf')
+        self.save(fig,save=save,
+                default_name = self.model_name+'_'+self.plot_variable+'.pdf')
 
         self._ax = ax
         self._ax_list = ax_list
