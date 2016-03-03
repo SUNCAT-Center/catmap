@@ -1,3 +1,4 @@
+import cStringIO
 import numpy as np
 import catmap
 from parser_base import *
@@ -52,7 +53,14 @@ class TableParser(ParserBase):
                                'frequency_surface_names':None}
 
     def parse(self,**kwargs):
-        f = open(self.input_file)
+        if type(self.input_file) is str:
+            f = open(self.input_file)
+        elif type(self.input_file) is file:
+            f = self.input_file
+        elif type(self.input_file) is cStringIO.InputType:
+            f = self.input_file
+        else:
+            raise UserWarning('Attribute input_file {self.input_file} has to by either a path or a file-like object'.format(**locals()))
         lines = f.read().split(self._linebreak)
         lines = [L for L in lines if L]
         f.close()

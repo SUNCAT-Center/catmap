@@ -20,6 +20,7 @@ basic_colors = [[0,0,0],[0,0,1],[0.1,1,0.1],[1,0,0],[0,1,1],[1,0.5,0],[1,0.9,0],
                 [1,0,1],[0,0.5,0.5],[0.5,0.25,0.15],[0.5,0.5,0.5]]
                #black,blue,green,red,cyan,orange,yellow,magenta,turquoise,brown,gray
 
+
 def get_colors(n_colors):
     """
     Get n colors from basic_colors.
@@ -229,6 +230,7 @@ class MapPlot:
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
+
         xy,rates = zip(*mapp)
         dim = len(xy[0])
         if dim == 1:
@@ -246,6 +248,7 @@ class MapPlot:
                 self.plot_function = 'contourf'
             if 'cmap' not in plot_args:
                 plot_args['cmap'] = self.colormap
+
 
         eff_res =self.resolution*self.resolution_enhancement
         if self.min:
@@ -307,6 +310,7 @@ class MapPlot:
             norm_array = norm_array/(maparray.max()-maparray.min())
             maparray = norm_array*(max_val-min_val)+min_val
 
+
         if dim == 1:
             x_range = descriptor_ranges[0]
             plot_in = [np.linspace(*x_range+eff_res),maparray[:,rxn_index]]
@@ -330,6 +334,7 @@ class MapPlot:
         if self.aspect:
             ax.set_aspect(self.aspect)
             ax.apply_aspect()
+
 
         if dim == 1:
             ax.set_xlim(descriptor_ranges[0])
@@ -428,6 +433,7 @@ class MapPlot:
 
         old_dict = copy(self.__dict__)
 
+
         if not self.min or not self.max:
             for id,i in enumerate(indices):
                 pts, datas = zip(*mapp)
@@ -442,7 +448,6 @@ class MapPlot:
                     self.min = dat_min
                 if self.max is None:
                     self.max = dat_max
-
 
         for id,i in enumerate(indices):
             kwargs = plot_single_kwargs
