@@ -267,7 +267,7 @@ class MeanFieldSolver(SolverBase):
     def summary_text(self):
         """Stub for producing solver summary.
         """
-        return ''
+        return r"\begin{verbatim}" + "\n".join(self.rate_equations()) + "\n\end{verbatim}"
 
     def rate_equation_term(self,species_list,rate_constant_string,d_wrt=None):
         """
