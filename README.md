@@ -30,5 +30,3 @@ following commands:
 
 See the [documentation](http://catmap.readthedocs.org) for more details
 and tutorials.
-
-[![Analytics](https://ga-beacon.appspot.com/UA-75027967-2/CatMAP/readme)](https://github.com/igrigorik/ga-beacon)
