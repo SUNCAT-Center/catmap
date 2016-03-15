@@ -64,7 +64,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 adsorbate_thermo_mode = 'harmonic_adsorbate',
                 electrochemical_thermo_mode = 'simple_electrochemical',
                 pressure_mode = 'static',
-                thermodynamic_corrections = ['gas','adsorbate','electrochemical'],
+                thermodynamic_corrections = ['gas','adsorbate'],
                 thermodynamic_variables = ['temperature','gas_pressures','voltage','beta','pH'],
                 ideal_gas_params = catmap.data.ideal_gas_params,
                 fixed_entropy_dict = catmap.data.fixed_entropy_dict,
@@ -93,7 +93,7 @@ class ThermoCorrections(ReactionModelWrapper):
         depending on the ``thermo mode'' of each class of species
         """
         l = self.thermodynamic_corrections
-        if 'electrochemical' in l and len(self.echem_transition_state_names) > 0:
+        if 'electrochemical' in l:
             self.force_recalculation = True
         state_dict = {}
         for v in self.thermodynamic_variables:
@@ -141,7 +141,7 @@ class ThermoCorrections(ReactionModelWrapper):
         are not specific to any particular mode.
         """
         # pH corrections to proton and hydroxide species
-        if self.pH:
+        if any(ads in ['ele_g', 'H_g', 'OH_g'] for ads in self.species_definitions.keys()):
             G_H2 = self._electronic_energy_dict['H2_g'] + self._correction_dict['H2_g']
             G_H = 0.5*G_H2 - .0592*self.pH
             G_H2O = self._electronic_energy_dict['H2O_g'] + self._correction_dict['H2O_g']

@@ -1030,6 +1030,9 @@ class ReactionModel:
             self.resolution = 15
             print("Info: set resolution to {self.resolution} as default.".format(**locals()))
 
+        if any(ads in ['ele_g', 'H_g', 'OH_g', 'pe_g'] for ads in self.species_definitions.keys()):
+            self.thermodynamic_corrections.append('electrochemical')
+
     #Data manipulation and conversion
 
     def _header(self,exclude_outputs=[],re_parse=False):
@@ -1452,7 +1455,6 @@ class ReactionModel:
         if not any(ads in ['ele_g', 'H_g', 'OH_g'] for ads in self.species_definitions.keys()):
             return
         self.pH = getattr(self, 'pH', 0)  # Default to RHE scale
-
         for ads in ['ele_g', 'H_g', 'OH_g']:
             if not self.species_definitions.get(ads):
                 continue

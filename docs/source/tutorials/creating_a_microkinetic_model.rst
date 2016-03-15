@@ -96,6 +96,13 @@ adsorbed at a site designated as ":code:`s`". These reaction expressions will be
 parsed automatically in order to define the adsorbates,
 transition-states, gasses, and surface sites in the model.
 
+One important thing to note is that uses some subset of gas phase energies present
+in your input file to generate a complete set of reference energies for every element
+present in your reactions.  However, it can only use gas species present in your reaction
+network.  If you'd like CatMAP to use a gas species that does not appear in your
+reaction network as an atomic reference, you may need to add a dummy reaction like
+":code:`H2O_g -> H2O_g`" (in the case of adding H2O gas) to ":code:`rxn_expressions`".
+
 Next, we need to tell the model which surfaces we are interested in.
 
 .. code:: python

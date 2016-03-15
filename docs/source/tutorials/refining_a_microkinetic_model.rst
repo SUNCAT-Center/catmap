@@ -121,7 +121,7 @@ For brevity these extensions are omitted.
 Using previous results as initial guesses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
- If you ran mkm\_job.py in the same directory as you had the
+If you ran mkm\_job.py in the same directory as you had the
 CO\_oxidation.pkl data file from :doc:`creating_a_microkinetic_model`, you might have
 noticed that instead of getting output about "minresid\_iterations" you
 get something like:
@@ -336,6 +336,57 @@ than Rh, but this could be due to neglecting some mechanism (e.g.
 O-O-CO), neglecting zero-point and free energy contributions for
 adsorbates, lack of adsorbate-adsorbate interactions, or issues with the
 DFT input energies.
+
+.. _fed:
+
+Free Energy Diagrams
+~~~~~~~~~~~~~~~~~~~~
+
+A common way to evaluate or diagnose simpler microkinetic models is to examine
+the free energy diagrams that went into its creation.  In the setup file, we
+can define any number of reaction mechanisms like the following:
+
+.. code:: python
+
+    rxn_mechanisms = {  # these are 1-indexed
+       "steps": [1, 1, 2, 3, 3],
+       "terraces": [4, 4, 5, 6, 7, 7],
+    }
+
+Here we have defined two reaction mechanisms that follow the catalytic cycle
+of CO oxidation on steps and terraces.  The array for each mechanism is composed
+of the 1-indexed reaction numbers as described in :code:`rxn_expressions`.  You
+can use the reverse of a given elementary step by prepending the index with a
+negative sign.
+
+To actually plot the free energy diagrams, we add the following lines to mkm\_job.py:
+
+.. code:: python
+
+    ...
+    ma = analyze.MechanismAnalysis(model)
+    ma.energy_type = 'free_energy' #can also be free_energy/potential_energy
+    ma.include_labels = False #way too messy with labels
+    ma.pressure_correction = False #assume all pressures are 1 bar (so that energies are the same as from DFT)
+    ma.include_labels = True
+    fig = ma.plot(plot_variants=['Pt'], save='FED.png')
+    print(ma.data_dict)  # contains [energies, barriers] for each rxn_mechanism defined
+    ...
+
+This uses CatMAP's built-in automatic plotter to generate free energy diagrams for your
+defined reaction mechanisms on all surfaces by default.  For clarity, we are choosing
+to only plot a subset of these surfaces with the :code:`plot_variants=['Pt']` keyword
+argument.  For electrochemical systems using ThermodynamicScaler, plot\_variants instead
+refers to an array of voltages at which to plot free energy diagrams.  The resulting plot
+is fairly simplistic, but feel free to generate your own nicer-looking free energy diagrams
+using the dictionary provided in :code:`ma.data_dict`, which stores the values of
+free energies and barriers for each defined reaction mechanism.
+
+.. figure:: ../_static/3_free_energy_diagram.png
+  :align: center
+
+The resulting free energy diagram is a good way to quickly determine if the results of your
+microkinetic model match with your expectations from its free energy inputs.
 
 .. _ratecontrol:
 
