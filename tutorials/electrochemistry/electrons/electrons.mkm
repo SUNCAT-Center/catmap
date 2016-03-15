@@ -3,6 +3,7 @@ scaler = 'ThermodynamicScaler'
 rxn_expressions = [
     "H_g + ele_g + *_s -> H-ele_s ->H_s",
     "H_s + H_s -> H2_g + 2*_s",
+    "H2O_g -> H2O_g",  # need H2O to be defined for SHE potentials
 ]
 
 surface_names = ['Pt']
@@ -22,7 +23,7 @@ species_definitions = {}
 species_definitions['H2_g'] = {'pressure':1.0}
 species_definitions['H_g'] = {'pressure':1.0}
 species_definitions['ele_g'] = {'pressure':1.0, 'composition':{}}
-species_definitions['H2e_g'] = {'pressure':1.0, 'composition':{'H':2}}
+species_definitions['H2O_g'] = {'pressure':1.0}
 
 species_definitions['s'] = {'site_names':['111'], 'total':1.0}
 
