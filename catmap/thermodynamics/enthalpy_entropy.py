@@ -141,7 +141,7 @@ class ThermoCorrections(ReactionModelWrapper):
         are not specific to any particular mode.
         """
         # pH corrections to proton and hydroxide species
-        if getattr(self, 'pH', None) is not None:
+        if any(ads in ['ele_g', 'H_g', 'OH_g'] for ads in self.species_definitions.keys()):
             G_H2 = self._electronic_energy_dict['H2_g'] + self._correction_dict['H2_g']
             G_H = 0.5*G_H2 - .0592*self.pH
             G_H2O = self._electronic_energy_dict['H2O_g'] + self._correction_dict['H2O_g']
