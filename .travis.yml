@@ -34,26 +34,27 @@ install:
 # Run tests; this is a very crude way of testing things
 # We should move to a more elegant strategy in the future
 script:
-  - coverage run -a --include='catmap/*' test_dependencies.py
+  - coverage run -a test_dependencies.py
   - cd tutorials/1-generating_input_file
-  - coverage run -a --include='catmap/*' generate_input.py
+  - coverage run -a generate_input.py
   - cd ../2-creating_microkinetic_model
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a mkm_job.py
   - cd ../3-refining_microkinetic_model
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a mkm_job.py
   - cd ../thermodynamic_descriptors
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a mkm_job.py
   - cd ../output_variables
-  - coverage run -a --include='catmap/*' mkm_job.py
-  - coverage run -a --include='catmap/*' mkm_job_output_all.py
+  - coverage run -a mkm_job.py
+  - coverage run -a mkm_job_output_all.py
   - cd ../electrochemistry/HER
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a mkm_job.py
   - cd ../ORR_scaling
-  - coverage run -a --include='catmap/*' make_input.py
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a make_input.py
+  - coverage run -a mkm_job.py
   - cd ../ORR_thermo
-  - coverage run -a --include='catmap/*' make_input.py
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a make_input.py
+  - coverage run -a mkm_job.py
   - cd ../electrons
-  - coverage run -a --include='catmap/*' mkm_job.py
+  - coverage run -a mkm_job.py
   - coverage combine
+  - coverage report
