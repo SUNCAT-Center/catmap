@@ -452,7 +452,7 @@ class ThermoCorrections(ReactionModelWrapper):
                     frequencies = [max(nu,nu_min) for nu in frequencies]
                 therm = HarmonicThermo(frequencies)
                 try:
-                    free_energy = therm.get_gibbs_energy(
+                    free_energy = therm.get_helmholtz_energy(
                             temperature,verbose=False)
                 except AttributeError:
                     warnings.warn('HarmonicThermo.get_free_energy is deprecated.'
