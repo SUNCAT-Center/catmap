@@ -58,5 +58,5 @@ script:
   - coverage run --include='*catmap*' -a mkm_job.py
   # Go up one directory and collect the coverage results from all directory below
   - cd ..
-  - coverage combined $(ls -d */)
+  - coverage combine $(ls -d */)
   - coverage report
