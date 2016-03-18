@@ -34,26 +34,29 @@ install:
 # Run tests; this is a very crude way of testing things
 # We should move to a more elegant strategy in the future
 script:
-  - coverage run --source=catmap -a test_dependencies.py
+  - coverage run --include='*catmap*' -a test_dependencies.py
   - cd tutorials/1-generating_input_file
-  - coverage run --source=catmap -a generate_input.py
+  - coverage run --include='*catmap*' -a generate_input.py
   - cd ../2-creating_microkinetic_model
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a mkm_job.py
   - cd ../3-refining_microkinetic_model
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a mkm_job.py
   - cd ../thermodynamic_descriptors
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a mkm_job.py
   - cd ../output_variables
-  - coverage run --source=catmap -a mkm_job.py
-  - coverage run --source=catmap -a mkm_job_output_all.py
+  - coverage run --include='*catmap*' -a mkm_job.py
+  - coverage run --include='*catmap*' -a mkm_job_output_all.py
   - cd ../electrochemistry/HER
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a mkm_job.py
   - cd ../ORR_scaling
-  - coverage run --source=catmap -a make_input.py
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a make_input.py
+  - coverage run --include='*catmap*' -a mkm_job.py
   - cd ../ORR_thermo
-  - coverage run --source=catmap -a make_input.py
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a make_input.py
+  - coverage run --include='*catmap*' -a mkm_job.py
   - cd ../electrons
-  - coverage run --source=catmap -a mkm_job.py
+  - coverage run --include='*catmap*' -a mkm_job.py
+  # Go up one directory and collect the coverage results from all directory below
+  - cd ..
+  - coverage combined $(ls -d */)
   - coverage report
