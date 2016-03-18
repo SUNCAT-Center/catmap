@@ -56,5 +56,4 @@ script:
   - coverage run -a mkm_job.py
   - cd ../electrons
   - coverage run -a mkm_job.py
-  - coverage combine
   - coverage report
