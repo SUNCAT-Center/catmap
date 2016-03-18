@@ -99,6 +99,9 @@ class SolverBase(ReactionModelWrapper):
             self.output_labels['directional_rates'] = [str(rxn) + ' forward' for rxn in self.elementary_rxns] + \
                 [str(rxn) + ' reverse' for rxn in self.elementary_rxns]
 
+        if 'turnover_frequency' in self.output_variables:
+            self.output_labels['turnover_frequency'] = self.gas_names
+
         for out in self.output_variables:
             if out == 'production_rate':
                 self._production_rate = [max(0,r) 
