@@ -1,6 +1,11 @@
 import sys
 import numpy as np
-from ase.all import string2symbols
+
+try:
+    from ase.atoms import string2symbols
+except:
+    from ase.all import string2symbols
+
 import string
 
 """this script creates a CatMap input file that attempts to match the data in Hansen et al. (2014)

@@ -136,6 +136,19 @@ class ReactionModel:
         for key in kwargs:
             setattr(self,key,kwargs[key])
 
+        # if 'all' is in output_variables, expand it to all processed output_variables
+        # note that this expansion needs to happen in ReactionModel.run and not
+        # ReactionModel.__init__ or it will not be caught in the mkm_job.py
+        if 'all' in self.output_variables:
+            import catmap.functions
+            self.output_variables.remove('all')
+            self.output_variables = sorted(list(
+                set(self.output_variables).union(
+                    set(
+                        catmap.functions.fetch_all_output_variables()
+                    )
+                )
+            ))
 
         #ensure resolution has the proper dimensions
         if not hasattr(self.resolution,'__iter__'):

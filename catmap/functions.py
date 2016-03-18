@@ -617,3 +617,72 @@ def add_dict_in_place(dict1, dict2):
             dict1[k] += dict2[k]
         else:
             dict1[k] = dict2[k]
+
+
+def fetch_all_output_variables():
+    """Use code-inspection to extract all processed output variables from
+
+            catmap.scalers.scaler_base.ScalerBase.set_output_attrs,
+            catmap.solvers.solver_base.SolverBase.set_output_attrs
+
+    New keywords should work out of the box if they are added
+    in one of those functions and using one of the kind of if-statements
+    that are already in place.
+
+    """
+
+    import ast
+    import inspect
+
+    import catmap
+    import catmap.scalers
+    import catmap.solvers
+
+    keywords = []
+    for infunc in [
+        catmap.scalers.scaler_base.ScalerBase.set_output_attrs,
+        catmap.solvers.solver_base.SolverBase.set_output_attrs
+    ]:
+        source = inspect.getsource(infunc)
+        unsource = ''
+        for line in source.split('\n'):
+            unsource += line[4:] + '\n'
+        node = ast.parse(unsource)
+        f = node.body[0]
+
+        class IfLister(ast.NodeVisitor):
+            """ast.NodeVisitor subclass that extracts string  keywords
+            from a function that parses keyword variables using
+            code inspection.
+            """
+            def visit_If(self, node):
+                """Override default behavior for visiting an if-statement.
+                """
+                if hasattr(node.test, 'left'):
+                    if hasattr(node.test.left, 's'):
+                        keywords.append(node.test.left.s)  # Done
+                    elif hasattr(node.test, 'comparators'):
+                        for comparator in node.test.comparators:
+                            if hasattr(comparator, 's'):
+                                keywords.append(comparator.s)
+                            else:
+                                pass  # dead-end
+                    else:
+                        pass  # dead-end
+
+                elif hasattr(node.test, 'func'):
+                    if hasattr(node.test.func, 'value'):
+                        if hasattr(node.test.func.value, 'args'):
+                            if hasattr(node.test.func.value.args[0], 'elts'):
+                                for elt in node.test.func.value.args[0].elts:
+                                    keywords.append(elt.s)
+                elif hasattr(node.test, 'values'):
+                    for elt in node.test.values:
+                        if hasattr(elt, 'left') and hasattr(elt.left, 's'):
+                            keywords.append(elt.left.s)
+                else:
+                    pass  # dead-end
+
+        IfLister().visit(f)
+
+    return keywords

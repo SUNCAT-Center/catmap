@@ -45,6 +45,7 @@ script:
   - python mkm_job.py
   - cd ../output_variables
   - python mkm_job.py
+  - python mkm_job_output_all.py
   - cd ../electrochemistry/HER
   - python mkm_job.py
   - cd ../ORR_scaling
