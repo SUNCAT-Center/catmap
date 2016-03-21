@@ -45,9 +45,6 @@ script:
   - cd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py &
   - cd tutorials/electrochemistry/electrons && coverage run --include='*catmap*' -a mkm_job.py &
   # Go up one directory and collect the coverage results from all directory below
-  - for job in $(jobs -p)
-  - do
-  -   wait ${job} || echo "${job} failed" # wait for all background-jobs to finish
-  - done
+  - for job in $(jobs -p); do wait ${job} || echo "${job} failed";  done
   - coverage combine $(find . -name '*.coverage')
   - coverage report
