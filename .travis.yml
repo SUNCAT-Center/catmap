@@ -35,16 +35,19 @@ install:
 # We should move to a more elegant strategy in the future
 script:
   - coverage run --include='*catmap*' -a test_dependencies.py &
-  - cd tutorials/1-generating_input_file ; coverage run --include='*catmap*' -a generate_input.py &
-  - cd tutorials/2-creating_microkinetic_model ; coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/3-refining_microkinetic_model ; coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/thermodynamic_descriptors ; coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/output_variables ; coverage run --include='*catmap*' -a mkm_job.py ; coverage run --include='*catmap*' -a mkm_job_output_all.py &
-  - cd tutorials/electrochemistry/HER ; coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/electrochemistry/ORR_scaling ; coverage run --include='*catmap*' -a make_input.py ; coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/electrochemistry/ORR_thermo ; coverage run --include='*catmap*' -a make_input.py ; coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/electrochemistry/electrons ; coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/1-generating_input_file && coverage run --include='*catmap*' -a generate_input.py &
+  - cd tutorials/2-creating_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/3-refining_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/thermodynamic_descriptors && coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/output_variables && coverage run --include='*catmap*' -a mkm_job.py && coverage run --include='*catmap*' -a mkm_job_output_all.py &
+  - cd tutorials/electrochemistry/HER && coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/electrochemistry/ORR_scaling && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py &
+  - cd tutorials/electrochemistry/electrons && coverage run --include='*catmap*' -a mkm_job.py &
   # Go up one directory and collect the coverage results from all directory below
-  - wait # wait for all background-jobs to finish
+  - for job in $(jobs -p)
+  - do
+  -   wait ${job} || echo "${job} failed" # wait for all background-jobs to finish
+  - done
   - coverage combine $(find . -name '*.coverage')
   - coverage report
