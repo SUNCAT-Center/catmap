@@ -34,17 +34,17 @@ install:
 # Run tests; this is a very crude way of testing things
 # We should move to a more elegant strategy in the future
 script:
-  - coverage run --include='*catmap*' -a test_dependencies.py &
-  - cd tutorials/1-generating_input_file && coverage run --include='*catmap*' -a generate_input.py &
-  - cd tutorials/2-creating_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/3-refining_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/thermodynamic_descriptors && coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/output_variables && coverage run --include='*catmap*' -a mkm_job.py && coverage run --include='*catmap*' -a mkm_job_output_all.py &
-  - cd tutorials/electrochemistry/HER && coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/electrochemistry/ORR_scaling && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py &
-  - cd tutorials/electrochemistry/electrons && coverage run --include='*catmap*' -a mkm_job.py &
-  # Go up one directory and collect the coverage results from all directory below
-  - for job in $(jobs -p); do wait ${job} && echo "${job} passed" || echo "${job} failed";  done
+  - coverage run --include='*catmap*' -a test_dependencies.py
+  - popd tutorials/1-generating_input_file && coverage run --include='*catmap*' -a generate_input.py && popd
+  - popd tutorials/2-creating_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - popd tutorials/3-refining_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - popd tutorials/thermodynamic_descriptors && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - popd tutorials/output_variables && coverage run --include='*catmap*' -a mkm_job.py && coverage run --include='*catmap*' -a mkm_job_output_all.py && popd
+  - popd tutorials/electrochemistry/HER && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - popd tutorials/electrochemistry/ORR_scaling && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - popd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - popd tutorials/electrochemistry/electrons && coverage run --include='*catmap*' -a mkm_job.py && popd
+  # lets give up on parallel test execution because current Travis VM only runs on 1.5 virtual cores.
+  #- for job in $(jobs -p); do wait ${job} && echo "${job} passed" || echo "${job} failed";  done
   - coverage combine $(find . -name '*.coverage')
   - coverage report
