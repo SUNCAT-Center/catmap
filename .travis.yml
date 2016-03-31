@@ -40,6 +40,7 @@ script:
   - pushd tutorials/3-refining_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py && popd
   - pushd tutorials/thermodynamic_descriptors && coverage run --include='*catmap*' -a mkm_job.py && popd
   - pushd tutorials/output_variables && coverage run --include='*catmap*' -a mkm_job.py && coverage run --include='*catmap*' -a mkm_job_output_all.py && popd
+  - pushd tutorials/custom_gasses && coverage run --include='*catmap*' -a fit_shomate.py && popd
   - pushd tutorials/electrochemistry/HER && coverage run --include='*catmap*' -a mkm_job.py && popd
   - pushd tutorials/electrochemistry/ORR_scaling && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
   - pushd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd

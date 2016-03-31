@@ -10,4 +10,5 @@ Topics
   including_adsorbate_adsorbate_interactions
   electrochemistry
   output_variables
+  custom_gasses
   developer_info
