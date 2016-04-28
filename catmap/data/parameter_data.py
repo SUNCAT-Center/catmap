@@ -80,7 +80,7 @@ shomate_params['HCOOH_g:298-1500'] = [3.8027523042252258,
 ideal_gas_params = {
         'H2_g':[2,'linear',0],
         'N2_g':[2,'linear',0],
-        'O2_g':[2,'linear',3],
+        'O2_g':[2,'linear',1.0],
         'H2O_g':[2,'nonlinear',0],
         'CO_g':[1,'linear',0],
         'CH4_g':[12,'nonlinear',0],

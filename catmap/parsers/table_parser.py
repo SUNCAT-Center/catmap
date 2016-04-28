@@ -72,6 +72,9 @@ class TableParser(ParserBase):
             for k, v in zip(headers, 
                     L.split(self._separator, len(headers))):
                 linedict[k] = v
+            if len(linedict) != len(headers):
+                print("Input line " + str(linedict) + " does not have all required fields.  Ignoring.")
+                continue
             sites = [s for s in self.species_definitions if
                     self.species_definitions[s].get('type',None) == 'site' and 
                     linedict['site_name'] in 
@@ -190,6 +193,13 @@ class TableParser(ParserBase):
                         allfreqdict[linedict['species_name']].append(frq)
 
         def freq_handler(freqdict_entry,site,ads):
+            """
+            Returns a single list of frequencies from a freqdict_entry, which is a list
+            of all frequency data for a given species.  Entries matching both site
+            and surface (if specified in self.frequency_surface_names) are preferred over
+            those that only match surface.  If more than match of the highest validity
+            is found, the mean of those frequencies is returned.
+            """
             perfect_matches = []
             partial_matches = []
             if self.frequency_surface_names is None:
@@ -207,7 +217,7 @@ class TableParser(ParserBase):
                     if site in self._gas_sites and entry[0] == 'None':
                         masked[0] = True
 
-                if False not in masked:
+                if all(masked):
                     perfect_matches.append(masked[-1])
                 elif masked[0] and site not in self._gas_sites: #Surface matches but site might not...
                     if entry[1] != 'gas': #HACK... this whole function needs to be cleaned up.

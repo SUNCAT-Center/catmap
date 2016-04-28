@@ -3,7 +3,10 @@ from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel as RM
 from catmap import griddata
 from copy import copy
-from scipy.stats import norm
+try:
+    from scipy.stats import norm
+except:
+    norm = None
 from matplotlib.ticker import MaxNLocator
 import os
 import math

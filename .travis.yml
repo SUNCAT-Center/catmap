@@ -4,7 +4,13 @@ python:
   
 notifications:
   email: false
- 
+  slack: slac-suncat:uMRwgQgYaSJFNr48PlZ1vtuf
+
+env:
+    matrix:
+      - WITH_SCIPY=true
+      - WITH_SCIPY=false
+
 # Setup anaconda
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -20,20 +26,26 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose
+  - if [ "x${WITH_SCIPY}" == "xtrue" ]; then conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose; else conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy matplotlib nose; fi
   - pip install mpmath
-  - pip install python-ase
+  - pip install ase coverage
   - python setup.py install #install catmap
  
 # Run tests; this is a very crude way of testing things
 # We should move to a more elegant strategy in the future
 script:
-  - python test_dependencies.py
-  - cd tutorials/1-generating_input_file
-  - python generate_input.py
-  - cd ../2-creating_microkinetic_model
-  - python mkm_job.py
-  - cd ../3-refining_microkinetic_model
-  - python mkm_job.py
-  - cd ../thermodynamic_descriptors
-  - python mkm_job.py
+  - coverage run --include='*catmap*' -a test_dependencies.py
+  - pushd tutorials/1-generating_input_file && coverage run --include='*catmap*' -a generate_input.py && popd
+  - pushd tutorials/2-creating_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/3-refining_microkinetic_model && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/thermodynamic_descriptors && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/output_variables && coverage run --include='*catmap*' -a mkm_job.py && coverage run --include='*catmap*' -a mkm_job_output_all.py && popd
+  - pushd tutorials/custom_gasses && coverage run --include='*catmap*' -a fit_shomate.py && popd
+  - pushd tutorials/electrochemistry/HER && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/electrochemistry/ORR_scaling && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/electrochemistry/electrons && coverage run --include='*catmap*' -a mkm_job.py && popd
+  # lets give up on parallel test execution because current Travis VM only runs on 1.5 virtual cores.
+  #- for job in $(jobs -p); do wait ${job} && echo "${job} passed" || echo "${job} failed";  done
+  - coverage combine $(find . -name '*.coverage')
+  - coverage report

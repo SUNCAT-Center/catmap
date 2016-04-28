@@ -209,8 +209,7 @@ class MeanFieldSolver(SolverBase):
         for i,p in enumerate(current_Ps):
             new_p = copy(current_Ps)
             new_p[i] = current_Ps[i]*(1+epsilon)
-            self._rxm.gas_pressures = new_p ##HACK
-            #setting self.gas_pressures = new_p inexplicably breaks the solver.
+            self.gas_pressures = new_p
             new_tofs = self.get_turnover_frequency(rxn_parameters)
             DRC_i = []
             for j,old_tof,new_tof,gas in zip(
@@ -225,8 +224,7 @@ class MeanFieldSolver(SolverBase):
                 dP = (new_p[i] - current_Ps[i])/current_Ps[i]
                 DRC_i.append(float(dTOF/dP))
             DRC.append(DRC_i)
-        self._rxm.gas_pressures = current_Ps ##HACK
-        #setting self.gas_pressures = current_Ps inexplicably breaks the solver.
+        self.gas_pressures = current_Ps 
         self._rxn_order = DRC
         return DRC
 
@@ -269,7 +267,7 @@ class MeanFieldSolver(SolverBase):
     def summary_text(self):
         """Stub for producing solver summary.
         """
-        return ''
+        return r"\begin{verbatim}" + "\n".join(self.rate_equations()) + "\n\end{verbatim}"
 
     def rate_equation_term(self,species_list,rate_constant_string,d_wrt=None):
         """
@@ -631,4 +629,76 @@ class MeanFieldSolver(SolverBase):
             txt = txt.replace(' + 0', '')
             expressions.append(txt)
         return expressions
+
+    def get_empty_site_cvgs(self):
+        """
+        take the coverages at a certain coverage_map entry and
+        return the dict of all the empty-sites coverages
+        i.e. dict[site_name] = coverage
+
+        type:
+        coverages: list
+        """
+        site_cvgs = {}
+        site_eqs = self.site_string_list()  # get the eqns to calculate empty site coverages
+
+        for site, eq in zip(self._rxm.site_names, site_eqs):    # get all the site names in the model
+            eq_list = eq[1:-1].split(' - ')
+            res = 0.
+            if 'mpf' in eq_list[0]:
+                res = float(eq_list[0][eq_list[0].index('(\'')+2:eq_list[0].index('\')')])
+            elif 'theta' in eq_list[0]:
+                res = float(self._coverage[int(eq_list[0][eq_list[0].index('[')+1:eq_list[0].index(']')])])
+            for species in eq_list[1:]:
+                if 'mpf' in species:
+                    res -= float(species[species.index('(\'')+2:species.index('\')')])
+                elif 'theta' in species:
+                    res -= float(self._coverage[int(species[species.index('[')+1:species.index(']')])])
+            site_cvgs[site] = res
+        return site_cvgs
+
+    def get_elem_ec(self,rxn_num,rxn_parameters,direction): ##rxn_num based on zero-index
+        """
+        return the ec on a certain coverage_map entry of a
+        certain elementary step based on rxn_number and direction given
+
+        type:
+        rxn_num: float
+        direction: str ('kf' or 'kr')
+        """
+        if direction == 'kf':
+            eq = self.rate_equation_term(self._rxm.elementary_rxns[rxn_num][0],'kf['+str(rxn_num)+']')
+        elif direction == 'kr':
+            eq = self.rate_equation_term(self._rxm.elementary_rxns[rxn_num][-1],'kr['+str(rxn_num)+']')
+        pressure = self._rxm.gas_pressures
+        coverages = self._coverage
+        rate_constants = self.get_rate_constants(rxn_parameters,coverages)
+        site_cvg_dict = self.get_empty_site_cvgs()   # get all the coverages necessary
+        eq_list = eq.split('*') # split the rate expression
+        parsed_results = 1.
+        for species in eq_list:
+            if 'kf' in species:
+                parsed_results *= float(rate_constants[int(species[species.index('[')+1:species.index(']')])])
+            elif 'kr' in species:
+                parsed_results *= float(rate_constants[len(rate_constants)/2+int(species[species.index('[')+1:species.index(']')])])
+            elif 'p' in species:
+                parsed_results *= float(pressure[int(species[species.index('[')+1:species.index(']')])])
+            elif 'theta' in species:
+                parsed_results *= float(coverages[int(species[species.index('[')+1:species.index(']')])])
+            else:
+                parsed_results *= site_cvg_dict[species[:species.index('[')]]
+        return  parsed_results
+
+    def get_directional_rates(self, rxn_parameters):
+        """
+        get the exchange current density of a certain
+        map entry on all elementary rxns for a given direction
+
+        type:
+        direction: str ('kf' or 'kr')
+        """
+        num_rxns = len(self._rxm.elementary_rxns)
+        directional_rates = [self.get_elem_ec(i,rxn_parameters,'kf') for i in range(num_rxns)] + [self.get_elem_ec(i,rxn_parameters,'kr') for i in range(num_rxns)]
+        self._rxm._directional_rates = directional_rates
+        return directional_rates
 

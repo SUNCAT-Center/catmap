@@ -7,7 +7,10 @@ from catmap.functions import parse_constraint
 from catmap.thermodynamics import FirstOrderInteractions
 import pylab as plt
 import numpy as np
-from scipy import integrate
+try:
+    from scipy import integrate
+except ImportError:
+    integrate = None
 
 class SecondOrderInteractions(FirstOrderInteractions,ReactionModelWrapper):
     """Class for implementing 'first-order adsorbate interaction model. 

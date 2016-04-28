@@ -4,20 +4,20 @@
 
 rxn_expressions = [
 
-               '*_s + CO_g -> CO*', 
+               '*_s + CO_g -> CO*',
                '2*_s + O2_g <-> O-O* + *_s -> 2O*',
 #               '*_s + O2_g -> O2_s',
 #               '*_s + O2_s <-> O-O* + *_s -> 2O*',
                'CO* +  O* <-> O-CO* + * -> CO2_g + 2*',
 
-               '*_t + CO_g -> CO_t', 
+#               '*_t + CO_g -> CO_t',
 #               '2*_t + O2_g <-> O-O* + *_t -> 2O*',
-               '*_t + O2_g -> O2_t',
-               '*_t + O2_t <-> O-O_t + *_t -> 2O_t',
-               'CO_t +  O_t <-> O-CO_t + *_t -> CO2_g + 2*_t',
+#               '*_t + O2_g -> O2_t',
+#               '*_t + O2_t <-> O-O_t + *_t -> 2O_t',
+#               'CO_t +  O_t <-> O-CO_t + *_t -> CO2_g + 2*_t',
 
-               '*_t + CO_s -> CO_t + *_s', 
-               '*_t + O_s -> O_t + *_s', 
+#               '*_t + CO_s -> CO_t + *_s',
+#               '*_t + O_s -> O_t + *_s',
 
                    ]
 
@@ -26,19 +26,19 @@ surface_names = ['Pt', 'Ag', 'Cu','Rh','Pd','Au','Ru','Ni'] #surfaces to include
 
 descriptor_names= ['O_s','CO_s'] #descriptor names
 
-descriptor_ranges = [[-1,3],[-0.5,4]]
+descriptor_ranges = [[-0.5,3],[0.5,4]]
 
-resolution = 29
+resolution = 15
 
 temperature = 500 #Temperature of the reaction
 
 species_definitions = {}
 species_definitions['CO_g'] = {'pressure':1.} #define the gas pressures
 species_definitions['O2_g'] = {'pressure':1./3.}
-species_definitions['CO2_g'] = {'pressure':0}
+species_definitions['CO2_g'] = {'pressure':1e-50} # some parts of catmap don't play nicely with exactly 0 pressure
 
 species_definitions['s'] = {'site_names': ['211'], 'total':0.05} #define the sites
-species_definitions['t'] = {'site_names': ['111'], 'total':0.95}
+# species_definitions['t'] = {'site_names': ['111'], 'total':0.95}
 
 data_file = 'CO_oxidation.pkl'
 
@@ -69,11 +69,6 @@ scaling_constraint_dict = {
                            'O-O_s':'final_state',
                            }
 
-
-rxn_mechanisms = {  # these are 1-indexed
-   "steps": [1, 1, 2, 3, 3],
-   "terraces": [4, 4, 5, 6, 7, 7],
-}
 
 #
 #Solver parameters

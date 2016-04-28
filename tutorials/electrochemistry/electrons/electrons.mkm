@@ -1,0 +1,40 @@
+scaler = 'ThermodynamicScaler'
+
+rxn_expressions = [
+    "H_g + ele_g + *_s -> H-ele_s ->H_s",
+    "H_s + H_s -> H2_g + 2*_s",
+    "H2O_g -> H2O_g",  # need H2O to be defined for SHE potentials
+]
+
+surface_names = ['Pt']
+
+descriptor_names= ['voltage','temperature'] #descriptor names
+
+descriptor_ranges = [[-0.0,-1.0],[300,300]]
+
+resolution = [15, 1]
+
+# voltage = 0.8
+
+beta = 0.5
+
+species_definitions = {}
+# assume heine's free energy numbers are already pressure-corrected
+species_definitions['H2_g'] = {'pressure':1.0}
+species_definitions['H_g'] = {'pressure':1.0}
+species_definitions['ele_g'] = {'pressure':1.0, 'composition':{}}
+species_definitions['H2O_g'] = {'pressure':1.0}
+
+species_definitions['s'] = {'site_names':['111'], 'total':1.0}
+
+data_file = 'electrons.pkl'
+input_file = 'input.txt'
+
+gas_thermo_mode = 'frozen_gas'
+adsorbate_thermo_mode = 'frozen_adsorbate'
+electrochemical_thermo_mode = 'simple_electrochemical'
+
+decimal_precision = 200
+tolerance = 1e-50
+max_rootfinding_iterations = 1000
+max_bisections = 5

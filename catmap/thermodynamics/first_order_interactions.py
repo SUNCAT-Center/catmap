@@ -5,8 +5,14 @@ from catmap.functions import smooth_piecewise_linear
 from catmap.functions import parse_constraint
 import pylab as plt
 import numpy as np
-from scipy import integrate
-from scipy.optimize import fmin
+
+try:
+    from scipy.optimize import fmin
+    from scipy import integrate
+except ImportError:
+    fmin = None
+    integrate = None
+
 from itertools import combinations_with_replacement as combinations
 
 class FirstOrderInteractions(ReactionModelWrapper):
