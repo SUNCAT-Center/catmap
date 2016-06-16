@@ -1,0 +1,445 @@
+from numpy import array
+
+import cPickle as pickle
+
+
+from mpmath import mpf 
+
+parser = None
+
+scaler = 'GeneralizedLinearScaler'
+
+thermodynamics = 'ThermoCorrections'
+
+solver = 'SteadyStateSolver'
+
+mapper = 'MinResidMapper'
+
+binary_data = pickle.load(open("HER.pkl"))
+
+locals().update(binary_data)
+
+adsorbate_coefficient_matrix = array([[ 1.     ,  0.     ,  0.     ],
+       [ 0.     ,  1.     ,  0.     ],
+       [ 0.     ,  1.58664,  0.40395]])
+
+adsorbate_interaction_model = 'ideal'
+
+adsorbate_interactions = None
+
+adsorbate_names = ('H_s', 'OH_s', 'O_s')
+
+adsorbate_thermo_mode = 'harmonic_adsorbate'
+
+analytical_jacobian = True
+
+atomic_reservoir_dict = {'H': 'pe_g', 'O': 'H2O_g'}
+
+atomic_reservoir_list = [{'H': 'H2_g', 'O': 'H2O_g'}, {'H': 'pe_g', 'O': 'H2O_g'}]
+
+avoid_scaling = False
+
+beta = 0.5
+
+coefficient_matrix = array([[ 1.        ,  0.        ,  0.        ],
+       [ 0.        ,  1.        ,  0.        ],
+       [ 0.        ,  1.58664   ,  0.40395   ],
+       [ 1.24838633,  0.        ,  0.68544777],
+       [ 0.        ,  1.58664   ,  0.60395   ],
+       [ 0.39715154,  0.        ,  0.84288376],
+       [ 0.        ,  1.        ,  0.3       ]])
+
+coefficient_maxs = [[1e+99, 0.0, 1e+99], [0.0, 1e+99, 1e+99], [0.0, 1e+99, 1e+99], [1e+99, 1e+99, 1e+99], [1e+99, 1e+99, 1e+99], [1e+99, 1e+99, 1e+99], [1e+99, 1e+99, 1e+99]]
+
+coefficient_mins = [[-1e+99, 0.0, -1e+99], [0.0, -1e+99, -1e+99], [0.0, -1e+99, -1e+99], [0, 0, -1e+99], [0, 0, -1e+99], [0, 0, -1e+99], [0, 0, -1e+99]]
+
+coverage_headers = ['coverage', 'coadsorbate_coverage']
+
+data_file = 'HER.pkl'
+
+decimal_precision = 100
+
+default_constraints = ['+', '+', None]
+
+default_interaction_constraints = None
+
+descriptor_decimal_precision = 2
+
+descriptor_dict = {'Ni': [-0.399, 0.114], 'Ag': [0.309, 0.697], 'Pt': [-0.34, 1.079], 'Au': [0.271, 1.426], 'Pd': [-0.444, 0.924], 'Rh': [-0.403, 0.365], 'Cu': [-0.052, 0.31]}
+
+descriptor_names = ('H_s', 'OH_s')
+
+descriptor_ranges = [[-1, 1], [-2, 3]]
+
+echem_transition_state_names = []
+
+electrochemical_thermo_mode = 'hbond_electrochemical'
+
+elementary_rxns = ([['O_s', 'pe_g'], ['O-pe_s'], ['OH_s']], [['OH_s', 'pe_g'], ['pe-OH_s'], ['H2O_g', 's']], [['pe_g', 's'], ['H_s']], [['pe_g', 'H_s'], ['pe-H_s'], ['H2_g', 's']], [['H_s', 'H_s'], ['H-H_s', 's'], ['H2_g', 's', 's']])
+
+estimate_frequencies = True
+
+extrapolate_coverages = False
+
+fixed_entropy_dict = {'H2_g': 0.00135, 'other': 0.002}
+
+force_recalculation = True
+
+force_recompilation = False
+
+frequency_dict = {'H2_g': [0.5485393850267649], 'pe_g': [], 'H_s': [0.12913744781913036, 0.11098205109103131, 0.080822416496198465], 'H2O_g': [0.4898196021102182, 0.4754177960051137, 0.1947466965564375], '*_g': [], 'OH_s': [0.47613151383709879, 0.0841169261470288, 0.067535603772631667, 0.047356079073360091, 0.03764112441378021, 0.014949939799894273], 'g': [], 's': [], '*_s': [], 'O-pe_s': [], 'pe-OH_s': [], 'O_s': [0.054737935187203726, 0.049526639345453545, 0.0393020054799973], 'H-H_s': [], 'pe-H_s': []}
+
+frequency_surface_names = []
+
+frequency_unit_conversion = 0.0001239842
+
+gas_names = ('H2O_g', 'H2_g', 'pe_g')
+
+gas_pressures = [0.03, 0.01, 1.0]
+
+gas_thermo_mode = 'ideal_gas'
+
+hbond_dict = {'OCHCH2': 0.0, 'C': 0.0, 'CH': 0.0, 'CO': -0.1, 'OH': -0.5, 'CHOH': -0.25, 'H': 0.0, 'OCHO': 0.0, 'O': 0.0, 'CHO': -0.1, 'OCH3': 0.0, 'CH2': 0.0, 'CH3': 0.0, 'COHOH': -0.25, 'OCH2O': 0.0, 'CH2OH': -0.25, 'CH2O': 0.0, 'COH': -0.25, 'COOH': -0.25, 'OCHCHO': 0.0}
+
+ideal_gas_params = {'H2_g': [2, 'linear', 0], 'CH3OH_g': [1, 'nonlinear', 0], 'CO_g': [1, 'linear', 0], 'H2O_g': [2, 'nonlinear', 0], 'HCOOH_g': [1, 'nonlinear', 0], 'CH3CH2CHCH2_g': [1, 'nonlinear', 0], 'CH3CHCH2_g': [1, 'nonlinear', 0], 'O2_g': [2, 'linear', 1.0], 'N2_g': [2, 'linear', 0], 'CH3CH2OH_g': [1, 'nonlinear', 0], 'NH3_g': [3, 'nonlinear', 0], 'CH4_g': [12, 'nonlinear', 0], 'CH3CHO_g': [1, 'nonlinear', 0], 'CH2CH2_g': [4, 'nonlinear', 0], 'CH3CHCHCH3_g': [2, 'nonlinear', 0], 'CO2_g': [2, 'linear', 0], 'pe_g': [2, 'linear', 0], 'CH3CH3CCH2_g': [2, 'nonlinear', 0], 'C2H4_g': [4, 'nonlinear', 0], 'CH2O_g': [2, 'nonlinear', 0], 'CH3COOH_g': [1, 'nonlinear', 0], 'C2H6_g': [6, 'nonlinear', 0]}
+
+input_file = 'HER_input.txt'
+
+interaction_fitting_mode = None
+
+interaction_surface_names = None
+
+internally_constrain_coverages = True
+
+max_bisections = 3
+
+max_initial_guesses = 3
+
+max_rootfinding_iterations = 100
+
+max_self_interaction = 'Pd'
+
+model_name = 'HER'
+
+numerical_representation = 'mpmath'
+
+optimize_analytical_expressions = False
+
+output_labels = {'directional_rates': ["[['O_s', 'pe_g'], ['O-pe_s'], ['OH_s']] forward", "[['OH_s', 'pe_g'], ['pe-OH_s'], ['H2O_g', 's']] forward", "[['pe_g', 's'], ['H_s']] forward", "[['pe_g', 'H_s'], ['pe-H_s'], ['H2_g', 's']] forward", "[['H_s', 'H_s'], ['H-H_s', 's'], ['H2_g', 's', 's']] forward", "[['O_s', 'pe_g'], ['O-pe_s'], ['OH_s']] reverse", "[['OH_s', 'pe_g'], ['pe-OH_s'], ['H2O_g', 's']] reverse", "[['pe_g', 's'], ['H_s']] reverse", "[['pe_g', 'H_s'], ['pe-H_s'], ['H2_g', 's']] reverse", "[['H_s', 'H_s'], ['H-H_s', 's'], ['H2_g', 's', 's']] reverse"], 'selectivity': ('H2O_g', 'H2_g', 'pe_g'), 'rate': ([['O_s', 'pe_g'], ['O-pe_s'], ['OH_s']], [['OH_s', 'pe_g'], ['pe-OH_s'], ['H2O_g', 's']], [['pe_g', 's'], ['H_s']], [['pe_g', 'H_s'], ['pe-H_s'], ['H2_g', 's']], [['H_s', 'H_s'], ['H-H_s', 's'], ['H2_g', 's', 's']]), 'production_rate': ('H2O_g', 'H2_g', 'pe_g'), 'coverage': ('H_s', 'OH_s', 'O_s'), 'free_energy': ('H2O_g', 'H2_g', 'pe_g', 'H_s', 'OH_s', 'O_s', 'H-H_s', 'O-pe_s', 'pe-H_s', 'pe-OH_s')}
+
+output_variables = ['coverage', 'rate', 'production_rate', 'free_energy', 'selectivity', 'directional_rates']
+
+parameter_dict = {'H_s': [0.271, 0.309, -0.052, -0.403, -0.399, -0.34, -0.444], 'O_s': [2.652, 2.164, 1.163, 0.558, 0.451, 1.947, 1.691], 'OH_s': [1.426, 0.697, 0.31, 0.365, 0.114, 1.079, 0.924], 'O-pe_s': [2.852, 2.364, 1.363, 0.758, 0.651, 2.147, 1.891], 'pe-OH_s': [1.726, 0.997, 0.61, 0.665, 0.414, 1.379, 1.224], 'H-H_s': [1.1, 1.0, 0.63, 0.25, None, 0.19, 0.12], 'pe-H_s': [0.971, 1.009, 0.7, 0.7, 0.7, 0.7, 0.7]}
+
+parameter_mode = 'formation_energy'
+
+parameter_names = ('H_s', 'OH_s', 'O_s', 'H-H_s', 'O-pe_s', 'pe-H_s', 'pe-OH_s')
+
+parse_headers = ['formation_energy', 'frequencies']
+
+perturbation_size = 1e-14
+
+prefactor_list = ['kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h', 'kB*T/h']
+
+pressure_mode = 'static'
+
+products = ['H2_g']
+
+reactants = ['H2O_g', 'pe_g']
+
+required_headers = ['species_name', 'surface_name', 'site_name', 'formation_energy', 'frequencies', 'reference']
+
+residual_threshold = 0.9
+
+resolution = [15, 15]
+
+rxn_expressions = ['O* + pe_g <-> O-pe* -> OH*', 'OH* + pe_g <-> pe-OH* <-> H2O_g+*', 'pe_g + *_s <-> H*', 'pe_g + H* <-> pe-H* <-> H2_g + *_s', 'H* + H* <-> H-H* + *_s <-> H2_g + 2*_s']
+
+rxn_options_dict = {'beta': {}, 'prefactor': {}}
+
+scaling_constraint_dict = {'CO_s': [None, 0.0, None], 'pe-OH_s': 'initial_state', 'H_s': [None, 0.0, None], 'O_s': [0.0, None, None], 'OH_s': [0.0, None, None], 'H-H_s': 'initial_state', 'pe-H_s': 'initial_state', 'O-pe_s': 'initial_state'}
+
+search_directions = [[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0], [-1, 1], [1, 1], [1, -1], [-1, -1]]
+
+setup_file = 'HER.mkm'
+
+shomate_params = {'HNO3_g:298-1200': [19.63229, 153.9599, -115.8378, 32.87955, -0.249114, -146.8818, 247.7049, -134.306], 'CH4_g:298-1300': [-0.703029, 108.4773, -42.52157, 5.862788, 0.678565, -76.84376, 158.7163, -74.8731], 'CH2CH2_g:298-1200': [-6.38788, 184.4019, -112.9718, 28.49593, 0.31554, 48.17332, 163.1568, 52.46694], 'HCN_g:298-1200': [32.69373, 22.59205, -4.369142, -0.407697, -0.282399, 123.4811, 233.2597, 135.1432], 'N2_g:100-500': [28.98641, 1.853978, -9.647459, 16.63537, 0.000117, -8.671914, 226.4168, 0.0], 'O2_g:2000-6000': [20.91111, 10.72071, -2.020498, 0.146449, 9.245722, 5.337651, 237.6185, 0.0], 'CO2_g:1200-6000': [58.16639, 2.720075, -0.492289, 0.038844, -6.447293, -425.9186, 263.6125, -393.5224], 'H2_g:1000-2500': [18.563083, 12.257357, -2.859786, 0.268238, 1.97799, -1.147438, 156.288133, 0], 'HNO2_g:298-1200': [24.89974, 91.37563, -64.84614, 17.92007, -0.134737, -88.13596, 254.2671, -76.73498], 'NO_g:298-1200': [23.83491, 12.58878, -1.139011, -1.497459, 0.214194, 83.35783, 237.1219, 90.29114], 'NH3_g:298-1400': [19.99563, 49.77119, -15.37599, 1.921168, 0.189174, -53.30667, 203.8591, -45.89806], 'N2_g:500-2000': [19.50583, 19.88705, -8.598535, 1.369784, 0.527601, -4.935202, 212.39, 0.0], 'O2_g:100-700': [31.32234, -20.23531, 57.8664, -36.50624, -0.007374, -8.903471, 246.7945, 0.0], 'CO_g:1300-1600': [35.1507, 1.300095, -0.205921, 0.01355, -3.28278, -127.8375, 231.712, -110.5271], 'CH2O_g:298-1500': [5.193767, 93.23249, -44.85457, 7.882279, 0.551175, -119.3591, 202.4663, -115.8972], 'CH4_g:1300-1600': [85.81217, 11.26467, -2.114146, 0.13819, -26.42221, -153.5327, 224.4143, -74.8731], 'H2O_g:1700-6000': [41.96426, 8.622053, -1.49978, 0.098119, -11.15764, -272.1797, 219.7809, -241.8264], 'H2_g:2500-6000': [43.41356, -4.293079, 1.272428, -0.096876, -20.533862, -38.515158, 162.081354, 0], 'H2_g:298-1000': [33.066178, -11.363417, 11.432816, -2.772874, -0.158558, -9.980797, 172.707974, 0], 'NO3_g:298-1200': [11.22316, 166.3889, -148.4458, 47.40598, -0.176791, 61.00858, 221.7679, 71.128], 'CO_g:298-1300': [25.56759, 6.09613, 4.054656, -2.671201, 0.131021, -118.0089, 227.3665, -110.5271], 'O2_g:700-2000': [30.03235, 8.772972, -3.988133, 0.788313, -0.741599, -11.32468, 236.1663, 0.0], 'H2O_g:500-1700': [30.092, 6.832514, 6.793435, -2.53448, 0.082139, -250.881, 223.3967, -241.8264], 'CH3CH2OH_g:298-1500': [-4.7367880805894265, 271.96181550301463, -169.34946529216657, 43.73860153608533, 0.24643430702178773, -9.828280829187861, 203.3325622617075, 0.0], 'CH3CHO_g:298-1500': [4.8037386340099095, 185.92002366990326, -99.1084610902012, 20.61473919069016, 0.2770802548558646, -8.566600040790945, 220.00244674443837, 0.0], 'N2O_g:298-1400': [27.67988, 51.14898, -30.64454, 6.847911, -0.157906, 71.24934, 238.6164, 82.04824], 'HCOOH_g:298-1500': [3.802752304225226, 153.66217894746168, -84.64046773816926, 16.297377707561505, 0.2772064997263338, -6.16527, 212.9698972559699, 0], 'NO2_g:298-1200': [16.10857, 75.89525, -54.3874, 14.30777, 0.239423, 26.17464, 240.5386, 33.09502], 'CO2_g:298-1200': [24.99735, 55.18696, -33.69137, 7.948387, -0.136638, -403.6075, 228.2431, -393.5224], 'H2O_g:100-500': [36.303952, -24.11232, 63.64111, -38.9524, -0.01385, -10.23966, 237.39431, 0.0], 'CH3OH_g:298-1500': [-1.0845814245433651, 153.2463565199489, -79.53050359618254, 16.47130239316011, 0.5220334601533215, -4.897417024069, 199.1893745506112, 0.0]}
+
+site_names = ('s', 'g')
+
+species_definitions = {'H2_g': {'n_sites': 0, 'pressure': 0.01, 'formation_energy': 0.0, 'name': 'H2', 'frequencies': [0.5485393850267649], 'formation_energy_source': 'gas phase calcs', 'type': 'gas', 'composition': {'H': 2}, 'site': 'g'}, 'pe_g': {'n_sites': 0, 'pressure': 1.0, 'formation_energy': 0.0, 'name': 'pe', 'frequencies': [], 'formation_energy_source': 'gas phase calcs', 'type': 'gas', 'composition': {'H': 1}, 'site': 'g'}, 'H_s': {'n_sites': 1, 'formation_energy': [0.271, 0.309, -0.052, -0.403, -0.399, -0.34, -0.444], 'name': 'H', 'frequencies': [0.12913744781913036, 0.11098205109103131, 0.080822416496198465], 'formation_energy_source': ['my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs'], 'site': 's', 'type': 'adsorbate', 'composition': {'H': 1}}, 'H2O_g': {'n_sites': 0, 'pressure': 0.03, 'formation_energy': 0.0, 'name': 'H2O', 'frequencies': [0.4898196021102182, 0.4754177960051137, 0.1947466965564375], 'formation_energy_source': 'gas phase calcs', 'type': 'gas', 'composition': {'H': 2, 'O': 1}, 'site': 'g'}, 'OH_s': {'n_sites': 1, 'formation_energy': [1.426, 0.697, 0.31, 0.365, 0.114, 1.079, 0.924], 'name': 'OH', 'frequencies': [0.47613151383709879, 0.0841169261470288, 0.067535603772631667, 0.047356079073360091, 0.03764112441378021, 0.014949939799894273], 'formation_energy_source': ['my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs'], 'site': 's', 'type': 'adsorbate', 'composition': {'H': 1, 'O': 1}}, '*_g': {'n_sites': 0, 'formation_energy': 0, 'name': 'g', 'frequencies': [], 'site': 'g', 'total': 0, 'type': 'site', 'composition': {}, 'site_names': ['gas']}, 'g': {'n_sites': 0, 'formation_energy': 0, 'name': 'g', 'frequencies': [], 'site': 'g', 'total': 0, 'type': 'site', 'composition': {}, 'site_names': ['gas']}, 's': {'n_sites': 1, 'formation_energy': 0, 'name': 's', 'frequencies': [], 'site': 's', 'total': 1, 'type': 'site', 'composition': {}, 'site_names': ['111']}, '*_s': {'n_sites': 1, 'formation_energy': 0, 'name': 's', 'frequencies': [], 'site': 's', 'total': 1, 'type': 'site', 'composition': {}, 'site_names': ['111']}, 'O-pe_s': {'n_sites': 1, 'formation_energy': [2.852, 2.364, 1.363, 0.758, 0.651, 2.147, 1.891], 'name': 'O-pe', 'frequencies': [], 'formation_energy_source': ['my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs'], 'site': 's', 'type': 'transition_state', 'composition': {'H': 1, 'O': 1}}, 'pe-OH_s': {'n_sites': 1, 'formation_energy': [1.726, 0.997, 0.61, 0.665, 0.414, 1.379, 1.224], 'name': 'pe-OH', 'frequencies': [], 'formation_energy_source': ['my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs'], 'site': 's', 'type': 'transition_state', 'composition': {'H': 2, 'O': 1}}, 'O_s': {'n_sites': 1, 'formation_energy': [2.652, 2.164, 1.163, 0.558, 0.451, 1.947, 1.691], 'name': 'O', 'frequencies': [0.054737935187203726, 0.049526639345453545, 0.0393020054799973], 'formation_energy_source': ['my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs'], 'site': 's', 'type': 'adsorbate', 'composition': {'O': 1}}, 'H-H_s': {'n_sites': 1, 'formation_energy': [1.1, 1.0, 0.63, 0.25, None, 0.19, 0.12], 'name': 'H-H', 'frequencies': [], 'formation_energy_source': ['CatApp', 'CatApp', 'CatApp', 'CatApp', 'CatApp', 'CatApp'], 'site': 's', 'type': 'transition_state', 'composition': {'H': 2}}, 'pe-H_s': {'n_sites': 1, 'formation_energy': [0.971, 1.009, 0.7, 0.7, 0.7, 0.7, 0.7], 'name': 'pe-H', 'frequencies': [], 'formation_energy_source': ['my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs', 'my ads calcs'], 'site': 's', 'type': 'transition_state', 'composition': {'H': 2}}}
+
+standard_coadsorbate_coverage = 'min'
+
+standard_coverage = 'min'
+
+surface_names = ('Au', 'Ag', 'Cu', 'Rh', 'Ni', 'Pt', 'Pd')
+
+temperature = 300
+
+thermodynamic_corrections = ['gas', 'adsorbate', 'electrochemical']
+
+thermodynamic_variables = ['temperature', 'gas_pressures', 'voltage', 'beta', 'pH', 'Upzc', 'gas_thermo_mode', 'adsorbate_thermo_mode']
+
+tolerance = 1e-50
+
+total_coefficient_dict = {'H_s': array([ 1.,  0.,  0.]), 'O_s': array([ 0.     ,  1.58664,  0.40395]), 'OH_s': array([ 0.,  1.,  0.]), 'O-pe_s': array([ 0.99418,  1.3181 ,  0.94277]), 'pe-OH_s': array([ 0. ,  1. ,  0.3]), 'H-H_s': array([ 1.24839,  0.     ,  0.68545]), 'pe-H_s': array([ 0.37155,  0.04609,  0.80665])}
+
+transition_state_coefficient_matrix = array([[ 1.24838633,  0.        ,  0.68544777],
+       [ 0.        ,  1.58664   ,  0.60395   ],
+       [ 0.39715154,  0.        ,  0.84288376],
+       [ 0.        ,  1.        ,  0.3       ]])
+
+transition_state_cross_interaction_mode = 'transition_state_scaling'
+
+transition_state_names = ('H-H_s', 'O-pe_s', 'pe-H_s', 'pe-OH_s')
+
+transition_state_scaling_coefficients = [[0.6241931669638412, 0.68544776567639043], [0.99999999999999922, 0.20000000000000043], [0.3971515376655077, 0.84288376097858664], [1.0000000000000007, 0.29999999999999993]]
+
+transition_state_scaling_matrix = array([[ 1.24838633,  0.        ,  0.        ,  0.68544777],
+       [ 0.        ,  0.        ,  1.        ,  0.2       ],
+       [ 0.39715154,  0.        ,  0.        ,  0.84288376],
+       [ 0.        ,  1.        ,  0.        ,  0.3       ]])
+
+transition_state_scaling_mode = 'initial_state'
+
+transition_state_scaling_parameters = {}
+
+verbose = 1
+
+voltage = -0.1
+
+stdout = """mapper_iteration_0: status - 225 points do not have valid solution.
+harmonic_transition_state_evaluation: warning - averaging initial/final state thermal contributions for H-H_s
+harmonic_transition_state_evaluation: warning - averaging initial/final state thermal contributions for O-pe_s
+harmonic_transition_state_evaluation: warning - averaging initial/final state thermal contributions for pe-H_s
+harmonic_transition_state_evaluation: warning - averaging initial/final state thermal contributions for pe-OH_s
+minresid_iteration_0: success - [ 1.00, 3.00] using coverages from [ 1.00, 3.00]
+minresid_iteration_0: success - [ 1.00, 2.64] using coverages from [ 1.00, 2.64]
+minresid_iteration_0: success - [ 1.00, 2.29] using coverages from [ 1.00, 2.29]
+minresid_iteration_0: success - [ 1.00, 1.93] using coverages from [ 1.00, 1.93]
+minresid_iteration_0: success - [ 1.00, 1.57] using coverages from [ 1.00, 1.57]
+minresid_iteration_0: success - [ 1.00, 1.21] using coverages from [ 1.00, 1.21]
+minresid_iteration_0: success - [ 1.00, 0.86] using coverages from [ 1.00, 0.86]
+minresid_iteration_0: success - [ 1.00, 0.50] using coverages from [ 1.00, 0.50]
+minresid_iteration_0: success - [ 1.00, 0.14] using coverages from [ 1.00, 0.14]
+minresid_iteration_0: success - [ 1.00,-0.21] using coverages from [ 1.00,-0.21]
+minresid_iteration_0: success - [ 1.00,-0.57] using coverages from [ 1.00,-0.57]
+minresid_iteration_0: success - [ 1.00,-0.93] using coverages from [ 1.00,-0.93]
+minresid_iteration_0: success - [ 1.00,-1.29] using coverages from [ 1.00,-1.29]
+minresid_iteration_0: success - [ 1.00,-1.64] using coverages from [ 1.00,-1.64]
+minresid_iteration_0: success - [ 1.00,-2.00] using coverages from [ 1.00,-2.00]
+minresid_iteration_0: success - [ 0.86, 3.00] using coverages from [ 0.86, 3.00]
+minresid_iteration_0: success - [ 0.86, 2.64] using coverages from [ 0.86, 2.64]
+minresid_iteration_0: success - [ 0.86, 2.29] using coverages from [ 0.86, 2.29]
+minresid_iteration_0: success - [ 0.86, 1.93] using coverages from [ 0.86, 1.93]
+minresid_iteration_0: success - [ 0.86, 1.57] using coverages from [ 0.86, 1.57]
+minresid_iteration_0: success - [ 0.86, 1.21] using coverages from [ 0.86, 1.21]
+minresid_iteration_0: success - [ 0.86, 0.86] using coverages from [ 0.86, 0.86]
+minresid_iteration_0: success - [ 0.86, 0.50] using coverages from [ 0.86, 0.50]
+minresid_iteration_0: success - [ 0.86, 0.14] using coverages from [ 0.86, 0.14]
+minresid_iteration_0: success - [ 0.86,-0.21] using coverages from [ 0.86,-0.21]
+minresid_iteration_0: success - [ 0.86,-0.57] using coverages from [ 0.86,-0.57]
+minresid_iteration_0: success - [ 0.86,-0.93] using coverages from [ 0.86,-0.93]
+minresid_iteration_0: success - [ 0.86,-1.29] using coverages from [ 0.86,-1.29]
+minresid_iteration_0: success - [ 0.86,-1.64] using coverages from [ 0.86,-1.64]
+minresid_iteration_0: success - [ 0.86,-2.00] using coverages from [ 0.86,-2.00]
+minresid_iteration_0: success - [ 0.71, 3.00] using coverages from [ 0.71, 3.00]
+minresid_iteration_0: success - [ 0.71, 2.64] using coverages from [ 0.71, 2.64]
+minresid_iteration_0: success - [ 0.71, 2.29] using coverages from [ 0.71, 2.29]
+minresid_iteration_0: success - [ 0.71, 1.93] using coverages from [ 0.71, 1.93]
+minresid_iteration_0: success - [ 0.71, 1.57] using coverages from [ 0.71, 1.57]
+minresid_iteration_0: success - [ 0.71, 1.21] using coverages from [ 0.71, 1.21]
+minresid_iteration_0: success - [ 0.71, 0.86] using coverages from [ 0.71, 0.86]
+minresid_iteration_0: success - [ 0.71, 0.50] using coverages from [ 0.71, 0.50]
+minresid_iteration_0: success - [ 0.71, 0.14] using coverages from [ 0.71, 0.14]
+minresid_iteration_0: success - [ 0.71,-0.21] using coverages from [ 0.71,-0.21]
+minresid_iteration_0: success - [ 0.71,-0.57] using coverages from [ 0.71,-0.57]
+minresid_iteration_0: success - [ 0.71,-0.93] using coverages from [ 0.71,-0.93]
+minresid_iteration_0: success - [ 0.71,-1.29] using coverages from [ 0.71,-1.29]
+minresid_iteration_0: success - [ 0.71,-1.64] using coverages from [ 0.71,-1.64]
+minresid_iteration_0: success - [ 0.71,-2.00] using coverages from [ 0.71,-2.00]
+minresid_iteration_0: success - [ 0.57, 3.00] using coverages from [ 0.57, 3.00]
+minresid_iteration_0: success - [ 0.57, 2.64] using coverages from [ 0.57, 2.64]
+minresid_iteration_0: success - [ 0.57, 2.29] using coverages from [ 0.57, 2.29]
+minresid_iteration_0: success - [ 0.57, 1.93] using coverages from [ 0.57, 1.93]
+minresid_iteration_0: success - [ 0.57, 1.57] using coverages from [ 0.57, 1.57]
+minresid_iteration_0: success - [ 0.57, 1.21] using coverages from [ 0.57, 1.21]
+minresid_iteration_0: success - [ 0.57, 0.86] using coverages from [ 0.57, 0.86]
+minresid_iteration_0: success - [ 0.57, 0.50] using coverages from [ 0.57, 0.50]
+minresid_iteration_0: success - [ 0.57, 0.14] using coverages from [ 0.57, 0.14]
+minresid_iteration_0: success - [ 0.57,-0.21] using coverages from [ 0.57,-0.21]
+minresid_iteration_0: success - [ 0.57,-0.57] using coverages from [ 0.57,-0.57]
+minresid_iteration_0: success - [ 0.57,-0.93] using coverages from [ 0.57,-0.93]
+minresid_iteration_0: success - [ 0.57,-1.29] using coverages from [ 0.57,-1.29]
+minresid_iteration_0: success - [ 0.57,-1.64] using coverages from [ 0.57,-1.64]
+minresid_iteration_0: success - [ 0.57,-2.00] using coverages from [ 0.57,-2.00]
+minresid_iteration_0: success - [ 0.43, 3.00] using coverages from [ 0.43, 3.00]
+minresid_iteration_0: success - [ 0.43, 2.64] using coverages from [ 0.43, 2.64]
+minresid_iteration_0: success - [ 0.43, 2.29] using coverages from [ 0.43, 2.29]
+minresid_iteration_0: success - [ 0.43, 1.93] using coverages from [ 0.43, 1.93]
+minresid_iteration_0: success - [ 0.43, 1.57] using coverages from [ 0.43, 1.57]
+minresid_iteration_0: success - [ 0.43, 1.21] using coverages from [ 0.43, 1.21]
+minresid_iteration_0: success - [ 0.43, 0.86] using coverages from [ 0.43, 0.86]
+minresid_iteration_0: success - [ 0.43, 0.50] using coverages from [ 0.43, 0.50]
+minresid_iteration_0: success - [ 0.43, 0.14] using coverages from [ 0.43, 0.14]
+minresid_iteration_0: success - [ 0.43,-0.21] using coverages from [ 0.43,-0.21]
+minresid_iteration_0: success - [ 0.43,-0.57] using coverages from [ 0.43,-0.57]
+minresid_iteration_0: success - [ 0.43,-0.93] using coverages from [ 0.43,-0.93]
+minresid_iteration_0: success - [ 0.43,-1.29] using coverages from [ 0.43,-1.29]
+minresid_iteration_0: success - [ 0.43,-1.64] using coverages from [ 0.43,-1.64]
+minresid_iteration_0: success - [ 0.43,-2.00] using coverages from [ 0.43,-2.00]
+minresid_iteration_0: success - [ 0.29, 3.00] using coverages from [ 0.29, 3.00]
+minresid_iteration_0: success - [ 0.29, 2.64] using coverages from [ 0.29, 2.64]
+minresid_iteration_0: success - [ 0.29, 2.29] using coverages from [ 0.29, 2.29]
+minresid_iteration_0: success - [ 0.29, 1.93] using coverages from [ 0.29, 1.93]
+minresid_iteration_0: success - [ 0.29, 1.57] using coverages from [ 0.29, 1.57]
+minresid_iteration_0: success - [ 0.29, 1.21] using coverages from [ 0.29, 1.21]
+minresid_iteration_0: success - [ 0.29, 0.86] using coverages from [ 0.29, 0.86]
+minresid_iteration_0: success - [ 0.29, 0.50] using coverages from [ 0.29, 0.50]
+minresid_iteration_0: success - [ 0.29, 0.14] using coverages from [ 0.29, 0.14]
+minresid_iteration_0: success - [ 0.29,-0.21] using coverages from [ 0.29,-0.21]
+minresid_iteration_0: success - [ 0.29,-0.57] using coverages from [ 0.29,-0.57]
+minresid_iteration_0: success - [ 0.29,-0.93] using coverages from [ 0.29,-0.93]
+minresid_iteration_0: success - [ 0.29,-1.29] using coverages from [ 0.29,-1.29]
+minresid_iteration_0: success - [ 0.29,-1.64] using coverages from [ 0.29,-1.64]
+minresid_iteration_0: success - [ 0.29,-2.00] using coverages from [ 0.29,-2.00]
+minresid_iteration_0: success - [ 0.14, 3.00] using coverages from [ 0.14, 3.00]
+minresid_iteration_0: success - [ 0.14, 2.64] using coverages from [ 0.14, 2.64]
+minresid_iteration_0: success - [ 0.14, 2.29] using coverages from [ 0.14, 2.29]
+minresid_iteration_0: success - [ 0.14, 1.93] using coverages from [ 0.14, 1.93]
+minresid_iteration_0: success - [ 0.14, 1.57] using coverages from [ 0.14, 1.57]
+minresid_iteration_0: success - [ 0.14, 1.21] using coverages from [ 0.14, 1.21]
+minresid_iteration_0: success - [ 0.14, 0.86] using coverages from [ 0.14, 0.86]
+minresid_iteration_0: success - [ 0.14, 0.50] using coverages from [ 0.14, 0.50]
+minresid_iteration_0: success - [ 0.14, 0.14] using coverages from [ 0.14, 0.14]
+minresid_iteration_0: success - [ 0.14,-0.21] using coverages from [ 0.14,-0.21]
+minresid_iteration_0: success - [ 0.14,-0.57] using coverages from [ 0.14,-0.57]
+minresid_iteration_0: success - [ 0.14,-0.93] using coverages from [ 0.14,-0.93]
+minresid_iteration_0: success - [ 0.14,-1.29] using coverages from [ 0.14,-1.29]
+minresid_iteration_0: success - [ 0.14,-1.64] using coverages from [ 0.14,-1.64]
+minresid_iteration_0: success - [ 0.14,-2.00] using coverages from [ 0.14,-2.00]
+minresid_iteration_0: success - [ 0.00, 3.00] using coverages from [ 0.00, 3.00]
+minresid_iteration_0: success - [ 0.00, 2.64] using coverages from [ 0.00, 2.64]
+minresid_iteration_0: success - [ 0.00, 2.29] using coverages from [ 0.00, 2.29]
+minresid_iteration_0: success - [ 0.00, 1.93] using coverages from [ 0.00, 1.93]
+minresid_iteration_0: success - [ 0.00, 1.57] using coverages from [ 0.00, 1.57]
+minresid_iteration_0: success - [ 0.00, 1.21] using coverages from [ 0.00, 1.21]
+minresid_iteration_0: success - [ 0.00, 0.86] using coverages from [ 0.00, 0.86]
+minresid_iteration_0: success - [ 0.00, 0.50] using coverages from [ 0.00, 0.50]
+minresid_iteration_0: success - [ 0.00, 0.14] using coverages from [ 0.00, 0.14]
+minresid_iteration_0: success - [ 0.00,-0.21] using coverages from [ 0.00,-0.21]
+minresid_iteration_0: success - [ 0.00,-0.57] using coverages from [ 0.00,-0.57]
+minresid_iteration_0: success - [ 0.00,-0.93] using coverages from [ 0.00,-0.93]
+minresid_iteration_0: success - [ 0.00,-1.29] using coverages from [ 0.00,-1.29]
+minresid_iteration_0: success - [ 0.00,-1.64] using coverages from [ 0.00,-1.64]
+minresid_iteration_0: success - [ 0.00,-2.00] using coverages from [ 0.00,-2.00]
+minresid_iteration_0: success - [-0.14, 3.00] using coverages from [-0.14, 3.00]
+minresid_iteration_0: success - [-0.14, 2.64] using coverages from [-0.14, 2.64]
+minresid_iteration_0: success - [-0.14, 2.29] using coverages from [-0.14, 2.29]
+minresid_iteration_0: success - [-0.14, 1.93] using coverages from [-0.14, 1.93]
+minresid_iteration_0: success - [-0.14, 1.57] using coverages from [-0.14, 1.57]
+minresid_iteration_0: success - [-0.14, 1.21] using coverages from [-0.14, 1.21]
+minresid_iteration_0: success - [-0.14, 0.86] using coverages from [-0.14, 0.86]
+minresid_iteration_0: success - [-0.14, 0.50] using coverages from [-0.14, 0.50]
+minresid_iteration_0: success - [-0.14, 0.14] using coverages from [-0.14, 0.14]
+minresid_iteration_0: success - [-0.14,-0.21] using coverages from [-0.14,-0.21]
+minresid_iteration_0: success - [-0.14,-0.57] using coverages from [-0.14,-0.57]
+minresid_iteration_0: success - [-0.14,-0.93] using coverages from [-0.14,-0.93]
+minresid_iteration_0: success - [-0.14,-1.29] using coverages from [-0.14,-1.29]
+minresid_iteration_0: success - [-0.14,-1.64] using coverages from [-0.14,-1.64]
+minresid_iteration_0: success - [-0.14,-2.00] using coverages from [-0.14,-2.00]
+minresid_iteration_0: success - [-0.29, 3.00] using coverages from [-0.29, 3.00]
+minresid_iteration_0: success - [-0.29, 2.64] using coverages from [-0.29, 2.64]
+minresid_iteration_0: success - [-0.29, 2.29] using coverages from [-0.29, 2.29]
+minresid_iteration_0: success - [-0.29, 1.93] using coverages from [-0.29, 1.93]
+minresid_iteration_0: success - [-0.29, 1.57] using coverages from [-0.29, 1.57]
+minresid_iteration_0: success - [-0.29, 1.21] using coverages from [-0.29, 1.21]
+minresid_iteration_0: success - [-0.29, 0.86] using coverages from [-0.29, 0.86]
+minresid_iteration_0: success - [-0.29, 0.50] using coverages from [-0.29, 0.50]
+minresid_iteration_0: success - [-0.29, 0.14] using coverages from [-0.29, 0.14]
+minresid_iteration_0: success - [-0.29,-0.21] using coverages from [-0.29,-0.21]
+minresid_iteration_0: success - [-0.29,-0.57] using coverages from [-0.29,-0.57]
+minresid_iteration_0: success - [-0.29,-0.93] using coverages from [-0.29,-0.93]
+minresid_iteration_0: success - [-0.29,-1.29] using coverages from [-0.29,-1.29]
+minresid_iteration_0: success - [-0.29,-1.64] using coverages from [-0.29,-1.64]
+minresid_iteration_0: success - [-0.29,-2.00] using coverages from [-0.29,-2.00]
+minresid_iteration_0: success - [-0.43, 3.00] using coverages from [-0.43, 3.00]
+minresid_iteration_0: success - [-0.43, 2.64] using coverages from [-0.43, 2.64]
+minresid_iteration_0: success - [-0.43, 2.29] using coverages from [-0.43, 2.29]
+minresid_iteration_0: success - [-0.43, 1.93] using coverages from [-0.43, 1.93]
+minresid_iteration_0: success - [-0.43, 1.57] using coverages from [-0.43, 1.57]
+minresid_iteration_0: success - [-0.43, 1.21] using coverages from [-0.43, 1.21]
+minresid_iteration_0: success - [-0.43, 0.86] using coverages from [-0.43, 0.86]
+minresid_iteration_0: success - [-0.43, 0.50] using coverages from [-0.43, 0.50]
+minresid_iteration_0: success - [-0.43, 0.14] using coverages from [-0.43, 0.14]
+minresid_iteration_0: success - [-0.43,-0.21] using coverages from [-0.43,-0.21]
+minresid_iteration_0: success - [-0.43,-0.57] using coverages from [-0.43,-0.57]
+minresid_iteration_0: success - [-0.43,-0.93] using coverages from [-0.43,-0.93]
+minresid_iteration_0: success - [-0.43,-1.29] using coverages from [-0.43,-1.29]
+minresid_iteration_0: success - [-0.43,-1.64] using coverages from [-0.43,-1.64]
+minresid_iteration_0: success - [-0.43,-2.00] using coverages from [-0.43,-2.00]
+minresid_iteration_0: success - [-0.57, 3.00] using coverages from [-0.57, 3.00]
+minresid_iteration_0: success - [-0.57, 2.64] using coverages from [-0.57, 2.64]
+minresid_iteration_0: success - [-0.57, 2.29] using coverages from [-0.57, 2.29]
+minresid_iteration_0: success - [-0.57, 1.93] using coverages from [-0.57, 1.93]
+minresid_iteration_0: success - [-0.57, 1.57] using coverages from [-0.57, 1.57]
+minresid_iteration_0: success - [-0.57, 1.21] using coverages from [-0.57, 1.21]
+minresid_iteration_0: success - [-0.57, 0.86] using coverages from [-0.57, 0.86]
+minresid_iteration_0: success - [-0.57, 0.50] using coverages from [-0.57, 0.50]
+minresid_iteration_0: success - [-0.57, 0.14] using coverages from [-0.57, 0.14]
+minresid_iteration_0: success - [-0.57,-0.21] using coverages from [-0.57,-0.21]
+minresid_iteration_0: success - [-0.57,-0.57] using coverages from [-0.57,-0.57]
+minresid_iteration_0: success - [-0.57,-0.93] using coverages from [-0.57,-0.93]
+minresid_iteration_0: success - [-0.57,-1.29] using coverages from [-0.57,-1.29]
+minresid_iteration_0: success - [-0.57,-1.64] using coverages from [-0.57,-1.64]
+minresid_iteration_0: success - [-0.57,-2.00] using coverages from [-0.57,-2.00]
+minresid_iteration_0: success - [-0.71, 3.00] using coverages from [-0.71, 3.00]
+minresid_iteration_0: success - [-0.71, 2.64] using coverages from [-0.71, 2.64]
+minresid_iteration_0: success - [-0.71, 2.29] using coverages from [-0.71, 2.29]
+minresid_iteration_0: success - [-0.71, 1.93] using coverages from [-0.71, 1.93]
+minresid_iteration_0: success - [-0.71, 1.57] using coverages from [-0.71, 1.57]
+minresid_iteration_0: success - [-0.71, 1.21] using coverages from [-0.71, 1.21]
+minresid_iteration_0: success - [-0.71, 0.86] using coverages from [-0.71, 0.86]
+minresid_iteration_0: success - [-0.71, 0.50] using coverages from [-0.71, 0.50]
+minresid_iteration_0: success - [-0.71, 0.14] using coverages from [-0.71, 0.14]
+minresid_iteration_0: success - [-0.71,-0.21] using coverages from [-0.71,-0.21]
+minresid_iteration_0: success - [-0.71,-0.57] using coverages from [-0.71,-0.57]
+minresid_iteration_0: success - [-0.71,-0.93] using coverages from [-0.71,-0.93]
+minresid_iteration_0: success - [-0.71,-1.29] using coverages from [-0.71,-1.29]
+minresid_iteration_0: success - [-0.71,-1.64] using coverages from [-0.71,-1.64]
+minresid_iteration_0: success - [-0.71,-2.00] using coverages from [-0.71,-2.00]
+minresid_iteration_0: success - [-0.86, 3.00] using coverages from [-0.86, 3.00]
+minresid_iteration_0: success - [-0.86, 2.64] using coverages from [-0.86, 2.64]
+minresid_iteration_0: success - [-0.86, 2.29] using coverages from [-0.86, 2.29]
+minresid_iteration_0: success - [-0.86, 1.93] using coverages from [-0.86, 1.93]
+minresid_iteration_0: success - [-0.86, 1.57] using coverages from [-0.86, 1.57]
+minresid_iteration_0: success - [-0.86, 1.21] using coverages from [-0.86, 1.21]
+minresid_iteration_0: success - [-0.86, 0.86] using coverages from [-0.86, 0.86]
+minresid_iteration_0: success - [-0.86, 0.50] using coverages from [-0.86, 0.50]
+minresid_iteration_0: success - [-0.86, 0.14] using coverages from [-0.86, 0.14]
+minresid_iteration_0: success - [-0.86,-0.21] using coverages from [-0.86,-0.21]
+minresid_iteration_0: success - [-0.86,-0.57] using coverages from [-0.86,-0.57]
+minresid_iteration_0: success - [-0.86,-0.93] using coverages from [-0.86,-0.93]
+minresid_iteration_0: success - [-0.86,-1.29] using coverages from [-0.86,-1.29]
+minresid_iteration_0: success - [-0.86,-1.64] using coverages from [-0.86,-1.64]
+minresid_iteration_0: success - [-0.86,-2.00] using coverages from [-0.86,-2.00]
+minresid_iteration_0: success - [-1.00, 3.00] using coverages from [-1.00, 3.00]
+minresid_iteration_0: success - [-1.00, 2.64] using coverages from [-1.00, 2.64]
+minresid_iteration_0: success - [-1.00, 2.29] using coverages from [-1.00, 2.29]
+minresid_iteration_0: success - [-1.00, 1.93] using coverages from [-1.00, 1.93]
+minresid_iteration_0: success - [-1.00, 1.57] using coverages from [-1.00, 1.57]
+minresid_iteration_0: success - [-1.00, 1.21] using coverages from [-1.00, 1.21]
+minresid_iteration_0: success - [-1.00, 0.86] using coverages from [-1.00, 0.86]
+minresid_iteration_0: success - [-1.00, 0.50] using coverages from [-1.00, 0.50]
+minresid_iteration_0: success - [-1.00, 0.14] using coverages from [-1.00, 0.14]
+minresid_iteration_0: success - [-1.00,-0.21] using coverages from [-1.00,-0.21]
+minresid_iteration_0: success - [-1.00,-0.57] using coverages from [-1.00,-0.57]
+minresid_iteration_0: success - [-1.00,-0.93] using coverages from [-1.00,-0.93]
+minresid_iteration_0: success - [-1.00,-1.29] using coverages from [-1.00,-1.29]
+minresid_iteration_0: success - [-1.00,-1.64] using coverages from [-1.00,-1.64]
+minresid_iteration_0: success - [-1.00,-2.00] using coverages from [-1.00,-2.00]
+mapper_iteration_1: status - 0 points do not have valid solution.
+header_evaluation: fail - could not save atoms_dict = {'H2_g': Atoms(symbols='H2', positions=..., cell=[1.0, 1.0, 1.0], pbc=[False, False, False]), 'H2O_g': Atoms(symbols='OH2', positions=..., cell=[1.0, 1.0, 1.0], pbc=[False, False, False])}
+
+"""

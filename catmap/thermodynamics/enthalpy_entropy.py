@@ -213,7 +213,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 atom_name = gas.replace('_g','')
             try:
                 ase_atoms_dict[gas] = molecule(atom_name)
-            except NotImplementedError:
+            except (NotImplementedError, KeyError):
                 pass
 
         ase_atoms_dict.update(self.atoms_dict)
