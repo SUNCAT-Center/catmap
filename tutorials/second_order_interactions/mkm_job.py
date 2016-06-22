@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0,'/Users/aj/catmap')
 from catmap import ReactionModel
 from catmap import analyze
 import numpy as np
