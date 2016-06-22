@@ -8,7 +8,7 @@ class MeanFieldSolver(SolverBase):
     """Class for handling mean-field type kinetic models. Can be sub-classed to
     get functionality for steady-state solutions, sabatier solutions, etc."""
 
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
         SolverBase.__init__(self,reaction_model)
         defaults = dict(
                 tolerance = 1e-35,

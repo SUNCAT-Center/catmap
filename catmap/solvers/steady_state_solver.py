@@ -14,7 +14,7 @@ import re
 
 class SteadyStateSolver(MeanFieldSolver):
 
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
         MeanFieldSolver.__init__(self,reaction_model)
         defaults = dict(
                 max_rootfinding_iterations = 50,

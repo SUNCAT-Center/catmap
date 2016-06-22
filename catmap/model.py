@@ -32,7 +32,6 @@ class ReactionModel:
            :param setup_file: Specify <mkm-file> from which to load model.
            :type setup_file: str
             """
-
         #Set static utility functions
         for f in dir(functions):
             if not f.startswith('_') and callable(getattr(functions,f)):
@@ -120,7 +119,7 @@ class ReactionModel:
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
-
+       
     # Functions for executing the kinetic model
 
     def run(self,**kwargs):
@@ -140,12 +139,11 @@ class ReactionModel:
         # note that this expansion needs to happen in ReactionModel.run and not
         # ReactionModel.__init__ or it will not be caught in the mkm_job.py
         if 'all' in self.output_variables:
-            import catmap.functions
             self.output_variables.remove('all')
             self.output_variables = sorted(list(
                 set(self.output_variables).union(
                     set(
-                        catmap.functions.fetch_all_output_variables()
+                        functions.fetch_all_output_variables()
                     )
                 )
             ))
@@ -362,6 +360,7 @@ class ReactionModel:
                 decimal_precision = 75,
                 verbose = 1,
                 data_file = 'data.pkl')
+
         globs = {}
         locs = defaults
 
@@ -380,7 +379,9 @@ class ReactionModel:
                         if basepath not in sys.path:
                             sys.path.append(basepath)
                         sublocs = {}
-                        _temp = __import__(pyfile,globals(),sublocs, [locs[var]])
+                        subglobs = {}
+                        _temp = __import__(pyfile,subglobs,sublocs, [locs[var]])
+                        #_temp = __import__(pyfile,globals(),sublocs, [locs[var]]) #no reason to mess with globals() unless we have to.
                         class_instance = getattr(_temp,locs[var])(self)
                         setattr(self,var,class_instance)
                     else:
@@ -771,7 +772,7 @@ class ReactionModel:
         else:
             rxn_str = IS + leftrightarrow() + FS
         if print_out == True:
-            print rxn_str
+            print(rxn_str)
         return rxn_str
 
     @staticmethod

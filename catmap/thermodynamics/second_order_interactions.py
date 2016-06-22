@@ -16,7 +16,7 @@ class SecondOrderInteractions(FirstOrderInteractions,ReactionModelWrapper):
     """Class for implementing 'first-order adsorbate interaction model. 
     Should be sub-classed by scaler."""
 
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
         FirstOrderInteractions.__init__(self,reaction_model)
 
     @staticmethod
