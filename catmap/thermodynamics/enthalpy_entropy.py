@@ -56,8 +56,8 @@ class ThermoCorrections(ReactionModelWrapper):
         'shomate_warning':
         'temperature below shomate minumum for ${gas};'+
         ' Cp(${T}) and S(${T}) are used below ${T}.',
-	'force_recompilation':
-	'Enabling model.force_recompilation = True.  Necessary for field corrections',
+        'force_recompilation':
+        'Enabling model.force_recompilation = True.  Necessary for field corrections',
         }
 
         #set defaults
