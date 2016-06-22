@@ -6,7 +6,7 @@ import mpmath as mp
 from ase.atoms import string2symbols
 
 class SolverBase(ReactionModelWrapper):
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
         """
         Class for `solving' for equilibrium coverages and rates as a 
         function of reaction parameters. This class acts as a base class 
@@ -30,7 +30,8 @@ class SolverBase(ReactionModelWrapper):
         compile(): a function to set-up/compile the solver.
 
         """
-
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         self._rxm = reaction_model
         self._compiled = False
 

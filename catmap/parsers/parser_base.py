@@ -10,7 +10,7 @@ from catmap.model import ReactionModel
 from catmap.functions import get_composition
 
 class ParserBase(ReactionModelWrapper):
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
         """Class for `parsing' information from raw data 
         (databases, spreadsheets, text files, trajectories, etc.) into a 
         structure which is useful to the microkinetic model. This class acts 
@@ -27,6 +27,8 @@ class ParserBase(ReactionModelWrapper):
         microkinetic model class will update itself from the Parser attributes.
 
         """
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         self._rxm = reaction_model
         self._required = {} #No user-defined attributes are required.
 

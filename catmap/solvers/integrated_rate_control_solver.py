@@ -5,7 +5,7 @@ class IntegratedRateControlSolver(SolverBase):
     """Class for estimating rates based on the degree of rate control
     screening method {citation after published}"""
 
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
         SolverBase.__init__(self,reaction_model)
         valid_DRCs = [sp for sp in self.species_definitions if self.species_definitions[sp].get('static_rate_control',0)]
         defaults = dict(

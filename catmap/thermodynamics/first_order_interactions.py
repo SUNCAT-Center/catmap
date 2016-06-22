@@ -19,7 +19,9 @@ class FirstOrderInteractions(ReactionModelWrapper):
     """Class for implementing 'first-order adsorbate interaction model. 
     Should be sub-classed by scaler."""
 
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         self._rxm = reaction_model
         defaults = dict(
                 cross_interaction_mode='geometric_mean',

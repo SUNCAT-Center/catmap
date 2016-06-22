@@ -43,7 +43,9 @@ class MapperBase(ReactionModelWrapper):
     # Unless this is deliberately so, one should better use e.g. None
     # as the default value and then instantiate ReactionModel in the
     # function body of __init__ .
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         self._rxm = reaction_model
         self._solver_output = ['coverage','rate', #outputs requiring solver
                 'turnover_frequency','selectivity','rate_control',

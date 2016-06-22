@@ -1,25 +1,30 @@
+import sys
+sys.path.insert(0,'/Users/aj/catmap')
 from catmap import ReactionModel
 from catmap import analyze
 import numpy as np
 import cPickle as pickle
 
+
 include_overbinding = False
 include_rate_control = False
 mkm_file = 'EtOH.mkm'
 model = ReactionModel(setup_file=mkm_file)
-model.create_standalone = True
+#print 'model:', id(model)
+#model.create_standalone = True
 
-if include_overbinding:
-    overbinding = 0.25
-    CO_energies = model.species_definitions['CO_s']['formation_energy']
-    CO_energies = [E+overbinding for E in CO_energies]
-    model.species_definitions['CO_s']['formation_energy'] = CO_energies
+#if include_overbinding:
+#    overbinding = 0.25
+#    CO_energies = model.species_definitions['CO_s']['formation_energy']
+#    CO_energies = [E+overbinding for E in CO_energies]
+#    model.species_definitions['CO_s']['formation_energy'] = CO_energies
 
-model.output_variables += ['production_rate','selectivity','zero_point_energy','enthalpy','entropy','free_energy']
-model.output_variables += ['interaction_matrix','interacting_energy','equilibrium_constant']
-if include_rate_control:
-    model.output_variables += ['rate_control']
+#model.output_variables += ['production_rate','selectivity','zero_point_energy','enthalpy','entropy','free_energy']
+#model.output_variables += ['interaction_matrix','interacting_energy','equilibrium_constant']
+#if include_rate_control:
+#    model.output_variables += ['rate_control']
 
+#print 'model 2:', id(model)
 model.run()
 
 vm = analyze.VectorMap(model)

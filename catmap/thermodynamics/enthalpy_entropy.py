@@ -48,7 +48,9 @@ class ThermoCorrections(ReactionModelWrapper):
     _kJmol2eV = 0.01036427
     _bar2Pa = 1e5
 
-    def __init__(self,reaction_model=ReactionModel()):
+    def __init__(self,reaction_model=None):
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         self._rxm = reaction_model
         self._log_strings = {
         'harmonic_transition_state_warning':

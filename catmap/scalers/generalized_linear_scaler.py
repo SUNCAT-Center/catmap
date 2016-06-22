@@ -8,7 +8,9 @@ class GeneralizedLinearScaler(ScalerBase):
     """
         :TODO:
     """
-    def __init__(self,reaction_model = ReactionModel()):
+    def __init__(self,reaction_model = None):
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         ScalerBase.__init__(self,reaction_model)
         defaults = dict(default_constraints=['+','+',None],
                         parameter_mode = 'formation_energy',

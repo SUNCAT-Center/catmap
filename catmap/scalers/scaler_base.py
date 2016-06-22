@@ -7,7 +7,7 @@ copy = catmap.copy
 string2symbols = catmap.string2symbols
 
 class ScalerBase(ReactionModelWrapper):
-    def __init__(self,reaction_model = ReactionModel()):
+    def __init__(self,reaction_model = None):
         """Class for `scaling' descriptors to free energies of reaction and 
         activation (or other parameters). This class acts as a base class 
         to be inherited by other scaler classes, but is not 
@@ -48,6 +48,8 @@ class ScalerBase(ReactionModelWrapper):
             but models accounting for interactions may require more 
             parameters which can be scaled.
         """
+        if reaction_model is None:
+            reaction_model = ReactionModel()
         self._rxm = reaction_model
         defaults = dict(
 		        parameter_mode = 'formation_energy',
