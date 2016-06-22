@@ -32,7 +32,6 @@ class ReactionModel:
            :param setup_file: Specify <mkm-file> from which to load model.
            :type setup_file: str
             """
-        print 'initializing', id(self)
         #Set static utility functions
         for f in dir(functions):
             if not f.startswith('_') and callable(getattr(functions,f)):
@@ -382,7 +381,7 @@ class ReactionModel:
                         sublocs = {}
                         subglobs = {}
                         _temp = __import__(pyfile,subglobs,sublocs, [locs[var]])
-                        #_temp = __import__(pyfile,globals(),sublocs, [locs[var]])
+                        #_temp = __import__(pyfile,globals(),sublocs, [locs[var]]) #no reason to mess with globals() unless we have to.
                         class_instance = getattr(_temp,locs[var])(self)
                         setattr(self,var,class_instance)
                     else:
@@ -773,7 +772,7 @@ class ReactionModel:
         else:
             rxn_str = IS + leftrightarrow() + FS
         if print_out == True:
-            print rxn_str
+            print(rxn_str)
         return rxn_str
 
     @staticmethod

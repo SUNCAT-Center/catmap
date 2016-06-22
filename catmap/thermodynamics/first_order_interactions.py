@@ -49,6 +49,8 @@ class FirstOrderInteractions(ReactionModelWrapper):
         self.get_interaction_transition_state_scaling_matrix()
         
         if self.interaction_fitting_mode is not None:
+            if '+' in self.interaction_fitting_mode:
+                self.interaction_fitting_mode = self.interaction_fitting_mode.split('+')
             try:
                 self.fit()
             except ValueError as inst:

@@ -9,8 +9,6 @@ class MeanFieldSolver(SolverBase):
     get functionality for steady-state solutions, sabatier solutions, etc."""
 
     def __init__(self,reaction_model=None):
-        if reaction_model is None:
-            reaction_model = ReactionModel()
         SolverBase.__init__(self,reaction_model)
         defaults = dict(
                 tolerance = 1e-35,

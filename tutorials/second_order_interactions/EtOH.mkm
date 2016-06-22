@@ -45,6 +45,7 @@ adsorbate_interaction_model = 'second_order'
 
 #interaction auto-fitting mode. integral, differential, numerical_differential or 
 # any combination (e.g. integral+differential)
+
 interaction_fitting_mode = 'numerical_differential+integral' 
 numerical_delta_theta = 0.11
 
