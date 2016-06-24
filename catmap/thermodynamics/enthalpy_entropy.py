@@ -57,7 +57,9 @@ class ThermoCorrections(ReactionModelWrapper):
         'averaging initial/final state thermal contributions for ${TS}',
         'shomate_warning':
         'temperature below shomate minumum for ${gas};'+
-        ' Cp(${T}) and S(${T}) are used below ${T}.'
+        ' Cp(${T}) and S(${T}) are used below ${T}.',
+        'force_recompilation':
+        'Enabling model.force_recompilation = True.  Necessary for field corrections',
         }
 
         #set defaults
@@ -67,7 +69,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 electrochemical_thermo_mode = 'simple_electrochemical',
                 pressure_mode = 'static',
                 thermodynamic_corrections = ['gas','adsorbate'],
-                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta','pH'],
+                thermodynamic_variables = ['temperature','gas_pressures','voltage','beta','pH','Upzc'],
                 ideal_gas_params = catmap.data.ideal_gas_params,
                 fixed_entropy_dict = catmap.data.fixed_entropy_dict,
                 shomate_params = catmap.data.shomate_params,
@@ -614,6 +616,62 @@ class ThermoCorrections(ReactionModelWrapper):
             if rxn_index in self.rxn_options_dict['beta'].keys():
                 beta = float(self.rxn_options_dict['beta'][rxn_index])
             thermo_dict[TS] = -voltage * (1 - beta)
+
+        return thermo_dict
+
+    def homogeneous_field(self):
+        """
+        Update simple_electrochemical with field corrections for adsorbates that respond to a field
+        """
+        thermo_dict = self.simple_electrochemical()
+        voltage = self.voltage
+        Upzc = self.Upzc
+        #distance = self.distance
+        #field = (voltage - Upzc)/distance
+        field = self.field
+        for ads in self.adsorbate_names + self.transition_state_names:
+            if 'field_params' in self.species_definitions[ads]:
+                mu,alpha = self.species_definitions[ads]['field_params']
+                if ads in thermo_dict:
+                    thermo_dict[ads] += mu*field + alpha*(field)**2
+                else:
+                    thermo_dict[ads] = mu*field + alpha*(field)**2
+
+        return thermo_dict
+
+    def local_field_electrochemical(self):
+        """
+        Obtains corrections to thermo_dict in the presence of ions
+        hey you need to specify these things:
+        model.Upzc (float)
+        model.CH (float)
+        model.field_site_name
+        model.unfield_site_name
+        and DO NOT specify beta
+        """
+        if not self.force_recompilation:
+                self.force_recompilation = True
+                self.log('force_recompilation')
+        thermo_dict = self.simple_electrochemical()
+        voltage = self.voltage
+        Upzc = self.Upzc
+        CH = self.CH
+        field = self.field      #Typically, the local field exerted by a cation is on the order of -1.0 V/Angstrom
+        theta_ion = -CH * (voltage - Upzc)
+        if theta_ion < 0:
+            theta_ion = 0.0
+        if theta_ion > 1:
+            theta_ion = 1.0
+        #self.rxn_options_dict['beta'] = {}
+        self.species_definitions['b']['total'] = theta_ion
+        self.species_definitions['a']['total'] = 1 - theta_ion
+        for ads in self.adsorbate_names + self.transition_state_names:
+            if 'field_params' in self.species_definitions[ads]:
+                mu,alpha = self.species_definitions[ads]['field_params']
+                if ads in thermo_dict:
+                    thermo_dict[ads] += mu*field - (alpha/2.0)*(field)**2
+                else:
+                    thermo_dict[ads] = mu*field - (alpha/2.0)*(field)**2
 
         return thermo_dict
 
