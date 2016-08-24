@@ -19,6 +19,7 @@ model.run()
 vm = analyze.VectorMap(model)
 mm = analyze.MatrixMap(model)
 
+
 def set_defaults(vm, mm):
     vm.log_scale = True
     vm.min = 1e-25

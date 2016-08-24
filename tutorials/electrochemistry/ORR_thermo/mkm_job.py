@@ -2,8 +2,8 @@ from catmap import ReactionModel
 from string import Template
 
 mkm_file = 'ORR.mkm'
-model = ReactionModel(setup_file = mkm_file)
-model.output_variables+=['production_rate', 'free_energy', 'selectivity']
+model = ReactionModel(setup_file=mkm_file)
+model.output_variables += ['production_rate', 'free_energy', 'selectivity']
 model.run()
 
 from catmap import analyze

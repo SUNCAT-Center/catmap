@@ -1,6 +1,6 @@
 templates = {}
 
-#LaTeX templates
+# LaTeX templates
 
 templates['latex_longtable'] = r"""
 \centering
@@ -36,7 +36,7 @@ ${summary_txt}
 \end{document}
 """
 
-#Dynamically compiled function templates
+# Dynamically compiled function templates
 
 templates['constrain_coverages'] = r"""
 def constrain_coverage_function(cvgs,mpf,c_min):
@@ -63,7 +63,11 @@ def constrain_coverage_function(cvgs,mpf,c_min):
 """
 
 templates['rate_constants'] = r"""
-def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matrix,mpexp,include_derivatives=True):
+def rate_constants(rxn_parameters, theta, gas_energies, site_energies, T, F,
+                   mpf,
+                   matrix,
+                   mpexp,
+                   include_derivatives=True):
     ${interaction_function}
 
     kfs = []
@@ -86,7 +90,12 @@ def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matri
     else:
         raise ValueError('Length of reaction parameters is not correct. '+ str(rxn_parameters))
 
-    G_int, Gf,dGs =  interaction_function(theta,energies,interaction_vector,F,include_derivatives=include_derivatives, include_integral=False)
+    G_int, Gf,dGs =  interaction_function(theta,
+                                          energies,
+                                          interaction_vector,
+                                          F,
+                                          include_derivatives=include_derivatives,
+                                          include_integral=False)
 
     ${kB}
     ${h}
@@ -133,25 +142,26 @@ def elementary_rates(rate_constants,theta,p,mpf,matrix):
 
     r = matrix([0]*len(kf))
     dtheta_dt = matrix([0]*len(theta))
-    
+
     ${steady_state_expressions}
-    
+
     return r
 """
 
 templates['interacting_mean_field_steady_state'] = r"""
-def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
+def interacting_mean_field_steady_state(rxn_parameters, theta, p, gas_energies, site_energies, T, F,
+                                        mpf, matrix, mpexp):
 
     ${rate_constants_no_derivatives}
-    
+
     kf, kr, junk, junk= rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,
             mpf,matrix,mpexp,include_derivatives=False)
-   
+
     r = [0]*len(kf)
     dtheta_dt = [0]*len(theta)
-    
+
     ${steady_state_expressions}
- 
+
     r = matrix(r)
     dtheta_dt = matrix(dtheta_dt)
 
@@ -163,17 +173,25 @@ def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
 
     r = [0]*len(kf)
     dtheta_dt = [0]*len(theta)
-    
+
     ${steady_state_expressions}
 
     r = matrix(r)
     dtheta_dt = matrix(dtheta_dt)
-    
+
     return dtheta_dt
 """
 
 templates['interacting_mean_field_jacobian'] = r"""
-def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
+def interacting_mean_field_jacobian(rxn_parameters,
+                                    theta,
+                                    p,
+                                    gas_energies,
+                                    site_energies,
+                                    T, F,
+                                    mpf,
+                                    matrix,
+                                    mpexp):
 
 #    print 'rxn_parameters = ', rxn_parameters
 #    print 'theta = ', theta
@@ -194,7 +212,7 @@ def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_ene
                           rxn_parameters,theta,gas_energies,site_energies,T,F,
                           mpf,matrix,mpexp,include_derivatives=True)
     ${jacobian_expressions}
-    
+
     J = matrix(J)
     return J
 """
@@ -211,9 +229,14 @@ def ideal_mean_field_jacobian(kf,kr,theta,p,mpf,matrix):
 """
 
 templates['first_order_interaction_function'] = r"""
-def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True,include_integral=False): 
+def interaction_function(coverages,
+                         energies,
+                         interaction_vector,
+                         F,
+                         include_derivatives=True,
+                         include_integral=False):
 
-#    Function for evaluating coverage-dependent intearction energies. 
+#    Function for evaluating coverage-dependent intearction energies.
 #
 #    -coverages is a vector of n_coverages coverages (thetas).
 #    -energies is a vector of energies (length n_coverages).
@@ -227,7 +250,7 @@ def interaction_function(coverages,energies,interaction_vector,F,include_derivat
 #
 #    dE_i/dtheta_n = sum_j(dF/dtheta_tot*dtheta_tot/dtheta_n*epsilon_ij*theta_j + F*epsilon_ij*delta_jn)
 #
-#    where sum_j is summation over index j, epsilon_ij is the interaction parameter between 
+#    where sum_j is summation over index j, epsilon_ij is the interaction parameter between
 #    adsorbate i and adsorbat j, theta_tot is a sum on theta, delta_nj is the kronecker delta,
 #    theta_j is the coverage of adsorbate j, and F is the "response function".
 
@@ -298,7 +321,8 @@ def interaction_function(coverages,energies,interaction_vector,F,include_derivat
     """
 
 templates['second_order_interaction_function'] = r"""
-def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,include_integral=False):
+def interaction_function(coverages, energies, epsilon, F, include_derivatives=True,
+                         include_integral=False):
 
     ##this dictionary is passed in via the "template" so that it can be compiled
     ${site_info_dict}
@@ -341,7 +365,7 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,i
     #initiate terms for first derivative
     term_1 = [0]*N_ads
     term_2 = [0]*N_ads
-    
+
     #initate intermediate quantities
     eps_theta_theta = [[0]*N_sites for x in range(N_sites)]
     eps_theta = [[0]*N_sites for x in range(N_ads)]
@@ -391,7 +415,7 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,i
                          (f_sq**2)*epsilon[l*N_ads+k] +\
                          2*(f_sq*df_sq*(eps_theta[k][s_l]+eps_theta[l][q_k]) + \
                          eps_theta_theta[s_l][q_k]*((df_sq**2) + (f_sq*d2f[s_l][q_k]))))
-                
+
                 #term is only included if l and k are on the same site
                 if l in idx_lists[q_k]:
                     for s in range(N_sites):
@@ -420,7 +444,11 @@ def interaction_function(coverages,energies,epsilon,F,include_derivatives=True,i
 """
 
 templates['ideal_interaction_function'] = r"""
-def interaction_function(coverages,energies,interaction_vector,F,include_derivatives=True,include_integral=False): 
+def interaction_function(coverages,energies,
+                         interaction_vector,
+                         F,
+                         include_derivatives=True,
+                         include_integral=False):
     #Dummy function for non-interacting
     derivs = [[0]*len(coverages)]
     derivs = derivs*len(coverages)

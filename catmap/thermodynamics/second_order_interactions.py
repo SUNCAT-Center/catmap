@@ -12,30 +12,31 @@ try:
 except ImportError:
     integrate = None
 
-class SecondOrderInteractions(FirstOrderInteractions,ReactionModelWrapper):
+
+class SecondOrderInteractions(FirstOrderInteractions, ReactionModelWrapper):
     """Class for implementing 'first-order adsorbate interaction model. 
     Should be sub-classed by scaler."""
 
-    def __init__(self,reaction_model=None):
-        FirstOrderInteractions.__init__(self,reaction_model)
+    def __init__(self, reaction_model=None):
+        FirstOrderInteractions.__init__(self, reaction_model)
 
     @staticmethod
-    def smooth_piecewise_linear_response(*args,**kwargs):
-        #Note these need to override first-order functions
-        #since second-derivatives are needed
-        return smooth_piecewise_linear(*args,**kwargs)
+    def smooth_piecewise_linear_response(*args, **kwargs):
+        # Note these need to override first-order functions
+        # since second-derivatives are needed
+        return smooth_piecewise_linear(*args, **kwargs)
 
     @staticmethod
-    def offset_smooth_piecewise_linear_response(*args,**kwargs):
-        return offset_smooth_piecewise_linear(*args,**kwargs)
+    def offset_smooth_piecewise_linear_response(*args, **kwargs):
+        return offset_smooth_piecewise_linear(*args, **kwargs)
 
     @staticmethod
-    def piecewise_linear_response(*args,**kwargs):
+    def piecewise_linear_response(*args, **kwargs):
         kwargs['smoothing'] = 0
-        return smooth_piecewise_linear(*args,**kwargs)
+        return smooth_piecewise_linear(*args, **kwargs)
 
     @staticmethod
-    def linear_response(*args,**kwargs):
+    def linear_response(*args, **kwargs):
         kwargs['smoothing'] = 0
         kwargs['cutoff'] = 0
-        return smooth_piecewise_linear(*args,**kwargs)
+        return smooth_piecewise_linear(*args, **kwargs)

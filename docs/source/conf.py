@@ -41,7 +41,7 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-todo_include_todos = True # set to false to not show todos
+todo_include_todos = True  # set to false to not show todos
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -195,22 +195,22 @@ htmlhelp_basename = 'CatMAPdoc'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'CatMAP.tex', u'CatMAP Documentation',
-   u'Andrew J. Medford', 'manual'),
+    ('index', 'CatMAP.tex', u'CatMAP Documentation',
+     u'Andrew J. Medford', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -253,9 +253,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'CatMAP', u'CatMAP Documentation',
-   u'Andrew J. Medford', 'CatMAP', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'CatMAP', u'CatMAP Documentation',
+     u'Andrew J. Medford', 'CatMAP', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -347,7 +347,9 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 # Mock some modules
 import sys
 
+
 class Mock(object):
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -366,23 +368,23 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = [
-               'numpy',
-               'mpmath',
-               'scipy',
-               'matplotlib',
-               'ase',
-               'scipy.interpolate',
-               'pylab',
-               'matplotlib.pylab',
-               'matplotlib.transforms',
-               'matplotlib.mlab',
-               'scipy.optimize',
-               'scipy.stats',
-               'matplotlib.ticker',
-               'ase.all',
-               'ase.atoms',
-               'ase.structure',
-               'ase.thermochemistry',
-                ]
+    'numpy',
+    'mpmath',
+    'scipy',
+    'matplotlib',
+    'ase',
+    'scipy.interpolate',
+    'pylab',
+    'matplotlib.pylab',
+    'matplotlib.transforms',
+    'matplotlib.mlab',
+    'scipy.optimize',
+    'scipy.stats',
+    'matplotlib.ticker',
+    'ase.all',
+    'ase.atoms',
+    'ase.structure',
+    'ase.thermochemistry',
+]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()

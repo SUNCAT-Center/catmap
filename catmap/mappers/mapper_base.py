@@ -36,6 +36,7 @@ from catmap.model import ReactionModel
 from catmap import ReactionModelWrapper
 from catmap import plt
 
+
 class MapperBase(ReactionModelWrapper):
     # XXX : Having an instantiated object as default parameter
     # may have side-effects since every instance of MapperBase will have
@@ -43,15 +44,16 @@ class MapperBase(ReactionModelWrapper):
     # Unless this is deliberately so, one should better use e.g. None
     # as the default value and then instantiate ReactionModel in the
     # function body of __init__ .
-    def __init__(self,reaction_model=None):
+
+    def __init__(self, reaction_model=None):
         if reaction_model is None:
             reaction_model = ReactionModel()
         self._rxm = reaction_model
-        self._solver_output = ['coverage','rate', #outputs requiring solver
-                'turnover_frequency','selectivity','rate_control',
-                'noninteracting_coverages']
+        self._solver_output = ['coverage', 'rate',  # outputs requiring solver
+                               'turnover_frequency', 'selectivity', 'rate_control',
+                               'noninteracting_coverages']
 
-    def get_point_output(self,descriptors,*args,**kwargs):
+    def get_point_output(self, descriptors, *args, **kwargs):
         self.solver.compile()
         self._output_variables = [v for v in self.output_variables]
 
@@ -67,26 +69,26 @@ class MapperBase(ReactionModelWrapper):
                 self._output_variables = ['coverage'] + self._output_variables
             self.output_labels['coverage'] = self.adsorbate_names
             self.output_labels['rate'] = self.elementary_rxns
-                # Need coverages for solver vars
+            # Need coverages for solver vars
 
         for out in self._output_variables:
-            if getattr(self,'get_point_'+out):
-                val = getattr(self,'get_point_'+out)(descriptors,*args,**kwargs)
-                setattr(self,'_'+out,val)
+            if getattr(self, 'get_point_' + out):
+                val = getattr(self, 'get_point_' + out)(descriptors, *args, **kwargs)
+                setattr(self, '_' + out, val)
 
         self.solver.set_output_attrs(params)
         self.scaler.set_output_attrs(descriptors)
 
         for out in self.output_variables:
-            mapp = getattr(self,'_'+out+'_temp',{})
-            mapp[repr(descriptors)] = getattr(self,'_'+out)
-            setattr(self,'_'+out+'_temp',mapp)
+            mapp = getattr(self, '_' + out + '_temp', {})
+            mapp[repr(descriptors)] = getattr(self, '_' + out)
+            setattr(self, '_' + out + '_temp', mapp)
 
-    def get_output_map(self,descriptor_ranges,resolution,*args,**kwargs):
+    def get_output_map(self, descriptor_ranges, resolution, *args, **kwargs):
         self.solver.compile()
         self._output_variables = [v for v in self.output_variables]
         if True in [v in self._solver_output for v in self.output_variables]:
-            #determines whether or not solver is needed
+            # determines whether or not solver is needed
             if 'coverage' not in self._output_variables:
                 self._output_variables = ['coverage'] + self._output_variables
                 self._coverage_map = None
@@ -97,34 +99,34 @@ class MapperBase(ReactionModelWrapper):
         # Need coverages for solver vars
         ismapped = False
         for out in self._output_variables:
-            if getattr(self,'get_'+out+'_map'):
-                val = getattr(self,'get_'+out+'_map')(
-                        descriptor_ranges,resolution,*args,**kwargs)
-                setattr(self,out+'_map',val)
+            if getattr(self, 'get_' + out + '_map'):
+                val = getattr(self, 'get_' + out + '_map')(
+                    descriptor_ranges, resolution, *args, **kwargs)
+                setattr(self, out + '_map', val)
                 ismapped = True
 
         if ismapped == False:
             d1Vals, d2Vals = self.process_resolution()
             for d1V in d1Vals:
                 for d2V in d2Vals:
-                    self._descriptors = [d1V,d2V]
+                    self._descriptors = [d1V, d2V]
                     self.get_point_output(self._descriptors)
 
         for out in self.output_variables:
-#            if getattr(self,out+'_map'):
-#                mapp = getattr(self,out+'_map')
-#            else:
-            map_dict = getattr(self,'_'+out+'_temp',[])
+            #            if getattr(self,out+'_map'):
+            #                mapp = getattr(self,out+'_map')
+            #            else:
+            map_dict = getattr(self, '_' + out + '_temp', [])
             mapp = []
             for key in map_dict:
-                mapp.append([eval(key),map_dict[key]])
-            setattr(self,out+'_map',mapp)
+                mapp.append([eval(key), map_dict[key]])
+            setattr(self, out + '_map', mapp)
 
-            if getattr(self,out+'_map_file'):
-                outfile = getattr(self,out+'_map_file')
-                self.save_map(mapp,outfile)
-    
-    def process_resolution(self, descriptor_ranges = None, resolution = None):
+            if getattr(self, out + '_map_file'):
+                outfile = getattr(self, out + '_map_file')
+                self.save_map(mapp, outfile)
+
+    def process_resolution(self, descriptor_ranges=None, resolution=None):
         if not descriptor_ranges:
             descriptor_ranges = self.descriptor_ranges
         if resolution is None:
@@ -132,7 +134,7 @@ class MapperBase(ReactionModelWrapper):
         resolution = np.array(resolution)
         if resolution.size == 1:
             resx = resy = float(resolution)
-        elif resolution.size ==2:
+        elif resolution.size == 2:
             resx = resolution[0]
             resy = resolution[1]
         else:
@@ -143,4 +145,3 @@ class MapperBase(ReactionModelWrapper):
         d1Vals = np.linspace(d1min, d1max, resx)
         d2Vals = np.linspace(d2min, d2max, resy)
         return d1Vals, d2Vals
-

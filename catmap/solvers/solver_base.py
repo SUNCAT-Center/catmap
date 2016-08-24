@@ -5,8 +5,10 @@ import numpy as np
 import mpmath as mp
 from ase.atoms import string2symbols
 
+
 class SolverBase(ReactionModelWrapper):
-    def __init__(self,reaction_model=None):
+
+    def __init__(self, reaction_model=None):
         """
         Class for `solving' for equilibrium coverages and rates as a 
         function of reaction parameters. This class acts as a base class 
@@ -35,19 +37,19 @@ class SolverBase(ReactionModelWrapper):
         self._rxm = reaction_model
         self._compiled = False
 
-    def set_output_attrs(self,rxn_parameters):
+    def set_output_attrs(self, rxn_parameters):
         """
         :param rxn_parameters: Reaction parameters.
         :type rxn_parameters: list
         """
-        if True in [v in self.mapper._solver_output 
-                for v in self.output_variables]:
+        if True in [v in self.mapper._solver_output
+                    for v in self.output_variables]:
             cvgs = self._coverage
-            self._coverage = list(self.solver.get_coverage( 
-                    rxn_parameters,c0=cvgs)) #verify coverage
+            self._coverage = list(self.solver.get_coverage(
+                rxn_parameters, c0=cvgs))  # verify coverage
 
             self._rate = list(self.solver.get_rate(rxn_parameters,
-                    coverages=self._coverage))
+                                                   coverages=self._coverage))
 
         if (
                 'turnover_frequency' in self.output_variables or
@@ -56,8 +58,8 @@ class SolverBase(ReactionModelWrapper):
                 'rxn_direction' in self.output_variables):
 
             self._turnover_frequency = self.get_turnover_frequency(
-                    rxn_parameters)
-        
+                rxn_parameters)
+
         if 'selectivity' in self.output_variables:
             self._selectivity = self.get_selectivity(rxn_parameters)
             self.output_labels['selectivity'] = self.gas_names
@@ -65,35 +67,35 @@ class SolverBase(ReactionModelWrapper):
         if 'carbon_selectivity' in self.output_variables:
             weights = []
             for g in self.gas_names:
-                name,site = g.split('_')
+                name, site = g.split('_')
                 weight = string2symbols(name).count('C')
                 weights.append(weight)
-            self._carbon_selectivity = self.get_selectivity(rxn_parameters,weights=weights)
+            self._carbon_selectivity = self.get_selectivity(rxn_parameters, weights=weights)
             self.output_labels['carbon_selectivity'] = self.gas_names
-
 
         if 'rate_control' in self.output_variables:
             self._rate_control = self.get_rate_control(rxn_parameters)
-            self.output_labels['rate_control'] = [self.gas_names,self.parameter_names]
+            self.output_labels['rate_control'] = [self.gas_names, self.parameter_names]
 
         if 'selectivity_control' in self.output_variables:
             self._selectivity_control = self.get_selectivity_control(rxn_parameters)
-            self.output_labels['selectivity_control'] = [self.gas_names,self.parameter_names]
+            self.output_labels['selectivity_control'] = [self.gas_names, self.parameter_names]
 
         if 'rxn_order' in self.output_variables:
             self._rxn_order = self.get_rxn_order(rxn_parameters)
-            self.output_labels['rxn_order'] = [self.gas_names,self.gas_names]
+            self.output_labels['rxn_order'] = [self.gas_names, self.gas_names]
 
         if 'apparent_activation_energy' in self.output_variables:
-                self._apparent_activation_energy = self.get_apparent_activation_energy(rxn_parameters)
-                self.output_labels['apparent_activation_energy'] = self.gas_names
+            self._apparent_activation_energy = self.get_apparent_activation_energy(rxn_parameters)
+            self.output_labels['apparent_activation_energy'] = self.gas_names
 
         if 'interacting_energy' in self.output_variables:
-            if self.adsorbate_interaction_model in [None,'ideal']:
+            if self.adsorbate_interaction_model in [None, 'ideal']:
                 self._interacting_energy = rxn_parameters
             else:
                 self._interacting_energy = self.get_interacting_energies(rxn_parameters)
-            self.output_labels['interacting_energy'] = self.adsorbate_names+self.transition_state_names
+            self.output_labels['interacting_energy'] = self.adsorbate_names + \
+                self.transition_state_names
 
         if 'directional_rates' in self.output_variables:
             self._directional_rates = self.get_directional_rates(rxn_parameters)
@@ -105,27 +107,27 @@ class SolverBase(ReactionModelWrapper):
 
         for out in self.output_variables:
             if out == 'production_rate':
-                self._production_rate = [max(0,r) 
-                        for r in self._turnover_frequency]
+                self._production_rate = [max(0, r)
+                                         for r in self._turnover_frequency]
                 self.output_labels['production_rate'] = self.gas_names
             if out == 'consumption_rate':
-                self._consumption_rate = [max(0,-r) 
-                        for r in self._turnover_frequency]
+                self._consumption_rate = [max(0, -r)
+                                          for r in self._turnover_frequency]
                 self.output_labels['consumption_rate'] = self.gas_names
             if out == 'forward_rate':
-                self._forward_rate = [max(0,r) 
-                        for r in self._rate]
+                self._forward_rate = [max(0, r)
+                                      for r in self._rate]
                 self.output_labels['forward_rate'] = self.elementary_rxns
             if out == 'reverse_rate':
-                self._reverse_rate = [max(0,-r) 
-                        for r in self._rate]
+                self._reverse_rate = [max(0, -r)
+                                      for r in self._rate]
                 self.output_labels['reverse_rate'] = self.elementary_rxns
             if out == 'rxn_direction':
-                self._rxn_direction = [np.sign(r) 
-                        for r in self._turnover_frequency]
+                self._rxn_direction = [np.sign(r)
+                                       for r in self._turnover_frequency]
                 self.output_labels['rxn_direction'] = self.elementary_rxns
             if out == 'rate_constant':
-                self._rate_constant = list(self._kf)+list(self._kr)
+                self._rate_constant = list(self._kf) + list(self._kr)
                 self.output_labels['rate_constant'] = self.elementary_rxns + self.elementary_rxns
             if out == 'forward_rate_constant':
                 self._forward_rate_constant = list(self._kf)
@@ -134,8 +136,8 @@ class SolverBase(ReactionModelWrapper):
                 self._reverse_rate_constant = list(self._kr)
                 self.output_labels['reverse_rate_constant'] = self.elementary_rxns
             if out == 'equilibrium_constant':
-                self._equilibrium_constant = [kf/kr 
-                        for kf,kr in zip(self._kf,self._kr)]
+                self._equilibrium_constant = [kf / kr
+                                              for kf, kr in zip(self._kf, self._kr)]
                 self.output_labels['equilibrium_constant'] = self.elementary_rxns
 
 
@@ -182,9 +184,9 @@ class NewtonRoot:
         if 'J' in kwargs:
             self.J = kwargs['J']
 
-            #the following is useful for debugging/benchmarking
-            #analytical derivatives, and should be commented out
-            #for any production code.
+            # the following is useful for debugging/benchmarking
+            # analytical derivatives, and should be commented out
+            # for any production code.
 #            import time
 #            def J(x): #Use this to confirm the analytical jacobian is correct
 #                t0 = time.time()
@@ -214,7 +216,6 @@ class NewtonRoot:
 #                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-50)
 #                return numerical
 #            self.J = J_numerical
-
 
         else:
             raise ValueError('No method for estimating Jacobian.')
@@ -248,7 +249,7 @@ class NewtonRoot:
                 break
             # damping step size TODO: better strategy (hard task)
             l = self._mpfloat('1.0')
-            x1 = x0 + l*s
+            x1 = x0 + l * s
             damp_iter = 0
             while True:
                 damp_iter += 1
@@ -266,6 +267,5 @@ class NewtonRoot:
                     x0 = x1
                     break
                 l /= 2.0
-                x1 = x0 + l*s
+                x1 = x0 + l * s
             yield (x0, fxnorm)
-
