@@ -150,7 +150,7 @@ class ThermoCorrections(ReactionModelWrapper):
             G_H = 0.5*G_H2 - .0592*self.pH
             G_H2O = self._electronic_energy_dict['H2O_g'] + self._correction_dict['H2O_g']
             H2O_index = self.gas_names.index('H2O_g')
-            G_OH = G_H2O - G_H + self._kB*self.temperature*np.log(self.gas_pressures[H2O_index]*1.e14)
+            G_OH = G_H2O - G_H # Do not need Kw, just need to make sure equilibria are satisfied
             correction_dict['H_g'] = G_H
             correction_dict['OH_g'] = G_OH
 
