@@ -2,7 +2,7 @@ from mapper_base import *
 
 class MinResidMapper(MapperBase):
     """Mapper which uses initial guesses with minimum residual."""
-    def __init__(self,reaction_model = ReactionModel()):
+    def __init__(self,reaction_model = None):
         MapperBase.__init__(self,reaction_model)
         defaults = dict(
                 search_directions = [[0,0],[0,1],[1,0],[0,-1],
@@ -11,6 +11,7 @@ class MinResidMapper(MapperBase):
                 max_initial_guesses = 3,
                 descriptor_decimal_precision = 2,
                 extrapolate_coverages = False,
+                force_recompilation = False,
                 )
         for v in self.output_variables:
             defaults['_'+v+'_map'] = None
@@ -109,6 +110,9 @@ class MinResidMapper(MapperBase):
                 self.descriptor_decimal_precision)
         if current:
             return current
+        if self.force_recompilation:
+            self._compiled = False
+            self.solver.compile()
         self._descriptors = descriptors
         params = self.scaler.get_rxn_parameters(descriptors)
         self._rxn_parameters = params

@@ -4,7 +4,7 @@ import numpy as np
 class ThermodynamicScaler(ScalerBase):
     """Scaler which uses temperature/pressure/potential as descriptors and 
     treates energetics as a constant"""
-    def __init__(self,reaction_model):
+    def __init__(self,reaction_model=None):
         ScalerBase.__init__(self,reaction_model)
 
     def get_electronic_energies(self,descriptors):

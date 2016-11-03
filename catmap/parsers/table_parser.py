@@ -11,7 +11,7 @@ class TableParser(ParserBase):
         the parse_{header_name} function where header_name is the 
         column header for the additional variable to be parsed.
     """
-    def __init__(self,reaction_model,**kwargs):
+    def __init__(self,reaction_model=None,**kwargs):
         ParserBase.__init__(self,reaction_model)
         defaults = dict(
                 estimate_frequencies = 1, #Use frequencies from different sites 
