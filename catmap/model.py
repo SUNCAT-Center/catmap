@@ -356,6 +356,7 @@ class ReactionModel:
                 numerical_representation = 'mpmath',
                 adsorbate_interaction_model = 'ideal',
                 prefactor_list=None,
+                A_uc=None,
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
@@ -1028,9 +1029,48 @@ class ReactionModel:
             self.prefactor_list = default_prefactor_list
         elif isinstance(self.prefactor_list, list) and len(self.prefactor_list) == len(self.elementary_rxns):
             prefactor_list = []
-            for prefactor in self.prefactor_list:
+            for prefactor,rxn in zip(self.prefactor_list,self.elementary_rxns):
                 if prefactor == None:
                     prefactor_list.append(default_prefactor)
+                elif isinstance(prefactor,dict):
+                    A_site = prefactor["A_site"]
+                    if prefactor["type"] == "non-activated":
+                        from ase.atoms import string2symbols
+                        from ase.data import atomic_masses
+                        from ase.data import atomic_numbers
+                        assert len(rxn) == 2 #if not, rxn is not non-activated
+                        all_species = []
+                        for state in rxn:
+                            for species in state:
+                                all_species.append(species)
+                        gas_species = []
+                        for species in all_species:
+                            if self.species_definitions[species]['type'] == 'gas':
+                                gas_species.append(species)
+                        if len(gas_species) != 1:
+                            raise ValueError('Prefactor of type non-activated can ' + \
+                                'only handle exactly one gas phase species per reaction') 
+                        species_name = gas_species[0].split('_')[0]
+                        symbols = string2symbols(species_name)
+                        m = sum([atomic_masses[atomic_numbers[symbol]]
+                                               for symbol in symbols])
+                        _bar2Pa = 1.e5
+                        _angstrom2m = 1.E-10
+                        _u2kg = 1.660538921e-27
+                        _eV2J = 1.602176565e-19
+                        pf = '%s/mpsqrt(kB*T)'%(_bar2Pa*A_site*_angstrom2m**2/np.sqrt(2.*np.pi*m*_u2kg*_eV2J))
+                        prefactor_list.append(pf)
+
+                        #sanity check
+
+                        #kB = 8.613e-5
+                        #T=573.
+                        #pf = _bar2Pa*A_site*_angstrom2m**2/np.sqrt(2.*np.pi*m*_u2kg*_eV2J*kB*T)
+                        #print species_name,pf
+
+                    elif prefactor["type"] == "activated":
+                        pf = '%s*%s'%((A_site/self.A_uc),default_prefactor)
+                        prefactor_list.append(pf)
                 else:
                     prefactor_list.append(str(prefactor))
             self.prefactor_list = prefactor_list
