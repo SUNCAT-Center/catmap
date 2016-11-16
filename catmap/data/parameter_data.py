@@ -113,6 +113,8 @@ ideal_gas_params = {
         'C5H4O2_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
         'C5H6O2_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
         'C5H6O_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
+        'HCl_g':[1,'linear',0], #Added by M. Andersen, TUM from NIST
+        'Cl2_g':[2,'linear',0], #Added by M. Andersen, TUM from NIST
         }
 
 #Define default fixed entropy gas entropies
