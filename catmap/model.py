@@ -587,6 +587,11 @@ class ReactionModel:
             # are separated from reactions by ";" and from each other by ","
             eq = rxn
             options = None
+            if rxn.count('->') > 2:
+                print(("Warning: reaction\n\n"
+                       "\t({rxn_index})\t{rxn}\n\n is very long!\n"
+                       "Make sure this is intended and there is no missing ',' (comma)\n"
+                       "at the end of the line.\n").format(**locals()))
             if ';' in rxn:
                 eq, options = rxn.split(';')
             if options:
