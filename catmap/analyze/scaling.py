@@ -39,7 +39,7 @@ class ScalingAnalysis(ScalingPlot,ReactionModelWrapper):
                 lab = ''
                 for i,a in enumerate(self.descriptor_names):
                     c_print =  round(c[i],self.descriptor_decimal_precision)
-                    if c_print > 0:
+                    if c_print != 0:
                         lab += str(c_print)+'*$E_{'+str(a)+'}$+'
                 const = round(c[-1],self.descriptor_decimal_precision)
                 if const > 0:
