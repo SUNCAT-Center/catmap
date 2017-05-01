@@ -102,8 +102,10 @@ ideal_gas_params = {
         'CH3CHCHCH3_g':[2,'nonlinear',0], #2-butene, ok for both trans and cis
         'CH3CH3CCH2_g':[2,'nonlinear',0], #isobutene
         'pe_g':[2,'linear',0], # fictitious gas molecule corresponding to proton electron pair
+        'C2H2_g':[2,'linear',0],
         'C2H4_g':[4,'nonlinear',0],
         'C2H6_g':[6,'nonlinear',0],
+        'C3H6_g':[1,'nonlinear',0],
         'CH3COOH_g':[1,'nonlinear',0],
         'CH3CHO_g':[1,'nonlinear',0],
         'C5H4O2_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
