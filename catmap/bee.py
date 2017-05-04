@@ -32,13 +32,11 @@ class BEEFEnsemble:
         assert np.shape(omega) == (31, 31)
         W, V, generator = self.eigendecomposition(omega, seed)
         RandV = generator.randn(31, size)
+        coefs = []
         for j in range(size):
             v = RandV[:, j]
-            coefs_i = (np.dot(np.dot(V, np.diag(np.sqrt(W))), v)[:])
-            if j == 0: 
-                ensemble_coefs = coefs_i
-            else: 
-                ensemble_coefs = np.vstack((ensemble_coefs, coefs_i))
+            coefs.append(np.dot(np.dot(V, np.diag(np.sqrt(W))), v)[:])
+        ensemble_coefs = np.concatenate(coefs,axis=0).reshape(-1,31)
         PBEc_ens = -ensemble_coefs[:, 30]
         return (np.vstack((ensemble_coefs.T, PBEc_ens))).T
 
