@@ -158,8 +158,8 @@ def get_BEE_PCA(de_dict, ref_de, ads_x, ads_y): #adapted from CATMAP wiki and GP
     for site in ref_de.keys():
         if 'gas' in site or len(site) <= 2:
             continue
-        de_x =-ref_de[site]
-        de_y =-ref_de[site]
+        de_x = -ref_de[site]
+        de_y = -ref_de[site]
         try:
             de_x += de_dict[ads_x + '_' + site]
             de_y += de_dict[ads_y + '_' + site]
@@ -172,22 +172,22 @@ def get_BEE_PCA(de_dict, ref_de, ads_x, ads_y): #adapted from CATMAP wiki and GP
             de_x -= ref_de[atom]
         for atom in composition_y:
             de_y -= ref_de[atom]
-        cov = np.cov(de_x,de_y)
+        cov = np.cov(de_x, de_y)
         eigval, eigvec = np.linalg.eig(cov)
         BEE_PC[site] = eigvec
-        BEE_lambda[site] = eigval
+        BEE_lambda[site] = eigval / len(cov)
     return BEE_PC, BEE_lambda
 
-def make_input_file(file_name,energy_dict,frequency_dict={},bee_dict={}): #adapted from CATMAP
+def make_input_file(file_name, energy_dict, frequency_dict={}, bee_dict={}): #adapted from CATMAP
     #create a header
-    header = '\t'.join(['surface_name','site_name',
-                        'species_name','formation_energy',
-                        'frequencies','reference','bee'])
+    header = '\t'.join(['surface_name', 'phase', 'site_name',
+                        'species_name', 'formation_energy',
+                        'frequencies', 'reference', 'bee'])
     lines = [] #list of lines in the output
     for key in energy_dict.keys(): #iterate through keys
         E = energy_dict[key] #raw energy
         if 'gas' in key:
-            name,site = key.split('_') #split key into name/site
+            name, site = key.split('_')  # split key into name/site
             try:
                 frequency = frequency_dict[key]
             except KeyError:
@@ -197,12 +197,12 @@ def make_input_file(file_name,energy_dict,frequency_dict={},bee_dict={}): #adapt
             except KeyError:
                 bee = np.NaN
         else:
-            name,cat,pha,facet = key.split('_') #split key into name/site
+            name, cat, pha, facet = key.split('_')  # split key into name/site
             if (facet == '1x1x1' and pha == 'fcc') or (facet == '0x0x1' and pha == 'hcp'):
                 site = 'hexagonal'
             else:
                 site = facet
-        if 'slab' not in name: #do not include empty site energy (0)          
+        if 'slab' not in name:  # do not include empty site energy (0)
             try:
                 frequency = frequency_dict[key]
             except KeyError:
@@ -213,9 +213,12 @@ def make_input_file(file_name,energy_dict,frequency_dict={},bee_dict={}): #adapt
                 bee = np.NaN
             if site == 'gas':
                 surface = None
+                phase = ''
             else:
-                surface = cat #+'_'+pha #useful to include phase in some cases.
-            outline = [surface,site,name,E,frequency,'MHH_DFT',bee]
+                surface = cat  # +'_'+pha #useful to include phase.
+                phase = pha
+            outline = [surface, phase, site, name,
+                       E, frequency, 'MHH_DFT', bee]
             line = '\t'.join([str(w) for w in outline])
             lines.append(line)
     lines.sort() #The file is easier to read if sorted (optional)
@@ -295,11 +298,12 @@ def db2surf(fname, selection=[]):
         if adsorbate+'_'+cat+'_'+site_name not in abinitio_energies:
             abinitio_energies[adsorbate+'_'+cat+'_'+site_name] = abinitio_energy
             dbids[adsorbate+'_'+cat+'_'+site_name] = int(d.id)
-            de[adsorbate+'_'+cat+'_'+site_name] = state.get_ensemble_perturbations(d.data.BEEFens)
+            de[adsorbate+'_'+cat+'_'+site_name] = \
+                state.get_ensemble_perturbations(d.data.BEEFens)
             if not series == 'slab':
                 try:
                     freq = json.load(open(adsorbate+'_'+surf_lattice+'.freq','r'))
-                    frequency_dict.update({adsorbate+'_'+cat+'_'+site_name: freq[adsorbate+'_'+surf_lattice]})
+                    frequency_dict.update({adsorbate+'_'+cat+'_'+ site_name: freq[adsorbate+'_'+surf_lattice]})
                 except IOError:
                     print('no frequencies for',adsorbate+'_'+site_name)
         elif abinitio_energies[adsorbate+'_'+cat+'_'+site_name] > abinitio_energy:
