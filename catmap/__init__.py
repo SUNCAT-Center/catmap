@@ -41,7 +41,7 @@ from ase.structure import molecule
 from catmap.model import ReactionModel
 import data
 
-__version__ = "0.2.270"
+__version__ = "0.2.446"
 
 def griddata(*args, **kwargs):
     """Wrapper function to avoid annoying griddata errors"""
