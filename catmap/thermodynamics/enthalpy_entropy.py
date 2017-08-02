@@ -546,56 +546,66 @@ class ThermoCorrections(ReactionModelWrapper):
         self._freq_cutoffs = {}
 
         for ads in adsorbate_names:
-            if ads in freq_dict:
-                if '-' in ads and freq_dict[ads] in [None,[],()]:
-                    avg_TS.append(ads)
-                frequencies = freq_dict[ads]
-                if self.max_entropy_per_mode:
-                    if temperature in self._freq_cutoffs:
-                        nu_min = self._freq_cutoffs[temperature]
-                    else:
-                        kB_multiplier = float(
-                                self.max_entropy_per_mode/self._kB)
-                        nu_min = self.get_frequency_cutoff(
-                                kB_multiplier,float(temperature))
-                        nu_min /= 1000.
-                        self._freq_cutoffs[temperature] = nu_min
-                    frequencies = [max(nu,nu_min) for nu in frequencies]
-
-                try:
-                    apars = ads_param_dict[ads]
-                except(KeyError):
-                    raise IndexError('Missing hindered_ads_params for '+ads)
-                barrierT = apars[0]
-                barrierR = apars[1]
-                sitedensity = apars[2]
-                rotationalminima = apars[3]
-                mass = apars[4]
-                inertia = apars[5]
-                symmetrynumber = apars[6]
-                atoms = atoms_dict[ads]
-                if not ((mass and inertia) or atoms):
-                    raise IndexError('Missing either mass and inertia of '+ads+
-                                     ' or atoms object for '+ads)
-                therm = HinderedThermo(
-                        frequencies, barrierT, barrierR, sitedensity, 
-                        rotationalminima, mass=mass, inertia=inertia, 
-                        atoms=atoms, symmetrynumber=symmetrynumber)
-
-                free_energy = therm.get_helmholtz_energy(
-                        temperature,verbose=False)
-                ZPE = therm.get_zero_point_energy(verbose=False)
-                dS = therm.get_entropy(temperature,verbose=False)
-                dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
-                self._zpe_dict[ads] = ZPE
-                self._enthalpy_dict[ads] = dH
-                self._entropy_dict[ads] = dS
-                thermo_dict[ads] = free_energy #use thermodynamic state from 
-                #ase.thermochemistry to calculate thermal corrections.
-            elif '-' in ads:
+            if '-' in ads and (freq_dict[ads] in [None,[],()] or 
+                    ads not in ads_param_dict):
                 avg_TS.append(ads)
+                break
+
+            #get frequencies or throw error
+            if freq_dict[ads] not in [None,[],()]:
+                frequencies = freq_dict[ads]
             else:
                 raise IndexError('Missing vibrational frequencies for '+ads)
+            if self.max_entropy_per_mode:
+                if temperature in self._freq_cutoffs:
+                    nu_min = self._freq_cutoffs[temperature]
+                else:
+                    kB_multiplier = float(
+                            self.max_entropy_per_mode/self._kB)
+                    nu_min = self.get_frequency_cutoff(
+                            kB_multiplier,float(temperature))
+                    nu_min /= 1000.
+                    self._freq_cutoffs[temperature] = nu_min
+                frequencies = [max(nu,nu_min) for nu in frequencies]
+
+            #get all other parameters or throw error
+            if ads in ads_param_dict:
+                apars = ads_param_dict[ads]
+            else:
+                raise IndexError('Missing hindered_ads_params for '+ads)
+            barrierT = apars[0]
+            barrierR = apars[1]
+            sitedensity = apars[2]
+            rotationalminima = apars[3]
+            mass = apars[4]
+            inertia = apars[5]
+            symmetrynumber = apars[6]
+            try:
+                atoms = atoms_dict[ads]
+            except:
+                atoms = {}
+            if not ((mass and inertia) or atoms):
+                if '-' in ads:
+                    avg_TS.append(ads)
+                    break
+                else:
+                    raise IndexError('Missing either mass and inertia of '+ads+
+                                     ' or atoms object for '+ads)
+            therm = HinderedThermo(
+                    frequencies, barrierT, barrierR, sitedensity, 
+                    rotationalminima, mass=mass, inertia=inertia, 
+                    atoms=atoms, symmetrynumber=symmetrynumber)
+
+            free_energy = therm.get_helmholtz_energy(
+                    temperature,verbose=False)
+            ZPE = therm.get_zero_point_energy(verbose=False)
+            dS = therm.get_entropy(temperature,verbose=False)
+            dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
+            self._zpe_dict[ads] = ZPE
+            self._enthalpy_dict[ads] = dH
+            self._entropy_dict[ads] = dS
+            thermo_dict[ads] = free_energy #use thermodynamic state from 
+            #ase.thermochemistry to calculate thermal corrections.
 
         ts_thermo = self.average_transition_state(thermo_dict,avg_TS)
         thermo_dict.update(ts_thermo)
