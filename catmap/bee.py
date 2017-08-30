@@ -1,15 +1,11 @@
 """
-Simplified version of ase.dft.bee
+Simplified version of ase.dft.bee. Only works with BEEF-vdW xc functional.
 
 Input:
-    32x1 array with non-selfconsitent energies.
+    32x1 array with non-selfconsistent energies.
 
 Output:
     array with 2000 perturbations to the BEEF-vdW energy.
-
-Warning!
-    Only works with BEEF-vdW xc functional.
-
 """
 
 import numpy as np
