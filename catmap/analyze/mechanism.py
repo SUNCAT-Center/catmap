@@ -266,6 +266,13 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
         
         :param mechanism: mechanism to select for the graph
 
+        :param filename: filename for output
+
+        :param exclude_sites: boolean for whether to exclude
+                              sites from graph
+
+        :param exclude_ts: boolean for whether to exclude
+                           transition states from graph
         """
         if mechanism is not None:
             el_rxns = [self.elementary_rxns[i] for i in 
