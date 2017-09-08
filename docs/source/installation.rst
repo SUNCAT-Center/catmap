@@ -35,7 +35,7 @@ call it $CATMAP):
 .. code:: bash
     
     $ cd $CATMAP 
-    $ git clone https://github.com/ajmedford/catmap.git 
+    $ git clone https://github.com/SUNCAT-Center/catmap.git
 
 This will clone the
 repository into a directory called "catmap". Next, you need to add
