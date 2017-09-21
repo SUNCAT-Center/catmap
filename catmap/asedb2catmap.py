@@ -59,7 +59,7 @@ import ase.db
 from ase.atoms import string2symbols
 import json
 from catmap.bee import BEEFEnsemble as BEE
-
+from uuid import uuid4
 state = BEE()
 
 
@@ -337,7 +337,7 @@ def db2surf(fname, selection=[], sites=False):
     for d in ssurf:                     # Get slab and adsorbates from .db
         series = str(d.series)
         adsorbate = str(d.adsorbate)
-        if 'FBL' in series or 'NEB' in series or '-' in adsorbate:
+        if '-' in adsorbate:
             continue
         if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
             continue
@@ -392,7 +392,7 @@ def db2pes(fname, selection=[]):
     """
     c = ase.db.connect(fname)
     s = c.select(selection)
-    surfaces = {}
+    reaction_paths = {}
     # Get images from ase .db
     for d in s:
         adsorbate = str(d.adsorbate)
@@ -408,29 +408,26 @@ def db2pes(fname, selection=[]):
         except AttributeError:
             print(dbid, adsorbate, surf, 'missing BEEF perturbations.')
             de = np.zeros(2000)
-        if surf in surfaces:
-            if adsorbate in surfaces[surf]:
-                surfaces[surf][adsorbate]['pes'].append(abinitio_energy)
-                surfaces[surf][adsorbate]['dbids'].append(dbid)
-                surfaces[surf][adsorbate]['de'].append(de)
+        rxn_id = str(d.fbl_id)
+        if rxn_id in reaction_paths:
+            reaction_paths[rxn_id]['pes'].append(abinitio_energy)
+            reaction_paths[rxn_id]['dbids'].append(dbid)
+            reaction_paths[rxn_id]['de'].append(de)
+            if 'image' in d:
+                reaction_paths[rxn_id]['images'].append(int(d.image))
             else:
-                surfaces[surf][adsorbate] = {'pes': [abinitio_energy],
-                                             'dbids': [dbid],
-                                             'de': [de],
-                                             'images': []}
+                reaction_paths[rxn_id]['images'].append(int(d.step))
         else:
-            surfaces[surf] = {adsorbate: {'pes': [abinitio_energy],
-                                          'dbids': [dbid],
-                                          'de': [de],
-                                          'images': []}}
-        if 'image' in d:
-            surfaces[surf][adsorbate]['images'].append(int(d.image))
-        else:
-            surfaces[surf][adsorbate]['images'].append(int(d.step))
-    return surfaces
+            reaction_paths[rxn_id] = {'surface_name': surf,
+                                      'adsorbate': adsorbate,
+                                      'pes': [abinitio_energy],
+                                      'dbids': [dbid],
+                                      'de': [de],
+                                      'images': [int(d.step)]}
+    return reaction_paths
 
 
-def pes2ts(surfaces):
+def pes2ts(reaction_paths):
     """ Returns dictionaries containing transition state ab initio energies.
 
         Input parameters
@@ -442,40 +439,42 @@ def pes2ts(surfaces):
     frequency_dict = {}
     dbids = {}
     de = {}
-    for m in surfaces:
-        for adsorbate in surfaces[m]:
-            key = adsorbate + '_' + m + '_site'
-            images = surfaces[m][adsorbate]['images']
-            if len(np.unique(images)) != len(images):
-                print('non unique image number!', m, adsorbate, images)
-                break
-            pes = surfaces[m][adsorbate]['pes']
-            if len(pes) < 4:
-                continue
-            #s = np.argsort(images)
-            # Look for local minima and maxima.
-            #localmins = np.where(np.r_[True, pes[1:] < pes[:-1]] &
-            #                    np.r_[pes[:-1] < pes[1:], True])[0]
-            #localmaxs = np.where(np.r_[True, pes[1:] > pes[:-1]] &
-            #                    np.r_[pes[:-1] > pes[1:], True])[0]
-            #if len(localmaxs) > 1:
-            #   print(len(localmaxs), 'local maxima in', key)
-            #if len(localmins) > 2:
-            #   print(len(localmins), 'local minima in', key)
-            tst = np.argmax(pes)
-            if key not in abinitio_energies:
-                abinitio_energies[key] = pes[tst]
-                dbids[key] = surfaces[m][adsorbate]['dbids'][tst]
-                de[key] = surfaces[m][adsorbate]['de'][tst]
-                try:
-                    freq = json.load(open(adsorbate + '_' + m +
-                                          '.freq', 'r'))
-                    frequency_dict.update({adsorbate + '_' + m + '_' +
-                                           key: freq[adsorbate + '_' + m]})
-                except IOError:
-                    print('no frequencies for', key)
-            elif abinitio_energies[key] > pes[tst]:
-                abinitio_energies[key] = pes[tst]
-                dbids[key] = surfaces[m][adsorbate]['dbids'][tst]
-                de[key] = surfaces[m][adsorbate]['de'][tst]
+    for rxn_id in reaction_paths:
+        adsorbate = reaction_paths[rxn_id]['adsorbate']
+        m = reaction_paths[rxn_id]['surface_name']
+        key = adsorbate + '_' + m + '_site'
+        images = reaction_paths[rxn_id]['images']
+        if len(np.unique(images)) != len(images):
+            print('non unique image number!', m, adsorbate, images)
+            continue
+        pes = np.array(reaction_paths[rxn_id]['pes'])
+        if len(pes) < 7:
+            print('Incomplete trajectory!', m, adsorbate, images)
+            continue
+        s = np.argsort(images)
+        # Look for local minima and maxima.
+        localmins = np.where(np.r_[True, pes[s][1:] < pes[s][:-1]] &
+                             np.r_[pes[s][:-1] < pes[s][1:], True])[0]
+        localmaxs = np.where(np.r_[True, pes[s][1:] > pes[s][:-1]] &
+                             np.r_[pes[s][:-1] > pes[s][1:], True])[0]
+        if len(localmaxs) > 1:
+            print(len(localmaxs), 'local maxima in', key)
+        if len(localmins) > 2:
+            print(len(localmins), 'local minima in', key)
+        tst = np.argmax(pes)
+        if key not in abinitio_energies:
+            abinitio_energies[key] = pes[tst]
+            dbids[key] = reaction_paths[rxn_id]['dbids'][tst]
+            de[key] = reaction_paths[rxn_id]['de'][tst]
+            try:
+                freq = json.load(open(adsorbate + '_' + m +
+                                      '.freq', 'r'))
+                frequency_dict.update({adsorbate + '_' + m + '_' +
+                                       key: freq[adsorbate + '_' + m]})
+            except IOError:
+                print('no frequencies for', key)
+        elif abinitio_energies[key] > pes[tst]:
+            abinitio_energies[key] = pes[tst]
+            dbids[key] = reaction_paths[rxn_id]['dbids'][tst]
+            de[key] = reaction_paths[rxn_id]['de'][tst]
     return abinitio_energies, frequency_dict, de, dbids
