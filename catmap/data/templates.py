@@ -63,7 +63,7 @@ def constrain_coverage_function(cvgs,mpf,c_min):
 """
 
 templates['rate_constants'] = r"""
-def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matrix,mpexp,include_derivatives=True):
+def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matrix,mpexp,mpsqrt,include_derivatives=True):
     ${interaction_function}
 
     kfs = []
@@ -140,12 +140,12 @@ def elementary_rates(rate_constants,theta,p,mpf,matrix):
 """
 
 templates['interacting_mean_field_steady_state'] = r"""
-def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
+def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp,mpsqrt):
 
     ${rate_constants_no_derivatives}
     
     kf, kr, junk, junk= rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,
-            mpf,matrix,mpexp,include_derivatives=False)
+            mpf,matrix,mpexp,mpsqrt,include_derivatives=False)
    
     r = [0]*len(kf)
     dtheta_dt = [0]*len(theta)
@@ -173,7 +173,7 @@ def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
 """
 
 templates['interacting_mean_field_jacobian'] = r"""
-def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp):
+def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_energies,T,F,mpf,matrix,mpexp,mpsqrt):
 
 #    print 'rxn_parameters = ', rxn_parameters
 #    print 'theta = ', theta
@@ -192,7 +192,7 @@ def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_ene
 
     kf, kr, dEf, dEr = rate_constants(
                           rxn_parameters,theta,gas_energies,site_energies,T,F,
-                          mpf,matrix,mpexp,include_derivatives=True)
+                          mpf,matrix,mpexp,mpsqrt,include_derivatives=True)
     ${jacobian_expressions}
     
     J = matrix(J)
