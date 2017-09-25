@@ -34,6 +34,7 @@ requires = ['ase',
             'matplotlib',
             'mpmath',
             'numpy',
+            'graphviz'
                    ]
 license = 'COPYING.txt'
 long_description = file('README.md').read()
