@@ -9,7 +9,7 @@ Description:
         Contains molecular reference states.
         Mandatory key value pairs:
         --------------------------
-                "enrgy" : float
+                "epot" : float
                     DFT calculated potential energy.
         Optional key value pairs:
         --------------------------
@@ -35,7 +35,7 @@ Description:
                 value of the adsorbate chemical formula.
                 '' should be the value for clean slabs.
                 '-' should be inserted between seperate fragments.
-            "enrgy" : float
+            "epot" : float
                 value with potential energy from DFT.
 
         Optional key value pairs:
@@ -79,6 +79,16 @@ def get_refs(energy_dict, energy_mols, de_dict, de_mols):
 
 def get_formation_energies(energy_dict, ref_dict):
     """ Returns a dictionary with formation energies of adsorbates.
+    Parameters
+    ----------
+    energy_dict : dictionary
+        Each key is named in the format: adsorbate_name_phase_facet_site, and
+        contains the potential energy of a slab an adsorbate or a molecule.
+    ref_dict : dictionary
+        Each key is either an atomic symbol and contains the reference
+        potential energy of that atom,
+        or the key is named in the format: _name_phase_facet_slab and it
+        contains the reference potential energy of the slab.
     """
     formation_energies = {}
     for key in energy_dict.keys():
@@ -131,19 +141,19 @@ def get_BEEstd(de_dict, ref_de):
     return BEEstd
 
 
-def get_BEE_PCA(de_dict, ref_de, ads_x, ads_y, site_x, site_y):
+def get_BEE_PCA(de_dict, ref_de, ads_x, ads_y, site_x='site', site_y='site'):
     """ Returns two dictionaries, BEE_PC with the principal component vectors
     and BEE_lambda with the corresponding eigenvalues of BEE pertubations.
 
-    Input:
-        de_dict  dict    contains beef perturbations of adsorbates on slabs,
-                            where keys are named: adsorbate_name_phase_facet
-        ref_de   dict    contains beef perturbations of references,
-                            where keys are refernce elements, e.g: 'C','H',
-                            and also slabs references: name_phase_facet
-        ads_x    string  adsorbate first dimension
-        ads_y    string  adsorbate second dimension
-
+    Parameters
+    ----------
+    de_dict  dict    contains beef perturbations of adsorbates on slabs,
+                        where keys are named: adsorbate_name_phase_facet
+    ref_de   dict    contains beef perturbations of references,
+                        where keys are refernce elements, e.g: 'C','H',
+                        and also slabs references: name_phase_facet
+    ads_x    string  adsorbate first dimension
+    ads_y    string  adsorbate second dimension
     """
     BEE_PC = {}
     BEE_lambda = {}
@@ -198,7 +208,7 @@ def make_input_file(file_name, energy_dict, frequency_dict={}, bee_dict={}):
     # Create a header
     header = '\t'.join(['surface_name', 'phase', 'site_name',
                         'species_name', 'formation_energy',
-                        'frequencies', 'reference', 'bee'])
+                        'frequencies', 'reference', 'std'])
     lines = []  # List of lines in the output
     for key in energy_dict.keys():  # Iterate through keys
         E = energy_dict[key]  # Ab initio energy
@@ -262,7 +272,7 @@ def db2mol(fname, selection=[], freq_path='.'):  # fname for db with molecules.
     dbids = {}
     de = {}
     for d in smol:              # Get molecules from mol.db
-        abinitio_energy = float(d.enrgy)
+        abinitio_energy = float(d.epot)
         species_name = str(d.formula)
         if species_name+'_gas' not in abinitio_energies:
             abinitio_energies[species_name+'_gas'] = abinitio_energy
@@ -342,7 +352,7 @@ def db2surf(fname, selection=[], sites=False):
         if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
             continue
         cat = str(d.name)+'_'+str(d.phase)
-        abinitio_energy = float(d.enrgy)
+        abinitio_energy = float(d.epot)
         surf_lattice = str(d.surf_lattice)
         # composition=str(d.formula)
         facet = str(d.facet)
@@ -400,7 +410,7 @@ def db2pes(fname, selection=[]):
             continue
         surf = str(d.name) + '_' + str(d.phase) + '_' + \
             str(d.surf_lattice) + '_' + str(d.facet)
-        abinitio_energy = float(d.enrgy)
+        abinitio_energy = float(d.epot)
         dbid = int(d.id)
         try:
             BEEFens = d.data.BEEFens
@@ -432,13 +442,14 @@ def pes2ts(reaction_paths):
 
         Input parameters
         ----------------
-        surfaces : dictionary
+        reaction_paths : dictionary
             Created by the db2pes function.
     """
     abinitio_energies = {}
     frequency_dict = {}
     dbids = {}
     de = {}
+    calculate = []
     for rxn_id in reaction_paths:
         adsorbate = reaction_paths[rxn_id]['adsorbate']
         m = reaction_paths[rxn_id]['surface_name']
@@ -450,6 +461,7 @@ def pes2ts(reaction_paths):
         pes = np.array(reaction_paths[rxn_id]['pes'])
         if len(pes) < 7:
             print('Incomplete trajectory!', m, adsorbate, images)
+            calculate.append(max(reaction_paths[rxn_id]['dbids']))
             continue
         s = np.argsort(images)
         # Look for local minima and maxima.
@@ -457,11 +469,17 @@ def pes2ts(reaction_paths):
                              np.r_[pes[s][:-1] < pes[s][1:], True])[0]
         localmaxs = np.where(np.r_[True, pes[s][1:] > pes[s][:-1]] &
                              np.r_[pes[s][:-1] > pes[s][1:], True])[0]
-        if len(localmaxs) > 1:
-            print(len(localmaxs), 'local maxima in', key)
-        if len(localmins) > 2:
-            print(len(localmins), 'local minima in', key)
+        differences = np.diff(pes[s])
+        smoothness = np.std(differences) / abs(np.mean(differences))
+        #if len(localmaxs) > 1:
+        #    print(len(localmaxs), 'local maxima in', key, smoothness)
+        #if len(localmins) > 2:
+        #    print(len(localmins), 'local minima in', key, smoothness)
+        if len(localmins) == 1:
+            calculate.append(max(reaction_paths[rxn_id]['dbids']))
+            #print(len(localmins), 'local minima in', key, smoothness)
         tst = np.argmax(pes)
+        print(adsorbate, m, smoothness, len(localmaxs), len(localmins))
         if key not in abinitio_energies:
             abinitio_energies[key] = pes[tst]
             dbids[key] = reaction_paths[rxn_id]['dbids'][tst]
@@ -477,4 +495,6 @@ def pes2ts(reaction_paths):
             abinitio_energies[key] = pes[tst]
             dbids[key] = reaction_paths[rxn_id]['dbids'][tst]
             de[key] = reaction_paths[rxn_id]['de'][tst]
+    print('Incomplete trajectory last step ids:',
+          ','.join([str(int(a)) for a in np.unique(calculate)]))
     return abinitio_energies, frequency_dict, de, dbids
