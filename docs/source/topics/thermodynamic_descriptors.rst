@@ -27,15 +27,13 @@ functionality of CatMAP. We will be able to use a "submission script"
 
     mkm_file = 'CO_oxidation.mkm'
     model = ReactionModel(setup_file=mkm_file)
-    model.output_variables += ['production_rate'] model.run()
+    model.output_variables += ['production_rate']
+    model.run()
 
     from catmap import analyze 
 
     vm = analyze.VectorMap(model) 
-    vm.plot_variable = 'production_rate' 
-
-    #tell the model which output to plot 
-
+    vm.plot_variable = 'production_rate' #tell the model which output to plot
     vm.log_scale = True #rates should be plotted on a log-scale 
     vm.min = 1e-25 #minimum rate to plot
     vm.max = 1e3 #maximum rate to plot 
@@ -110,7 +108,7 @@ the following changes:
     descriptor_ranges = [[400,1000],[1e-8,1e3]]
 
 - Modify temperature/pressure to be compatible - In
-  :doc:`../tutorials/creating_a_microkinetic_model`) we used a model where
+  :doc:`../tutorials/creating_a_microkinetic_model` we used a model where
   temperature and pressure were explicitly specified. This doesn't really make
   sense now, since we are varying these two variables. The temperature ends up
   not really mattering since it will be over-written as CatMAP moves through
