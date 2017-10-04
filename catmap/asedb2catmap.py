@@ -54,12 +54,14 @@ Description:
             Expand this feature to individual frequency lists for individual
             catalysts.
 """
+from os import mkdir, listdir
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
 import json
 from catmap.bee import BEEFEnsemble as BEE
-from uuid import uuid4
+import csv
+
 state = BEE()
 
 
@@ -94,10 +96,10 @@ def get_formation_energies(energy_dict, ref_dict):
     for key in energy_dict.keys():
         E0 = 0
         if 'gas' in key:
-            series, site_name = key.split('_')  # Split key into name/site
+            species, site_name = key.split('_')  # Split key into name/site
         else:
             try:
-                series, cat, pha, lattice, fac, site = key.split('_')
+                species, cat, pha, lattice, fac, site = key.split('_')
             except ValueError as err:
                 err.message += 'key=' + key
                 raise
@@ -105,10 +107,9 @@ def get_formation_energies(energy_dict, ref_dict):
             try:
                 E0 -= ref_dict[site_name]
             except KeyError:
-                Warning('no slab reference ' + site_name)
                 continue
         if 'slab' not in key:
-            composition = string2symbols(series.replace('-', ''))
+            composition = string2symbols(species.replace('-', ''))
             E0 += energy_dict[key]
             for atom in composition:
                 E0 -= ref_dict[atom]
@@ -123,17 +124,16 @@ def get_BEEstd(de_dict, ref_de):
     for key in de_dict.keys():
         de = np.zeros(2000)
         if 'gas' in key:
-            series, site = key.split('_')  # Split key into name/site
+            species, site = key.split('_')  # Split key into name/site
         else:
-            series, cat, pha, lattice, fac, site = key.split('_')
+            species, cat, pha, lattice, fac, site = key.split('_')
             surface = cat + '_' + pha + '_' + lattice + '_' + fac + '_slab'
             try:
                 de -= ref_de[surface]
             except KeyError:
-                print('no slab BEE perturbation '+surface)
                 continue
         if 'slab' not in key:
-            composition = string2symbols(series.replace('-', ''))
+            composition = string2symbols(species.replace('-', ''))
             de += de_dict[key]
             for atom in composition:
                 de -= ref_de[atom]
@@ -345,8 +345,8 @@ def db2surf(fname, selection=[], sites=False):
     dbids = {}
     de = {}
     for d in ssurf:                     # Get slab and adsorbates from .db
-        series = str(d.series)
-        adsorbate = str(d.adsorbate)
+        series = str(d.ads)
+        adsorbate = str(d.species)
         if '-' in adsorbate:
             continue
         if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
@@ -356,7 +356,7 @@ def db2surf(fname, selection=[], sites=False):
         surf_lattice = str(d.surf_lattice)
         # composition=str(d.formula)
         facet = str(d.facet)
-        if adsorbate == '' or series == 'slab':
+        if adsorbate == '' or ('series' in d and series == 'slab'):
             adsorbate = ''
             site = 'slab'
         elif sites:
@@ -369,7 +369,7 @@ def db2surf(fname, selection=[], sites=False):
             abinitio_energies[key] = abinitio_energy
             dbids[key] = int(d.id)
             de[key] = state.get_ensemble_perturbations(d.data.BEEFens)
-            if not series == 'slab':
+            if adsorbate != '' and ('series' not in d or series == 'slab'):
                 try:
                     freq = json.load(open(adsorbate + '_' + surf_lattice +
                                           '.freq', 'r'))
@@ -405,7 +405,7 @@ def db2pes(fname, selection=[]):
     reaction_paths = {}
     # Get images from ase .db
     for d in s:
-        adsorbate = str(d.adsorbate)
+        adsorbate = str(d.species)
         if '-' not in adsorbate:
             continue
         surf = str(d.name) + '_' + str(d.phase) + '_' + \
@@ -418,11 +418,15 @@ def db2pes(fname, selection=[]):
         except AttributeError:
             print(dbid, adsorbate, surf, 'missing BEEF perturbations.')
             de = np.zeros(2000)
-        rxn_id = str(d.fbl_id)
+        rxn_id = str(d.path_id)
         if rxn_id in reaction_paths:
             reaction_paths[rxn_id]['pes'].append(abinitio_energy)
             reaction_paths[rxn_id]['dbids'].append(dbid)
             reaction_paths[rxn_id]['de'].append(de)
+            try:
+                reaction_paths[rxn_id]['distance'].append(float(d.distance))
+            except AttributeError:
+                # Do nothing.
             if 'image' in d:
                 reaction_paths[rxn_id]['images'].append(int(d.image))
             else:
@@ -433,7 +437,8 @@ def db2pes(fname, selection=[]):
                                       'pes': [abinitio_energy],
                                       'dbids': [dbid],
                                       'de': [de],
-                                      'images': [int(d.step)]}
+                                      'images': [int(d.step)],
+                                      'distance': [float(d.distance)]}
     return reaction_paths
 
 
@@ -459,10 +464,6 @@ def pes2ts(reaction_paths):
             print('non unique image number!', m, adsorbate, images)
             continue
         pes = np.array(reaction_paths[rxn_id]['pes'])
-        if len(pes) < 7:
-            print('Incomplete trajectory!', m, adsorbate, images)
-            calculate.append(max(reaction_paths[rxn_id]['dbids']))
-            continue
         s = np.argsort(images)
         # Look for local minima and maxima.
         localmins = np.where(np.r_[True, pes[s][1:] < pes[s][:-1]] &
@@ -471,13 +472,19 @@ def pes2ts(reaction_paths):
                              np.r_[pes[s][:-1] > pes[s][1:], True])[0]
         differences = np.diff(pes[s])
         smoothness = np.std(differences) / abs(np.mean(differences))
-        #if len(localmaxs) > 1:
-        #    print(len(localmaxs), 'local maxima in', key, smoothness)
-        #if len(localmins) > 2:
-        #    print(len(localmins), 'local minima in', key, smoothness)
+        if len(localmaxs) > 1:
+            print(len(localmaxs), 'local maxima in', key,
+                  'smoothness:', smoothness)
+        if len(localmins) > 2:
+            print(len(localmins), 'local minima in', key,
+                  'smoothness:', smoothness)
         if len(localmins) == 1:
+            print(len(localmins), 'local minima in', key,
+                  'smoothness:', smoothness)
+        if np.min(reaction_paths[rxn_id]['distance']) > 1.6:
+            print('Incomplete trajectory!', m, adsorbate, images)
             calculate.append(max(reaction_paths[rxn_id]['dbids']))
-            #print(len(localmins), 'local minima in', key, smoothness)
+            continue
         tst = np.argmax(pes)
         print(adsorbate, m, smoothness, len(localmaxs), len(localmins))
         if key not in abinitio_energies:
@@ -495,6 +502,105 @@ def pes2ts(reaction_paths):
             abinitio_energies[key] = pes[tst]
             dbids[key] = reaction_paths[rxn_id]['dbids'][tst]
             de[key] = reaction_paths[rxn_id]['de'][tst]
-    print('Incomplete trajectory last step ids:',
-          ','.join([str(int(a)) for a in np.unique(calculate)]))
-    return abinitio_energies, frequency_dict, de, dbids
+    incomplete = ','.join([str(int(a)) for a in np.unique(calculate)])
+    print(incomplete)
+    return abinitio_energies, frequency_dict, de, dbids  # , incomplete
+
+
+def make_catapp_files(fname, project, dbid_dict, energy_dict,
+                      frequency_dict={}, bee_dict={}):
+    """ Saves the catmap input file.
+
+    Parameters
+    ----------
+    file_name : string
+        path and name of an ase database file.
+    energy_dict : dictionary
+        Contains formation energies. Each species is represented by a field
+        and the fields must be named in the format
+        <species>_<surface>_<phase>_<surface lattice>_<facet>_<site>
+        or
+        <species>_gas
+    frequency_dict : dictionary
+        Contains lists of frequencies. Each species is represented by a field
+        and the fields must be named corresponding to energy_dict.
+    bee_dict : dictionary
+        Contains standard deviations on the energy.
+        Each species is represented by a field and the fields must be named
+        corresponding to energy_dict.
+    """
+    # Create a header
+    c = ase.db.connect(fname)
+    spreadsheet = [['chemical_composition', 'facet', 'AB', 'A', 'B',
+                    'reaction_energy', 'beef_standard_deviation',
+                    'activation_energy', 'DFT_code', 'DFT_functional',
+                    'reference', 'url']]
+    for key in dbid_dict.keys():  # Iterate through keys
+        if key in energy_dict:
+            Ef = energy_dict[key]  # formation energy
+            if 'gas' in key:
+                name, site = key.split('_')  # Split key into name/site
+                # try:
+                #     frequency = frequency_dict[key]
+                # except KeyError:
+                #     frequency = []
+                # try:
+                #     bee = bee_dict[key]
+                # except KeyError:
+                #     bee = np.NaN
+            else:
+                name, cat, pha, lattice, facet, site = key.split('_')
+            if 'slab' not in key:  # Do not include empty site energy (0)
+                print(key)
+                # try:
+                #     frequency = frequency_dict[key]
+                # except KeyError:
+                #     frequency = []
+                try:
+                    bee = bee_dict[key]
+                except KeyError:
+                    bee = np.NaN
+                if site == 'gas':
+                    continue
+                else:
+                    surface = cat  # +'_'+pha #useful to include phase.
+                    # phase = pha
+                    # site_name = lattice + '_' + site
+                composition = string2symbols(name)
+                nC = composition.count('C')
+                nH = composition.count('H')
+                AB = name
+                if nC is not 0:
+                    A = (str(int(nC)) +
+                         'CH4gas').replace('1.0', '').replace('1', '')
+                else:
+                    A = ''
+                B = (str(nH/2. - 2 * nC) +
+                     'H2gas').replace('1.0', '')
+                A_B = A + '_' + B
+                path_reaction = project + AB + 'star_' + A_B + '_star'
+                path_surface = path_reaction + '/' + surface + '_' + facet
+                atoms = c.get_atoms(energy_dict[key])
+                slab = c.get_atoms(energy_dict['_' + cat + '_' + pha + '_' +
+                                   lattice + '_' + facet + '_slab'])
+                if not AB + 'star_' + A_B + '_star' in listdir(project):
+                    print('Creating ' + path_reaction)
+                    mkdir(path_reaction)
+                # CH4.write(path_reaction + '/CH4gas.traj')
+                # H2.write(path_reaction + '/H2gas.traj')
+                if not surface + '_' + facet in listdir(path_reaction):
+                    print('Creating ' + path_surface)
+                    mkdir(path_surface)
+                slab.write(path_surface + '/empty_surface.traj')
+                slab.write(path_surface + '/empty_surface.xyz')
+                atoms.write(path_surface + '/' + AB + '.traj')
+                atoms.write(path_surface + '/' + AB + '.xyz')
+                activation_energy = np.NaN
+                spreadsheet.append([surface, facet, AB, A, B,
+                                    Ef, bee, activation_energy,
+                                    'Quantum Espresso',
+                                    'BEEF-vdW', 'M. H. Hansen, 2017',
+                                    'suncat.stanford.edu'])
+    with open(project+'test.csv', 'wb') as f:
+        writer = csv.writer(f)
+        writer.writerows(spreadsheet)
