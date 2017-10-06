@@ -345,9 +345,9 @@ def db2surf(fname, selection=[], sites=False):
     dbids = {}
     de = {}
     for d in ssurf:                     # Get slab and adsorbates from .db
-        series = str(d.ads)
-        adsorbate = str(d.species)
-        if '-' in adsorbate:
+        ads = str(d.ads)
+        species = str(d.species)
+        if '-' in species:
             continue
         if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
             continue
@@ -356,29 +356,29 @@ def db2surf(fname, selection=[], sites=False):
         surf_lattice = str(d.surf_lattice)
         # composition=str(d.formula)
         facet = str(d.facet)
-        if adsorbate == '' or ('series' in d and series == 'slab'):
-            adsorbate = ''
+        if species == '' or ('ads' in d and ads == 'slab'):
+            species = ''
             site = 'slab'
         elif sites:
             site = str(d.site)
         else:
             site = 'site'
         site_name = surf_lattice + '_' + facet + '_' + site
-        key = adsorbate + '_' + cat + '_' + site_name
+        key = species + '_' + cat + '_' + site_name
         if key not in abinitio_energies:
             abinitio_energies[key] = abinitio_energy
             dbids[key] = int(d.id)
             de[key] = state.get_ensemble_perturbations(d.data.BEEFens)
-            if adsorbate != '' and ('series' not in d or series == 'slab'):
+            if species != '' and ('ads' not in d or ads == 'slab'):
                 try:
-                    freq = json.load(open(adsorbate + '_' + surf_lattice +
+                    freq = json.load(open(species + '_' + surf_lattice +
                                           '.freq', 'r'))
-                    frequency_dict.update({adsorbate + '_' + cat + '_' +
-                                           site_name: freq[adsorbate +
+                    frequency_dict.update({species + '_' + cat + '_' +
+                                           site_name: freq[species +
                                                            '_' + surf_lattice]}
                                           )
                 except IOError:
-                    print('no frequencies for', adsorbate + '_' + site_name)
+                    print('no frequencies for', species + '_' + site_name)
         elif abinitio_energies[key] > abinitio_energy:
             abinitio_energies[key] = abinitio_energy
             dbids[key] = int(d.id)
@@ -426,6 +426,7 @@ def db2pes(fname, selection=[]):
             try:
                 reaction_paths[rxn_id]['distance'].append(float(d.distance))
             except AttributeError:
+                continue
                 # Do nothing.
             if 'image' in d:
                 reaction_paths[rxn_id]['images'].append(int(d.image))
