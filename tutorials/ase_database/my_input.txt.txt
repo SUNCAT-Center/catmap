@@ -1,0 +1,34 @@
+surface_name	phase	site_name	species_name	formation_energy	frequencies	reference	coverage	std
+Ag	fcc	hexagonal_site	C	5.3119	[]	mhangaard	0.167	7.58817344334
+Ag	fcc	hexagonal_site	H	0.3496	[]	mhangaard	0.167	3.79408672167
+Au	fcc	hexagonal_site	C	4.6641	[]	mhangaard	0.167	7.58817344334
+Au	fcc	hexagonal_site	CH	3.2187	[]	mhangaard	0.167	3.79408672167
+Au	fcc	hexagonal_site	H	0.3914	[]	mhangaard	0.167	3.79408672167
+Co	fcc	hexagonal_site	CH3	0.9834	[]	mhangaard	0.167	3.79408672167
+Co	fcc	hexagonal_site	H	-0.3632	[]	mhangaard	0.167	3.79408672167
+Cu	fcc	hexagonal_site	C	3.914	[]	mhangaard	0.167	7.58817344334
+Cu	fcc	hexagonal_site	H	-0.061	[]	mhangaard	0.167	3.79408672167
+Fe	fcc	hexagonal_site	CH3	0.2383	[]	mhangaard	0.167	3.79408672167
+Fe	fcc	hexagonal_site	H	-0.8167	[]	mhangaard	0.167	3.79408672167
+In	fcc	hexagonal_site	CH3	1.191	[]	mhangaard	0.167	3.79408672167
+Ir	fcc	hexagonal_site	C	1.6443	[]	mhangaard	0.167	7.58817344334
+Ir	fcc	hexagonal_site	H	-0.3394	[]	mhangaard	0.167	3.79408672167
+Ni	fcc	hexagonal_site	C	2.3623	[]	mhangaard	0.167	7.58817344334
+Ni	fcc	hexagonal_site	H	-0.3384	[]	mhangaard	0.167	3.79408672167
+None		gas	CH4	-0.0	[]	mhangaard	0	15.1763468867
+None		gas	CO	2.6036	[]	mhangaard	0	15.1763468867
+None		gas	H2	0.0	[]	mhangaard	0	3.79408672167
+None		gas	H2O	0.0	[]	mhangaard	0	7.58817344334
+Pd	fcc	hexagonal_site	C	2.1371	[]	mhangaard	0.167	7.58817344334
+Pd	fcc	hexagonal_site	CH	1.3878	[]	mhangaard	0.167	3.79408672167
+Pd	fcc	hexagonal_site	H	-0.3267	[]	mhangaard	0.167	3.79408672167
+Pt	fcc	hexagonal_site	C	1.8633	[]	mhangaard	0.167	7.58817344334
+Pt	fcc	hexagonal_site	CH3	0.3615	[]	mhangaard	0.167	3.79408672167
+Pt	fcc	hexagonal_site	H	-0.3385	[]	mhangaard	0.167	3.79408672167
+PtSn	mp	hexagonal_site	CH3	1.1322	[]	mhangaard	1.0	3.79408672167
+Re	hcp	hexagonal_site	C	1.3464	[]	mhangaard	0.167	7.58817344334
+Re	hcp	hexagonal_site	H	-0.5508	[]	mhangaard	0.167	3.79408672167
+Rh	fcc	hexagonal_site	C	1.869	[]	mhangaard	0.167	7.58817344334
+Rh	fcc	hexagonal_site	H	-0.3238	[]	mhangaard	0.167	3.79408672167
+Ru	hcp	hexagonal_site	C	2.0483	[]	mhangaard	0.167	7.58817344334
+Ru	hcp	hexagonal_site	H	-0.3682	[]	mhangaard	0.167	3.79408672167

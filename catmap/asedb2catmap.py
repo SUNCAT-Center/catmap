@@ -61,7 +61,7 @@ Description:
             Expand this feature to individual frequency lists for individual
             catalysts.
 """
-from os import mkdir, listdir
+from os import mkdir, listdir, environ
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
@@ -570,7 +570,7 @@ class db2catmap(object):
                     coverage = round(float(n) /
                                      (float(cell[0]) * float(cell[2])), 3)
                 outline = [surface, phase, site_name, name,
-                           E, frequency, 'MHH_DFT', coverage, std]
+                           E, frequency, environ['USER'], coverage, std]
                 line = '\t'.join([str(w) for w in outline])
                 lines.append(line)
         # The file is easier to read if sorted (optional).
