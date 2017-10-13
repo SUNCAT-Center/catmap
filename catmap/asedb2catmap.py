@@ -301,7 +301,8 @@ class db2catmap(object):
         return rxn_paths
 
     def _mol2ref(self,
-                 references={'H': 'H2_gas', 'O': 'H2O_gas', 'C': 'CH4_gas'}):
+                 references=(('H', 'H2_gas'), ('O', 'H2O_gas'),
+                             ('C', 'CH4_gas'))):
         """ Returns two dictionaries containing:
             abinitio energy references for atoms
             32 non-selfconsitent perturbations for atoms.
@@ -309,10 +310,12 @@ class db2catmap(object):
         atomic_e = {}
         atomic_de = {}
         print(references)
-        for key in references:
-            atomic_e[key] = self.epot[references[key]]
-            atomic_de[key] = self.de[references[key]]
-            composition = string2symbols(references[key].split('_')[0])
+        for t in references:
+            key = t[0]
+            species = t[1]
+            atomic_e[key] = self.epot[species]
+            atomic_de[key] = self.de[species]
+            composition = string2symbols(species.split('_')[0])
             n = 0.
             for symbol in composition:
                 if symbol == key:
@@ -472,22 +475,15 @@ class db2catmap(object):
             localmaxs = np.where(np.r_[True, pes[s][1:] > pes[s][:-1]] &
                                  np.r_[pes[s][:-1] > pes[s][1:], True])[0]
             differences = np.diff(pes[s])
-            smoothness = np.std(differences) / abs(np.mean(differences))
-            if len(localmaxs) > 1:
-                print(len(localmaxs), 'local maxima in', key,
-                      'smoothness:', smoothness)
-            if len(localmins) > 2:
-                print(len(localmins), 'local minima in', key,
-                      'smoothness:', smoothness)
-            if len(localmins) == 1:
-                print(len(localmins), 'local minima in', key,
-                      'smoothness:', smoothness)
+            roughness = np.std(differences)
+            if len(localmaxs) > 1 or len(localmins) > 2 or len(localmins) == 1:
+                print('Warning!:')
             if np.min(self.rxn_paths[rxn_id]['distance']) > 1.6:
                 print('Incomplete trajectory!', m, species, images)
                 calculate.append(max(self.rxn_paths[rxn_id]['dbids']))
                 continue
             tst = np.argmax(pes)
-            print(species, m, smoothness, len(localmaxs), len(localmins))
+            print(species, m, roughness, len(localmaxs), len(localmins))
             if key not in abinitio_energies:
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
@@ -569,6 +565,7 @@ class db2catmap(object):
                     site_name = lattice + '_' + site
                     coverage = round(float(n) /
                                      (float(cell[0]) * float(cell[2])), 3)
+                E = float(E)
                 outline = [surface, phase, site_name, name,
                            E, frequency, environ['USER'], coverage, std]
                 line = '\t'.join([str(w) for w in outline])
