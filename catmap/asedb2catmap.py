@@ -3,19 +3,6 @@
 Description:
     Module to convert ase.db files into a catmap input file
 
-    File dependencies:
-    ------------------
-    <mol_name>.db: db file
-        Contains molecular reference states.
-        Mandatory key value pairs:
-        --------------------------
-                "epot" : float
-                    DFT calculated potential energy.
-        Optional key value pairs:
-        --------------------------
-                "data.BEEFens" : list
-                    32 non-selfconsistent BEEF-vdW energies.
-
     <surface_name>.db: db file
         Contains all adsorbate states on
         surfaces and clean slabs for reference.
@@ -23,6 +10,17 @@ Description:
         --------------------------
             "name" : str
                 Value that identifies the catalyst composition.
+            "species" : str
+                value of the adsorbate chemical formula.
+                '' should be the value for clean slabs.
+                '-' should be inserted between seperate fragments.
+            "epot" : float
+                value with potential energy from DFT.
+
+        Recommended key value pairs:
+        ----------------------------
+            "site" : str
+                name of adsorption site.
             "phase" : str
                 Value that identifies the catalyst phase.
             "facet" : str
@@ -31,25 +29,16 @@ Description:
             "surf_lattice" : str
                 Name of the surface lattice geometry.
                 E.g. hcp001 and fcc111 has "hexagonal" surface lattices.
-            "species" : str
-                value of the adsorbate chemical formula.
-                '' should be the value for clean slabs.
-                '-' should be inserted between seperate fragments.
-            "epot" : float
-                value with potential energy from DFT.
-            "supercell" : str
-                Supercell size separated by x, e.g. 2x2
             "layers" : int
                 Number of atomic layers in slab.
-
-        Recommended key value pairs:
-        ----------------------------
-            "site" : str
-                name of adsorption site.
+            "supercell" : str
+                Supercell size separated by x, e.g. 2x2
+            "n": int
+                number of identical adsorbates.
 
         Recommended keys in "data":
         ---------------------------
-            "BEEFens" : list
+            "BEEFvdW" : list
                 32 non-selfconsistent BEEF-vdW energies.
 
     Optional file dependencies:
@@ -93,6 +82,13 @@ class db2catmap(object):
                                                   select=ts_selection)
 
     def get_molecules(self, fname, selection=[]):
+        """ Method for importing molecules.
+        
+        Parameters
+        ----------
+        fname : str
+            path and filename of an ase database file containing molecules.
+        """
         [mol_epot,
          mol_freq,
          mol_de,
@@ -103,12 +99,12 @@ class db2catmap(object):
         self.de.update(mol_de)
         self.dbid.update(mol_dbid)
 
-    def get_surfaces(self, fname, selection=[]):
+    def get_surfaces(self, fname, selection=[], site_specific=False):
         [surf_epot,
          surf_freq,
          surf_de,
          surf_dbid] = self._db2surf(fname, selection=selection,
-                                    freq_path='.')
+                                    freq_path='.', site_specific=site_specific)
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
         self.de.update(surf_de)
@@ -126,8 +122,17 @@ class db2catmap(object):
         self.de.update(surf_de)
         self.dbid.update(surf_dbid)
 
-    def calc_formation_energies(self,
-                                references={'O': 'H2O_gas', 'C': 'CH4_gas'}):
+    def calc_formation_energies(self, references=(('H', 'H2_gas'),
+                                                  ('O', 'H2O_gas'),
+                                                  ('C', 'CH4_gas'),)):
+        """ Method for generating formation energies.
+
+        Parameters
+        ----------
+        references : list of tuples of strings.
+            The first item in each tuple must be an atomic symbol, and the 
+            second item in each tuple must be a reference <species name>_gas
+        """
         # Get atomic reference energies.
         self._mol2ref(references=references)
         # Make a dictionary with slab references and atomic references.
@@ -141,10 +146,26 @@ class db2catmap(object):
             frequecies,
             non-selfconsistent BEEF perturbations,
             database ids.
+        
+        Parameters
+        ----------
+        fname : str
+            path and filename of ase db file.
+        
 
-            File dependencies
-            -----------------
-                fname : ase.db file.
+        File dependencies:
+        ------------------
+        fname : ase-db file
+            Contains molecular reference states.
+            
+            Mandatory key value pairs:
+            --------------------------
+                    "energy" or "epot" : float
+                        DFT calculated potential energy.
+            Optional key value pairs:
+            --------------------------
+                    "data.BEEFens" : list
+                        32 non-selfconsistent BEEF-vdW energies.
         """
         cmol = ase.db.connect(fname)
         smol = cmol.select(selection)
@@ -153,7 +174,10 @@ class db2catmap(object):
         dbids = {}
         de = {}
         for d in smol:              # Get molecules from mol.db
-            abinitio_energy = float(d.epot)
+            if 'energy' in d:
+                abinitio_energy = float(d.energy)
+            else:
+                abinitio_energy = float(d.epot)
             species_name = str(d.formula)
             if species_name+'_gas' not in abinitio_energies:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
@@ -173,7 +197,8 @@ class db2catmap(object):
                     self.state.get_ensemble_perturbations(d.data.BEEFens)
         return abinitio_energies, freq_dict, de, dbids
 
-    def _db2surf(self, fname, selection=[], freq_path='.', sites=False):
+    def _db2surf(self, fname, selection=[], freq_path='.',
+                 site_specific=False):
         """ Returns four dictionaries containing:
             ab initio energies,
             frequecies,
@@ -190,10 +215,10 @@ class db2catmap(object):
                 path/filname.
             selection : list of strings.
                 Optional ase.db selection strings.
-            sites : boolean
-                If True: Dinstinguish sites using the site key value pair,
-                    in which case the site key value pair becomes mandatory.
-                Else: Use the minimum ab initio energy regardless of site.
+            site_specific : boolean
+                If True: Dinstinguish sites using the site key value pair, and
+                stores a the potential energy of adsorbates on each site.
+                Else: Use the minimum ab initio energy, disregarding the site.
         """
         csurf = ase.db.connect(fname)
         ssurf = csurf.select(selection)
@@ -208,20 +233,42 @@ class db2catmap(object):
                 continue
             if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
                 continue
-            cat = str(d.name)+'_'+str(d.phase)
-            abinitio_energy = float(d.epot)
-            surf_lattice = str(d.surf_lattice)
-            cell = str(d.supercell) + 'x' + str(d.layers)
-            n = int(d.n)
+            if 'energy' in d:
+                abinitio_energy = float(d.energy)              
+            else:
+                abinitio_energy = float(d.epot)
+            if 'supercell' in d:
+                cell = str(d.supercell)
+            else:
+                cell = 'XxY'
+            if 'layers' in d:
+                cell += 'x' + str(d.layers)
+            if 'phase'  in d:
+                phase = str(d.phase)
+            else:
+                phase = ''
+            if 'surf_lattice' in d:
+                surf_lattice = str(d.surf_lattice)
+            else:
+                surf_lattice = ''
+            if 'facet' in d:
+                facet = str(d.facet)
+            else:
+                str(d.facet)
+            if 'n' in d:
+                n = int(d.n)
+            else:
+                n = 1
             # composition=str(d.formula)
-            facet = str(d.facet)
             if species == '' or ('ads' in d and ads == 'slab'):
                 species = ''
                 site = 'slab'
-            elif sites:
+                n = 0
+            elif site_specific:
                 site = str(d.site)
             else:
                 site = 'site'
+            cat = str(d.name) + '_' + phase
             site_name = surf_lattice + '_' + facet + '_' + cell + '_' + site
             key = str(n) + '_' + species + '_' + cat + '_' + site_name
             if key not in abinitio_energies:
@@ -265,10 +312,30 @@ class db2catmap(object):
             species = str(d.species)
             if '-' not in species:
                 continue
-            cell = str(d.supercell) + 'x' + str(d.layers)
-            surf = str(d.name) + '_' + str(d.phase) + '_' + \
-                str(d.surf_lattice) + '_' + str(d.facet) + '_' + cell
-            abinitio_energy = float(d.epot)
+            if 'supercell' in d:
+                cell = str(d.supercell)
+            else:
+                cell = 'XxY'
+            if 'layers' in d:
+                cell += 'x' + str(d.layers)
+            if 'phase'  in d:
+                phase = str(d.phase)
+            else:
+                phase = ''
+            if 'surf_lattice' in d:
+                surf_lattice = str(d.surf_lattice)
+            else:
+                surf_lattice = ''
+            if 'facet' in d:
+                facet = str(d.facet)
+            else:
+                str(d.facet)
+            surf = str(d.name) + '_' + phase + '_' + \
+                surf_lattice + '_' + facet + '_' + cell
+            if 'energy' in d:
+                abinitio_energy = float(d.energy)
+            else:
+                abinitio_energy = float(d.epot)
             dbid = int(d.id)
             try:
                 BEEFens = d.data.BEEFens
@@ -607,7 +674,7 @@ class db2catmap(object):
         """
         # Create a header
         c = ase.db.connect(fname)
-        spreadsheet = [['chemical_composition', 'facet', 'AB', 'A', 'B',
+        spreadsheet = [['chemical_composition', 'facet', 'reactants', 'products',
                         'reaction_energy', 'beef_standard_deviation',
                         'activation_energy', 'DFT_code', 'DFT_functional',
                         'reference', 'url']]
@@ -639,13 +706,10 @@ class db2catmap(object):
                     if site == 'gas':
                         continue
                     else:
-                        surface = cat  # +'_'+pha #useful to include phase.
-                        # phase = pha
-                        # site_name = lattice + '_' + site
+                        surface = cat
                     composition = string2symbols(name)
                     nC = composition.count('C')
                     nH = composition.count('H')
-                    AB = name
                     if nC is not 0:
                         A = (str(int(nC)) +
                              'CH4gas').replace('1.0', '').replace('1', '')
@@ -653,26 +717,28 @@ class db2catmap(object):
                         A = ''
                     B = (str(nH/2. - 2 * nC) +
                          'H2gas').replace('1.0', '')
-                    A_B = A + '_' + B
-                    path_reaction = project + AB + 'star_' + A_B + '_star'
+                    rname = '_'.join(reactions[i]['reactants'])
+                    pname = '_'.join(reactions[i]['products'])
+                    reaction_name = '__'.join([rname, pname])
+                    path_reaction = project + reaction_name
                     path_surface = path_reaction + '/' + surface + '_' + facet
                     atoms = c.get_atoms(self.epot[key])
                     slab = c.get_atoms(self.epot['_' + cat + '_' + pha +
                                        '_' + lattice + '_' + facet + '_slab'])
-                    if not AB + 'star_' + A_B + '_star' in listdir(project):
+                    if not reaction_name in listdir(project):
                         print('Creating ' + path_reaction)
                         mkdir(path_reaction)
-                    # CH4.write(path_reaction + '/CH4gas.traj')
-                    # H2.write(path_reaction + '/H2gas.traj')
                     if not surface + '_' + facet in listdir(path_reaction):
                         print('Creating ' + path_surface)
                         mkdir(path_surface)
                     slab.write(path_surface + '/empty_surface.traj')
                     slab.write(path_surface + '/empty_surface.xyz')
-                    atoms.write(path_surface + '/' + AB + '.traj')
-                    atoms.write(path_surface + '/' + AB + '.xyz')
+                    for reactant in reactions[i]['reactants']:
+                        atoms.write(path_surface + '/' + reactant + '.traj')
+                    for product in reactions[i]['products']:
+                        atoms.write(path_surface + '/' + product + '.traj')                    
                     activation_energy = np.NaN
-                    spreadsheet.append([surface, facet, AB, A, B,
+                    spreadsheet.append([surface, facet, rname, pname,
                                         Ef, bee, activation_energy,
                                         'Quantum Espresso',
                                         'BEEF-vdW', 'M. H. Hansen, 2017',

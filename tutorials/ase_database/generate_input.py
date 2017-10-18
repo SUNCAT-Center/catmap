@@ -1,40 +1,58 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct  6 10:47:15 2016
+Title: generate_input.py
 
-@author: mhangaard
+Description
+-----------
+    Creates CATMAP input table from ase databases.
 
-Title: db2catmap_input
-
-Description:
-    Creates CATMAP input table from ase db files
-
-Input:
-    1) string: <name>
-
-
-Dependencies:
-    mol.db: db file which must include the key-value fields:
-        "enrgy" with float value of DFT calculated electronic energy.
-        "vacuum" with float value specifying amount of vacuum.
-        "pw" float with plane wave cutoff.
-
-    <name>.db: db file, which must include the key-value fields:
-        "name" with str value that identifies the catalyst stochiometry.
-        "phase" with str value that identifies the catalyst phase.
-        "facet" with str value that identifies the site.
-        "series" with string value of 'slab' or adsorbate chemical formula.
-        "enrgy" with float value of DFT calculated electronic energy.
-        "pw" float with plane wave cutoff.
-        "kpts" str with k-points in the plane dimensions separated by 'x'
+Input
+----
+    argv[1] : string
+        Output filename, e.g. my_input.txt
 
 
-Output:
-    CATMAP input file: <name>.txt
+Dependencies
+------------
+        db file which must include the key-value fields:
+        "epot" with float value of DFT calculated electronic energy.
 
-Example:
-    python db2catmap_input therm_dft
-    will produce "therm_dft.txt"
+    <name>.db: db file
+        file for molecules.
+        Must include the key-value-pairs:
+            "name" : str
+                identifies the catalyst.
+            "energy" or "epot" : float
+                calculated potential energy.
+
+    <name>.db: db file
+        file for surfaces and adsorbate structures.
+        Must include the key-value-pairs:
+            "name" : str
+                identifies the catalyst.
+            "energy" or "epot" : float
+                calculated potential energy.
+            "species" : str
+                adsorbate chemical formula.
+        Recommended key-value-pairs:
+            "phase" : str
+                identifies the catalyst crystal phase.
+            "facet" : str 
+                identifies the site.
+            "supercell" : str
+                formatted XxY
+                identifies the supercell.
+            "layers" : int
+                number of layers in the slab.
+
+Output
+------
+    <name>.txt : text file
+        CATMAP input file.
+
+Example
+-------
+    python generate_input.py my_input.txt
 """
 from sys import argv
 from catmap.asedb2catmap import db2catmap
@@ -42,12 +60,14 @@ from catmap.asedb2catmap import db2catmap
 # Initialize thermodynamics module.
 dehydro = db2catmap()
 
-# Define search filters.
-
+# Step 1: Define search filters. These are needed to select comparable data.
+# They are typically calculation parameters, supercell sizes,
+# number of layers in slabs
 # Search strings for molecules.
-mol_select = ['vacuum=8', 'fmaxout<0.05']
+mol_select = ['vacuum=8', 'fmaxout<0.05', 'pw=500']
 
-# Import molecules from ase database.
+# Step 2: Import from an ase database.
+# Import molecules.
 dehydro.get_molecules('molecules.db', selection=mol_select)
 
 # Search strings for all slabs, adsorbates.
@@ -61,19 +81,22 @@ surfaces2 = ['facet=0x0x1', 'phase=hcp', 'kpts=4x6', 'supercell=3x2',
 surfaces3 = ['surf_lattice=hexagonal', 'kpts=6x6', 'supercell=1x1'] + fixed_p
 
 # Import three different subsets of slabs, adsorbates.
-dehydro.get_surfaces('surfaces.db', selection=surfaces1)
-dehydro.get_surfaces('surfaces.db', selection=surfaces2)
-dehydro.get_surfaces('surfaces.db', selection=surfaces3)
+dehydro.get_surfaces('surfaces.db', selection=surfaces1, site_specific=False)
+dehydro.get_surfaces('surfaces.db', selection=surfaces2, site_specific=False)
+dehydro.get_surfaces('surfaces.db', selection=surfaces3, site_specific=False)
 
 # Get transition states.
 # dehydro.get_transition_states('fbl.db', selection=['Re=0'])
 # dehydro.get_transition_states('fbl.db', selection=['Re', 'species!=CH2CH2-H'])
 
-# Calculate formation energies with custom elemental references.
-dehydro.calc_formation_energies(references={'H': 'H2_gas',
-                                            'O': 'H2O_gas',
-                                            'C': 'CH4_gas'})
+# Step 3: Calculate formation energies of adsorbates and transition states.
+# refences is an optional parameter, 
+# which defines the energy references for each element.
+dehydro.calc_formation_energies(references=(('H', 'H2_gas'),
+                                            ('O', 'H2O_gas'),
+                                            ('C', 'CO_gas'),))
+# The defaults are as hydrogen, water and methane.
 
-# Save catmap input file.
-file_name = argv[1] + '.txt'
+# Step 4: Save catmap input file.
+file_name = argv[1]
 dehydro.make_input_file(file_name)
