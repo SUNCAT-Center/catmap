@@ -58,7 +58,7 @@ from sys import argv
 from catmap.asedb2catmap import db2catmap
 
 # Initialize thermodynamics module.
-dehydro = db2catmap()
+project = db2catmap()
 
 # Step 1: Define search filters. These are needed to select comparable data.
 # They are typically calculation parameters, supercell sizes,
@@ -68,7 +68,8 @@ mol_select = ['vacuum=8', 'fmaxout<0.05', 'pw=500']
 
 # Step 2: Import from an ase database.
 # Import molecules.
-dehydro.get_molecules('molecules.db', selection=mol_select)
+print('Importing molecules.')
+project.get_molecules('molecules.db', selection=mol_select)
 
 # Search strings for all slabs, adsorbates.
 fixed_p = ['ads!=FBL', 'ads!=NEB', 'layers=5', 'pw=500', 'psp=gbrv1.5pbe',
@@ -81,22 +82,22 @@ surfaces2 = ['facet=0x0x1', 'phase=hcp', 'kpts=4x6', 'supercell=3x2',
 surfaces3 = ['surf_lattice=hexagonal', 'kpts=6x6', 'supercell=1x1'] + fixed_p
 
 # Import three different subsets of slabs, adsorbates.
-dehydro.get_surfaces('surfaces.db', selection=surfaces1, site_specific=False)
-dehydro.get_surfaces('surfaces.db', selection=surfaces2, site_specific=False)
-dehydro.get_surfaces('surfaces.db', selection=surfaces3, site_specific=False)
+print('Importing surfaces.')
+project.get_surfaces('surfaces.db', selection=surfaces1, site_specific=False)
+project.get_surfaces('surfaces.db', selection=surfaces2, site_specific=False)
+project.get_surfaces('surfaces.db', selection=surfaces3, site_specific=False)
 
 # Get transition states.
-# dehydro.get_transition_states('fbl.db', selection=['Re=0'])
-# dehydro.get_transition_states('fbl.db', selection=['Re', 'species!=CH2CH2-H'])
+# dehydro.get_transition_states('neb.db')
 
 # Step 3: Calculate formation energies of adsorbates and transition states.
-# refences is an optional parameter, 
+# refences is an optional parameter,
 # which defines the energy references for each element.
-dehydro.calc_formation_energies(references=(('H', 'H2_gas'),
+project.calc_formation_energies(references=(('H', 'H2_gas'),
                                             ('O', 'H2O_gas'),
                                             ('C', 'CO_gas'),))
 # The defaults are as hydrogen, water and methane.
 
 # Step 4: Save catmap input file.
 file_name = argv[1]
-dehydro.make_input_file(file_name)
+project.make_input_file(file_name)

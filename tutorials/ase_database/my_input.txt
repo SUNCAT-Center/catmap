@@ -37,9 +37,9 @@ Ni	fcc	hexagonal_site	H	-0.3385	[]	mhangaard	0.167	0.0843955081031
 Ni	fcc	hexagonal_site	O	0.1946	[]	mhangaard	0.167	0.207749398951
 Ni	fcc	hexagonal_site	OH	0.0355	[]	mhangaard	0.167	0.194752455228
 None		gas	CH4	-2.6036	[]	mhangaard	0	0.257209191244
-None		gas	CO	0.0	[]	mhangaard	0	5.25136759658
-None		gas	H2	0.0	[]	mhangaard	0	0.554171407918
-None		gas	H2O	0.0	[]	mhangaard	0	1.10834281584
+None		gas	CO	0.0	[]	mhangaard	0	6.20478360528e-19
+None		gas	H2	0.0	[]	mhangaard	0	0.0
+None		gas	H2O	0.0	[]	mhangaard	0	0.0
 Pd	fcc	hexagonal_site	C	-0.4665	[]	mhangaard	0.167	0.387695736722
 Pd	fcc	hexagonal_site	CH	-1.2158	[]	mhangaard	0.167	0.298675274354
 Pd	fcc	hexagonal_site	CH3	-1.9217	[]	mhangaard	0.167	0.245544457432

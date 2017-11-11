@@ -50,11 +50,10 @@ Description:
             Expand this feature to individual frequency lists for individual
             catalysts.
 """
-from os import mkdir, listdir, environ
+from os import listdir, environ
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
-import json
 from catmap.bee import BEEFEnsemble as BEE
 import csv
 
@@ -74,16 +73,15 @@ class db2catmap(object):
         self.formation_energies = {}
         self.std = {}
         if mol_db is not None:
-            self.attach_molecules(mol_db, select=mol_select)
+            self.get_molecules(mol_db, selection=mol_select)
             if ads_db is not None:
-                self.attach_surfaces(ads_db, select=ads_select)
+                self.get_surfaces(ads_db, selection=ads_select)
                 if ts_db is not None:
-                    self.rxn_paths = self._db2pes(ts_db,
-                                                  select=ts_selection)
+                    self.get_transition_states(ts_db, selection=ts_selection)
 
-    def get_molecules(self, fname, selection=[]):
+    def get_molecules(self, fname, selection=[], frequency_db=None):
         """ Method for importing molecules.
-        
+
         Parameters
         ----------
         fname : str
@@ -93,30 +91,48 @@ class db2catmap(object):
          mol_freq,
          mol_de,
          mol_dbid] = self._db2mol(fname, selection=selection,
-                                  freq_path='.')
+                                  freq_path=frequency_db)
         self.epot.update(mol_epot)
         self.freq.update(mol_freq)
         self.de.update(mol_de)
         self.dbid.update(mol_dbid)
 
-    def get_surfaces(self, fname, selection=[], site_specific=False):
+    def get_surfaces(self, fname, selection=[], site_specific=False,
+                     frequency_db=None):
+        """ Method for importing slabs and adsorbates.
+
+        Parameters
+        ----------
+        fname : str
+            path and filename of an ase database file containing slabs.
+        """
         [surf_epot,
          surf_freq,
          surf_de,
          surf_dbid] = self._db2surf(fname, selection=selection,
-                                    freq_path='.', site_specific=site_specific)
+                                    freq_path=frequency_db,
+                                    site_specific=site_specific)
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
         self.de.update(surf_de)
         self.dbid.update(surf_dbid)
 
-    def get_transition_states(self, fname, selection=[]):
+    def get_transition_states(self, fname, selection=[], frequency_db=None):
+        """ Method for importing surface transition states.
+
+        Parameters
+        ----------
+        fname : str
+            path and filename of an ase database file
+            containing reaction images.
+        """
+
         rxn_paths = self._db2pes(fname, selection=selection)
         self.rxn_paths.update(rxn_paths)
         [surf_epot,
          surf_freq,
          surf_de,
-         surf_dbid] = self.pes2ts()
+         surf_dbid] = self.pes2ts(freq_path=frequency_db)
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
         self.de.update(surf_de)
@@ -130,7 +146,7 @@ class db2catmap(object):
         Parameters
         ----------
         references : list of tuples of strings.
-            The first item in each tuple must be an atomic symbol, and the 
+            The first item in each tuple must be an atomic symbol, and the
             second item in each tuple must be a reference <species name>_gas
         """
         # Get atomic reference energies.
@@ -140,24 +156,24 @@ class db2catmap(object):
         self._get_BEEstd()
         self._get_formation_energies()
 
-    def _db2mol(self, fname, selection=[], freq_path='.'):
+    def _db2mol(self, fname, selection=[], freq_path=None):
         """ Returns four dictionaries containing:
             ab initio energies,
             frequecies,
             non-selfconsistent BEEF perturbations,
             database ids.
-        
+
         Parameters
         ----------
         fname : str
             path and filename of ase db file.
-        
+
 
         File dependencies:
         ------------------
         fname : ase-db file
             Contains molecular reference states.
-            
+
             Mandatory key value pairs:
             --------------------------
                     "energy" or "epot" : float
@@ -169,6 +185,8 @@ class db2catmap(object):
         """
         cmol = ase.db.connect(fname)
         smol = cmol.select(selection)
+        if freq_path is not None:
+            c_freq = ase.db.connect(freq_path)
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
@@ -183,21 +201,24 @@ class db2catmap(object):
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
                 de[species_name+'_gas'] = \
-                    self.state.get_ensemble_perturbations(d.data.BEEFens)
-                try:
-                    freq = json.load(open(freq_path + '/' + species_name +
-                                          '_gas.freq', 'r'))
-                    freq_dict.update(freq)
-                except IOError:
-                    print('no frequencies for', species_name, '(g)')
+                    self.state.get_ensemble_perturbations(
+                        d.data.BEEFvdW_contribs)
+                if freq_path is not None:
+                    try:
+                        d_freq = c_freq.get(['formula='+species_name])
+                        frequencies = d_freq.data.frequencies
+                        freq_dict.update({species_name + '_gas': frequencies})
+                    except KeyError:
+                        continue
             elif abinitio_energies[species_name+'_gas'] > abinitio_energy:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
                 de[species_name+'_gas'] = \
-                    self.state.get_ensemble_perturbations(d.data.BEEFens)
+                    self.state.get_ensemble_perturbations(
+                        d.data.BEEFvdW_contribs)
         return abinitio_energies, freq_dict, de, dbids
 
-    def _db2surf(self, fname, selection=[], freq_path='.',
+    def _db2surf(self, fname, selection=[], freq_path=None,
                  site_specific=False):
         """ Returns four dictionaries containing:
             ab initio energies,
@@ -221,20 +242,23 @@ class db2catmap(object):
                 Else: Use the minimum ab initio energy, disregarding the site.
         """
         csurf = ase.db.connect(fname)
+        if freq_path is not None:
+            c_freq = ase.db.connect(freq_path)
         ssurf = csurf.select(selection)
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
         de = {}
         for d in ssurf:                     # Get slab and adsorbates from .db
-            ads = str(d.ads)
             species = str(d.species)
             if '-' in species:
                 continue
+            ads = str(d.ads)
+            name = str(d.name)
             if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
                 continue
             if 'energy' in d:
-                abinitio_energy = float(d.energy)              
+                abinitio_energy = float(d.energy)
             else:
                 abinitio_energy = float(d.epot)
             if 'supercell' in d:
@@ -243,7 +267,7 @@ class db2catmap(object):
                 cell = 'XxY'
             if 'layers' in d:
                 cell += 'x' + str(d.layers)
-            if 'phase'  in d:
+            if 'phase' in d:
                 phase = str(d.phase)
             else:
                 phase = ''
@@ -268,26 +292,30 @@ class db2catmap(object):
                 site = str(d.site)
             else:
                 site = 'site'
-            cat = str(d.name) + '_' + phase
+            cat = name + '_' + phase
             site_name = surf_lattice + '_' + facet + '_' + cell + '_' + site
             key = str(n) + '_' + species + '_' + cat + '_' + site_name
             if key not in abinitio_energies:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
-                de[key] = self.state.get_ensemble_perturbations(d.data.BEEFens)
-                if species != '' and ads != 'slab':
+                try:
+                    contribs = d.data.BEEFvdW_contribs
+                    de[key] = self.state.get_ensemble_perturbations(contribs)
+                except AttributeError:
+                    print(dbids[key], 'has no BEEF contribs')
+                    continue
+                if species != '' and ads != 'slab' and freq_path is not None:
                     try:
-                        freq = json.load(open(freq_path + '/' + species + '_' +
-                                              surf_lattice + '.freq', 'r'))
-                        freq_dict.update({key: freq[species +
-                                                    '_' + surf_lattice]})
-                    except IOError:
-                        print('no frequencies for',
-                              species + '_' + site_name)
+                        d_freq = c_freq.get(['species='+species, 'name='+name])
+                        frequencies = d_freq.data.frequencies
+                        freq_dict.update({key: frequencies})
+                    except KeyError:
+                        continue
             elif abinitio_energies[key] > abinitio_energy:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
-                de[key] = self.state.get_ensemble_perturbations(d.data.BEEFens)
+                contribs = d.data.BEEFvdW_contribs
+                de[key] = self.state.get_ensemble_perturbations(contribs)
         return abinitio_energies, freq_dict, de, dbids
 
     def _db2pes(self, fname, selection=[]):
@@ -318,7 +346,7 @@ class db2catmap(object):
                 cell = 'XxY'
             if 'layers' in d:
                 cell += 'x' + str(d.layers)
-            if 'phase'  in d:
+            if 'phase' in d:
                 phase = str(d.phase)
             else:
                 phase = ''
@@ -338,10 +366,10 @@ class db2catmap(object):
                 abinitio_energy = float(d.epot)
             dbid = int(d.id)
             try:
-                BEEFens = d.data.BEEFens
-                de = self.state.get_ensemble_perturbations(BEEFens)
+                BEEFvdW_contribs = d.data.BEEFvdW_contribs
+                de = self.state.get_ensemble_perturbations(BEEFvdW_contribs)
             except AttributeError:
-                print(dbid, species, surf, 'missing BEEF perturbations.')
+                print(dbid, 'has no BEEF contribs')
                 de = np.zeros(2000)
             rxn_id = str(d.path_id)
             if rxn_id in rxn_paths:
@@ -351,25 +379,30 @@ class db2catmap(object):
                 try:
                     rxn_paths[rxn_id]['distance'].append(float(d.distance))
                 except AttributeError:
-                    continue
                     # Do nothing.
+                    continue
                 if 'image' in d:
                     rxn_paths[rxn_id]['images'].append(int(d.image))
                 else:
                     rxn_paths[rxn_id]['images'].append(int(d.step))
             else:
+                if 'site' in d:
+                    site = str(d.site)
+                else:
+                    site = 'site'
                 rxn_paths[rxn_id] = {'surface_name': surf,
                                      'species': species,
                                      'pes': [abinitio_energy],
                                      'dbids': [dbid],
                                      'de': [de],
+                                     'site': site,
                                      'images': [int(d.step)],
                                      'distance': [float(d.distance)]}
         return rxn_paths
 
     def _mol2ref(self,
                  references=(('H', 'H2_gas'), ('O', 'H2O_gas'),
-                             ('C', 'CH4_gas'))):
+                             ('C', 'CH4_gas'),)):
         """ Returns two dictionaries containing:
             abinitio energy references for atoms
             32 non-selfconsitent perturbations for atoms.
@@ -381,7 +414,7 @@ class db2catmap(object):
             key = t[0]
             species = t[1]
             atomic_e[key] = self.epot[species]
-            atomic_de[key] = self.de[species]
+            atomic_de[key] = np.array(self.de[species])
             composition = string2symbols(species.split('_')[0])
             n = 0.
             for symbol in composition:
@@ -389,10 +422,9 @@ class db2catmap(object):
                     n += 1
                 else:
                     atomic_e[key] -= atomic_e[symbol]
-                    atomic_de[key] -= atomic_de[symbol]
+                    atomic_de[key] -= np.array(atomic_de[symbol])
             atomic_e[key] /= n
             atomic_de[key] /= n
-        print(atomic_e)
         self.atomic_e = atomic_e
         self.atomic_de = atomic_de
         # return atomic_e, atomic_de
@@ -513,14 +545,16 @@ class db2catmap(object):
             BEE_lambda[slab] = eigval / len(cov)
         return BEE_PC, BEE_lambda
 
-    def pes2ts(self, freq_path='.'):
+    def pes2ts(self, freq_path=None):
         """ Returns dictionaries containing transition state ab initio energies.
 
             Input parameters
             ----------------
-            rxn_paths : dictionary
-                Created by the db2pes function.
+            freq_path : str
+                path/folder where frequency files are located.
         """
+        if freq_path is not None:
+            c_freq = ase.db.connect(freq_path)
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
@@ -529,7 +563,8 @@ class db2catmap(object):
         for rxn_id in self.rxn_paths:
             species = self.rxn_paths[rxn_id]['species']
             m = self.rxn_paths[rxn_id]['surface_name']
-            key = '0_' + species + '_' + m + '_site'
+            site = self.rxn_paths[rxn_id]['site']
+            key = '0_' + species + '_' + m + '_' + site
             images = self.rxn_paths[rxn_id]['images']
             if len(np.unique(images)) != len(images):
                 print('non unique image number!', m, species, images)
@@ -555,13 +590,13 @@ class db2catmap(object):
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
                 de[key] = self.rxn_paths[rxn_id]['de'][tst]
-                try:
-                    freq = json.load(open(freq_path + '/' + species + '_' + m +
-                                          '.freq', 'r'))
-                    freq_dict.update({species + '_' + m + '_' + key:
-                                      freq[species + '_' + m]})
-                except IOError:
-                    print('no frequencies for', key)
+                if freq_path is not None:
+                    try:
+                        d_freq = c_freq.get('path_id='+rxn_id)
+                        frequencies = d_freq.data.frequencies
+                        freq_dict.update({key: frequencies})
+                    except KeyError:
+                        continue
             elif abinitio_energies[key] > pes[tst]:
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
@@ -606,7 +641,7 @@ class db2catmap(object):
                 except KeyError:
                     frequency = []
                 try:
-                    std = self.std[key]
+                    std = round(self.std[key], 4)
                 except KeyError:
                     std = np.NaN
             else:
@@ -617,7 +652,7 @@ class db2catmap(object):
                 except KeyError:
                     frequency = []
                 try:
-                    std = self.std[key]
+                    std = round(self.std[key], 4)
                 except KeyError:
                     std = np.NaN
                 if site == 'gas':
@@ -634,7 +669,7 @@ class db2catmap(object):
                                      (float(cell[0]) * float(cell[2])), 3)
                 E = float(E)
                 outline = [surface, phase, site_name, name,
-                           E, frequency, environ['USER'], coverage, std]
+                           E, list(frequency), environ['USER'], coverage, std]
                 line = '\t'.join([str(w) for w in outline])
                 lines.append(line)
         # The file is easier to read if sorted (optional).
@@ -650,12 +685,12 @@ class db2catmap(object):
         # Close the file.
         input.close()
 
-    def make_catapp_files(self, fname, project):
+    def make_catapp_files(self, fname, project, reactions):
         """ Saves the catmap input file.
 
         Parameters
         ----------
-        file_name : string
+        path : string
             path and name of an ase database file.
         energy_dict : dictionary
             Contains formation energies. Each species is represented by a field
@@ -673,76 +708,54 @@ class db2catmap(object):
             corresponding to energy_dict.
         """
         # Create a header
-        c = ase.db.connect(fname)
         spreadsheet = [['chemical_composition', 'facet', 'reactants', 'products',
                         'reaction_energy', 'beef_standard_deviation',
                         'activation_energy', 'DFT_code', 'DFT_functional',
                         'reference', 'url']]
-        for key in self.dbid.keys():  # Iterate through keys
-            if key in self.epot:
-                Ef = self.epot[key]  # formation energy
-                if 'gas' in key:
-                    name, site = key.split('_')  # Split key into name/site
-                    # try:
-                    #     frequency = freq_dict[key]
-                    # except KeyError:
-                    #     frequency = []
-                    # try:
-                    #     bee = bee_dict[key]
-                    # except KeyError:
-                    #     bee = np.NaN
-                else:
-                    name, cat, pha, lattice, facet, site = key.split('_')
-                if 'slab' not in key:  # Do not include empty site energy (0)
-                    print(key)
-                    # try:
-                    #     frequency = freq_dict[key]
-                    # except KeyError:
-                    #     frequency = []
-                    try:
-                        bee = self.de[key]
-                    except KeyError:
-                        bee = np.NaN
-                    if site == 'gas':
-                        continue
-                    else:
-                        surface = cat
-                    composition = string2symbols(name)
-                    nC = composition.count('C')
-                    nH = composition.count('H')
-                    if nC is not 0:
-                        A = (str(int(nC)) +
-                             'CH4gas').replace('1.0', '').replace('1', '')
-                    else:
-                        A = ''
-                    B = (str(nH/2. - 2 * nC) +
-                         'H2gas').replace('1.0', '')
-                    rname = '_'.join(reactions[i]['reactants'])
-                    pname = '_'.join(reactions[i]['products'])
-                    reaction_name = '__'.join([rname, pname])
-                    path_reaction = project + reaction_name
-                    path_surface = path_reaction + '/' + surface + '_' + facet
-                    atoms = c.get_atoms(self.epot[key])
-                    slab = c.get_atoms(self.epot['_' + cat + '_' + pha +
-                                       '_' + lattice + '_' + facet + '_slab'])
-                    if not reaction_name in listdir(project):
-                        print('Creating ' + path_reaction)
-                        mkdir(path_reaction)
-                    if not surface + '_' + facet in listdir(path_reaction):
-                        print('Creating ' + path_surface)
-                        mkdir(path_surface)
-                    slab.write(path_surface + '/empty_surface.traj')
-                    slab.write(path_surface + '/empty_surface.xyz')
-                    for reactant in reactions[i]['reactants']:
-                        atoms.write(path_surface + '/' + reactant + '.traj')
-                    for product in reactions[i]['products']:
-                        atoms.write(path_surface + '/' + product + '.traj')                    
-                    activation_energy = np.NaN
-                    spreadsheet.append([surface, facet, rname, pname,
-                                        Ef, bee, activation_energy,
-                                        'Quantum Espresso',
-                                        'BEEF-vdW', 'M. H. Hansen, 2017',
-                                        'suncat.stanford.edu'])
+        c = ase.db.connect(fname)
+        rpaths = []
+        spath = []
+        fpath = []
+        for key in self.formation_energies:
+            for i in range(len(reactions)):
+                states = reactions[i].split('<->').split('->').split('<-')
+                reactants = states[0].split['+'].split('_')[0].replace('*','')
+                products = states[1].split['+'].split('_')[0].replace('*','')
+                rname = '_'.join(reactants)
+                pname = '_'.join(products)
+                reaction_name = '__'.join([rname, pname])
+                path_reaction = project + '/' + reaction_name
+                if not reaction_name in listdir(project):
+                    rpaths.append(path_reaction)
+                n, ads, surf, pha, fac, lat, cell, site = key.split('_')
+                path_surface = path_reaction + '/' + surf
+                if not surf in listdir(path_reaction):
+                    spath.append(path_surface)
+                path_facet = path_surface + '/' + fac                  
+                if not fac in listdir(path_surface):
+                    fpath.append(path_facet)
+                slabkey = '_' + surf + '_' + pha + '_' + lat + \
+                    '_' + fac + '_slab'
+                if slabkey not in self.dbid:
+                    continue
+                for reactant in reactions[i]['reactants']:
+                    pkey = '1_' + product + '_' + surface + '_' + \
+                        lattice + '_' + cell + '_' + site
+                    ratoms = c.get_atoms(self.dbid[rkey])
+                    ratoms.write(path_facet + '/' + reactant + '.traj')
+                for product in reactions[i]['products']:
+                    pkey = '1_' + product + '_' + surface + '_' + \
+                        lattice + '_' + cell + '_' + site
+                    patoms = c.get_atoms(self.dbid[pkey])
+                    patoms.write(path_facet + '/' + product + '.traj')
+                slab.write(path_facet + '/empty_surface.traj')
+                ts = reactions[i]['ts']
+                c.get_atoms(dbid[ts])
+        spreadsheet.append([surface, facet, rname, pname,
+                            DeltaE, std, activation_energy,
+                            'Quantum Espresso',
+                            'BEEF-vdW', 'M. H. Hansen, 2017',
+                            'suncat.stanford.edu'])
         with open(project+'test.csv', 'wb') as f:
             writer = csv.writer(f)
             writer.writerows(spreadsheet)
