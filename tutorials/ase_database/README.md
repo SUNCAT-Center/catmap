@@ -13,7 +13,7 @@ In the end of your calculation script, you can add the lines:
 
 which will write a row to your db file. If the file is not there already,
 it will be created. The above keys are suitable for relaxed slab and adsorbate structures.
-If the structure is a clean slab, put an empty string `''` in species.
+If the structure is a clean slab, put an empty string `''` in `species`.
 
 ## How to import the data
 

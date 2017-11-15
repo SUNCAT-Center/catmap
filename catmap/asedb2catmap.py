@@ -50,7 +50,8 @@ Description:
             Expand this feature to individual frequency lists for individual
             catalysts.
 """
-from os import listdir, environ
+from os import listdir, environ, mkdir
+import os.path
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
@@ -73,11 +74,14 @@ class db2catmap(object):
         self.formation_energies = {}
         self.std = {}
         if mol_db is not None:
+            self.mol_db = mol_db
             self.get_molecules(mol_db, selection=mol_select)
             if ads_db is not None:
+                self.ads_db = ads_db
                 self.get_surfaces(ads_db, selection=ads_select)
                 if ts_db is not None:
                     self.get_transition_states(ts_db, selection=ts_selection)
+        self.ts_db = ts_db
 
     def get_molecules(self, fname, selection=[], frequency_db=None):
         """ Method for importing molecules.
@@ -197,12 +201,15 @@ class db2catmap(object):
             else:
                 abinitio_energy = float(d.epot)
             species_name = str(d.formula)
+            try:
+                contribs = d.data.BEEFvdW_contribs
+                ens = self.state.get_ensemble_perturbations(contribs)
+            except AttributeError:
+                ens = 0  # np.zeros(self.state.size)
             if species_name+'_gas' not in abinitio_energies:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
-                de[species_name+'_gas'] = \
-                    self.state.get_ensemble_perturbations(
-                        d.data.BEEFvdW_contribs)
+                de[species_name+'_gas'] = ens
                 if freq_path is not None:
                     try:
                         d_freq = c_freq.get(['formula='+species_name])
@@ -213,9 +220,7 @@ class db2catmap(object):
             elif abinitio_energies[species_name+'_gas'] > abinitio_energy:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
-                de[species_name+'_gas'] = \
-                    self.state.get_ensemble_perturbations(
-                        d.data.BEEFvdW_contribs)
+                de[species_name+'_gas'] = contribs
         return abinitio_energies, freq_dict, de, dbids
 
     def _db2surf(self, fname, selection=[], freq_path=None,
@@ -284,7 +289,8 @@ class db2catmap(object):
             else:
                 n = 1
             # composition=str(d.formula)
-            if species == '' or ('ads' in d and ads == 'slab'):
+            if species == '' or ('ads' in d and
+                                 (ads == 'slab' or ads == 'clean')):
                 species = ''
                 site = 'slab'
                 n = 0
@@ -295,15 +301,15 @@ class db2catmap(object):
             cat = name + '_' + phase
             site_name = surf_lattice + '_' + facet + '_' + cell + '_' + site
             key = str(n) + '_' + species + '_' + cat + '_' + site_name
+            try:
+                contribs = d.data.BEEFvdW_contribs
+                ens = self.state.get_ensemble_perturbations(contribs)
+            except:
+                ens = 0  # np.zeros(self.state.size)
             if key not in abinitio_energies:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
-                try:
-                    contribs = d.data.BEEFvdW_contribs
-                    de[key] = self.state.get_ensemble_perturbations(contribs)
-                except AttributeError:
-                    print(dbids[key], 'has no BEEF contribs')
-                    continue
+                de[key] = ens
                 if species != '' and ads != 'slab' and freq_path is not None:
                     try:
                         d_freq = c_freq.get(['species='+species, 'name='+name])
@@ -314,8 +320,7 @@ class db2catmap(object):
             elif abinitio_energies[key] > abinitio_energy:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
-                contribs = d.data.BEEFvdW_contribs
-                de[key] = self.state.get_ensemble_perturbations(contribs)
+                de[key] = ens
         return abinitio_energies, freq_dict, de, dbids
 
     def _db2pes(self, fname, selection=[]):
@@ -367,15 +372,14 @@ class db2catmap(object):
             dbid = int(d.id)
             try:
                 BEEFvdW_contribs = d.data.BEEFvdW_contribs
-                de = self.state.get_ensemble_perturbations(BEEFvdW_contribs)
+                ens = self.state.get_ensemble_perturbations(BEEFvdW_contribs)
             except AttributeError:
-                print(dbid, 'has no BEEF contribs')
-                de = np.zeros(2000)
+                ens = 0  # np.zeros(self.state.size)
             rxn_id = str(d.path_id)
             if rxn_id in rxn_paths:
                 rxn_paths[rxn_id]['pes'].append(abinitio_energy)
                 rxn_paths[rxn_id]['dbids'].append(dbid)
-                rxn_paths[rxn_id]['de'].append(de)
+                rxn_paths[rxn_id]['de'].append(ens)
                 try:
                     rxn_paths[rxn_id]['distance'].append(float(d.distance))
                 except AttributeError:
@@ -394,7 +398,7 @@ class db2catmap(object):
                                      'species': species,
                                      'pes': [abinitio_energy],
                                      'dbids': [dbid],
-                                     'de': [de],
+                                     'de': [ens],
                                      'site': site,
                                      'images': [int(d.step)],
                                      'distance': [float(d.distance)]}
@@ -482,7 +486,7 @@ class db2catmap(object):
         """
         BEEstd = {}
         for key in self.de:
-            de = np.zeros(2000)
+            de = np.zeros(self.state.size)
             if 'gas' in key:
                 species, site_name = key.split('_')  # Split key into name/site
             else:
@@ -685,77 +689,171 @@ class db2catmap(object):
         # Close the file.
         input.close()
 
-    def make_catapp_files(self, fname, project, reactions):
-        """ Saves the catmap input file.
+    def make_nested_folders(self, project, reactions, surfaces=None,
+                            site='site', ads_db=None, mol_db=None, ts_db=None):
+        """Saves a nested directory structure,
+        compatible with the catapp project.
 
         Parameters
         ----------
-        path : string
+        fname : string
             path and name of an ase database file.
-        energy_dict : dictionary
-            Contains formation energies. Each species is represented by a field
-            and the fields must be named in the format
-            <species>_<surface>_<phase>_<surface lattice>_<facet>_<site>
-            or
-            <species>_gas
-        freq_dict : dictionary
-            Contains lists of frequencies.
-            Each species is represented by a field and the fields must be named
-            corresponding to energy_dict.
-        bee_dict : dictionary
-            Contains standard deviations on the energy.
-            Each species is represented by a field and the fields must be named
-            corresponding to energy_dict.
+        project : dictionary
+        reactions : list
         """
         # Create a header
-        spreadsheet = [['chemical_composition', 'facet', 'reactants', 'products',
-                        'reaction_energy', 'beef_standard_deviation',
+        spreadsheet = [['chemical_composition', 'facet', 'reactants',
+                        'products', 'reaction_energy',
+                        'beef_standard_deviation',
                         'activation_energy', 'DFT_code', 'DFT_functional',
                         'reference', 'url']]
-        c = ase.db.connect(fname)
-        rpaths = []
-        spath = []
-        fpath = []
-        for key in self.formation_energies:
-            for i in range(len(reactions)):
-                states = reactions[i].split('<->').split('->').split('<-')
-                reactants = states[0].split['+'].split('_')[0].replace('*','')
-                products = states[1].split['+'].split('_')[0].replace('*','')
-                rname = '_'.join(reactants)
-                pname = '_'.join(products)
-                reaction_name = '__'.join([rname, pname])
-                path_reaction = project + '/' + reaction_name
-                if not reaction_name in listdir(project):
-                    rpaths.append(path_reaction)
-                n, ads, surf, pha, fac, lat, cell, site = key.split('_')
-                path_surface = path_reaction + '/' + surf
-                if not surf in listdir(path_reaction):
-                    spath.append(path_surface)
-                path_facet = path_surface + '/' + fac                  
-                if not fac in listdir(path_surface):
-                    fpath.append(path_facet)
-                slabkey = '_' + surf + '_' + pha + '_' + lat + \
-                    '_' + fac + '_slab'
-                if slabkey not in self.dbid:
+        if surfaces is None:
+            surfaces = [s for s in self.reference_epot.keys() if 'slab' in s]
+        if mol_db is None:
+            mol_db = self.mol_db
+        if ads_db is None:
+            ads_db = self.ads_db
+        if ts_db is None:
+            ts_db = self.ts_db
+        c_ads = ase.db.connect(ads_db)
+        c_mol = ase.db.connect(mol_db)
+        if ts_db is not None:
+            c_ts = ase.db.connect(ts_db)
+        Nsurf = 0
+        Nrxn = 0
+        for i in range(len(reactions)):
+            states = reactions[i].replace(' ', '').split('<->')
+            if len(states) == 1:
+                states = states[0].split('->')
+                if len(states) == 1:
+                    states = states[0].split('<-')
+            elif len(states) < 3:
+                states = [states[0]] + states[-1].split('->')
+                if len(states) < 3:
+                    states = states[0].split('<-') + states[1:]
+            reactants = states[0].split('+')
+            tstates = states[1].split('+')
+            products = states[-1].split('+')
+            rspecies = [r.replace('*', 'star').split('_')[0] for r in reactants]
+            pspecies = [p.replace('*', 'star').split('_')[0] for p in products]
+            rname = '_'.join(rspecies)
+            pname = '_'.join(pspecies)
+            reaction_name = '__'.join([rname, pname])
+            path_reaction = project + '/' + reaction_name
+            for slabkey in surfaces:
+                totraj = {}
+                [n, species, name, phase,
+                 lattice, facet, cell, slab] = slabkey.split('_')
+                path_surface = path_reaction + '/' + name.replace('/', '')
+                path_facet = path_surface + '/' + facet.replace('x', '')
+                DeltaE = 0
+                de = 0  # np.zeros(self.state.size)
+                ea = 0
+                intermediates_exist = True
+                for reactant in reactants:
+                    species, sitesymbol = reactant.split('_')
+                    if species[0].isdigit():
+                        n = int(species[0])
+                        species = species[1:]
+                    else:
+                        n = 1
+                    if sitesymbol == 'g':
+                        rkey = species + '_gas'
+                        fname = path_reaction + '/' + rkey
+                    elif species == '*':
+                        rkey = slabkey
+                        fname = path_facet + '/empty_surface'
+                    else:
+                        rkey = '1_' + species.replace('*', '') + \
+                            '_' + name + '_' + phase + '_' + lattice + '_' + \
+                            facet + '_' + cell + '_' + site
+                        fname = path_facet + '/' + species
+                    if rkey not in self.dbid:
+                        intermediates_exist = False
+                        break
+                    totraj.update({rkey:
+                                   {'dbid': self.dbid[rkey],
+                                    'fname': fname}})
+                    if species != '*':
+                        DeltaE -= n * self.formation_energies[rkey]
+                        de -= n * self.de[rkey]
+                if not intermediates_exist:
                     continue
-                for reactant in reactions[i]['reactants']:
-                    pkey = '1_' + product + '_' + surface + '_' + \
-                        lattice + '_' + cell + '_' + site
-                    ratoms = c.get_atoms(self.dbid[rkey])
-                    ratoms.write(path_facet + '/' + reactant + '.traj')
-                for product in reactions[i]['products']:
-                    pkey = '1_' + product + '_' + surface + '_' + \
-                        lattice + '_' + cell + '_' + site
-                    patoms = c.get_atoms(self.dbid[pkey])
-                    patoms.write(path_facet + '/' + product + '.traj')
-                slab.write(path_facet + '/empty_surface.traj')
-                ts = reactions[i]['ts']
-                c.get_atoms(dbid[ts])
-        spreadsheet.append([surface, facet, rname, pname,
-                            DeltaE, std, activation_energy,
-                            'Quantum Espresso',
-                            'BEEF-vdW', 'M. H. Hansen, 2017',
-                            'suncat.stanford.edu'])
+                if ts_db is not None:
+                    for ts in tstates:
+                        if '-' not in ts:
+                            continue
+                        species, sitesymbol = ts.split('_')
+                        tskey = '0_' + species + '_' + name + '_' + phase + \
+                            '_' + lattice + '_' + facet + '_' + cell + \
+                            '_' + site
+                        if tskey not in self.dbid:
+                            continue
+                        totraj.update({tskey:
+                                       {'dbid': self.dbid[tskey],
+                                        'fname': path_facet + '/' + ts}})
+                        ea += self.formation_energies[tskey] - DeltaE
+                for product in products:
+                    species, sitesymbol = product.split('_')
+                    if species[0].isdigit():
+                        n = int(species[0])
+                        species = species[1:]
+                    else:
+                        n = 1
+                    if sitesymbol == 'g':
+                        pkey = species + '_gas'
+                        fname = path_reaction + '/' + pkey
+                    elif species == '*':
+                        pkey = slabkey
+                        fname = path_facet + '/empty_surface'
+                    else:
+                        pkey = '1_' + species.replace('*', '') + \
+                            '_' + name + '_' + phase + '_' + lattice + '_' + \
+                            facet + '_' + cell + '_' + site
+                        fname = path_facet + '/' + species
+                    if pkey not in self.dbid:
+                        intermediates_exist = False
+                        break
+                    totraj.update({pkey:
+                                   {'dbid': self.dbid[pkey],
+                                    'fname': fname}})
+                    if species != '*':
+                        DeltaE += n * self.formation_energies[pkey]
+                        de += n * self.de[pkey]
+                # If all states are found for this surface, write.
+                if intermediates_exist:
+                    if not os.path.isdir(project):
+                        os.mkdir(project)
+                    if reaction_name not in listdir(project):
+                        os.mkdir(path_reaction)
+                    if name.replace('/', '') not in listdir(path_reaction):
+                        os.mkdir(path_surface)
+                    if facet.replace('x', '') not in listdir(path_surface):
+                        os.mkdir(path_facet)
+                    for trajkey in totraj.keys():
+                        if 'gas' in trajkey:
+                            fname = totraj[trajkey]['fname'] + '.traj'
+                            if fname in os.listdir(path_reaction):
+                                continue
+                            else:
+                                atoms = c_mol.get_atoms(self.dbid[trajkey])
+                        elif '-' in trajkey.split('_')[1]:
+                            atoms = c_ts.get_atoms(self.dbid[trajkey])
+                        else:
+                            atoms = c_ads.get_atoms(self.dbid[trajkey])
+                        atoms.write(totraj[trajkey]['fname'] + '.traj')
+                    std = np.std(de)
+                    spreadsheet.append([name, facet, rname, pname,
+                                        DeltaE, std, ea,
+                                        'Quantum Espresso',
+                                        'BEEF-vdW', 'M. H. Hansen, 2017',
+                                        'suncat.stanford.edu'])
+                    Nsurf += 1
+                else:
+                    continue
+            Nrxn += 1
         with open(project+'test.csv', 'wb') as f:
             writer = csv.writer(f)
             writer.writerows(spreadsheet)
+        print(Nrxn, 'reactions imported.')
+        print(Nsurf, 'surfaces saved.')
