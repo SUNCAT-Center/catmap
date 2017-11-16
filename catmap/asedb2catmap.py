@@ -101,8 +101,8 @@ class db2catmap(object):
         self.de.update(mol_de)
         self.dbid.update(mol_dbid)
 
-    def get_surfaces(self, fname, selection=[], site_specific=False,
-                     frequency_db=None):
+    def get_surfaces(self, fname, selection=[], frequency_db=None,
+                     site_specific=False):
         """ Method for importing slabs and adsorbates.
 
         Parameters
@@ -294,7 +294,7 @@ class db2catmap(object):
                 species = ''
                 site = 'slab'
                 n = 0
-            elif site_specific:
+            elif 'site' in d:
                 site = str(d.site)
             else:
                 site = 'site'
@@ -609,7 +609,7 @@ class db2catmap(object):
         print(incomplete)
         return abinitio_energies, freq_dict, de, dbids
 
-    def make_input_file(self, file_name):
+    def make_input_file(self, file_name, site_specific=False):
         """ Saves the catmap input file.
 
         Parameters
@@ -668,9 +668,19 @@ class db2catmap(object):
                 else:
                     surface = cat  # +'_'+pha #useful to include phase.
                     phase = pha
-                    site_name = lattice + '_' + site
                     coverage = round(float(n) /
                                      (float(cell[0]) * float(cell[2])), 3)
+                    if site_specific is True:
+                        site_name = lattice + '_' + site
+                    elif site_specific is False:
+                        site_name = lattice
+                    elif site_specific == 'facet':
+                        site_name = facet
+                    else:
+                        if site == site_specific:
+                            site_name = site
+                        else:
+                            site_name = lattice
                 E = float(E)
                 outline = [surface, phase, site_name, name,
                            E, list(frequency), environ['USER'], coverage, std]
@@ -690,7 +700,8 @@ class db2catmap(object):
         input.close()
 
     def make_nested_folders(self, project, reactions, surfaces=None,
-                            site='site', ads_db=None, mol_db=None, ts_db=None):
+                            site='site', ads_db=None, mol_db=None, ts_db=None,
+                            publication='', url=''):
         """Saves a nested directory structure,
         compatible with the catapp project.
 
@@ -734,8 +745,10 @@ class db2catmap(object):
             reactants = states[0].split('+')
             tstates = states[1].split('+')
             products = states[-1].split('+')
-            rspecies = [r.replace('*', 'star').split('_')[0] for r in reactants]
-            pspecies = [p.replace('*', 'star').split('_')[0] for p in products]
+            rspecies = [r.replace('*',
+                                  'star').split('_')[0] for r in reactants]
+            pspecies = [p.replace('*',
+                                  'star').split('_')[0] for p in products]
             rname = '_'.join(rspecies)
             pname = '_'.join(pspecies)
             reaction_name = '__'.join([rname, pname])
@@ -746,10 +759,11 @@ class db2catmap(object):
                  lattice, facet, cell, slab] = slabkey.split('_')
                 path_surface = path_reaction + '/' + name.replace('/', '')
                 path_facet = path_surface + '/' + facet.replace('x', '')
-                DeltaE = 0
-                de = 0  # np.zeros(self.state.size)
-                ea = 0
+                DeltaE = 0.
+                de = 0.  # np.zeros(self.state.size)
+                ea = 0.
                 intermediates_exist = True
+                # Find reactant structures and energies
                 for reactant in reactants:
                     species, sitesymbol = reactant.split('_')
                     if species[0].isdigit():
@@ -779,6 +793,7 @@ class db2catmap(object):
                         de -= n * self.de[rkey]
                 if not intermediates_exist:
                     continue
+                # Find transition state structures and energies.
                 if ts_db is not None:
                     for ts in tstates:
                         if '-' not in ts:
@@ -793,6 +808,7 @@ class db2catmap(object):
                                        {'dbid': self.dbid[tskey],
                                         'fname': path_facet + '/' + ts}})
                         ea += self.formation_energies[tskey] - DeltaE
+                # Find product structures and energies.
                 for product in products:
                     species, sitesymbol = product.split('_')
                     if species[0].isdigit():
@@ -843,11 +859,12 @@ class db2catmap(object):
                             atoms = c_ads.get_atoms(self.dbid[trajkey])
                         atoms.write(totraj[trajkey]['fname'] + '.traj')
                     std = np.std(de)
+                    print(DeltaE)
                     spreadsheet.append([name, facet, rname, pname,
                                         DeltaE, std, ea,
                                         'Quantum Espresso',
-                                        'BEEF-vdW', 'M. H. Hansen, 2017',
-                                        'suncat.stanford.edu'])
+                                        'BEEF-vdW', publication, url])
+
                     Nsurf += 1
                 else:
                     continue

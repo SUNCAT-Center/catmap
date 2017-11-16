@@ -76,16 +76,16 @@ fixed_p = ['ads!=FBL', 'ads!=NEB', 'layers=5', 'pw=500', 'psp=gbrv1.5pbe',
            'site!=off', 'C<3']
 
 # Search strings for subsets of slabs, adsorbates.
-surfaces1 = ['facet=1x1x1', 'phase=fcc', 'kpts=4x6', 'supercell=3x2'] + fixed_p
-surfaces2 = ['facet=0x0x1', 'phase=hcp', 'kpts=4x6', 'supercell=3x2',
+surfaces1 = ['facet=(111)', 'phase=fcc', 'kpts=4x6', 'supercell=3x2'] + fixed_p
+surfaces2 = ['facet=(001)', 'phase=hcp', 'kpts=4x6', 'supercell=3x2',
              'name!=Co'] + fixed_p
 surfaces3 = ['surf_lattice=hexagonal', 'kpts=6x6', 'supercell=1x1'] + fixed_p
 
 # Import three different subsets of slabs, adsorbates.
 print('Importing surfaces.')
-project.get_surfaces('surfaces.db', selection=surfaces1, site_specific=False)
-project.get_surfaces('surfaces.db', selection=surfaces2, site_specific=False)
-project.get_surfaces('surfaces.db', selection=surfaces3, site_specific=False)
+project.get_surfaces('surfaces.db', selection=surfaces1)
+project.get_surfaces('surfaces.db', selection=surfaces2)
+project.get_surfaces('surfaces.db', selection=surfaces3)
 
 # Get transition states.
 # dehydro.get_transition_states('neb.db')
@@ -100,4 +100,4 @@ project.calc_formation_energies(references=(('H', 'H2_gas'),
 
 # Step 4: Save catmap input file.
 file_name = argv[1]
-project.make_input_file(file_name)
+project.make_input_file(file_name, site_specific='facet')
