@@ -859,7 +859,6 @@ class db2catmap(object):
                             atoms = c_ads.get_atoms(self.dbid[trajkey])
                         atoms.write(totraj[trajkey]['fname'] + '.traj')
                     std = np.std(de)
-                    print(DeltaE)
                     spreadsheet.append([name, facet, rname, pname,
                                         DeltaE, std, ea,
                                         'Quantum Espresso',
