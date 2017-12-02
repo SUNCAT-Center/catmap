@@ -570,6 +570,9 @@ class MapPlot:
         if save:
             fig.savefig(save)
 
+    def __del__(self):
+        plt.close("all")
+
 class MechanismPlot:
     """
     Class for generating potential energy diagrams
