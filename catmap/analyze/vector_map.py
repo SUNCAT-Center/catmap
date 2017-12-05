@@ -19,6 +19,7 @@ class VectorMap(MapPlot, ReactionModelWrapper):
         self.threshold = 0 #count anything less than this as 0
         self.labels = None
         self.plot_precision = 5 #round to this precision when testing for uniqueness
+        self.mode_name = reaction_model.model_name
 
     def get_pts_cols(self):
         """
@@ -121,6 +122,7 @@ class VectorMap(MapPlot, ReactionModelWrapper):
                 ax = None
             fig = self.plot_weighted(mapp,ax=ax,indices=idxs)
 
+        print(self.model_name)
         self.save(fig,save=save,
                 default_name = self.model_name+'_'+self.plot_variable+'.pdf')
 

@@ -8,6 +8,7 @@ from string import Template
 import functions
 import re
 from data import regular_expressions
+import collections
 string2symbols = catmap.string2symbols
 pickle = catmap.pickle
 plt = catmap.plt
@@ -26,13 +27,15 @@ class ReactionModel:
     - external parameters (temperature, pressures)
     - other more technical settings related to the solver and mapper
     """
-    def __init__(self,**kwargs): #
+    def __init__(self,debug=False,**kwargs): #
         """Class for managing microkinetic models.
 
            :param setup_file: Specify <mkm-file> from which to load model.
            :type setup_file: str
             """
         #Set static utility functions
+        if debug:
+            return
         for f in dir(functions):
             if not f.startswith('_') and callable(getattr(functions,f)):
                 setattr(self,f,getattr(functions,f))
@@ -119,6 +122,7 @@ class ReactionModel:
             #This is NOT idiot proof.
             self.model_name = self.setup_file.rsplit('.',1)[0]
             self.load(self.setup_file)
+
        
     # Functions for executing the kinetic model
 
@@ -279,15 +283,20 @@ class ReactionModel:
             #Make logfile
             log_txt = self._log_imports
             log_txt += self._header(exclude_outputs=self._pickle_attrs)
+            #print(self._header(exclude_outputs=self._pickle_attrs))
             self._stdout = '\n'.join(self._log_lines)
             log_txt += 'stdout = ' + '"'*3+self._stdout+'"'*3
             #this construction means that self.stdout will only be set
             #for models which have been re-loaded.
             self._solved = self._token()
+
+
             if hasattr(self,'log_file'):
                 logfile = self.log_file
             else:
-                name,suffix = self.setup_file.rsplit('.',1)
+                #name,suffix = self.setup_file.rsplit('.',1)
+                name = "dry"
+                suffix = "log"
                 if suffix != 'log':
                     suffix = 'log'
                 else:
@@ -298,8 +307,9 @@ class ReactionModel:
             f.write(log_txt)
             f.close()
 
-            if getattr(self,'create_standalone',None):
-                self.make_standalone()
+            self.make_standalone()
+            return log_txt
+
 
     def descriptor_space_analysis(self):
         """
@@ -356,7 +366,6 @@ class ReactionModel:
                 numerical_representation = 'mpmath',
                 adsorbate_interaction_model = 'ideal',
                 prefactor_list=None,
-                A_uc=None,
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
@@ -369,6 +378,7 @@ class ReactionModel:
         for var in locs.keys():
             if var in self._classes:
                 #black magic to auto-import classes
+
                 try:
                     if locs[var]:
                         if not var.endswith('s'):
@@ -381,9 +391,12 @@ class ReactionModel:
                             sys.path.append(basepath)
                         sublocs = {}
                         subglobs = {}
+                        # WANG: that means, if you have the class(the parameter in setup_file, then will auto-import the class)
+
                         _temp = __import__(pyfile,subglobs,sublocs, [locs[var]])
                         #_temp = __import__(pyfile,globals(),sublocs, [locs[var]]) #no reason to mess with globals() unless we have to.
                         class_instance = getattr(_temp,locs[var])(self)
+                        # WANG: here self.var = class_instance
                         setattr(self,var,class_instance)
                     else:
                         setattr(self,var,None)
@@ -414,6 +427,85 @@ class ReactionModel:
         self.generate_echem_species_definitions()
 
         self.verify()
+
+
+    def load_without_file(self,**kwargs): #
+        """Load a 'setup file' by importing it and assigning all local
+        variables as attributes of the kinetic model. Special attributes
+        mapper, parser, scaler, solver will attempt to convert strings
+        to modules."""
+        defaults = dict(mapper='MinResidMapper',
+                parser='TableParser',
+                scaler='GeneralizedLinearScaler',
+                solver='SteadyStateSolver',
+                thermodynamics='ThermoCorrections',
+                numerical_representation = 'mpmath',
+                adsorbate_interaction_model = 'ideal',
+                prefactor_list=None,
+                interaction_fitting_mode=None,
+                decimal_precision = 75,
+                verbose = 1,
+                data_file = 'data.pkl')
+
+        globs = {}
+        defaults.update(**kwargs)
+        locs = defaults
+
+
+        for var in locs.keys():
+            print(var)
+            if var in self._classes:
+                #black magic to auto-import classes
+
+                try:
+                    if locs[var]:
+
+                        if not var.endswith('s'):
+                            pyfile = var + 's'
+                        else:
+                            pyfile = var
+                        basepath=os.path.dirname(
+                                inspect.getfile(inspect.currentframe()))
+                        if basepath not in sys.path:
+                            sys.path.append(basepath)
+                        sublocs = {}
+                        subglobs = {}
+
+                        _temp = __import__(pyfile,subglobs,sublocs, [locs[var]])
+                        #_temp = __import__(pyfile,globals(),sublocs, [locs[var]]) #no reason to mess with globals() unless we have to.
+                        class_instance = getattr(_temp,locs[var])(self)
+                        # WANG: here self.var = class_instance
+                        setattr(self,var,class_instance)
+                    else:
+                        setattr(self,var,None)
+                except ImportError:
+                    raise AttributeError(var.capitalize()+' '+locs[var]+ \
+                            ' could not be imported. Ensure that the class ' +\
+                            'exists and is spelled properly.')
+            elif var == 'rxn_expressions':
+                self.parse_elementary_rxns()
+                setattr(self,var,locs[var])
+            else:
+                setattr(self,var,locs[var])
+
+
+        if self.parser:
+            if self.input_file:
+                if getattr(self,'interaction_fitting_mode',None):
+                    #automatically parse in "coverage" if fitting interaction params
+                    self.parse_headers += ['coverage']
+                self.parse() #Automatically parse in data.
+
+        self.load_data_file()
+
+        self.set_rxn_options()
+
+        self.generate_echem_TS()
+
+        self.generate_echem_species_definitions()
+
+        self.verify()
+
 
     def load_data_file(self,overwrite=False):
         """
@@ -554,7 +646,7 @@ class ReactionModel:
                 raise ValueError('Initial or final state is undefined: '+eq)
         return rxn_list
 
-    def parse_elementary_rxns(self, equations): #
+    def parse_elementary_rxns(self): #
         """
         Convert elementary reaction strings into structured elementary reaction lists.
 
@@ -574,6 +666,7 @@ class ReactionModel:
 
         :type equations:[str]
         """
+        state_dict_list = getattr(self,"state_dict_list")
         elementary_rxns = []
         gas_names = []
         adsorbate_names = []
@@ -581,36 +674,14 @@ class ReactionModel:
         site_names = []
         echem_transition_state_names = []
         rxn_options_dict = {'prefactor':{}, 'beta':{}}
-        for rxn_index, rxn in enumerate(equations):
-            #Replace separators with ' '
-            regex = re.compile(regular_expressions['species_separator'][0])
-            # Parse out the reaction options.  Options are key=value pairs that
-            # are separated from reactions by ";" and from each other by ","
-            eq = rxn
-            options = None
-            if rxn.count('->') > 2:
-                print(("Warning: reaction\n\n"
-                       "\t({rxn_index})\t{rxn}\n\n is very long!\n"
-                       "Make sure this is intended and there is no missing ',' (comma)\n"
-                       "at the end of the line.\n").format(**locals()))
-            if ';' in rxn:
-                eq, options = rxn.split(';')
-            if options:
-                options = "".join(options.split(" "))  # ignore spaces
-                suboptions = options.split(',')
-                for subopt in suboptions:
-                    key, value = subopt.split('=')
-                    if key in rxn_options_dict:
-                        rxn_options_dict[key][rxn_index] = value
-            eq = regex.sub(' ',eq)
-            state_dict = functions.match_regex(eq,
-                    *regular_expressions['initial_transition_final_states'])
+        for state_dict in state_dict_list:
             rxn_list = []
             for key in ['initial_state','transition_state','final_state']:
                 state_list = []
-                state_str = state_dict[key]
-                if state_str:
-                    state_strings = [si for si in state_str.split() if si]
+                state_strings = state_dict[key]
+
+
+                if state_strings:
                     # echem transition state syntax parsing. generate echem transition state from TS like "^0.6eV_a"
                     if key == 'transition_state' and len(state_strings) == 1 and state_strings[0].startswith('^'):
                         try:
@@ -673,6 +744,7 @@ class ReactionModel:
                 else:
                     raise ValueError('Initial or final state is undefined: '+eq)
             elementary_rxns.append(rxn_list)
+        print(rxn_options_dict)
         gas_names = list(set(gas_names))
         adsorbate_names = list(set(adsorbate_names))
         transition_state_names = list(set(transition_state_names))
@@ -703,6 +775,7 @@ class ReactionModel:
         self.site_names = site_names
         self.echem_transition_state_names = echem_transition_state_names
         self.rxn_options_dict = rxn_options_dict
+
 
     def texify(self,ads): #
         """Generate LaTeX representation of an adsorbate.
@@ -1034,48 +1107,9 @@ class ReactionModel:
             self.prefactor_list = default_prefactor_list
         elif isinstance(self.prefactor_list, list) and len(self.prefactor_list) == len(self.elementary_rxns):
             prefactor_list = []
-            for prefactor,rxn in zip(self.prefactor_list,self.elementary_rxns):
+            for prefactor in self.prefactor_list:
                 if prefactor == None:
                     prefactor_list.append(default_prefactor)
-                elif isinstance(prefactor,dict):
-                    A_site = prefactor["A_site"]
-                    if prefactor["type"] == "non-activated":
-                        from ase.atoms import string2symbols
-                        from ase.data import atomic_masses
-                        from ase.data import atomic_numbers
-                        assert len(rxn) == 2 #if not, rxn is not non-activated
-                        all_species = []
-                        for state in rxn:
-                            for species in state:
-                                all_species.append(species)
-                        gas_species = []
-                        for species in all_species:
-                            if self.species_definitions[species]['type'] == 'gas':
-                                gas_species.append(species)
-                        if len(gas_species) != 1:
-                            raise ValueError('Prefactor of type non-activated can ' + \
-                                'only handle exactly one gas phase species per reaction') 
-                        species_name = gas_species[0].split('_')[0]
-                        symbols = string2symbols(species_name)
-                        m = sum([atomic_masses[atomic_numbers[symbol]]
-                                               for symbol in symbols])
-                        _bar2Pa = 1.e5
-                        _angstrom2m = 1.E-10
-                        _u2kg = 1.660538921e-27
-                        _eV2J = 1.602176565e-19
-                        pf = '%s/mpsqrt(kB*T)'%(_bar2Pa*A_site*_angstrom2m**2/np.sqrt(2.*np.pi*m*_u2kg*_eV2J))
-                        prefactor_list.append(pf)
-
-                        #sanity check
-
-                        #kB = 8.613e-5
-                        #T=573.
-                        #pf = _bar2Pa*A_site*_angstrom2m**2/np.sqrt(2.*np.pi*m*_u2kg*_eV2J*kB*T)
-                        #print species_name,pf
-
-                    elif prefactor["type"] == "activated":
-                        pf = '%s*%s'%((A_site/self.A_uc),default_prefactor)
-                        prefactor_list.append(pf)
                 else:
                     prefactor_list.append(str(prefactor))
             self.prefactor_list = prefactor_list
@@ -1116,6 +1150,10 @@ class ReactionModel:
         header = ''
         for attr in self._classes:
             inst = getattr(self,attr)
+
+            # it extract all the class, and set all the attr
+
+            #print(inst)
             if inst:
                 name = str(inst.__class__)
                 junk,name = name.rsplit('.',1)
@@ -1128,6 +1166,7 @@ class ReactionModel:
                     header += attr + ' = ' + 'None\n\n'
             else:
                 header += attr + ' = ' + 'None\n\n'
+        print("the header: ________________\n",header)
         exec(self._log_imports) #needed for testing evaluation of log file
         #load in pickled data at the beginning
         header += 'binary_data = ' + 'pickle.load(open("' + \
@@ -1534,3 +1573,8 @@ class ReactionModel:
                 else:
                     value = float(value)
                 self.prefactor_list[key] = value
+if __name__ == "__main__":
+    def test():
+        model = ReactionModel()
+        print(model.parse_elementary_rxns( 'A_s + B_q <-> C_s + D_q'))
+    test()

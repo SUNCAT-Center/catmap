@@ -64,7 +64,7 @@ class SteadyStateSolver(MeanFieldSolver):
         kfs, krs, dkfs, dkrs = self.rate_constants(rxn_parameters,coverages,
             self._gas_energies,self._site_energies,
             self.temperature,self.interaction_response_function,
-            self._mpfloat,self._matrix,self._math.exp,self._math.sqrt)
+            self._mpfloat,self._matrix,self._math.exp)
         self._kf = kfs
         self._kr = krs
         self._rate_constant_memoize[memo] = [kfs,krs]
@@ -313,7 +313,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     self._rxn_parameters,coverages,self.gas_pressures,
                     self._gas_energies, self._site_energies,
                     self.temperature,self.interaction_response_function,
-                    self._mpfloat, self._matrix,self._math.exp,self._math.sqrt)
+                    self._mpfloat, self._matrix,self._math.exp)
             self._steady_state_memoize[memo] = c
             return c
 
@@ -341,7 +341,7 @@ class SteadyStateSolver(MeanFieldSolver):
                 self._rxn_parameters,coverages,self.gas_pressures,
                 self._gas_energies,self._site_energies,
                 self.temperature,self.interaction_response_function,
-                self._mpfloat, self._matrix,self._math.exp,self._math.sqrt)
+                self._mpfloat, self._matrix,self._math.exp)
         return J
 
     def ideal_steady_state_jacobian(self,coverages):
@@ -442,14 +442,14 @@ class SteadyStateSolver(MeanFieldSolver):
                         'interacting_mean_field_steady_state':[
                             test_params,test_theta,test_p,test_gas_E,test_site_E,
                             test_T,self.interaction_response_function,
-                            self._mpfloat,self._matrix,self._math.exp,self._math.sqrt],
+                            self._mpfloat,self._matrix,self._math.exp],
                         'ideal_mean_field_steady_state':[
                             test_kfs, test_krs, test_theta, test_p,
                             self._mpfloat, self._matrix],
                         'interacting_mean_field_jacobian':[
                             test_params,test_theta,test_p,test_gas_E,test_site_E,
                             test_T,self.interaction_response_function,
-                            self._mpfloat, self._matrix, self._math.exp,self._math.sqrt],
+                            self._mpfloat, self._matrix, self._math.exp],
                         'ideal_mean_field_jacobian':[
                             test_kfs, test_krs, test_theta, test_p,
                             self._mpfloat, self._matrix]
