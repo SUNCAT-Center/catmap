@@ -43,6 +43,8 @@ class TableParser(ParserBase):
 
         self._linebreak = '\n'
         self._separator = '\t'
+
+
         self._rxm.update(kwargs,override=True)
         self._rxm.update(defaults,override=False)
         self._required = {'input_file':str,'estimate_frequencies':bool,
@@ -62,6 +64,7 @@ class TableParser(ParserBase):
 
         headers = lines.pop(0).split(self._separator)
         headers = [h.strip() for h in headers]
+        print(headers)
         if not set(self.required_headers).issubset(set(headers)):
             raise ValueError('Required headers are missing! '+\
                              'Please be sure that all headers '+\
