@@ -307,7 +307,7 @@ class ReactionModel:
             f.write(log_txt)
             f.close()
 
-            self.make_standalone()
+            #self.make_standalone()
             return log_txt
 
 
@@ -453,7 +453,7 @@ class ReactionModel:
 
 
         for var in locs.keys():
-            print(var)
+            #print(var)
             if var in self._classes:
                 #black magic to auto-import classes
 
@@ -711,7 +711,7 @@ class ReactionModel:
                         species_dict = functions.match_regex(st,
                                 *regular_expressions['species_definition'])
                         if species_dict is None:
-                            raise UserWarning('Could not parse state: '+state_str)
+                            raise UserWarning('Could not parse state: '+str(state_strings))
                         if species_dict['stoichiometry'] == '':
                             species_dict['stoichiometry'] = 1
                         else:
@@ -744,7 +744,7 @@ class ReactionModel:
                 else:
                     raise ValueError('Initial or final state is undefined: '+eq)
             elementary_rxns.append(rxn_list)
-        print(rxn_options_dict)
+        #print(rxn_options_dict)
         gas_names = list(set(gas_names))
         adsorbate_names = list(set(adsorbate_names))
         transition_state_names = list(set(transition_state_names))
@@ -775,6 +775,7 @@ class ReactionModel:
         self.site_names = site_names
         self.echem_transition_state_names = echem_transition_state_names
         self.rxn_options_dict = rxn_options_dict
+
 
 
     def texify(self,ads): #
@@ -1166,7 +1167,6 @@ class ReactionModel:
                     header += attr + ' = ' + 'None\n\n'
             else:
                 header += attr + ' = ' + 'None\n\n'
-        print("the header: ________________\n",header)
         exec(self._log_imports) #needed for testing evaluation of log file
         #load in pickled data at the beginning
         header += 'binary_data = ' + 'pickle.load(open("' + \
