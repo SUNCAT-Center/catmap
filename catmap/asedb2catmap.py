@@ -3,7 +3,7 @@
 Description:
     Module to convert ase.db files into a catmap input file
 
-    <surface_name>.db: db file
+    <fname>.db: db file
         Contains all adsorbate states on
         surfaces and clean slabs for reference.
         Mandatory key value pairs:
@@ -43,18 +43,16 @@ Description:
 
     Optional file dependencies:
     ---------------------------
-        json files in the working directory containing a dictionary with
-        frequencies. The file name and the key name should be
-            species + '_' + facet + '.freq'
-        # To do:
-            Expand this feature to individual frequency lists for individual
-            catalysts.
+    <fname>.db : db file
+        Stores vibrational frequencies along with atomic structures
+        and energies.
 """
 from os import listdir, environ, mkdir
 import os.path
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
+from ase.data import covalent_radii, atomic_numbers
 from catmap.bee import BEEFEnsemble as BEE
 import csv
 
@@ -66,10 +64,11 @@ class db2catmap(object):
         self.state = BEE()
         self.epot = {}
         self.freq = {}
-        self.de = {}
+        self.ens = {}
+        self.de_dict = {}
         self.dbid = {}
         self.reference_epot = {}
-        self.reference_de = {}
+        self.reference_ens = {}
         self.rxn_paths = {}
         self.formation_energies = {}
         self.std = {}
@@ -93,12 +92,12 @@ class db2catmap(object):
         """
         [mol_epot,
          mol_freq,
-         mol_de,
+         mol_ens,
          mol_dbid] = self._db2mol(fname, selection=selection,
                                   freq_path=frequency_db)
         self.epot.update(mol_epot)
         self.freq.update(mol_freq)
-        self.de.update(mol_de)
+        self.ens.update(mol_ens)
         self.dbid.update(mol_dbid)
 
     def get_surfaces(self, fname, selection=[], frequency_db=None,
@@ -112,13 +111,13 @@ class db2catmap(object):
         """
         [surf_epot,
          surf_freq,
-         surf_de,
+         surf_ens,
          surf_dbid] = self._db2surf(fname, selection=selection,
                                     freq_path=frequency_db,
                                     site_specific=site_specific)
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
-        self.de.update(surf_de)
+        self.ens.update(surf_ens)
         self.dbid.update(surf_dbid)
 
     def get_transition_states(self, fname, selection=[], frequency_db=None):
@@ -135,11 +134,11 @@ class db2catmap(object):
         self.rxn_paths.update(rxn_paths)
         [surf_epot,
          surf_freq,
-         surf_de,
+         surf_ens,
          surf_dbid] = self.pes2ts(freq_path=frequency_db)
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
-        self.de.update(surf_de)
+        self.ens.update(surf_ens)
         self.dbid.update(surf_dbid)
 
     def calc_formation_energies(self, references=(('H', 'H2_gas'),
@@ -153,12 +152,15 @@ class db2catmap(object):
             The first item in each tuple must be an atomic symbol, and the
             second item in each tuple must be a reference <species name>_gas
         """
-        # Get atomic reference energies.
-        self._mol2ref(references=references)
-        # Make a dictionary with slab references and atomic references.
-        self._get_refs()
-        self._get_BEEstd()
-        self._get_formation_energies()
+        # Get atomic references.
+        [self.atomic_e,
+         self.atomic_ens] = self._mol2ref(references=references)
+        # Get dictionaries with slab references and atomic references.
+        [self.reference_epot,
+         self.reference_ens] = self._get_refs()
+        #
+        self.de_dict, self.std = self._get_BEEstd()
+        self.formation_energies = self._get_formation_energies()
 
     def _db2mol(self, fname, selection=[], freq_path=None):
         """ Returns four dictionaries containing:
@@ -194,7 +196,7 @@ class db2catmap(object):
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
-        de = {}
+        ens_dict = {}
         for d in smol:              # Get molecules from mol.db
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
@@ -209,7 +211,7 @@ class db2catmap(object):
             if species_name+'_gas' not in abinitio_energies:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
-                de[species_name+'_gas'] = ens
+                ens_dict[species_name+'_gas'] = ens
                 if freq_path is not None:
                     try:
                         d_freq = c_freq.get(['formula='+species_name])
@@ -220,8 +222,8 @@ class db2catmap(object):
             elif abinitio_energies[species_name+'_gas'] > abinitio_energy:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
-                de[species_name+'_gas'] = contribs
-        return abinitio_energies, freq_dict, de, dbids
+                ens_dict[species_name+'_gas'] = contribs
+        return abinitio_energies, freq_dict, ens_dict, dbids
 
     def _db2surf(self, fname, selection=[], freq_path=None,
                  site_specific=False):
@@ -253,7 +255,7 @@ class db2catmap(object):
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
-        de = {}
+        ens_dict = {}
         for d in ssurf:                     # Get slab and adsorbates from .db
             species = str(d.species)
             if '-' in species:
@@ -294,13 +296,14 @@ class db2catmap(object):
                 species = ''
                 site = 'slab'
                 n = 0
-            elif 'site' in d:
+            elif 'site' in d and site_specific is True:
                 site = str(d.site)
             else:
                 site = 'site'
             cat = name + '_' + phase
-            site_name = surf_lattice + '_' + facet + '_' + cell + '_' + site
-            key = str(n) + '_' + species + '_' + cat + '_' + site_name
+            site_name = '_'.join([surf_lattice, facet, cell, site])
+            key = '_'.join([str(n), species, cat, site_name])
+            freq_key = key  # str(n) + '_' + species + '_' + surf_lattice
             try:
                 contribs = d.data.BEEFvdW_contribs
                 ens = self.state.get_ensemble_perturbations(contribs)
@@ -309,19 +312,22 @@ class db2catmap(object):
             if key not in abinitio_energies:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
-                de[key] = ens
+                ens_dict[key] = ens
                 if species != '' and ads != 'slab' and freq_path is not None:
                     try:
-                        d_freq = c_freq.get(['species='+species, 'name='+name])
+                        freqsearch = ['species='+species, 'name='+name]
+                        if site_specific is True:
+                            freqsearch.append('site='+site)
+                        d_freq = c_freq.get(freqsearch)
                         frequencies = d_freq.data.frequencies
-                        freq_dict.update({key: frequencies})
+                        freq_dict.update({freq_key: frequencies})
                     except KeyError:
                         continue
             elif abinitio_energies[key] > abinitio_energy:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
-                de[key] = ens
-        return abinitio_energies, freq_dict, de, dbids
+                ens_dict[key] = ens
+        return abinitio_energies, freq_dict, ens_dict, dbids
 
     def _db2pes(self, fname, selection=[]):
         """ Returns a dictionary containing potential energy surfaces and metadata.
@@ -363,8 +369,7 @@ class db2catmap(object):
                 facet = str(d.facet)
             else:
                 str(d.facet)
-            surf = str(d.name) + '_' + phase + '_' + \
-                surf_lattice + '_' + facet + '_' + cell
+            surf = '_'.join([str(d.name), phase, surf_lattice, facet, cell])
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
             else:
@@ -379,12 +384,26 @@ class db2catmap(object):
             if rxn_id in rxn_paths:
                 rxn_paths[rxn_id]['pes'].append(abinitio_energy)
                 rxn_paths[rxn_id]['dbids'].append(dbid)
-                rxn_paths[rxn_id]['de'].append(ens)
-                try:
-                    rxn_paths[rxn_id]['distance'].append(float(d.distance))
-                except AttributeError:
-                    # Do nothing.
-                    continue
+                rxn_paths[rxn_id]['ens'].append(ens)
+                # try:
+                rxn_paths[rxn_id]['distance'].append(float(d.distance))
+                # except AttributeError:
+                #    d0 = c.get(rxn_paths[rxn_id]['dbids'][0])
+                #    atoms0 = c.get_atoms(rxn_paths[rxn_id]['dbids'][0])
+                #    species0 = str(d0.species)
+                #    g1, g2 = species0.split('-')
+                #    cons = atoms0.constraints
+                #    fbl = cons[-1].todict()['kwargs']['pairs'][0]
+                #    atom1 = int(fbl[0])
+                #    atom2 = int(fbl[1])
+                #    assert (atoms0[atom2].symbol == g1[0] and
+                #            atoms0[atom1].symbol == g2[0]) or \
+                #        (atoms0[atom1].symbol == g1[0] and
+                #         atoms0[atom2].symbol == g2[0])
+                #    atoms = c.get_atoms(dbid)
+                #    dist = atoms.get_distance(atom1, atom2, mic=True)
+                #    print(dbid, dist, atom1, atom2)
+                #    c.update(dbid, distance=dist)
                 if 'image' in d:
                     rxn_paths[rxn_id]['images'].append(int(d.image))
                 else:
@@ -398,7 +417,7 @@ class db2catmap(object):
                                      'species': species,
                                      'pes': [abinitio_energy],
                                      'dbids': [dbid],
-                                     'de': [ens],
+                                     'ens': [ens],
                                      'site': site,
                                      'images': [int(d.step)],
                                      'distance': [float(d.distance)]}
@@ -412,13 +431,13 @@ class db2catmap(object):
             32 non-selfconsitent perturbations for atoms.
         """
         atomic_e = {}
-        atomic_de = {}
+        atomic_ens = {}
         print(references)
         for t in references:
             key = t[0]
             species = t[1]
             atomic_e[key] = self.epot[species]
-            atomic_de[key] = np.array(self.de[species])
+            atomic_ens[key] = np.array(self.ens[species])
             composition = string2symbols(species.split('_')[0])
             n = 0.
             for symbol in composition:
@@ -426,25 +445,22 @@ class db2catmap(object):
                     n += 1
                 else:
                     atomic_e[key] -= atomic_e[symbol]
-                    atomic_de[key] -= np.array(atomic_de[symbol])
+                    atomic_ens[key] -= np.array(atomic_ens[symbol])
             atomic_e[key] /= n
-            atomic_de[key] /= n
-        self.atomic_e = atomic_e
-        self.atomic_de = atomic_de
-        # return atomic_e, atomic_de
+            atomic_ens[key] /= n
+        return atomic_e, atomic_ens
 
     def _get_refs(self):
         """ Returns dictionaries with referece energies of slabs and
         single atoms.
         """
         ref_dict = self.atomic_e
-        ref_de = self.atomic_de
+        ref_ens = self.atomic_ens
         for key in self.epot.keys():
             if 'slab' in key:
                 ref_dict[key] = self.epot[key]
-                ref_de[key] = self.de[key]
-        self.reference_epot = ref_dict
-        self.reference_de = ref_de
+                ref_ens[key] = self.ens[key]
+        return ref_dict, ref_ens
 
     def _get_formation_energies(self):
         """ Returns a dictionary with formation energies of adsorbates.
@@ -467,8 +483,8 @@ class db2catmap(object):
                 species, site_name = key.split('_')  # Split key into name/site
             else:
                 n, species, cat, pha, lattice, fac, cell, site = key.split('_')
-                site_name = '0__' + cat + '_' + pha + '_' + lattice + '_' + \
-                    fac + '_' + cell + '_slab'
+                site_name = '_'.join(['0_', cat, pha, lattice, fac, cell,
+                                      'slab'])
                 try:
                     E0 -= self.reference_epot[site_name]
                 except KeyError:
@@ -479,34 +495,37 @@ class db2catmap(object):
                 for atom in composition:
                     E0 -= self.reference_epot[atom]
                 formation_energies[key] = E0
-        self.formation_energies.update(formation_energies)
+        return formation_energies
 
     def _get_BEEstd(self):
-        """ Returns dictionary with BEEF standard deviations on formation energies.
+        """ Returns a dictionary with BEEF ensembles and with
+        BEEF standard deviations on formation energies.
         """
-        BEEstd = {}
-        for key in self.de:
+        de_dict = {}
+        std_dict = {}
+        for key in self.ens:
             de = np.zeros(self.state.size)
             if 'gas' in key:
                 species, site_name = key.split('_')  # Split key into name/site
             else:
                 n, species, cat, pha, lattice, fac, cell, site = key.split('_')
-                site_name = '0__' + cat + '_' + pha + '_' + lattice + '_' + \
-                    fac + '_' + cell + '_slab'
+                site_name = '_'.join(['0_', cat, pha, lattice, fac, cell,
+                                      'slab'])
                 try:
-                    de -= self.reference_de[site_name]
+                    de -= self.reference_ens[site_name]
                 except KeyError:
                     continue
             if 'slab' not in key:
                 composition = string2symbols(species.replace('-', ''))
-                de += self.de[key]
+                de += self.ens[key]
                 for atom in composition:
-                    de -= self.reference_de[atom]
-                BEEstd[key] = de.std()
-        self.std.update(BEEstd)
+                    de -= self.reference_ens[atom]
+                de_dict[key] = de
+                std_dict[key] = np.std(de)
+        return de_dict, std_dict
 
-    def get_BEE_PCA(self, ads_x, ads_y,
-                    site_x='site', site_y='site'):
+    def get_ellipses(self, ads_x, ads_y,
+                     site_x=None, site_y=None):
         """ Returns two dictionaries, BEE_PC with the principal component
         vectors and BEE_lambda with the corresponding eigenvalues of
         BEE pertubations.
@@ -521,35 +540,47 @@ class db2catmap(object):
         ads_x    string  adsorbate first dimension
         ads_y    string  adsorbate second dimension
         """
-        BEE_PC = {}
-        BEE_lambda = {}
+        widths = {}
+        heights = {}
+        angles = {}
         # Loop over reference surfaces in ref_de.
         for slab in self.reference_epot.keys():
             # Ignore gas species.
-            if 'gas' in slab or len(slab) <= 2:
+            if 'slab' not in slab:
                 continue
-            de_x = -self.reference_de[slab]
-            de_y = -self.reference_de[slab]
-            try:
-                de_x += self.de[ads_x + '_' + slab[:-4] + site_x]
-                de_y += self.de[ads_y + '_' + slab[:-4] + site_y]
-            except KeyError:
-                print('Missing BEEF ensemble for ', ads_x, ads_y, slab[:-4],
-                      site_x, site_y)
+            key_x = self._insert_species(slab, ads_x, site_x)
+            if isinstance(key_x, list):
+                de_x = np.zeros(self.state.size)
+                continue_outer = False
+                for k_x in key_x:
+                    if k_x in self.de_dict:
+                        de_x += self.de_dict[k_x]
+                    else:
+                        continue_outer = True
+                        break
+                if continue_outer is True:
+                    continue
+            elif key_x in self.de_dict:
+                de_x = self.de_dict[key_x]
+            else:
                 continue
-            composition_x = string2symbols(ads_x)
-            composition_y = string2symbols(ads_y)
-            for atom in composition_x:
-                de_x -= self.reference_de[atom]
-            for atom in composition_y:
-                de_y -= self.reference_de[atom]
+            key_y = self._insert_species(slab, ads_y, site_y)
+            if key_y in self.de_dict:
+                de_y = self.de_dict[key_y]
+            else:
+                continue
+            if np.isclose(de_x, 0).all() or np.isclose(de_y, 0).all():
+                continue
             cov = np.cov(de_x, de_y)
             eigval, eigvec = np.linalg.eig(cov)
-            BEE_PC[slab] = eigvec
-            BEE_lambda[slab] = eigval / len(cov)
-        return BEE_PC, BEE_lambda
+            width, height = 2*np.sqrt(eigval)
+            angle = np.rad2deg(np.arccos(eigvec[0, 0]))
+            widths[slab] = width
+            heights[slab] = height
+            angles[slab] = angle
+        return widths, heights, angles
 
-    def pes2ts(self, freq_path=None):
+    def pes2ts(self, freq_path=None, rtol=1.03):
         """ Returns dictionaries containing transition state ab initio energies.
 
             Input parameters
@@ -562,17 +593,15 @@ class db2catmap(object):
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
-        de = {}
+        ens_dict = {}
         calculate = []
         for rxn_id in self.rxn_paths:
+            warn = False
             species = self.rxn_paths[rxn_id]['species']
             m = self.rxn_paths[rxn_id]['surface_name']
             site = self.rxn_paths[rxn_id]['site']
-            key = '0_' + species + '_' + m + '_' + site
+            key = '1_' + species + '_' + m + '_' + site
             images = self.rxn_paths[rxn_id]['images']
-            if len(np.unique(images)) != len(images):
-                print('non unique image number!', m, species, images)
-                continue
             pes = np.array(self.rxn_paths[rxn_id]['pes'])
             s = np.argsort(images)
             # Look for local minima and maxima.
@@ -580,20 +609,37 @@ class db2catmap(object):
                                  np.r_[pes[s][:-1] < pes[s][1:], True])[0]
             localmaxs = np.where(np.r_[True, pes[s][1:] > pes[s][:-1]] &
                                  np.r_[pes[s][:-1] > pes[s][1:], True])[0]
+            # Measure path roughness
             differences = np.diff(pes[s])
             roughness = np.std(differences)
+            # For fixed bond length (drag) calculations
+            g1, g2 = species.split('-')
+            dbond = covalent_radii[atomic_numbers[g1[0]]] + \
+                covalent_radii[atomic_numbers[g2[0]]]
+            if len(np.unique(images)) != len(images):
+                warn = True
+                print('non unique image number!')
+                print('Warning!', species, m, roughness,
+                      len(localmaxs), len(localmins), images)
+                continue
             if len(localmaxs) > 1 or len(localmins) > 2 or len(localmins) == 1:
-                print('Warning!:')
-            if np.min(self.rxn_paths[rxn_id]['distance']) > 1.6:
-                print('Incomplete trajectory!', m, species, images)
+                warn = True
+            shortest = np.min(self.rxn_paths[rxn_id]['distance'])
+            if shortest > dbond * rtol:
+                warn = True
+                assert np.argmax(self.rxn_paths[rxn_id]['dbids']) == \
+                    np.argmax(self.rxn_paths[rxn_id]['images'])
                 calculate.append(max(self.rxn_paths[rxn_id]['dbids']))
                 continue
             tst = np.argmax(pes)
-            print(species, m, roughness, len(localmaxs), len(localmins))
+            if warn:
+                print('Warning!', species, m, round(dbond * rtol, 3),
+                      round(shortest, 3), roughness,
+                      len(localmaxs), len(localmins), len(images))
             if key not in abinitio_energies:
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
-                de[key] = self.rxn_paths[rxn_id]['de'][tst]
+                ens_dict[key] = self.rxn_paths[rxn_id]['ens'][tst]
                 if freq_path is not None:
                     try:
                         d_freq = c_freq.get('path_id='+rxn_id)
@@ -604,36 +650,158 @@ class db2catmap(object):
             elif abinitio_energies[key] > pes[tst]:
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
-                de[key] = self.rxn_paths[rxn_id]['de'][tst]
+                ens_dict[key] = self.rxn_paths[rxn_id]['ens'][tst]
         incomplete = ','.join([str(int(a)) for a in np.unique(calculate)])
-        print(incomplete)
-        return abinitio_energies, freq_dict, de, dbids
+        print('Incomplete:', incomplete)
+        return abinitio_energies, freq_dict, ens_dict, dbids
 
-    def make_input_file(self, file_name, site_specific=False):
+    def scaling_analysis(self, x, y, lattice=None, site_x=None, site_y=None):
+        """Returns the scaling relation information between the species
+        x and y on the surface geometry 'lattice' and site.
+        The outputs are in order: slope, intercept, which are floats,
+        followed by X and Y, which are lists of formation energies.
+
+        Parameters
+        ----------
+        x : str or list
+            species x
+        y : str
+            species y
+        lattice : str or None
+            surface lattice of y
+        site='site' : str
+            Site of y. If _db2surf was run with site_specific=False, use the
+            default value, 'site'.
+        """
+        X = []
+        Y = []
+        l = []
+        # Loop over slabs.
+        for slab in self.reference_epot.keys():
+            if 'slab' not in slab:
+                continue
+            # Filter by surface lattice.
+            if lattice is not None and lattice not in slab:
+                continue
+            # Get formation energy if it is stored.
+            key_y = self._insert_species(slab, y, site_y)
+            if key_y not in self.formation_energies:
+                continue
+            key_x = self._insert_species(slab, x, site_x)
+            # If the x species is a list, sum them.
+            if isinstance(key_x, list):
+                DeltaE_x = 0
+                continue_outer = False
+                for k_x in key_x:
+                    if k_x in self.formation_energies:
+                        DeltaE_x += self.formation_energies[k_x]
+                    else:
+                        continue_outer = True
+                        break
+                if continue_outer:
+                    continue
+                else:
+                    X.append(DeltaE_x)
+                    Y.append(self.formation_energies[key_y])
+            else:
+                if key_x in self.formation_energies:
+                    X.append(self.formation_energies[key_x])
+                    Y.append(self.formation_energies[key_y])
+                else:
+                    continue
+            # Store the list of slabs.
+            l.append(slab)
+        # Get the scaling relation.
+        slope, intercept = np.polyfit(X, Y, deg=1)
+        return slope, intercept, X, Y, l
+
+    def _insert_species(self, slab, species, site=None):
+        """Return a key for a hypothetical adsorbate state. This is useful
+        for reading or filling in formation energies of states related
+        by scaling relations.
+
+        Parameters
+        ----------
+        slab : str
+            key of the slab
+        species : str
+            adsorbate formula
+        site : str
+            optional site.
+        """
+        if isinstance(species, list):
+            key = []
+            for x in range(len(species)):
+                fields = slab.split('_')
+                fields[0] = '1'
+                fields[1] = species[x]
+                if site is None:
+                    fields[-1] = 'site'
+                else:
+                    fields[-1] = site[x]
+                key.append('_'.join(fields))
+        else:
+            fields = slab.split('_')
+            fields[0] = '1'
+            fields[1] = species
+            if site is None:
+                fields[-1] = 'site'
+            else:
+                fields[-1] = site
+            key = '_'.join(fields)
+        return key
+
+    def insert_interpolated_states(self, x, y, site_y=None,
+                                   slope=None, intercept=None):
+        """ Update the formation_energy dictionary with interpolated values.
+        This is intended for use with thermodynamic scalers only.
+
+        Parameters
+        ----------
+        x : list of strings
+            keys from self.formation_energy
+        y : str
+            species
+        site_y : str
+            site of species y
+        slope : float or None
+        intercept : float or None
+        """
+        if slope is None or intercept is None:
+            raise NotImplementedError("Call scaling_analysis.")
+        for key_x in x:
+            X = self.formation_energies[key_x]
+            Y = slope * X + intercept
+            fields = key_x.split('_')
+            fields[1] = y
+            if site_y is not None:
+                fields[-1] = site_y
+            key_y = '_'.join(fields)
+            self.formation_energies.update({key_y: Y})
+
+    def make_input_file(self, file_name, site_specific=False,
+                        covariance=None):
         """ Saves the catmap input file.
 
         Parameters
         ----------
         file_name : string
             path and name of the output file.
-        energy_dict : dictionary
-            Contains formation energies. Each species is represented by a field
-            and the fields must be named in the format
-            <species>_<surface>_<phase>_<surface lattice>_<facet>_<site>
-            or
-            <species>_gas
-        freq_dict : dictionary
-            Contains lists of frequencies. Each species is represented by a
-            field and the fields must be named corresponding to energy_dict.
-        bee_dict : dictionary
-            Contains standard deviations on the energy.
-            Each species is represented by a field and the fields must be named
-            corresponding to energy_dict.
+        site_specific : boolean or string
+            Decides what to export to the site key.
+            True exports the site field from the db.
+            False exports the lattice field from the db.
+            'facet' exports the facet field from the db.
+            str : another string is treated as False, except if that string is
+            found in the site field.
         """
         # Create a header.
-        header = '\t'.join(['surface_name', 'phase', 'site_name',
-                            'species_name', 'formation_energy',
-                            'frequencies', 'reference', 'coverage', 'std'])
+        headerlist = ['surface_name', 'phase', 'site_name',
+                      'species_name', 'formation_energy',
+                      'frequencies', 'reference', 'coverage', 'std']
+        if covariance is not None:
+            headerlist += ['width', 'height', 'angle', 'covariance']
+        header = '\t'.join(headerlist)
         # List of lines in the output.
         lines = []
         for key in self.formation_energies.keys():  # Iterate through keys
@@ -652,7 +820,8 @@ class db2catmap(object):
                 n, name, cat, pha, lattice, facet, cell, site = key.split('_')
             if 'slab' not in key:  # Do not include empty site energy (0)
                 try:
-                    frequency = self.freq[key]
+                    freq_key = key
+                    frequency = self.freq[freq_key]
                 except KeyError:
                     frequency = []
                 try:
@@ -666,7 +835,7 @@ class db2catmap(object):
                     site_name = 'gas'
                     coverage = 0
                 else:
-                    surface = cat  # +'_'+pha #useful to include phase.
+                    surface = cat
                     phase = pha
                     coverage = round(float(n) /
                                      (float(cell[0]) * float(cell[2])), 3)
@@ -684,6 +853,20 @@ class db2catmap(object):
                 E = float(E)
                 outline = [surface, phase, site_name, name,
                            E, list(frequency), environ['USER'], coverage, std]
+                if covariance is not None and covariance[1] == name:
+                    slab = '_'.join(['0_', cat, pha, lattice, facet, cell,
+                                     'slab'])
+                    if slab in self.width:
+                        width = round(self.width[slab], 4)
+                        height = round(self.height[slab], 4)
+                        angle = round(self.angle[slab], 4)
+                        reference = covariance[0]
+                    else:
+                        width = ''
+                        height = ''
+                        angle = ''
+                        reference = ''
+                    outline += [width, height, angle, reference]
                 line = '\t'.join([str(w) for w in outline])
                 lines.append(line)
         # The file is easier to read if sorted (optional).
@@ -760,7 +943,7 @@ class db2catmap(object):
                 path_surface = path_reaction + '/' + name.replace('/', '')
                 path_facet = path_surface + '/' + facet.replace('x', '')
                 DeltaE = 0.
-                de = 0.  # np.zeros(self.state.size)
+                de = np.zeros(self.state.size)
                 ea = 0.
                 intermediates_exist = True
                 # Find reactant structures and energies
@@ -778,9 +961,8 @@ class db2catmap(object):
                         rkey = slabkey
                         fname = path_facet + '/empty_surface'
                     else:
-                        rkey = '1_' + species.replace('*', '') + \
-                            '_' + name + '_' + phase + '_' + lattice + '_' + \
-                            facet + '_' + cell + '_' + site
+                        rkey = '_'.join(['1', species.replace('*', ''), name,
+                                         phase, lattice, facet, cell, site])
                         fname = path_facet + '/' + species
                     if rkey not in self.dbid:
                         intermediates_exist = False
@@ -790,7 +972,7 @@ class db2catmap(object):
                                     'fname': fname}})
                     if species != '*':
                         DeltaE -= n * self.formation_energies[rkey]
-                        de -= n * self.de[rkey]
+                        de -= n * self.de_dict[rkey]
                 if not intermediates_exist:
                     continue
                 # Find transition state structures and energies.
@@ -799,9 +981,8 @@ class db2catmap(object):
                         if '-' not in ts:
                             continue
                         species, sitesymbol = ts.split('_')
-                        tskey = '0_' + species + '_' + name + '_' + phase + \
-                            '_' + lattice + '_' + facet + '_' + cell + \
-                            '_' + site
+                        tskey = '_'.join(['0', species, name, phase, lattice,
+                                          facet, cell, site])
                         if tskey not in self.dbid:
                             continue
                         totraj.update({tskey:
@@ -823,9 +1004,8 @@ class db2catmap(object):
                         pkey = slabkey
                         fname = path_facet + '/empty_surface'
                     else:
-                        pkey = '1_' + species.replace('*', '') + \
-                            '_' + name + '_' + phase + '_' + lattice + '_' + \
-                            facet + '_' + cell + '_' + site
+                        pkey = '_'.join(['1', species.replace('*', ''), name,
+                                         phase, lattice, facet, cell, site])
                         fname = path_facet + '/' + species
                     if pkey not in self.dbid:
                         intermediates_exist = False
@@ -835,17 +1015,17 @@ class db2catmap(object):
                                     'fname': fname}})
                     if species != '*':
                         DeltaE += n * self.formation_energies[pkey]
-                        de += n * self.de[pkey]
+                        de += n * self.de_dict[pkey]
                 # If all states are found for this surface, write.
                 if intermediates_exist:
                     if not os.path.isdir(project):
-                        os.mkdir(project)
+                        mkdir(project)
                     if reaction_name not in listdir(project):
-                        os.mkdir(path_reaction)
+                        mkdir(path_reaction)
                     if name.replace('/', '') not in listdir(path_reaction):
-                        os.mkdir(path_surface)
+                        mkdir(path_surface)
                     if facet.replace('x', '') not in listdir(path_surface):
-                        os.mkdir(path_facet)
+                        mkdir(path_facet)
                     for trajkey in totraj.keys():
                         if 'gas' in trajkey:
                             fname = totraj[trajkey]['fname'] + '.traj'
