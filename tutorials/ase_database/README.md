@@ -7,7 +7,7 @@ In the end of your calculation script, you can add the lines:
     epot = atoms.get_potential_energy()
     contribs = calc.get_nonselfconsistent_energies()
     c = ase.db.connect('my_path_and_filename.db')
-    c.write(atoms, epot=epot, species='OH', name='Pt', phase='fcc',
+    c.write(atoms, species='OH', name='Pt', phase='fcc',
             facet='1x1x1', supercell='2x2', layers=3, site='top',
             n=1, data={'BEEFvdW_contribs': contribs})
 
@@ -33,19 +33,19 @@ sufficient for your dataset. Make sure you filter calculator parameters such as
 XC-funcional, basis sets cutoffs, k-point sampling, ect.
 For surfaces, the module have built-in distinctions that uses the keys:
 
- - n
- - species
- - name
- - phase
- - facet
- - surf_lattice
- - supercell
- - layers
- - site
- - data.BEEFvdW_contribs
+ - `energy` (immutable key retreived from the calculator)
+ - `n`
+ - `species`
+ - `name`
+ - `phase`
+ - `facet`
+ - `surf_lattice`
+ - `supercell`
+ - `layers`
+ - `site`
+ - `data.BEEFvdW_contribs`
 
-`site` is optional and turned off by default. The potential energy is retrieved
-from the key `energy` or `epot`, whichever is present.
+`site` is optional and turned off by default.
 
 Importing data from correctly formatted .db files is done like so:
     
@@ -75,7 +75,7 @@ A convenient way of storing the frequencies is along with the atoms object in th
     vib.run()
     vib.summary(method='standard')
     frequencies = vib.get_frequencies()
-    c_out.write(atoms, epot=epot, data={'frequencies': frequencies})
+    c_out.write(atoms, data={'frequencies': frequencies})
 
 Use the key `frequencies` to make it accessible to the asedb2catmap module.
 Importing frequencies is handled by `get_surfaces`, which we have already used. 
@@ -92,22 +92,34 @@ Doing so from a NEB can be done like so:
     for atoms in images:
         im += 1
         epot = atoms.get_potential_energy()
-        # ase-espresso calculator cannot be written to db.
-        relaxed_atoms = atoms.copy()
-        relaxed_atoms.set_calculator(None)
-        c_out.write(relaxed_atoms, epot=epot, path_id=path_id, image=im)
+        c_out.write(atoms, path_id=path_id, image=im)
 
-Transition states and paths have the mandatory keys:
+Transition states and paths have the mandatory key value pairs:
 
- - energy or epot
- - path_id
- - step or image
+ - `path_id`
+ - `step` or `image`
 
 `step` or `image` is used to order the images.
 There is one additional recommended key:
 
- - distance
+ - `distance`
 
 which is useful for making plots of the energy versus reaction coordinate.
 To add formation energies of transition states to your catmap input, you can simply do:
+
+## Issues with ASE-incompatible calculators
+
+ase-espresso is not fully compatible with the ase database module.
+A workaround is to store the energy and forces in a `SinglePointDFTCalculator` like so:
+
+    epot = atoms.get_potential_energy()
+    forces = atoms.get_forces()
+    relaxed_atoms = atoms.copy()
+    spcalc = SinglePointDFTCalculator(relaxed_atoms)
+    spcalc.results['energy'] = epot
+    spcalc.results['forces'] = forces
+    relaxed_atoms.set_calculator(spcalc)
+    c.write(relaxed_atoms, ...)
+
+`SinglePointDFTCalculator` can be imported from `from ase.calculators.singlepoint`
 
