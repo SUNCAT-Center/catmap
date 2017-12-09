@@ -1,5 +1,5 @@
-Additional Gas Species Properties
-================================
+Additional Gas and Adsorbate Species Properties
+===============================================
 
 There are two main ways of using free energies in CatMAP:
 
@@ -46,6 +46,21 @@ Shomate parameters as values.  You can input this dictionary in your .mkm file l
 
   shomate_params = {'CH3OH_g:298-1500':[-1.0846, 153.2464, -79.5305, 16.4713, 0.5220, -4.8974, 199.1894, 0.0],
                     'CH3CH2OH_g:298-1200':[-4.7368, 271.9618, -169.3495, 43.7386, 0.2464, -9.8283, 203.3326, 0.0],}
+
+**Hindered Adsorbate Properties**
+
+``hindered_adsorbate`` is a mode for correcting the energies of adsorbed species.  It relies on `ASE's thermochemistry package 
+HinderedThermo <https://wiki.fysik.dtu.dk/ase/ase/thermochemistry/thermochemistry.html#hindered-translator-hindered-rotor-model>`__, 
+user-provided vibrational frequencies, and a dictionary of hindered adsorbate parameters, ``hindered_ads_params``, which stores 
+``[barrierT, barrierR, site_density, rotational_minima, mass, inertia, symmetry_number]`` values for each adsorbate species key. 
+You can provide your own parameters by adding something like the following to your .mkm file:
+
+.. code:: python
+
+  hindered_ads_params = {'CH4_s':[0.006, 0.0008, 1.5e15, 6, None, None, 1],
+                         'C2H6_s':[0.049, 0.018, 1.5e15, 6, 30.07, 73.15, 1],}
+
+and so on for each adsorbed species in your system.
 
 
 **Contributing Data to CatMAP**

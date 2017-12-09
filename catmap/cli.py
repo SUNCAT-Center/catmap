@@ -7,6 +7,10 @@ usage['import'] = """catmap import <mkm-file>
     Open a *.mkm project file and work with it interactively.
 """
 
+usage['graphviz'] = """catmap graphviz <mkm-file>
+    Create graphical representation of reaction mechanism in *.mkm file
+"""
+
 
 def get_options(args=None, get_parser=False):
     import optparse
@@ -76,6 +80,21 @@ def main(args=None):
         model = ReactionModel(setup_file=mkm_file)
         sh(banner='Note: model = catmap.ReactionModel(setup_file=\'%s\')\n# do model.run()\nfor a fully initialized model.' %
            args[1])
+
+    elif args[0] == 'graphviz':
+        import catmap.analyze.mechanism
+        import catmap.model
+        if len(args) < 2:
+            parser.error('mkm filename expected.')
+        mkm_file = args[1]
+        seed = mkm_file.split('.')[0]
+        model = catmap.model.ReactionModel(setup_file=mkm_file)
+        mechanism = catmap.analyze.mechanism.MechanismAnalysis(model)
+        graph = mechanism.create_graph()
+        graph.render(seed)
+
+
+
 
 
 def sh(banner):

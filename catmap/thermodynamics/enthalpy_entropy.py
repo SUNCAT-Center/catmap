@@ -12,6 +12,7 @@ from mpmath import mpf
 from math import exp, log
 IdealGasThermo = catmap.IdealGasThermo
 HarmonicThermo = catmap.HarmonicThermo
+HinderedThermo = catmap.HinderedThermo
 molecule = catmap.molecule
 np = catmap.np
 copy = catmap.copy
@@ -71,6 +72,7 @@ class ThermoCorrections(ReactionModelWrapper):
                 thermodynamic_corrections = ['gas','adsorbate'],
                 thermodynamic_variables = ['temperature','gas_pressures','voltage','beta','pH','Upzc'],
                 ideal_gas_params = catmap.data.ideal_gas_params,
+                hindered_ads_params = {},
                 fixed_entropy_dict = catmap.data.fixed_entropy_dict,
                 shomate_params = catmap.data.shomate_params,
                 hbond_dict = catmap.data.hbond_dict,
@@ -185,12 +187,12 @@ class ThermoCorrections(ReactionModelWrapper):
             of interest. Vibrational frequencies should be in eV. 
             The dictionary should be of the form 
             freq_dict[gas_name] = [freq1, freq2, ...]
-        ideal_gas_params = dictionary of the symetry number, 
+        ideal_gas_params = dictionary of the symmetry number, 
             geometry keyword, and spin of the gas. If no dictionary 
             is specified then the function will attempt to look the 
             gas up in the hard-coded gas_params dictionary. 
             The dictionary should be of the form 
-            ideal_gas_params[gas_name] = [symmetry_number,geometry, spin]
+            ideal_gas_params[gas_name] = [symmetry_number, geometry, spin]
         atoms_dict = dictionary of ase atoms objects to use for 
             calculating rotational contributions. If none is specified 
             then the function will look in ase.data.molecules.
@@ -247,8 +249,7 @@ class ThermoCorrections(ReactionModelWrapper):
             ZPE = 0.5*(sum(freq_dict[gas]))
 
             H = therm.get_enthalpy(temperature, verbose=False)
-            S = therm.get_entropy(
-                    temperature, fugacity, verbose=False)
+            S = therm.get_entropy(temperature, fugacity, verbose=False)
 
             free_energy = H-temperature*S
             thermo_dict[gas] = free_energy #use thermodynamic state 
@@ -336,7 +337,8 @@ class ThermoCorrections(ReactionModelWrapper):
 
     def fixed_entropy_gas(self,include_ZPE=True):
         """
-        Add entropy based on fixed_entropy_dict (entropy contribution to free energy assumed linear with temperature) and ZPE 
+        Add entropy based on fixed_entropy_dict (entropy contribution to free 
+        energy assumed linear with temperature) and ZPE
         """
         thermo_dict = {}
         gas_names = self.gas_names
@@ -423,11 +425,10 @@ class ThermoCorrections(ReactionModelWrapper):
         an adsorbate in the harmonic approximation using the HarmonicThermo 
         class in ase.thermochemistry.
 
-        adsorbate_names = the chemical formulas of the gasses of interest 
-            (usually ending in _g to denote that they are in the gas phase).
-            freq_dict = dictionary of vibrational frequencies for each gas of 
+        adsorbate_names = the chemical formulas of the adsorbates of interest.
+        freq_dict = dictionary of vibrational frequencies for each adsorbate of 
             interest. Vibrational frequencies should be in eV. The dictionary 
-            should be of the form freq_dict[gas_name] = [freq1, freq2, ...]
+            should be of the form freq_dict[ads_name] = [freq1, freq2, ...]
         """
         adsorbate_names = self.adsorbate_names+self.transition_state_names
         temperature = float(self.temperature)
@@ -448,8 +449,10 @@ class ThermoCorrections(ReactionModelWrapper):
                     if temperature in self._freq_cutoffs:
                         nu_min = self._freq_cutoffs[temperature]
                     else:
-                        kB_multiplier = float(self.max_entropy_per_mode/self._kB)
-                        nu_min = self.get_frequency_cutoff(kB_multiplier,float(temperature))
+                        kB_multiplier = float(
+                                self.max_entropy_per_mode/self._kB)
+                        nu_min = self.get_frequency_cutoff(
+                                kB_multiplier,float(temperature))
                         nu_min /= 1000.
                         self._freq_cutoffs[temperature] = nu_min
 
@@ -481,6 +484,134 @@ class ThermoCorrections(ReactionModelWrapper):
 
         return thermo_dict
     
+    def hindered_adsorbate(self):
+        """Calculate the thermal correction to the free energy of an 
+        adsorbate in the hindered translator and hindered rotor model using 
+        the HinderedThermo class in ase.thermochemistry along with the 
+        molecular structures in ase.data.molecules. Requires ase version 
+        3.12.0 or greater.
+
+        adsorbate_names = the chemical formulas of the adsorbates of interest. 
+        freq_dict = dictionary of vibrational frequencies for each adsorbate of 
+            interest. Vibrational frequencies should be in eV. The dictionary 
+            should be of the form freq_dict[ads_name] = [freq1, freq2, ...]
+        hindered_ads_params = dictionary containing for each adsorbate 
+            [0] = translational energy barrier in eV (barrier for the 
+                  adsorbate to diffuse on the surface)
+            [1] = rotational energy barrier in eV (barrier for the adsorbate 
+                  to rotate about an axis perpendicular to the surface)
+            [2] = surface site density in cm^-2 
+            [3] = number of equivalent minima in full adsorbate rotation 
+            [4] = mass of the adsorbate in amu (can be unspecified by putting 
+                  None, in which case mass will attempt to be calculated from 
+                  the ase atoms class)
+            [5] = reduced moment of inertia of the adsorbate in amu*Ang^-2 
+                  (can be unspecified by putting None, in which case inertia 
+                  will attempt to be calculated from the ase atoms class)
+            [6] = symmetry number of the adsorbate (number of symmetric arms 
+                  of the adsorbate which depends upon how it is bound to the 
+                  surface. For example, propane bound through its end carbon 
+                  has a symmetry number of 1 but propane bound through its 
+                  middle carbon has a symmetry number of 2. For single atom 
+                  adsorbates such as O* the symmetry number is 1.)
+            The dictionary should be of the form 
+            hindered_ads_params[ads_name] = [barrierT, barrierR, site_density, 
+            rotational_minima, mass, inertia, symmetry_number]
+        atoms_dict = dictionary of ase atoms objects to use for calculating 
+            mass and rotational inertia. If none is specified then the function 
+            will look in ase.data.molecules. Can be omitted if both mass and 
+            rotational inertia are specified in hindered_ads_params.
+
+        """
+        adsorbate_names = self.adsorbate_names+self.transition_state_names
+        temperature = float(self.temperature)
+        freq_dict = self.frequency_dict
+        ads_param_dict = self.hindered_ads_params
+
+        thermo_dict = {}
+        if temperature == 0: temperature = 1e-99
+
+        ase_atoms_dict = {}
+        for ads in self.adsorbate_names:
+            atom_name = ads.rsplit('_',1)[0]
+            try:
+                ase_atoms_dict[ads] = molecule(atom_name)
+            except(NotImplementedError,KeyError):
+                pass
+        ase_atoms_dict.update(self.atoms_dict)
+        self.atoms_dict = ase_atoms_dict
+        atoms_dict = self.atoms_dict
+
+        avg_TS = []
+        self._freq_cutoffs = {}
+
+        for ads in adsorbate_names:
+            if '-' in ads and (freq_dict[ads] in [None,[],()] or 
+                    ads not in ads_param_dict):
+                avg_TS.append(ads)
+                break
+
+            #get frequencies or throw error
+            if freq_dict[ads] not in [None,[],()]:
+                frequencies = freq_dict[ads]
+            else:
+                raise IndexError('Missing vibrational frequencies for '+ads)
+            if self.max_entropy_per_mode:
+                if temperature in self._freq_cutoffs:
+                    nu_min = self._freq_cutoffs[temperature]
+                else:
+                    kB_multiplier = float(
+                            self.max_entropy_per_mode/self._kB)
+                    nu_min = self.get_frequency_cutoff(
+                            kB_multiplier,float(temperature))
+                    nu_min /= 1000.
+                    self._freq_cutoffs[temperature] = nu_min
+                frequencies = [max(nu,nu_min) for nu in frequencies]
+
+            #get all other parameters or throw error
+            if ads in ads_param_dict:
+                apars = ads_param_dict[ads]
+            else:
+                raise IndexError('Missing hindered_ads_params for '+ads)
+            barrierT = apars[0]
+            barrierR = apars[1]
+            sitedensity = apars[2]
+            rotationalminima = apars[3]
+            mass = apars[4]
+            inertia = apars[5]
+            symmetrynumber = apars[6]
+            try:
+                atoms = atoms_dict[ads]
+            except:
+                atoms = {}
+            if not ((mass and inertia) or atoms):
+                if '-' in ads:
+                    avg_TS.append(ads)
+                    break
+                else:
+                    raise IndexError('Missing either mass and inertia of '+ads+
+                                     ' or atoms object for '+ads)
+            therm = HinderedThermo(
+                    frequencies, barrierT, barrierR, sitedensity, 
+                    rotationalminima, mass=mass, inertia=inertia, 
+                    atoms=atoms, symmetrynumber=symmetrynumber)
+
+            free_energy = therm.get_helmholtz_energy(
+                    temperature,verbose=False)
+            ZPE = therm.get_zero_point_energy(verbose=False)
+            dS = therm.get_entropy(temperature,verbose=False)
+            dH = therm.get_internal_energy(temperature,verbose=False) - ZPE
+            self._zpe_dict[ads] = ZPE
+            self._enthalpy_dict[ads] = dH
+            self._entropy_dict[ads] = dS
+            thermo_dict[ads] = free_energy #use thermodynamic state from 
+            #ase.thermochemistry to calculate thermal corrections.
+
+        ts_thermo = self.average_transition_state(thermo_dict,avg_TS)
+        thermo_dict.update(ts_thermo)
+
+        return thermo_dict
+
     def zero_point_adsorbate(self):
         """
         Add zero point energy correction to adsorbate energy.

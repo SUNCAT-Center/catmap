@@ -49,6 +49,7 @@ gas_thermo_mode = "shomate_gas"
 
 adsorbate_thermo_mode = "frozen_adsorbate"
 #adsorbate_thermo_mode = "harmonic_adsorbate"
+#adsorbate_thermo_mode = "hindered_adsorbate"
 #adsorbate_thermo_mode = "zero_point_adsorbate"
 
 scaling_constraint_dict = {

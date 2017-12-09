@@ -28,8 +28,8 @@ class ScalerBase(ReactionModelWrapper):
             adsorbate approximation.
         frequency_dict: a dictionary of vibrational frequencies (in eV) for 
             each gas/adsorbate. Should be of the form 
-            frequency_dict[ads] = [freq1, freq2,...]. Needed for ideal gas or 
-            harmonic adsorbate approximations.
+            frequency_dict[ads] = [freq1, freq2,...]. Needed for ideal gas, 
+            harmonic adsorbate, or hindered adsorbate approximations.
 
         A functional derived scaler class must also contain the methods:
 

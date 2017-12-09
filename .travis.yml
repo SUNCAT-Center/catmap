@@ -27,8 +27,8 @@ before_install:
 # Install packages
 install:
   - if [ "x${WITH_SCIPY}" == "xtrue" ]; then conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose; else conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy matplotlib nose; fi
-  - pip install mpmath
-  - pip install ase coverage
+  - pip install -r requirements.txt
+  - pip install coverage
   - python setup.py install #install catmap
  
 # Run tests; this is a very crude way of testing things

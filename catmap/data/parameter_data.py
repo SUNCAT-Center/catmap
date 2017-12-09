@@ -63,6 +63,10 @@ shomate_params['C5H6O2_g:100-1500'] = [-18.57626, 0.50733, -0.000335824, 0.00000
         231619.2141, -6357.53523, 2.75692, 7057.53523] #Added by N. Shan, KSU from NIST/CRC
 shomate_params['C5H6O_g:50-1500'] = [1.26847, 0.35388, -0.000173962, 0.0000000287427,
         48401.71207, -5691.94893, -85.38991, 7191.94893] #Added by N. Shan, KSU from NIST/CRC
+shomate_params['Cl2_g:298-1000'] = [33.05060, 12.22940, -12.06510, 4.385330, -0.159494,
+        -10.83480, 259.0290, 0.000000] #Added by M. Andersen, TUM from NIST
+shomate_params['HCl_g:298-1200'] = [32.12392, -13.45805, 19.86852, -6.853936, -0.049672,
+        -101.6206, 228.6866, -92.31201] #Added by M. Andersen, TUM from NIST
 #Fitted to values from CRC Handbook of Chemistry and Physics 91st Ed.
 #H constrained to 0
 shomate_params['CH3CH2OH_g:298-1500'] = [-4.7367880805894265, 271.96181550301463, 
@@ -109,6 +113,8 @@ ideal_gas_params = {
         'C5H4O2_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
         'C5H6O2_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
         'C5H6O_g':[1,'nonlinear',0], #Added by N. Shan, KSU from NIST/CRC
+        'HCl_g':[1,'linear',0], #Added by M. Andersen, TUM from NIST
+        'Cl2_g':[2,'linear',0], #Added by M. Andersen, TUM from NIST
         }
 
 #Define default fixed entropy gas entropies

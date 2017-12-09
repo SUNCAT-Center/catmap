@@ -36,12 +36,12 @@ def griddata(*args, **kwargs):
 
 import mpmath as mp
 from ase.atoms import string2symbols
-from ase.thermochemistry import IdealGasThermo, HarmonicThermo
+from ase.thermochemistry import IdealGasThermo, HarmonicThermo, HinderedThermo
 from ase.structure import molecule
 from catmap.model import ReactionModel
 import data
 
-__version__ = "0.2.270"
+__version__ = "0.2.450"
 
 def griddata(*args, **kwargs):
     """Wrapper function to avoid annoying griddata errors"""

@@ -333,7 +333,7 @@ dictionary:
 
 Next, we need to decide on a choice of reference molecules. One simple
 option for this system is to take hydrogen relative to |H2|, carbon
-relative to |CH4|, and water relative to |H2O|. We will take all adsorption
+relative to |CH4|, and oxygen relative to |H2O|. We will take all adsorption
 energies relative to the clean (111) :math:`{\rm{Rh}}` slab.
 
 .. code:: python
