@@ -53,6 +53,7 @@ import numpy as np
 import ase.db
 from ase.atoms import string2symbols
 from ase.data import covalent_radii, atomic_numbers
+from ase.calculators.singlepoint import SinglePointDFTCalculator
 from catmap.bee import BEEFEnsemble as BEE
 import csv
 
@@ -883,17 +884,18 @@ class db2catmap(object):
         input.close()
 
     def make_nested_folders(self, project, reactions, surfaces=None,
-                            site='site', ads_db=None, mol_db=None, ts_db=None,
+                            site='site', mol_db=None,
+                            slab_db=None, ads_db=None, ts_db=None,
                             publication='', url=''):
         """Saves a nested directory structure,
         compatible with the catapp project.
 
         Parameters
         ----------
-        fname : string
-            path and name of an ase database file.
-        project : dictionary
+        project : str
+            parent folder name.
         reactions : list
+            catmap's rxn_expressions. A list of strings.
         """
         # Create a header
         spreadsheet = [['chemical_composition', 'facet', 'reactants',
@@ -901,16 +903,23 @@ class db2catmap(object):
                         'beef_standard_deviation',
                         'activation_energy', 'DFT_code', 'DFT_functional',
                         'reference', 'url']]
+        # width, height, angle, covariance
         if surfaces is None:
             surfaces = [s for s in self.reference_epot.keys() if 'slab' in s]
         if mol_db is None:
             mol_db = self.mol_db
         if ads_db is None:
             ads_db = self.ads_db
+        if slab_db is None:
+            slab_db = ads_db
         if ts_db is None:
             ts_db = self.ts_db
-        c_ads = ase.db.connect(ads_db)
         c_mol = ase.db.connect(mol_db)
+        c_ads = ase.db.connect(ads_db)
+        if slab_db == ads_db:
+            c_slab = c_ads
+        else:
+            c_slab = ase.db.connect(slab_db)
         if ts_db is not None:
             c_ts = ase.db.connect(ts_db)
         Nsurf = 0
@@ -941,7 +950,8 @@ class db2catmap(object):
                 [n, species, name, phase,
                  lattice, facet, cell, slab] = slabkey.split('_')
                 path_surface = path_reaction + '/' + name.replace('/', '')
-                path_facet = path_surface + '/' + facet.replace('x', '')
+                facet_name = facet.replace('(', '').replace(')', '')
+                path_facet = path_surface + '/' + facet_name
                 DeltaE = 0.
                 de = np.zeros(self.state.size)
                 ea = 0.
@@ -1024,31 +1034,42 @@ class db2catmap(object):
                         mkdir(path_reaction)
                     if name.replace('/', '') not in listdir(path_reaction):
                         mkdir(path_surface)
-                    if facet.replace('x', '') not in listdir(path_surface):
+                    if facet_name not in listdir(path_surface):
                         mkdir(path_facet)
                     for trajkey in totraj.keys():
+                        fname = totraj[trajkey]['fname'] + '.traj'
                         if 'gas' in trajkey:
-                            fname = totraj[trajkey]['fname'] + '.traj'
                             if fname in os.listdir(path_reaction):
                                 continue
                             else:
                                 atoms = c_mol.get_atoms(self.dbid[trajkey])
+                                d = c_mol.get(self.dbid[trajkey])
                         elif '-' in trajkey.split('_')[1]:
                             atoms = c_ts.get_atoms(self.dbid[trajkey])
+                            d = c_ts.get(self.dbid[trajkey])
+                        elif 'slab' in trajkey.split('_')[-1]:
+                            atoms = c_slab.get_atoms(self.dbid[trajkey])
+                            d = c_slab.get(self.dbid[trajkey])
                         else:
                             atoms = c_ads.get_atoms(self.dbid[trajkey])
-                        atoms.write(totraj[trajkey]['fname'] + '.traj')
+                            d = c_ads.get(self.dbid[trajkey])
+                        if atoms.calc is None:
+                            calc = SinglePointDFTCalculator(atoms)
+                            calc.results['energy'] = float(d.epot)
+                            atoms.set_calculator(calc)
+                        fname = fname.replace('(', '').replace(')', '')
+                        atoms.write(fname)
                     std = np.std(de)
                     spreadsheet.append([name, facet, rname, pname,
                                         DeltaE, std, ea,
                                         'Quantum Espresso',
                                         'BEEF-vdW', publication, url])
-
+                    # width, height, angle, covariance
                     Nsurf += 1
                 else:
                     continue
             Nrxn += 1
-        with open(project+'test.csv', 'wb') as f:
+        with open(project + '/data.csv', 'wb') as f:
             writer = csv.writer(f)
             writer.writerows(spreadsheet)
         print(Nrxn, 'reactions imported.')
