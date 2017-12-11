@@ -43,7 +43,7 @@ from ase.atoms import string2symbols
 from ase.thermochemistry import IdealGasThermo, HarmonicThermo, HinderedThermo
 from ase.structure import molecule
 from catmap.model import ReactionModel
-import data
+from . import data
 
 __version__ = "0.2.450"
 
