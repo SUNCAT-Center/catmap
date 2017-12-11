@@ -241,13 +241,13 @@ class SteadyStateSolver(MeanFieldSolver):
             try:
                 valid_coverages =  self.get_steady_state_coverage(new_params,self.interacting_steady_state_function,
                     self.interacting_steady_state_jacobian,valid_coverages,findrootArgs)
-                print 'Successfully bisected with strength: ',new_strength
+                print('Successfully bisected with strength: {new_strength:s}'.format(new_strength=new_strength))
                 valid_strength = new_strength
                 n_bisects = 0
                 if valid_strength > 0.95*target_strength:
                     return valid_coverages
             except ValueError:
-                print 'Failed to bisect with strength: ',new_strength
+                print('Failed to bisect with strength: {new_strength:s}'.format(new_strength=new_strength))
                 n_bisects += 1
         return valid_coverages
 
