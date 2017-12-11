@@ -341,7 +341,7 @@ class ReactionModel:
                 func_string = template.substitute(self._function_substitutions)
                 self._function_strings[func_name] = func_string
                 locs = {}
-                exec func_string in globals(), locs
+                exec(func_string in globals(), locs)
                 setattr(self,func_name,locs[func_name])
 
     #File IO functions
