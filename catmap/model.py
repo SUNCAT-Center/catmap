@@ -5,9 +5,9 @@ from copy import copy
 import numpy as np
 import catmap
 from string import Template
-import functions
+from . import functions
 import re
-from data import regular_expressions
+from .data import regular_expressions
 string2symbols = catmap.string2symbols
 pickle = catmap.pickle
 plt = catmap.plt
