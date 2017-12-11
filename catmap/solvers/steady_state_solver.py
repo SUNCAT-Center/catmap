@@ -474,7 +474,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     #re-compile optimized function
                     self._function_strings[func] = func_string
                     locs = {}
-                    exec(func_string in globals(), locs)
+                    exec(func_string, globals(), locs)
                     setattr(self,func,locs[func])
 
             self._compiled = True
@@ -490,7 +490,7 @@ class SteadyStateSolver(MeanFieldSolver):
         """
 
         locs = {}
-        exec(func_string in globals(), locs)
+        exec(func_string, globals(), locs)
         unoptimized = locs[func_name]
 
         #replace common multiplications with substitution
@@ -532,7 +532,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     func_string = func_string.replace(m,sub)
 
         locs = {}
-        exec(func_string in globals(), locs)
+        exec(func_string, globals(), locs)
 
         optimized = locs[func_name]
         delta = np.array((optimized(*test_args) - unoptimized(*test_args)).tolist()).max()
