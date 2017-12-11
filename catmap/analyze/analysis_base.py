@@ -680,7 +680,7 @@ class MechanismPlot:
                 if barrier > 0 and barrier_rev > 0:
                     ratio = np.sqrt(barrier)/(np.sqrt(barrier)+np.sqrt(barrier_rev))
                 else:
-                    print 'Warning: Encountered barrier less than 0'
+                    print('Warning: Encountered barrier less than 0')
                     ratio = 0.0001
                     yts = max(yi,yf)
                 xts = xi + ratio*(xf-xi)
