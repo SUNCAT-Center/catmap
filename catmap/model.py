@@ -70,7 +70,10 @@ class ReactionModel:
                              'could not save ${save_txt}'}
         #modules to import in the log file to allow opening with python -i
         self._log_imports = "from numpy import array\n\n"+\
-                            "import cPickle as pickle\n\n"
+                            "try:\n" + \
+                            "    import cPickle as pickle\n\n" + \
+                            "except: #workaround for python3.X\n" + \
+                            "    import _pickle as pickle\n\n"
         #attrs taking up more space than this will be dumpted to self.data_file
         self._max_log_line_length = 8000 #100 lines at 80 cols
         #Character used for loop depth in std out

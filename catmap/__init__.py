@@ -3,7 +3,11 @@ import os
 import sys
 import inspect
 import time
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import _pickle as pickle
+
 import re
 from copy import copy
 from string import Template
