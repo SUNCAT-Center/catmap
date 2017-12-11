@@ -1,6 +1,6 @@
 import numpy as np
 import catmap
-from parser_base import *
+from .parser_base import *
 string2symbols = catmap.string2symbols
 Template = catmap.Template
 
