@@ -1,4 +1,4 @@
-from scaler_base import *
+from .scaler_base import *
 from catmap.data import regular_expressions
 from catmap.functions import parse_constraint
 from math import isnan
@@ -431,7 +431,7 @@ class GeneralizedLinearScaler(ScalerBase):
             for ads in self.parameter_names:
                 if ads not in constraint_dict:
                     constr = self.default_constraints
-                elif not hasattr(constraint_dict[ads], '__iter__'):
+                elif isinstance(constraint_dict[ads], str):
                     constr = self.default_constraints
                 else:
                     constr = constraint_dict[ads]
