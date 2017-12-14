@@ -1,4 +1,4 @@
-from scaler_base import *
+from .scaler_base import *
 import numpy as np
 
 class ThermodynamicScaler(ScalerBase):
