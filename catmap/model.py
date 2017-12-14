@@ -277,7 +277,10 @@ class ReactionModel:
             pickled_data = {}
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self,attr)
-            pickle.dump(pickled_data,open(self.data_file,'w'))
+            try:
+                pickle.dump(pickled_data,open(self.data_file,'w'))
+            except:  # Fallback workaround for Py3
+                pickle.dump(pickled_data,open(self.data_file,'wb'))
 
             #Make logfile
             log_txt = self._log_imports
@@ -368,7 +371,7 @@ class ReactionModel:
         globs = {}
         locs = defaults
 
-        execfile(setup_file,globs,locs)
+        exec(compile(open(setup_file, 'r').read(), '<string>', 'exec'), globs, locs)
         for var in locs.keys():
             if var in self._classes:
                 #black magic to auto-import classes
@@ -423,7 +426,10 @@ class ReactionModel:
         Load in output data from external files.
         """
         if os.path.exists(self.data_file):
-            pickled_data = pickle.load(open(self.data_file,'r'))
+            try:
+                pickled_data = pickle.load(open(self.data_file,'r'))
+            except:
+                pickled_data = pickle.load(open(self.data_file,'rb'))
             for attr in pickled_data:
                 if not overwrite:
                     if getattr(self,attr,None) is None: #don't over-write
@@ -697,7 +703,7 @@ class ReactionModel:
                     name,site = sp.rsplit('_',1)
                 new_list.append([site,sp])
             new_list.sort()
-            return zip(*new_list)[-1]
+            return list(zip(*new_list))[-1]
 
         self.gas_names = sort_list(gas_names)
         self.adsorbate_names = sort_list(adsorbate_names)
@@ -1202,7 +1208,7 @@ class ReactionModel:
 
     def nearest_mapped_point(self,mapp,point):
         """Get the point in the map nearest to the point supplied"""
-        pts,outs = zip(*mapp)
+        pts,outs = list(zip(*list(mapp)))
         deltas = []
         for pt in pts:
             dist = sum([(xi-xo)**2 for xi,xo in zip(point,pt)])
@@ -1239,15 +1245,15 @@ class ReactionModel:
         :type maxval: float
         """
         desc_rngs = copy(descriptor_ranges)
-        pts,datas = zip(*mapp)
-        cols = zip(*datas)
+        pts,datas = list(zip(*list(mapp)))
+        cols = list(zip(*list(datas)))
         if len(pts[0]) == 1:
-            xData = np.array(zip(*pts)[0])
+            xData = np.array(list(zip(*list(pts)))[0])
             sorted_order = xData.argsort()
             maparray = np.zeros((resolution[0],len(datas[0])))  # resolution assumed to be [x, 1]
             x_range = desc_rngs[0]
             xi = np.linspace(x_range[0],x_range[1],resolution[0])
-            datas = zip(*datas)
+            datas = list(zip(*list(datas)))
             for i,yData in enumerate(datas):
                 yData = np.array(yData)
                 y_sp = catmap.spline(xData[sorted_order],yData[sorted_order],k=1)
@@ -1255,9 +1261,9 @@ class ReactionModel:
                 maparray[:,i] = yi
 
         elif len(pts[0]) == 2:
-            xData,yData = zip(*pts)
+            xData,yData = list(zip(*list(pts)))
             maparray = np.zeros((resolution[1],resolution[0],len(datas[0])))
-            datas = zip(*datas)
+            datas = list(zip(*list(datas)))
             x_range,y_range = desc_rngs
             xi = np.linspace(*x_range+[resolution[0]])
             yi = np.linspace(*y_range+[resolution[1]])
@@ -1334,7 +1340,7 @@ class ReactionModel:
             data = get_next_dim(array,list(ij))
             datas.append(data)
 
-        mapp = zip(*[pts,datas])
+        mapp = list(zip(*[pts,datas]))
         return mapp
 
     #Commonly used convenience functions
@@ -1531,7 +1537,7 @@ class ReactionModel:
         if self.rxn_options_dict['prefactor']:
             if not self.prefactor_list:
                 self.prefactor_list = [None] * len(self.elementary_rxns)
-            for key, value in self.rxn_options_dict['prefactor'].iteritems():
+            for key, value in self.rxn_options_dict['prefactor'].items():
                 if value == "None":
                     value = None
                 else:
