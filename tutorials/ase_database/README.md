@@ -4,34 +4,16 @@
 
 In the end of your calculation script, you can add the lines:
     
-    epot = atoms.get_potential_energy()
-    contribs = calc.get_nonselfconsistent_energies()
     c = ase.db.connect('my_path_and_filename.db')
-    c.write(atoms, species='OH', name='Pt', phase='fcc',
-            facet='1x1x1', supercell='2x2', layers=3, site='top',
-            n=1, data={'BEEFvdW_contribs': contribs})
+    c.write(atoms, species='OH', ads='OH_b', name='Pt', phase='fcc',
+            facet='(111)', supercell='2x2', layers=3, site='top',
+            n=1)
 
-which will write a row to your db file. If the file is not there already,
-it will be created. The above keys are suitable for relaxed slab and adsorbate structures.
-If the structure is a clean slab, put an empty string `''` in `species`.
+which will write a row to your db file. If the db is not there already,
+it will be created. The above keys are recommended for relaxed slab and adsorbate structures.
+If the structure is a clean slab, put an empty string `''` in `species` and/or the string `'clean'` in `ads`.
 
-## How to import the data
-
-    python generate_input.py my_input.txt
-
-will save the input file in `my_input.txt`.
-In the script `generate_input.py`, you will see it carries out four steps:
-1) Define search filters. Needed if some data has to be filtered out.
-    E.g. if some data was calculated with different parameters than other data. 
-2) Import data from ase databases.
-3) Calculate references and formation energies.
-4) Export catmap input file.
-
-It is important to pay attention to the search filters. If you get garbage
-results, it is likely because the search filters are not
-sufficient for your dataset. Make sure you filter calculator parameters such as
-XC-funcional, basis sets cutoffs, k-point sampling, ect.
-For surfaces, the module have built-in distinctions that uses the keys:
+For surfaces, the db2catmap module recognizes the following keys:
 
  - `energy` (immutable key retreived from the calculator)
  - `n`
@@ -45,15 +27,35 @@ For surfaces, the module have built-in distinctions that uses the keys:
  - `site`
  - `data.BEEFvdW_contribs`
 
-`site` is optional and turned off by default.
+`site` is not recognized by default, but can be switched on by the option `site_specific` as seen further below.
 
+## How to import the data
+
+An example script is provided in this folder, which you can run like so:
+
+    python generate_input.py my_input.txt
+
+This will save a catmap input file in `my_input.txt`.
+Look at the code in `generate_input.py`, and you will see it carries out four steps:
+1) Define search filters. This is needed if some data has to be filtered out.
+    E.g. if some data was calculated with different parameters than other data. 
+2) Import data from ase databases.
+3) Store references and calculate formation energies.
+4) Export catmap input file.
+
+It is important to pay attention to the search filters. If you get garbage
+results, it is likely because the search filters are not
+sufficient for your dataset. Make sure you filter calculator parameters such as
+XC-funcional, basis sets cutoffs, k-point sampling, ect, when necessary.
 Importing data from correctly formatted .db files is done like so:
     
     project = db2catmap()
-    project.get_molecules('molecules.db')
-    project.get_surfaces('surfaces.db')
+    project.get_molecules('molecules.db', selection=['fmax<0.05'])
+    project.get_surfaces('surfaces.db', selection=['fmax<0.05'], site_specific=False)
 
 The data is now attached to your asedb2catmap object.
+
+The `site_specific` option accepts `True`, `False` or a string, in which case the site is recognized only if it matches the string.
 
 ## Get formation energies and export to catmap format.
 
@@ -78,8 +80,9 @@ A convenient way of storing the frequencies is along with the atoms object in th
     c_out.write(atoms, data={'frequencies': frequencies})
 
 Use the key `frequencies` to make it accessible to the asedb2catmap module.
-Importing frequencies is handled by `get_surfaces`, which we have already used. 
-It is necessary to pass the parameter `frequency_db` to it to import frequencies along with atomic structures.
+Importing frequencies is handled by `get_surfaces`, which we have already used. It is necessary to pass the parameter `frequency_db` to it to import frequencies along with atomic structures like so:
+
+    project.get_molecules('molecules.db', frequency_db='frequencies.db', selection=['fmax<0.05'])
 
 ## How to store and import transition states and pathways.
 
@@ -105,7 +108,9 @@ There is one additional recommended key:
  - `distance`
 
 which is useful for making plots of the energy versus reaction coordinate.
-To add formation energies of transition states to your catmap input, you can simply do:
+To add formation energies of transition states to your catmap input, you can use the method:
+
+    project.get_transition_states('neb.db')
 
 ## Issues with ASE-incompatible calculators
 
@@ -122,4 +127,6 @@ A workaround is to store the energy and forces in a `SinglePointDFTCalculator` l
     c.write(relaxed_atoms, ...)
 
 `SinglePointDFTCalculator` can be imported from `from ase.calculators.singlepoint`
+
+Currently, the db2catmap module also supports storing the energy in the key `epot`, if a calculator is not attached.
 

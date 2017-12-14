@@ -1,95 +1,69 @@
 surface_name	phase	site_name	species_name	formation_energy	frequencies	reference	coverage	std
 Ag	fcc	(111)	C	2.7083	[]	mhangaard	0.167	0.3359
-Ag	fcc	(111)	C	2.94	[]	mhangaard	0.167	0.3129
-Ag	fcc	(111)	CH3	-0.9911	[]	mhangaard	0.167	0.2492
 Ag	fcc	(111)	CH3	-1.165	[]	mhangaard	0.167	0.2418
 Ag	fcc	(111)	H	0.3496	[]	mhangaard	0.167	0.1008
-Ag	fcc	(111)	H	0.8071	[]	mhangaard	0.167	0.127
 Ag	fcc	(111)	O	1.8854	[]	mhangaard	0.167	0.2481
 Ag	fcc	(111)	OH	0.5295	[]	mhangaard	0.167	0.2059
 Au	fcc	(111)	C	2.0605	[]	mhangaard	0.167	0.4417
 Au	fcc	(111)	CH	0.6152	[]	mhangaard	0.167	0.3428
 Au	fcc	(111)	CH3	-1.4498	[]	mhangaard	0.167	0.2394
 Au	fcc	(111)	H	0.3914	[]	mhangaard	0.167	0.0995
-Au	fcc	(111)	H	0.5167	[]	mhangaard	0.167	0.1071
 Au	fcc	(111)	O	2.3984	[]	mhangaard	0.167	0.256
 Au	fcc	(111)	OH	1.3748	[]	mhangaard	0.167	0.1639
 Co	fcc	(111)	C	-0.3098	[]	mhangaard	0.167	0.2674
 Co	fcc	(111)	CH	-1.0507	[]	mhangaard	0.167	0.2201
 Co	fcc	(111)	CH2	-1.017	[]	mhangaard	0.167	0.2166
-Co	fcc	(111)	CH3	-1.6206	[]	mhangaard	0.167	0.2511
 Co	fcc	(111)	CH3	-1.9829	[]	mhangaard	0.167	0.2847
 Co	fcc	(111)	H	-0.3601	[]	mhangaard	0.167	0.0788
-Co	fcc	(111)	H	0.2462	[]	mhangaard	0.167	0.1121
 Co	fcc	(111)	O	-0.0818	[]	mhangaard	0.167	0.2046
 Co	fcc	(111)	OH	0.2742	[]	mhangaard	0.167	0.1773
 Cu	fcc	(111)	C	1.3104	[]	mhangaard	0.167	0.2954
-Cu	fcc	(111)	C	1.4718	[]	mhangaard	0.167	0.2537
-Cu	fcc	(111)	CH3	-1.4676	[]	mhangaard	0.167	0.2475
 Cu	fcc	(111)	CH3	-1.495	[]	mhangaard	0.167	0.2768
 Cu	fcc	(111)	H	-0.061	[]	mhangaard	0.167	0.079
-Cu	fcc	(111)	H	0.4795	[]	mhangaard	0.167	0.1011
 Cu	fcc	(111)	O	0.7807	[]	mhangaard	0.167	0.2377
 Cu	fcc	(111)	OH	0.1491	[]	mhangaard	0.167	0.2096
 Fe	fcc	(111)	CH3	-2.3653	[]	mhangaard	0.167	0.4232
 Fe	fcc	(111)	H	-0.8167	[]	mhangaard	0.167	0.0662
 In	fcc	(111)	CH3	-1.4126	[]	mhangaard	0.167	0.3005
 Ir	fcc	(111)	C	-0.9593	[]	mhangaard	0.167	0.4298
-Ir	fcc	(111)	C	0.6488	[]	mhangaard	0.167	0.1663
-Ir	fcc	(111)	CH3	-1.6579	[]	mhangaard	0.167	0.3267
 Ir	fcc	(111)	CH3	-2.1289	[]	mhangaard	0.167	0.2729
-Ir	fcc	(111)	H	-0.2207	[]	mhangaard	0.167	0.0979
 Ir	fcc	(111)	H	-0.3394	[]	mhangaard	0.167	0.0772
 Ir	fcc	(111)	O	0.655	[]	mhangaard	0.167	0.1512
 Ir	fcc	(111)	OH	0.4517	[]	mhangaard	0.167	0.1433
 Ni	fcc	(111)	C	-0.2412	[]	mhangaard	0.167	0.2495
-Ni	fcc	(111)	CH2	-1.1336	[]	mhangaard	0.167	0.211
 Ni	fcc	(111)	CH2	-1.2906	[]	mhangaard	0.167	0.2512
-Ni	fcc	(111)	CH3	-1.7396	[]	mhangaard	0.167	0.2497
 Ni	fcc	(111)	CH3	-1.8551	[]	mhangaard	0.167	0.2942
 Ni	fcc	(111)	H	-0.3385	[]	mhangaard	0.167	0.0844
-Ni	fcc	(111)	H	0.194	[]	mhangaard	0.167	0.1063
 Ni	fcc	(111)	O	0.1946	[]	mhangaard	0.167	0.2077
 Ni	fcc	(111)	OH	0.0355	[]	mhangaard	0.167	0.1948
-None		gas	CH4	-2.6036	[]	mhangaard	0	0.2572
-None		gas	CO	0.0	[]	mhangaard	0	0.0
-None		gas	H2	0.0	[]	mhangaard	0	0.0
-None		gas	H2O	0.0	[]	mhangaard	0	0.0
+None		gas	CH4	-2.6036	[23.552995581528762, 27.764742563603662, 33.585098005307799, 53.406563666871108, 57.897537192848368, 60.177324832107026, 1325.8417848412198, 1326.2077585306993, 1326.3096621770933, 1544.5344277414026, 1544.619454821669, 3007.1699114446992, 3113.831746849025, 3113.9002522596738, 3114.0862738043661]	mhangaard	0	0.2572
+None		gas	CO	0.0	[3.6194198674152118, 3.5301621037511084, 0.33467624028699544, 39.152300942718455, 39.272481965276761, 2207.7656267788548]	mhangaard	0	0.0
+None		gas	H2	0.0	[4400]	mhangaard	0	0.0
+None		gas	H2O	0.0	[165.36363311922634, 13.185128462564089, 0.6293642545957937, 1.4699564256900925, 45.936303291749134, 93.511055090995455, 1600.6734392229107, 3857.3162959637821, 3961.4748324870689]	mhangaard	0	0.0
 Pd	fcc	(111)	C	-0.4665	[]	mhangaard	0.167	0.3877
 Pd	fcc	(111)	CH	-1.2158	[]	mhangaard	0.167	0.2987
-Pd	fcc	(111)	CH3	-1.5827	[]	mhangaard	0.167	0.26
 Pd	fcc	(111)	CH3	-1.9217	[]	mhangaard	0.167	0.2455
 Pd	fcc	(111)	H	-0.3267	[]	mhangaard	0.167	0.0782
-Pd	fcc	(111)	H	0.092	[]	mhangaard	0.167	0.0994
 Pd	fcc	(111)	O	1.2039	[]	mhangaard	0.167	0.2332
 Pd	fcc	(111)	OH	0.8507	[]	mhangaard	0.167	0.1801
-Pt	fcc	(111)	C	-0.7403	[]	mhangaard	0.167	0.4122
-Pt	fcc	(111)	C	1.4139	[]	mhangaard	0.167	0.1571
+Pt	fcc	(111)	C	-0.7403	[450.49481105939577, 584.86285440721065, 641.46423001636037]	mhangaard	0.167	0.4122
 Pt	fcc	(111)	CH3	-2.2462	[]	mhangaard	0.167	0.2602
-Pt	fcc	(111)	H	-0.2228	[]	mhangaard	0.167	0.0823
-Pt	fcc	(111)	H	-0.3385	[]	mhangaard	0.167	0.0824
+Pt	fcc	(111)	H	-0.3385	[553.76351049568177, 588.1537873840831, 1004.8532529529884]	mhangaard	0.167	0.0824
 Pt	fcc	(111)	O	1.2905	[]	mhangaard	0.167	0.1782
 Pt	fcc	(111)	OH	0.7608	[]	mhangaard	0.167	0.1569
 PtSn	mp	(110)	CH3	-1.4714	[]	mhangaard	1.0	0.2518
 Re	hcp	(001)	C	-1.2572	[]	mhangaard	0.167	0.3822
 Re	hcp	(001)	CH	-1.7374	[]	mhangaard	0.167	0.2869
 Re	hcp	(001)	CH2	-2.048	[]	mhangaard	0.167	0.3571
-Re	hcp	(001)	CH3	-1.7524	[]	mhangaard	0.167	0.2781
 Re	hcp	(001)	CH3	-2.2763	[]	mhangaard	0.167	0.3325
 Re	hcp	(001)	H	-0.5695	[]	mhangaard	0.167	0.0837
-Re	hcp	(001)	H	0.0983	[]	mhangaard	0.167	0.086
 Rh	fcc	(111)	C	-0.7346	[]	mhangaard	0.167	0.3186
-Rh	fcc	(111)	C	0.9225	[]	mhangaard	0.167	0.1414
-Rh	fcc	(111)	CH3	-1.8416	[]	mhangaard	0.167	0.2822
-Rh	fcc	(111)	CH3	-1.9619	[]	mhangaard	0.167	0.257
-Rh	fcc	(111)	H	-0.0578	[]	mhangaard	0.167	0.0864
+Rh	fcc	(111)	CH3	-1.9619	[53.457906905995195, 83.130811281270226, 85.427195843786734, 441.17785666617056, 671.45345800149323, 675.11498867655018, 1144.1163901031482, 1405.8899965799831, 1410.5384285385228, 3018.2079861098455, 3123.280097693043, 3124.2941869229103]	mhangaard	0.167	0.257
 Rh	fcc	(111)	H	-0.3238	[]	mhangaard	0.167	0.0808
 Rh	fcc	(111)	O	0.3997	[]	mhangaard	0.167	0.1858
 Rh	fcc	(111)	OH	0.4884	[]	mhangaard	0.167	0.1715
 Ru	hcp	(001)	C	-1.1961	[]	mhangaard	0.167	0.3508
 Ru	hcp	(001)	CH	-1.4436	[]	mhangaard	0.167	0.2585
 Ru	hcp	(001)	CH2	-1.4546	[]	mhangaard	0.167	0.2524
-Ru	hcp	(001)	CH3	-1.8948	[]	mhangaard	0.167	0.2796
 Ru	hcp	(001)	CH3	-2.163	[]	mhangaard	0.167	0.3047
-Ru	hcp	(001)	H	-0.0318	[]	mhangaard	0.167	0.0894
 Ru	hcp	(001)	H	-0.4394	[]	mhangaard	0.167	0.0725

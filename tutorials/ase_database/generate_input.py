@@ -69,7 +69,7 @@ mol_select = ['vacuum=8', 'fmaxout<0.05', 'pw=500']
 # Step 2: Import from an ase database.
 # Import molecules.
 print('Importing molecules.')
-project.get_molecules('molecules.db', selection=mol_select)
+project.get_molecules('molecules.db', selection=mol_select, frequency_db='frequencies.db')
 
 # Search strings for all slabs, adsorbates.
 fixed_p = ['ads!=FBL', 'ads!=NEB', 'layers=5', 'pw=500', 'psp=gbrv1.5pbe',
@@ -83,7 +83,7 @@ surfaces3 = ['surf_lattice=hexagonal', 'kpts=6x6', 'supercell=1x1'] + fixed_p
 
 # Import three different subsets of slabs, adsorbates.
 print('Importing surfaces.')
-project.get_surfaces('surfaces.db', selection=surfaces1)
+project.get_surfaces('surfaces.db', selection=surfaces1, frequency_db='frequencies.db')
 project.get_surfaces('surfaces.db', selection=surfaces2)
 project.get_surfaces('surfaces.db', selection=surfaces3)
 
