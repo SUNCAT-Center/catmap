@@ -1,4 +1,4 @@
-from analysis_base import *
+from .analysis_base import *
 
 class ScalingAnalysis(ScalingPlot,ReactionModelWrapper):
     """
