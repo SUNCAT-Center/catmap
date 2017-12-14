@@ -249,7 +249,7 @@ class TableParser(ParserBase):
         for adsdef in all_ads+list(allfreqdict.keys()): #format all freqs
             if '_' in adsdef:
                 adsname,site = adsdef.split('_')
-            elif adsdef in allfreqdict.keys():
+            elif adsdef in list(allfreqdict.keys()):
                 adsname = adsdef
                 site = self._default_site
 
