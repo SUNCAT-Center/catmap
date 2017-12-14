@@ -1,5 +1,5 @@
-from solver_base import *
-from mean_field_solver import *
+from .solver_base import *
+from .mean_field_solver import *
 from catmap import string2symbols
 try:
     from scipy.optimize import fmin_powell as fmin
