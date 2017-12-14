@@ -1,4 +1,4 @@
-from analysis_base import *
+from .analysis_base import *
 from string import Template
 
 class VectorMap(MapPlot, ReactionModelWrapper):
@@ -27,13 +27,13 @@ class VectorMap(MapPlot, ReactionModelWrapper):
         mapp = getattr(self, self.plot_variable+'_map')
         if not mapp:
             raise AttributeError('No output found for ' + self.plot_variable)
-        pts,datas = zip(*mapp)
+        pts,datas = list(zip(*mapp))
         # stupid hack for 1d plotting: if resolution in the y-direction is 1, make pts
         # an array of 1d vectors instead of 2d vectors.  Currently, 1d plotting can
         # only be done if resolution is set to [x_res, 1]
         if hasattr(self._rxm.resolution, '__iter__') and self._rxm.resolution[1] == 1:
             pts = [[first] for first, second in pts]
-        cols = zip(*datas)
+        cols = list(zip(*datas))
         return pts,cols
 
     def include_labels_to_idxs(self):
@@ -59,7 +59,7 @@ class VectorMap(MapPlot, ReactionModelWrapper):
         include_indices = self.include_labels_to_idxs()
 
         if not include_indices:
-            include_indices = range(0,len(cols))
+            include_indices = list(range(0,len(list(cols))))
 
         if not self.include_empty:
             for i,col in enumerate(cols):
@@ -106,8 +106,8 @@ class VectorMap(MapPlot, ReactionModelWrapper):
         """
         pts,cols = self.get_pts_cols()
         include_indices = self.get_included_indices(pts,cols)
-        datas = zip(*cols)
-        mapp = zip(pts,datas)
+        datas = list(zip(*cols))
+        mapp = list(zip(pts,datas))
         if not self.labels:
             self.map_plot_labels = self.get_labels()
         if not self.descriptor_labels:
