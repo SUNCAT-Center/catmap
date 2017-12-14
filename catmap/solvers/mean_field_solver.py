@@ -1,4 +1,4 @@
-from solver_base import *
+from .solver_base import *
 from catmap.data import templates
 from copy import copy
 import mpmath as mp
@@ -680,7 +680,8 @@ class MeanFieldSolver(SolverBase):
             if 'kf' in species:
                 parsed_results *= float(rate_constants[int(species[species.index('[')+1:species.index(']')])])
             elif 'kr' in species:
-                parsed_results *= float(rate_constants[len(rate_constants)/2+int(species[species.index('[')+1:species.index(']')])])
+                # use // division to ensure integer result under Python 2 & 3
+                parsed_results *= float(rate_constants[len(rate_constants)//2+int(species[species.index('[')+1:species.index(']')])])
             elif 'p' in species:
                 parsed_results *= float(pressure[int(species[species.index('[')+1:species.index(']')])])
             elif 'theta' in species:
