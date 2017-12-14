@@ -61,9 +61,9 @@ def load(setup_file):
 
 modified = []
 class ReactionModelWrapper:
-    def __getattribute__(self,attr):
-        "Force use of custom getattr"
-        return self.__getattr__(self,attr)
+    #def __getattribute__(self,attr):
+        #"Force use of custom getattr"
+        #return object.__getattr__(self,attr)
 
     def __getattr__(self,attr):
         "Return the value of the reaction model instance if its there. Otherwise return the instances own value (or none if the instance does not have the attribute defined and the attribute is not private)"
