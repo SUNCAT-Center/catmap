@@ -246,7 +246,7 @@ class TableParser(ParserBase):
         all_ads = [k for k in self.species_definitions.keys()
                    if self.species_definitions[k]['type'] != 'site']
 
-        for adsdef in all_ads+allfreqdict.keys(): #format all freqs
+        for adsdef in all_ads+list(allfreqdict.keys()): #format all freqs
             if '_' in adsdef:
                 adsname,site = adsdef.split('_')
             elif adsdef in allfreqdict.keys():
