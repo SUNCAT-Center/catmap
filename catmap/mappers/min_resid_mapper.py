@@ -1,4 +1,4 @@
-from mapper_base import *
+from .mapper_base import *
 
 class MinResidMapper(MapperBase):
     """Mapper which uses initial guesses with minimum residual."""
