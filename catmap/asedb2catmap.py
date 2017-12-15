@@ -14,8 +14,9 @@ Description:
                 value of the adsorbate chemical formula.
                 '' should be the value for clean slabs.
                 '-' should be inserted between seperate fragments.
-            "epot" : float
-                value with potential energy from DFT.
+            "epot" or "energy" : float
+                value with potential energy from DFT. "energy" is an immutable
+                key, imported from a calculator object, if it is attached.
 
         Recommended key value pairs:
         ----------------------------
@@ -24,15 +25,15 @@ Description:
             "phase" : str
                 Value that identifies the catalyst phase.
             "facet" : str
-                Name of the facet,
-                preferably in hkl notation and separated by 'x', e.g. '0x0x0'.
+                Name of the facet, preferably in hkl notation, e.g. '(100)'.
+                Note that integer strings like '100' are not accepted.
             "surf_lattice" : str
                 Name of the surface lattice geometry.
-                E.g. hcp001 and fcc111 has "hexagonal" surface lattices.
+                E.g. HCP(001) and FCC(111) has "hexagonal" surface lattices.
             "layers" : int
                 Number of atomic layers in slab.
             "supercell" : str
-                Supercell size separated by x, e.g. 2x2
+                Supercell size separated by 'x', e.g. '2x2'
             "n": int
                 number of identical adsorbates.
 
@@ -73,6 +74,7 @@ class db2catmap(object):
         self.rxn_paths = {}
         self.formation_energies = {}
         self.std = {}
+        # If database paths, files are passed, data is imported upon init.
         if mol_db is not None:
             self.mol_db = mol_db
             self.get_molecules(mol_db, selection=mol_select)
@@ -103,7 +105,7 @@ class db2catmap(object):
 
     def get_surfaces(self, fname, selection=[], frequency_db=None,
                      site_specific=False):
-        """ Method for importing slabs and adsorbates.
+        """ Method for importing slabs and slabs with adsorbates.
 
         Parameters
         ----------
@@ -347,11 +349,14 @@ class db2catmap(object):
         c = ase.db.connect(fname)
         s = c.select(selection)
         rxn_paths = {}
-        # Get images from ase .db
+        # Loop over states from ase .db
         for d in s:
+            # Store variables identifying the atomic states.
             species = str(d.species)
+            # - identifies transition states.
             if '-' not in species:
                 continue
+            # Most fiels are optional.
             if 'supercell' in d:
                 cell = str(d.supercell)
             else:
@@ -371,11 +376,13 @@ class db2catmap(object):
             else:
                 str(d.facet)
             surf = '_'.join([str(d.name), phase, surf_lattice, facet, cell])
+            # 'energy' only exist if a calculator is attached to the atoms.
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
             else:
                 abinitio_energy = float(d.epot)
             dbid = int(d.id)
+            # Try to import non-selfconsistent BEEF contributions.
             try:
                 BEEFvdW_contribs = d.data.BEEFvdW_contribs
                 ens = self.state.get_ensemble_perturbations(BEEFvdW_contribs)
@@ -467,15 +474,17 @@ class db2catmap(object):
         """ Returns a dictionary with formation energies of adsorbates.
         Parameters
         ----------
-        energy_dict : dictionary
-            Each key is named in the format: adsorbate_name_phase_facet_site,
-            and contains the potential energy of a slab an adsorbate or
-            a molecule.
-        ref_dict : dictionary
-            Each key is either an atomic symbol and contains the reference
-            potential energy of that atom,
-            or the key is named in the format: _name_phase_facet_slab and it
-            contains the reference potential energy of the slab.
+        self : db2catmap object
+            self.epot : dictionary
+                Each key is named in the format:
+                n_species_name_phase_facet_supercell{x}layers_site,
+                and contains the potential energy of a slab an adsorbate or
+                a molecule.
+            self.reference_epot : dictionary
+                Each key is either an atomic symbol and contains the reference
+                potential energy of that atom,
+                or the key is named in the format: _name_phase_facet_slab and
+                it contains the reference potential energy of the slab.
         """
         formation_energies = {}
         for key in self.epot.keys():
@@ -499,8 +508,9 @@ class db2catmap(object):
         return formation_energies
 
     def _get_BEEstd(self):
-        """ Returns a dictionary with BEEF ensembles and with
+        """ Returns a dictionary with BEEF ensembles and one with
         BEEF standard deviations on formation energies.
+
         """
         de_dict = {}
         std_dict = {}
@@ -527,9 +537,9 @@ class db2catmap(object):
 
     def get_ellipses(self, ads_x, ads_y,
                      site_x=None, site_y=None):
-        """ Returns two dictionaries, BEE_PC with the principal component
-        vectors and BEE_lambda with the corresponding eigenvalues of
-        BEE pertubations.
+        """ Returns three dictionaries, width, height and angle with the
+        parameters for plotting the covariance ellipses showing the
+        +/- 1 sigma confidence intervals.
 
         Parameters
         ----------
@@ -581,13 +591,16 @@ class db2catmap(object):
             angles[slab] = angle
         return widths, heights, angles
 
-    def pes2ts(self, freq_path=None, rtol=1.03):
-        """ Returns dictionaries containing transition state ab initio energies.
+    def pes2ts(self, freq_path=None, rtol=1.0):
+        """ Returns dictionaries containing transition state energies.
 
-            Input parameters
-            ----------------
+            Parameters
+            ----------
             freq_path : str
-                path/folder where frequency files are located.
+                path/folder where frequency database is located.
+            rtol : float
+                relative tolerance of the threshold distance, where fixed bond
+                lenght calculations are considered complete.
         """
         if freq_path is not None:
             c_freq = ase.db.connect(freq_path)
@@ -625,7 +638,10 @@ class db2catmap(object):
                 continue
             if len(localmaxs) > 1 or len(localmins) > 2 or len(localmins) == 1:
                 warn = True
-            shortest = np.min(self.rxn_paths[rxn_id]['distance'])
+            try:
+                shortest = np.min(self.rxn_paths[rxn_id]['distance'])
+            except KeyError:
+                print('Distances missing in reaction path.')
             if shortest > dbond * rtol:
                 warn = True
                 assert np.argmax(self.rxn_paths[rxn_id]['dbids']) == \
@@ -670,9 +686,12 @@ class db2catmap(object):
             species y
         lattice : str or None
             surface lattice of y
-        site='site' : str
+        site_x='site' : str
+            Site of x. If _db2surf was run with site_specific=False, use the
+            default value, None or 'site'.
+        site_y='site' : str
             Site of y. If _db2surf was run with site_specific=False, use the
-            default value, 'site'.
+            default value, None or 'site'.
         """
         X = []
         Y = []
@@ -779,6 +798,10 @@ class db2catmap(object):
                 fields[-1] = site_y
             key_y = '_'.join(fields)
             self.formation_energies.update({key_y: Y})
+
+    def insert_rscaled_states(self, x, y, site_y=None,
+                              slope=None, intercept=None):
+        raise NotImplementedError
 
     def make_input_file(self, file_name, site_specific=False,
                         covariance=None):
@@ -887,8 +910,7 @@ class db2catmap(object):
                             site='site', mol_db=None,
                             slab_db=None, ads_db=None, ts_db=None,
                             publication='', url=''):
-        """Saves a nested directory structure,
-        compatible with the catapp project.
+        """Saves a nested directory structure.
 
         Parameters
         ----------
