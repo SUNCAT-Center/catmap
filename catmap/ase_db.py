@@ -144,16 +144,15 @@ class db2catmap(object):
         self.ens.update(surf_ens)
         self.dbid.update(surf_dbid)
 
-    def calc_formation_energies(self, references=(('H', 'H2_gas'),
-                                                  ('O', 'H2O_gas'),
-                                                  ('C', 'CH4_gas'),)):
+    def calc_formation_energies(self, references):
         """ Method for generating formation energies.
 
         Parameters
         ----------
         references : list of tuples of strings.
             The first item in each tuple must be an atomic symbol, and the
-            second item in each tuple must be a reference <species name>_gas
+            second item in each tuple must be the self.epot dictionary key
+            of a reference gas phase species, <species name>_gas.
         """
         # Get atomic references.
         [self.atomic_e,
@@ -279,6 +278,8 @@ class db2catmap(object):
                 cell += 'x' + str(d.layers)
             if 'phase' in d:
                 phase = str(d.phase)
+            elif 'crystal' in d:
+                phase = str(d.crystal)
             else:
                 phase = ''
             if 'surf_lattice' in d:
@@ -431,9 +432,7 @@ class db2catmap(object):
                                      'distance': [float(d.distance)]}
         return rxn_paths
 
-    def _mol2ref(self,
-                 references=(('H', 'H2_gas'), ('O', 'H2O_gas'),
-                             ('C', 'CH4_gas'),)):
+    def _mol2ref(self, references):
         """ Returns two dictionaries containing:
             abinitio energy references for atoms
             32 non-selfconsitent perturbations for atoms.
@@ -505,6 +504,9 @@ class db2catmap(object):
                 for atom in composition:
                     E0 -= self.reference_epot[atom]
                 formation_energies[key] = E0
+                if abs(E0) > 10.:
+                    print('Warning! Large formation energy.',
+                          self.dbid[key], key, E0)
         return formation_energies
 
     def _get_BEEstd(self):
@@ -559,7 +561,7 @@ class db2catmap(object):
             # Ignore gas species.
             if 'slab' not in slab:
                 continue
-            key_x = self._insert_species(slab, ads_x, site_x)
+            key_x = self._create_state(slab, ads_x, site_x)
             if isinstance(key_x, list):
                 de_x = np.zeros(self.state.size)
                 continue_outer = False
@@ -575,7 +577,7 @@ class db2catmap(object):
                 de_x = self.de_dict[key_x]
             else:
                 continue
-            key_y = self._insert_species(slab, ads_y, site_y)
+            key_y = self._create_state(slab, ads_y, site_y)
             if key_y in self.de_dict:
                 de_y = self.de_dict[key_y]
             else:
@@ -589,9 +591,12 @@ class db2catmap(object):
             widths[slab] = width
             heights[slab] = height
             angles[slab] = angle
+        self.width = widths
+        self.height = heights
+        self.angle = angles
         return widths, heights, angles
 
-    def pes2ts(self, freq_path=None, rtol=1.0):
+    def pes2ts(self, freq_path=None, rtol=1.1):
         """ Returns dictionaries containing transition state energies.
 
             Parameters
@@ -704,10 +709,10 @@ class db2catmap(object):
             if lattice is not None and lattice not in slab:
                 continue
             # Get formation energy if it is stored.
-            key_y = self._insert_species(slab, y, site_y)
+            key_y = self._create_state(slab, y, site_y)
             if key_y not in self.formation_energies:
                 continue
-            key_x = self._insert_species(slab, x, site_x)
+            key_x = self._create_state(slab, x, site_x)
             # If the x species is a list, sum them.
             if isinstance(key_x, list):
                 DeltaE_x = 0
@@ -735,9 +740,9 @@ class db2catmap(object):
         slope, intercept = np.polyfit(X, Y, deg=1)
         return slope, intercept, X, Y, l
 
-    def _insert_species(self, slab, species, site=None):
+    def _create_state(self, slab, species, site=None):
         """Return a key for a hypothetical adsorbate state. This is useful
-        for reading or filling in formation energies of states related
+        for reading or filling in formation energies of states that are related
         by scaling relations.
 
         Parameters
@@ -745,7 +750,7 @@ class db2catmap(object):
         slab : str
             key of the slab
         species : str
-            adsorbate formula
+            adsorbate chemical formula
         site : str
             optional site.
         """
@@ -799,9 +804,33 @@ class db2catmap(object):
             key_y = '_'.join(fields)
             self.formation_energies.update({key_y: Y})
 
+    def _insert_state(self, key, ads, slopes, intercept):
+        """ Update the formation_energy dictionary with interpolated values.
+        This is intended for use with thermodynamic scalers only.
+
+        Parameters
+        ----------
+        key : str
+            exact key of the species to be inserted self.formation_energy
+        y : str
+            species
+        site_y : str
+            site of species y
+        slope : float or None
+        intercept : float or None
+        """
+        interpolated = intercept
+        fields = key.split('_')
+        for a in range(len(ads)):
+            fields[1] = ads[a]
+            key = '_'.join(fields)
+            interpolated += slopes[a] * self.formation_energies[key]
+        state = {key: interpolated}
+        self.formation_energies.update(state)
+
     def insert_rscaled_states(self, x, y, site_y=None,
                               slope=None, intercept=None):
-        raise NotImplementedError
+        raise NotImplementedError("Coming in 2018.")
 
     def make_input_file(self, file_name, site_specific=False,
                         covariance=None):
@@ -877,14 +906,20 @@ class db2catmap(object):
                 E = float(E)
                 outline = [surface, phase, site_name, name,
                            E, list(frequency), environ['USER'], coverage, std]
-                if covariance is not None and covariance[1] == name:
-                    slab = '_'.join(['0_', cat, pha, lattice, facet, cell,
-                                     'slab'])
-                    if slab in self.width:
-                        width = round(self.width[slab], 4)
-                        height = round(self.height[slab], 4)
-                        angle = round(self.angle[slab], 4)
-                        reference = covariance[0]
+                if covariance is not None:
+                    if covariance[1] == name:
+                        slab = '_'.join(['0_', cat, pha, lattice, facet, cell,
+                                         'slab'])
+                        if slab in self.width:
+                            width = round(self.width[slab], 4)
+                            height = round(self.height[slab], 4)
+                            angle = round(self.angle[slab], 4)
+                            reference = covariance[0]
+                        else:
+                            width = ''
+                            height = ''
+                            angle = ''
+                            reference = ''
                     else:
                         width = ''
                         height = ''
@@ -925,7 +960,6 @@ class db2catmap(object):
                         'beef_standard_deviation',
                         'activation_energy', 'DFT_code', 'DFT_functional',
                         'reference', 'url']]
-        # width, height, angle, covariance
         if surfaces is None:
             surfaces = [s for s in self.reference_epot.keys() if 'slab' in s]
         if mol_db is None:
@@ -959,10 +993,22 @@ class db2catmap(object):
             reactants = states[0].split('+')
             tstates = states[1].split('+')
             products = states[-1].split('+')
-            rspecies = [r.replace('*',
-                                  'star').split('_')[0] for r in reactants]
-            pspecies = [p.replace('*',
-                                  'star').split('_')[0] for p in products]
+            pspecies = []
+            rspecies = []
+            for specie in reactants:
+                if '_g' in specie:
+                    rspecies.append(specie.split('_')[0] + 'gas')
+                elif '*_' in specie:
+                    rspecies.append('star')
+                else:
+                    rspecies.append(specie.split('_')[0] + 'star')
+            for specie in products:
+                if '_g' in specie:
+                    pspecies.append(specie.split('_')[0] + 'gas')
+                elif '*_' in specie:
+                    pspecies.append('star')
+                else:
+                    pspecies.append(specie.split('_')[0] + 'star')
             rname = '_'.join(rspecies)
             pname = '_'.join(pspecies)
             reaction_name = '__'.join([rname, pname])
@@ -1013,7 +1059,7 @@ class db2catmap(object):
                         if '-' not in ts:
                             continue
                         species, sitesymbol = ts.split('_')
-                        tskey = '_'.join(['0', species, name, phase, lattice,
+                        tskey = '_'.join(['1', species, name, phase, lattice,
                                           facet, cell, site])
                         if tskey not in self.dbid:
                             continue
@@ -1058,6 +1104,7 @@ class db2catmap(object):
                         mkdir(path_surface)
                     if facet_name not in listdir(path_surface):
                         mkdir(path_facet)
+                    # Loop over atomic structures.
                     for trajkey in totraj.keys():
                         fname = totraj[trajkey]['fname'] + '.traj'
                         if 'gas' in trajkey:
@@ -1080,7 +1127,9 @@ class db2catmap(object):
                             calc.results['energy'] = float(d.epot)
                             atoms.set_calculator(calc)
                         fname = fname.replace('(', '').replace(')', '')
+                        # Save trajectory file.
                         atoms.write(fname)
+                    # Store rows for spreadsheet.
                     std = np.std(de)
                     spreadsheet.append([name, facet, rname, pname,
                                         DeltaE, std, ea,
