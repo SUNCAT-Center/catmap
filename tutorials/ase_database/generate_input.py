@@ -55,7 +55,7 @@ Example
     python generate_input.py my_input.txt
 """
 from sys import argv
-from catmap.asedb2catmap import db2catmap
+from catmap.ase_db import db2catmap
 
 # Initialize thermodynamics module.
 project = db2catmap()
@@ -95,7 +95,7 @@ project.get_surfaces('surfaces.db', selection=surfaces3)
 # which defines the energy references for each element.
 project.calc_formation_energies(references=(('H', 'H2_gas'),
                                             ('O', 'H2O_gas'),
-                                            ('C', 'CO_gas'),))
+                                            ('C', 'CH4_gas'),))
 # The defaults are as hydrogen, water and methane.
 
 # Step 4: Save catmap input file.

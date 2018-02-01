@@ -22,7 +22,7 @@ For surfaces, the db2catmap module recognizes the following keys:
  - `n`
  - `species`
  - `name`
- - `phase`
+ - `phase` or `crystal` (if both are present, `phase` will apply.)
  - `facet`
  - `surf_lattice`
  - `supercell`
@@ -50,16 +50,16 @@ Look at the code in `generate_input.py`, and you will see it carries out four ta
 It is important to pay attention to the search filters. If you get garbage
 results, it is likely because the search filters are not
 sufficient for your dataset. Make sure you filter calculator parameters such as
-XC-funcional, basis sets cutoffs, k-point sampling, ect, when necessary.
+XC-functional, basis sets cutoffs, k-point sampling, ect., when necessary.
 Importing data from correctly formatted .db files is done like so:
     
     project = db2catmap()
     project.get_molecules('molecules.db', selection=['fmax<0.05'])
     project.get_surfaces('surfaces.db', selection=['fmax<0.05'], site_specific=False)
 
-The data is now attached to your db2catmap object.
+The `site_specific` option accepts `True`, `False` or a string. In the latter case, the site is recognized only if it matches the string.
 
-The `site_specific` option accepts `True`, `False` or a string, in which case the site is recognized only if it matches the string.
+Your data is now stored in dictionaries that are attached to your db2catmap object. 
 
 ## Get formation energies and export to catmap format.
 
@@ -93,7 +93,7 @@ Importing frequencies is handled by the methods `get_surfaces` and `get_molecule
 
 The module expects you to leave all images in a database file and distunguish
 paths using the key `path_id`, which can be generated using the uuid module.
-Doing so from a NEB can be done like so:
+Doing this after a NEB calculation can be done like so:
 
     path_id = uuid4().hex
     im = 0
@@ -108,7 +108,7 @@ Transition states and paths have the mandatory key value pairs:
  - `step` or `image`
 
 `step` or `image` is used to order the images.
-There is one additional recommended key:
+There is one additional recommended key value pair:
 
  - `distance`
 
