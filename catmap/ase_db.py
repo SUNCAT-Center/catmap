@@ -15,8 +15,7 @@ Description:
                 '' should be the value for clean slabs.
                 '-' should be inserted between seperate fragments.
             "epot" or "energy" : float
-                value with potential energy from DFT. "energy" is an immutable
-                key, imported from a calculator object, if it is attached.
+                value with potential energy from DFT.
 
         Recommended key value pairs:
         ----------------------------
@@ -57,7 +56,10 @@ from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from catmap.bee import BEEFEnsemble as BEE
 import csv
-
+try:
+    import pandas as pd
+except:
+    print("Pandas not available.")
 
 class db2catmap(object):
     def __init__(self, mol_db=None, ads_db=None, mol_select=[], ads_select=[],
@@ -105,19 +107,21 @@ class db2catmap(object):
 
     def get_surfaces(self, fname, selection=[], frequency_db=None,
                      site_specific=False):
-        """ Method for importing slabs and slabs with adsorbates.
+        """ Method for importing clean slabs and slabs with adsorbates.
 
         Parameters
         ----------
         fname : str
             path and filename of an ase database file containing slabs.
         """
+        # Select and import from database file. Return most stable states.
         [surf_epot,
          surf_freq,
          surf_ens,
          surf_dbid] = self._db2surf(fname, selection=selection,
                                     freq_path=frequency_db,
                                     site_specific=site_specific)
+        # Store data in dictionaries.
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
         self.ens.update(surf_ens)
@@ -132,13 +136,15 @@ class db2catmap(object):
             path and filename of an ase database file
             containing reaction images.
         """
-
+        # Select and import images from a database file.
         rxn_paths = self._db2pes(fname, selection=selection)
+        # Return lowest saddle points.
         self.rxn_paths.update(rxn_paths)
         [surf_epot,
          surf_freq,
          surf_ens,
          surf_dbid] = self.pes2ts(freq_path=frequency_db)
+        # Store data in dictionaries.
         self.epot.update(surf_epot)
         self.freq.update(surf_freq)
         self.ens.update(surf_ens)
@@ -191,25 +197,31 @@ class db2catmap(object):
                     "data.BEEFens" : list
                         32 non-selfconsistent BEEF-vdW energies.
         """
+        # Connect to a database.
         cmol = ase.db.connect(fname)
+        # Select data using search filters.
         smol = cmol.select(selection)
+        # Connect to a database with frequencies.
         if freq_path is not None:
             c_freq = ase.db.connect(freq_path)
         abinitio_energies = {}
         freq_dict = {}
         dbids = {}
         ens_dict = {}
-        for d in smol:              # Get molecules from mol.db
+        # Iterate over molecules.
+        for d in smol:
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
             else:
                 abinitio_energy = float(d.epot)
             species_name = str(d.formula)
+            # Attempt to retrieve the 32 BEEF perturbations.
             try:
                 contribs = d.data.BEEFvdW_contribs
                 ens = self.state.get_ensemble_perturbations(contribs)
             except AttributeError:
-                ens = 0  # np.zeros(self.state.size)
+                ens = 0
+            # Store the most stable state of each molecule.
             if species_name+'_gas' not in abinitio_energies:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
@@ -250,7 +262,9 @@ class db2catmap(object):
                 stores a the potential energy of adsorbates on each site.
                 Else: Use the minimum ab initio energy, disregarding the site.
         """
+        # Connect to a database with clean surfaces and/or adsorbates.
         csurf = ase.db.connect(fname)
+        # Connect to a database with frequencies.
         if freq_path is not None:
             c_freq = ase.db.connect(freq_path)
         ssurf = csurf.select(selection)
@@ -258,14 +272,14 @@ class db2catmap(object):
         freq_dict = {}
         dbids = {}
         ens_dict = {}
-        for d in ssurf:                     # Get slab and adsorbates from .db
+        # Loop over states.
+        for d in ssurf:
             species = str(d.species)
+            # Skip any transition states.
             if '-' in species:
                 continue
             ads = str(d.ads)
             name = str(d.name)
-            if 'n' in d and int(d.n) > 1:  # Skip higher coverages for now.
-                continue
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
             else:
@@ -294,7 +308,6 @@ class db2catmap(object):
                 n = int(d.n)
             else:
                 n = 1
-            # composition=str(d.formula)
             if species == '' or ('ads' in d and
                                  (ads == 'slab' or ads == 'clean')):
                 species = ''
@@ -304,15 +317,17 @@ class db2catmap(object):
                 site = str(d.site)
             else:
                 site = 'site'
+            # Make key unique to a physical state of a site.
             cat = name + '_' + phase
             site_name = '_'.join([surf_lattice, facet, cell, site])
             key = '_'.join([str(n), species, cat, site_name])
-            freq_key = key  # str(n) + '_' + species + '_' + surf_lattice
+            freq_key = key
+            # Attempt to import the 32 BEEF perturbations.
             try:
                 contribs = d.data.BEEFvdW_contribs
                 ens = self.state.get_ensemble_perturbations(contribs)
             except:
-                ens = 0  # np.zeros(self.state.size)
+                ens = 0
             if key not in abinitio_energies:
                 abinitio_energies[key] = abinitio_energy
                 dbids[key] = int(d.id)
@@ -676,6 +691,21 @@ class db2catmap(object):
         incomplete = ','.join([str(int(a)) for a in np.unique(calculate)])
         print('Incomplete:', incomplete)
         return abinitio_energies, freq_dict, ens_dict, dbids
+
+    def colinearity(self, species, sites):
+        matrix = np.zeros(len(sites), len(species))
+        for i, s in enumerate(species):
+            for j, c in enumerate(sites):
+                fields = c.split('_')
+                fields[1] = s
+                key = '_'.join(fields)
+                try:
+                    matrix[i, j] = self.formation_energies[key]
+                except KeyError:
+                    matrix[i, j] = np.NaN
+        d = pd.DataFrame(matrix)
+        corr = d.corr(method='pearson')
+        return corr
 
     def scaling_analysis(self, x, y, lattice=None, site_x=None, site_y=None):
         """Returns the scaling relation information between the species
