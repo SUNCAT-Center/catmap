@@ -1,4 +1,4 @@
-from scaler_base import *
+from .scaler_base import *
 
 class NullScaler(ScalerBase):
     """Scaler which passes descriptor values directly to solver"""

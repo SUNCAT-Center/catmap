@@ -1,4 +1,4 @@
-from scaler_base import *
+from .scaler_base import *
 from catmap.data import regular_expressions
 from catmap.functions import parse_constraint
 from math import isnan
@@ -46,7 +46,7 @@ class GeneralizedLinearScaler(ScalerBase):
             descriptor_dict = {}
             for species in self.species_definitions:
                 Ef = self.species_definitions[species].get('formation_energy',None)
-                if hasattr(Ef,'__iter__') and len(Ef) == len(self.surface_names):
+                if isinstance(Ef, list) and len(Ef) == len(self.surface_names):
                     parameter_dict[species] = Ef
 
             for s_id, surf in enumerate(self.surface_names):
@@ -84,8 +84,8 @@ class GeneralizedLinearScaler(ScalerBase):
         all_coeffs += list(self.get_transition_state_coefficient_matrix())
         # populate all TS rows using direct scaling with the correct coefficients
         for i, TS in enumerate(self.transition_state_names):
-            if TS in self.scaling_constraint_dict and hasattr(
-                self.scaling_constraint_dict[TS],'__iter__'):
+            if TS in self.scaling_constraint_dict and isinstance(
+                self.scaling_constraint_dict[TS], list):
                     TS_row = i + len(self.adsorbate_names)
                     all_coeffs[TS_row] = self.total_coefficient_dict[TS]
         if self.adsorbate_interaction_model not in [None,'ideal']:
@@ -173,7 +173,7 @@ class GeneralizedLinearScaler(ScalerBase):
                         idx = self.adsorbate_names.index(ads)
                         coeffs[idx] += coeff_sign
                     Ef = self.species_definitions[ads]['formation_energy']
-                    if hasattr(Ef,'__iter__'):
+                    if isinstance(Ef, list):
                         energies.append(Ef)
                     else:
                         energies.append([0]*len(self.surface_names))
@@ -279,13 +279,13 @@ class GeneralizedLinearScaler(ScalerBase):
             if TS in self.echem_transition_state_names:
                 mode = 'echem'
                 params = None
-            elif TS in self.scaling_constraint_dict and hasattr(
-                self.scaling_constraint_dict[TS], '__iter__'):
+            elif TS in self.scaling_constraint_dict and isinstance(
+                self.scaling_constraint_dict[TS], list):
                     mode = 'direct'
                     params = None
             elif TS in self.scaling_constraint_dict:
                 constring = self.scaling_constraint_dict[TS]
-                if not isinstance(constring,basestring):
+                if not isinstance(constring, str):
                     raise ValueError('Constraints must be strings: '\
                             +repr(constring))
                 match_dict = self.match_regex(constring,
@@ -431,7 +431,7 @@ class GeneralizedLinearScaler(ScalerBase):
             for ads in self.parameter_names:
                 if ads not in constraint_dict:
                     constr = self.default_constraints
-                elif not hasattr(constraint_dict[ads], '__iter__'):
+                elif not isinstance(constraint_dict[ads], list):
                     constr = self.default_constraints
                 else:
                     constr = constraint_dict[ads]

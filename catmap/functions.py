@@ -37,7 +37,7 @@ def cartesian_product(*args, **kwds):
     """
     # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
     # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
-    pools = map(tuple, args) * kwds.get('repeat', 1)
+    pools = [list(map(tuple, args)) for _ in range(kwds.get('repeat', 1))][0]
     result = [[]]
     for pool in pools:
                 result = [x+[y] for x in result for y in pool]
@@ -302,7 +302,7 @@ def scaling_coefficient_matrix(
         :type force_numeric: bool, optional
         """
         for val in dictionary.values():
-            if len(val) != len(dictionary.values()[0]):
+            if len(val) != len(list(dictionary.values())[0]):
                 key_len = '\n'.join([key+':'+str(len(dictionary[key])) 
                     for key in dictionary])
                 raise ValueError('All values must be lists of same length.'+
@@ -319,7 +319,7 @@ def scaling_coefficient_matrix(
 
     #initialize coefficient matrix that will be returned.
     C = np.zeros(
-            (len(descriptor_dict.values()[0])+1,len(parameter_dict.keys())))
+            (len(list(descriptor_dict.values())[0])+1,len(list(parameter_dict.keys()))))
 
     #initialize error dictionary that will be returned 
     #(if return_error_dict=True)
@@ -329,7 +329,7 @@ def scaling_coefficient_matrix(
 
     #initialize descriptor matrix that will be used if 
     #all surfaces are present for a given adsorbate
-    Dtotal = np.zeros((len(surface_names),len(descriptor_dict.values()[0])+1))
+    Dtotal = np.zeros((len(surface_names),len(list(descriptor_dict.values())[0])+1))
     for i,Dsurf in enumerate(surface_names):
         Dtotal[i,-1] = 1 #constant term.
         for j,DE in enumerate(descriptor_dict[Dsurf]):
@@ -373,7 +373,7 @@ def scaling_coefficient_matrix(
         #for loop to allow different parameters to have different number 
         #of surfaces)
 
-        if len(surfs) <= len(descriptor_dict.values()[0])+1:
+        if len(surfs) <= len(list(descriptor_dict.values())[0])+1:
             warnings.warn('Number of energies specified is less than the number'
                           'of free parameters for '+ads+'. Scaling is not reliable'
                           'unless parameters are explicitly specified in '
@@ -382,7 +382,7 @@ def scaling_coefficient_matrix(
         if len(surfs) == len(surface_names):
             D = Dtotal
         else:
-            D = np.zeros((len(surfs),len(descriptor_dict.values()[0])+1))
+            D = np.zeros((len(surfs),len(list(descriptor_dict.values())[0])+1))
             for i,Dsurf in enumerate(surfs):
                 D[i,-1] = 1 #constant term.
                 for j,DE in enumerate(descriptor_dict[Dsurf]):
@@ -516,7 +516,7 @@ def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
     n = len(x)
     J = matrix(m, n)
     if not diff_idxs:
-        diff_idxs = xrange(n)
+        diff_idxs = range(n)
     for j in diff_idxs:
         xj = x.copy()
         delta = abs(h*xj[j])
@@ -525,7 +525,7 @@ def numerical_jacobian(f, x, matrix, h = 1e-10,diff_idxs=None):
         #for very small numbers.
         xj[j] += delta
         Jj = (matrix(f(xj)) - fx)/(delta)
-        for i in xrange(m):
+        for i in range(m):
             J[i,j] = Jj[i]
     return J
 
@@ -612,7 +612,7 @@ def add_dict_in_place(dict1, dict2):
 
     :type dict2: dict
     """
-    for k, v in dict2.iteritems():
+    for k, v in dict2.items(): # inefficient in Py2 but at least works in Py3
         if k in dict1:
             dict1[k] += dict2[k]
         else:

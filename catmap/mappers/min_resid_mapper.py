@@ -1,4 +1,4 @@
-from mapper_base import *
+from .mapper_base import *
 
 class MinResidMapper(MapperBase):
     """Mapper which uses initial guesses with minimum residual."""
@@ -125,7 +125,7 @@ class MinResidMapper(MapperBase):
                     cvgs = self.solver.get_coverage(params,*args,**kwargs)
                     self.log('single_point_success',new_pt=descriptors,i=i)
                     break
-                except ValueError,strerror:
+                except ValueError as strerror:
                     self.log('single_point_fail',new_pt=descriptors,i=i)
         else:
             cvgs = self.solver.get_coverage(params,*args,**kwargs)
@@ -372,7 +372,7 @@ class MinResidMapper(MapperBase):
                                     old_pt=sol_pt)
                         return None
 
-                    except ValueError,strerror:
+                    except ValueError as strerror:
                         strerror = str(strerror)
                         resid = strerror.split('resid=')[-1]
                         resid = resid.split(')')[0]

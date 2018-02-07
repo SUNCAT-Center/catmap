@@ -48,7 +48,7 @@ def get_formation_energies(energy_dict,ref_dict):
 formation_energies = get_formation_energies(abinitio_energies,ref_dict)
 
 for key in formation_energies:
-    print key, formation_energies[key]
+    print(str(key) + ' ' + str(formation_energies[key]))
 
 frequency_dict = {
                 'CO_gas': [2170],
@@ -101,7 +101,7 @@ def make_input_file(file_name,energy_dict,frequency_dict):
     input.write(input_file) #write the text
     input.close() #close the file
 
-    print 'Successfully created input file'
+    print('Successfully created input file')
 
 file_name = 'energies.txt'
 make_input_file(file_name,formation_energies,frequency_dict)
@@ -126,4 +126,4 @@ parser.parse()
 #check that the parsing was successful by ensuring that all the
 #data in the input file was collected in this dictionary.
 for key in rxm.species_definitions:
-    print key, rxm.species_definitions[key]
+    print(str(key) + ' ' + str(rxm.species_definitions[key]))

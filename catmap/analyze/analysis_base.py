@@ -182,7 +182,7 @@ class MapPlot:
         """
         if getattr(self,'descriptor_dict',None):
             self.update_descriptor_args()
-            xy,rates = zip(*mapp)
+            xy,rates = zip(*list(mapp))
             dim = len(xy[0])
             for key in self.descriptor_dict:
                 pt_kwargs = self.descriptor_pt_args.get(key,
@@ -229,10 +229,10 @@ class MapPlot:
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
-        xy,rates = zip(*mapp)
+        xy,rates = zip(*list(mapp))
         dim = len(xy[0])
         if dim == 1:
-            x = zip(*xy)[0]
+            x = list(zip(*xy))[0]
             descriptor_ranges = [[min(x),max(x)]]
             if not self.plot_function:
                 if self.log_scale == True:
@@ -320,7 +320,10 @@ class MapPlot:
                     levels = np.linspace(
                             int(min_val),int(max_val),3*self.n_ticks)
             else:
-                levels = np.linspace(min_val,max_val,min(eff_res,25))
+                # python 3 cannot do int < list, thus
+                # we look at the first element if it is
+                # a list.
+                levels = np.linspace(min_val,max_val,min(eff_res if type(eff_res) is int else eff_res[0],25))
 
             plot_in = [np.linspace(*x_range+[eff_res[0]]),
                     np.linspace(*y_range+[eff_res[1]]),z,levels]
@@ -393,7 +396,8 @@ class MapPlot:
         .. todo:: __doc__
         """
 
-        pts,rates = zip(*mapp)
+        list_mapp = list(mapp)
+        pts,rates = list(zip(*list(mapp)))
         if indices is None:
             indices = range(0,len(rates[0]))
         n_plots = len(indices)
@@ -430,7 +434,7 @@ class MapPlot:
 
         if not self.min or not self.max:
             for id,i in enumerate(indices):
-                pts, datas = zip(*mapp)
+                pts, datas = zip(*list(mapp))
                 dat_min = 1e99
                 dat_max = -1e99
                 for col in zip(*datas):
@@ -491,7 +495,7 @@ class MapPlot:
             color_list = self.color_list
 
 
-        pts,datas = zip(*mapp)
+        pts,datas = zip(*list(mapp))
         if indices is None:
             indices = range(0,len(datas[0]))
         rgbs = []
@@ -680,7 +684,7 @@ class MechanismPlot:
                 if barrier > 0 and barrier_rev > 0:
                     ratio = np.sqrt(barrier)/(np.sqrt(barrier)+np.sqrt(barrier_rev))
                 else:
-                    print 'Warning: Encountered barrier less than 0'
+                    print('Warning: Encountered barrier less than 0')
                     ratio = 0.0001
                     yts = max(yi,yf)
                 xts = xi + ratio*(xf-xi)

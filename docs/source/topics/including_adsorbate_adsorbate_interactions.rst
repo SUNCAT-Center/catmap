@@ -485,6 +485,13 @@ add the following to the CO\_oxidation.mkm setup file:
 If we use the same submission script as before we should get the
 following outputs for coverage and rate:
 
+.. figure:: ../_static/5_self_interactions_coverage.png
+    :align: center
+
+.. figure:: ../_static/5_self_interactions_rate.png
+    :align: center
+
+
 We can see that the coverages change much more gradually, as expected.
 The rate volcano is a little worrying since it now predicts Pt and Pd to
 be some of the worst catalysts. However, we recall that the reaction

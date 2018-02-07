@@ -9,7 +9,7 @@ import shutil
 from catmap.model import ReactionModel
 from catmap.analyze.mechanism import MechanismAnalysis
 
-ref_dir = os.path.join('..', '..', '..', 'tutorials', '3-refining_microkinetic_model')
+ref_dir = os.path.join('tutorials', '3-refining_microkinetic_model')
 
 class MechanismTest(unittest.TestCase):
     def setUp(self):
