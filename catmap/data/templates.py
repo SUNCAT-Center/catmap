@@ -128,8 +128,10 @@ def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matri
 templates['elementary_rates'] = r"""
 def elementary_rates(rate_constants,theta,p,mpf,matrix):
 
-    kf = rate_constants[0:len(rate_constants)/2]
-    kr = rate_constants[len(rate_constants)/2:]
+    # using // for integer division
+    # ensuring integer result under Py2 and Py3
+    kf = rate_constants[0:len(rate_constants)//2]
+    kr = rate_constants[len(rate_constants)//2:]
 
     r = matrix([0]*len(kf))
     dtheta_dt = matrix([0]*len(theta))

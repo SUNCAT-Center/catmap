@@ -1,6 +1,6 @@
 import numpy as np
 import catmap
-from parser_base import *
+from .parser_base import *
 string2symbols = catmap.string2symbols
 Template = catmap.Template
 
@@ -246,10 +246,10 @@ class TableParser(ParserBase):
         all_ads = [k for k in self.species_definitions.keys()
                    if self.species_definitions[k]['type'] != 'site']
 
-        for adsdef in all_ads+allfreqdict.keys(): #format all freqs
+        for adsdef in all_ads+list(allfreqdict.keys()): #format all freqs
             if '_' in adsdef:
                 adsname,site = adsdef.split('_')
-            elif adsdef in allfreqdict.keys():
+            elif adsdef in list(allfreqdict.keys()):
                 adsname = adsdef
                 site = self._default_site
 
@@ -331,13 +331,13 @@ class TableParser(ParserBase):
                                         names_only = [n.split('_')[0] for n in ads_names]
                                         coads_name = coads.split('_')[0]
                                         if coads_name not in names_only:
-                                            print 'Warning: Could not find co-adsorbed species '\
-                                            +coads+' (adsorbate '+ads+'). Ignoring this entry.'
+                                            print(('Warning: Could not find co-adsorbed species '
+                                                   '{coads:s} (adsorbate {ads:s}). Ignoring this entry.').format(coads=coads,ads=ads))
                                         else:
                                             idx_j = names_only.index(coads_name)
                                             actual_ads = ads_names[idx_j]
-                                            print 'Warning: Could not find co-adsorbed species '\
-                                            +coads+' (adsorbate '+ads+'). Using '+actual_ads+'.'
+                                            print(('Warning: Could not find co-adsorbed species '
+                                                '{coads:s} (adsorbate {ads:s}). Using {actual_ads:s}.').format(coads=coads, ads=ads, actual_ads=actual_ads))
                                             theta_vec[idx_j] += theta_j
                         E_diff = float(linedict['formation_energy'])
                         E_int = linedict.get('integral_formation_energy',None)

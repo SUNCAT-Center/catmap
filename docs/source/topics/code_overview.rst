@@ -257,7 +257,9 @@ variants of each class are listed below. Required attributes are
    -  adsorbate\_thermo\_mode - Approximation used for obtaining
       adsorbate free energy corrections. Defaults to harmonic\_adsorbate
       (use statistical mechanics+vibrational frequencies). Other
-      possibilities are: zero\_point\_adsorbate (zero-point corrections
+      possibilities are: hindered\_adsorbate (statistical mechanics +
+      vibrational frequencies + translational frequencies + rotational
+      frequencies), zero\_point\_adsorbate (zero-point corrections
       only), frozen\_gas (no corrections). [string]
 
 -  *Solver:*

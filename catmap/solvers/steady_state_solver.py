@@ -1,5 +1,5 @@
-from solver_base import *
-from mean_field_solver import *
+from .solver_base import *
+from .mean_field_solver import *
 from catmap import string2symbols
 try:
     from scipy.optimize import fmin_powell as fmin
@@ -241,13 +241,13 @@ class SteadyStateSolver(MeanFieldSolver):
             try:
                 valid_coverages =  self.get_steady_state_coverage(new_params,self.interacting_steady_state_function,
                     self.interacting_steady_state_jacobian,valid_coverages,findrootArgs)
-                print 'Successfully bisected with strength: ',new_strength
+                print('Successfully bisected with strength: {new_strength:s}'.format(new_strength=new_strength))
                 valid_strength = new_strength
                 n_bisects = 0
                 if valid_strength > 0.95*target_strength:
                     return valid_coverages
             except ValueError:
-                print 'Failed to bisect with strength: ',new_strength
+                print('Failed to bisect with strength: {new_strength:s}'.format(new_strength=new_strength))
                 n_bisects += 1
         return valid_coverages
 
@@ -474,7 +474,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     #re-compile optimized function
                     self._function_strings[func] = func_string
                     locs = {}
-                    exec func_string in globals(), locs
+                    exec(func_string, globals(), locs)
                     setattr(self,func,locs[func])
 
             self._compiled = True
@@ -490,7 +490,7 @@ class SteadyStateSolver(MeanFieldSolver):
         """
 
         locs = {}
-        exec func_string in globals(), locs
+        exec(func_string, globals(), locs)
         unoptimized = locs[func_name]
 
         #replace common multiplications with substitution
@@ -532,7 +532,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     func_string = func_string.replace(m,sub)
 
         locs = {}
-        exec func_string in globals(), locs
+        exec(func_string, globals(), locs)
 
         optimized = locs[func_name]
         delta = np.array((optimized(*test_args) - unoptimized(*test_args)).tolist()).max()

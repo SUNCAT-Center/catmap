@@ -95,8 +95,8 @@ def ideal_shomate_comparison():
     plt.legend()
     fig.savefig('shomate_ideal_comparison.pdf')
 
-print 'methanol',CH3OH_shomate('methanol_shomate.pdf')
-print 'ethanol',CH3CH2OH_shomate('ethanol_shomate.pdf')
-print 'acetaldehyde',CH3CHO_shomate('acetaldehyde_shomate.pdf')
+print('methanol' + str(CH3OH_shomate('methanol_shomate.pdf')))
+print('ethanol' + str(CH3CH2OH_shomate('ethanol_shomate.pdf')))
+print('acetaldehyde' + str(CH3CHO_shomate('acetaldehyde_shomate.pdf')))
 
 ideal_shomate_comparison()

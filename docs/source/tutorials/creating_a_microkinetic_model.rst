@@ -222,6 +222,11 @@ Similarly, adsorbate thermochemistry can be approximated by:
    degrees of freedom are vibrational (implemented via
    ase.thermochemistry.HarmonicThermo and assumes that frequencies are
    defined)
+-  :code:`hindered_adsorbate` - Use a hindered translator and hindered rotor
+   model and assume all but three degrees of freedom are vibrational, two
+   come from hindered translations, and one comes from a hindered rotation
+   (implemented via ase.thermochemistry.HinderedThermo and assumes that
+   frequencies are defined)
 -  :code:`zero_point_adsorbate` - Only includes zero-point energies (assumes
    frequencies are defined)
 -  :code:`frozen_adsorbate` - Do not include any corrections.
@@ -303,7 +308,7 @@ necessary to specify these coefficients manually because, for example,
 the transition-state energies have not been calculated. This can be
 achieved by using the values: 'initial\_state:[*m*,\ *n*]' or
 :code:`initial_state:[m]` where ':code:`initial_state`' could also be
-':code:`final_state`' or 'BEP'. If only *m* is specified then *n* will be
+':code:`final_state`' or ':code:`BEP`'. If only *m* is specified then *n* will be
 determined by a least-squared fit. It is worth noting here that while
 *m* is independent of the reference used to compute the "generalized
 formation energies" in the input file (see :ref:`formation_energy`), *n*
@@ -424,7 +429,7 @@ If you look in the working directory you should see 5 files:
 
 The log file and the data file contain all information about the solved
 model. The log file is human-readable. If you open it up you will notice
-that is is actually a python script which contains many of the same
+that it is actually a python script which contains many of the same
 things as are found in 'CO\_oxidation.mkm', but also contains a number
 of new variable definitions. You will also see that it automatically
 reads in 'CO\_oxidation.pkl' and stores the variables from this pickle

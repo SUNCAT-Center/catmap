@@ -1,4 +1,4 @@
-from solver_base import *
+from .solver_base import *
 from copy import copy
 
 class IntegratedRateControlSolver(SolverBase):

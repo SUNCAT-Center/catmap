@@ -3,7 +3,11 @@ import os
 import sys
 import inspect
 import time
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import _pickle as pickle
+
 import re
 from copy import copy
 from string import Template
@@ -37,11 +41,15 @@ def griddata(*args, **kwargs):
 import mpmath as mp
 from ase.atoms import string2symbols
 from ase.thermochemistry import IdealGasThermo, HarmonicThermo
-from ase.build import molecule
+try:
+    from ase.build import molecule
+except ImportError:
+    from ase.structure import molecule
+from ase.thermochemistry import IdealGasThermo, HarmonicThermo, HinderedThermo
 from catmap.model import ReactionModel
-import data
+from . import data
 
-__version__ = "0.2.270"
+__version__ = "0.2.450"
 
 def griddata(*args, **kwargs):
     """Wrapper function to avoid annoying griddata errors"""
@@ -57,9 +65,9 @@ def load(setup_file):
 
 modified = []
 class ReactionModelWrapper:
-    def __getattribute__(self,attr):
-        "Force use of custom getattr"
-        return self.__getattr__(self,attr)
+    #def __getattribute__(self,attr):
+        #"Force use of custom getattr"
+        #return object.__getattr__(self,attr)
 
     def __getattr__(self,attr):
         "Return the value of the reaction model instance if its there. Otherwise return the instances own value (or none if the instance does not have the attribute defined and the attribute is not private)"
