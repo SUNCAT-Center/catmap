@@ -54,7 +54,7 @@ class BEEFEnsemble:
                 list of 32 non-selfconsistent energies from the
                 BEEF-vdW exchange-correlation functional.
         """
-        coefs = self.get_beefvdw_ensemble_coefs(self.size, self.seed)
+        coefs = self.get_beefvdw_ensemble_coefs()
         ens = np.dot(coefs, contribs)
         return ens
 
@@ -62,7 +62,7 @@ class BEEFEnsemble:
         """Return perturbation coefficients of the BEEF-vdW ensemble.
         """
         assert np.shape(omega) == (31, 31)
-        W, V, generator = self.eigendecomposition(omega, self.seed)
+        W, V, generator = self.eigendecomposition(omega)
         RandV = generator.randn(31, self.size)
         coefs = []
         Q = np.dot(V, np.diag(np.sqrt(W)))

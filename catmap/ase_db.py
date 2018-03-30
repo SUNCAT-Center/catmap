@@ -49,6 +49,7 @@ Description:
         Stores vibrational frequencies along with atomic structures
         and energies.
 """
+import warnings
 from os import listdir, environ, mkdir
 import os.path
 import numpy as np
@@ -56,14 +57,15 @@ import ase.db
 from ase.atoms import string2symbols
 from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
-from catmap.bee import BEEFEnsemble as BEE
+from catmap.bee import BEEFEnsemble as bee
 import csv
+from tqdm import tqdm
 
 
 class db2catmap(object):
     def __init__(self, beef_size=2000, beef_seed=0):
         """Initialize class."""
-        self.state = BEE(size=beef_size, seed=beef_seed)
+        self.bee = bee(size=beef_size, seed=beef_seed)
         self.epot = {}
         self.freq = {}
         self.ens = {}
@@ -231,7 +233,7 @@ class db2catmap(object):
             # Attempt to retrieve the 32 BEEF perturbations.
             try:
                 contribs = d.data.BEEFvdW_contribs
-                ens = self.state.get_ensemble_perturbations(contribs)
+                ens = self.bee.get_ensemble_perturbations(contribs)
             except AttributeError:
                 ens = 0
             # Store the most stable state of each molecule.
@@ -249,7 +251,7 @@ class db2catmap(object):
             elif abinitio_energies[species_name+'_gas'] > abinitio_energy:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
                 dbids[species_name+'_gas'] = int(d.id)
-                ens_dict[species_name+'_gas'] = contribs
+                ens_dict[species_name+'_gas'] = ens
         return abinitio_energies, freq_dict, ens_dict, dbids
 
     def _db2surf(self, fname, selection=[], freq_path=None,
@@ -338,7 +340,7 @@ class db2catmap(object):
             # Attempt to import the 32 BEEF perturbations.
             try:
                 contribs = d.data.BEEFvdW_contribs
-                ens = self.state.get_ensemble_perturbations(contribs)
+                ens = self.bee.get_ensemble_perturbations(contribs)
             except (AttributeError, KeyError):
                 ens = 0
             if key not in abinitio_energies:
@@ -418,9 +420,9 @@ class db2catmap(object):
             # Try to import non-selfconsistent BEEF contributions.
             try:
                 BEEFvdW_contribs = d.data.BEEFvdW_contribs
-                ens = self.state.get_ensemble_perturbations(BEEFvdW_contribs)
+                ens = self.bee.get_ensemble_perturbations(BEEFvdW_contribs)
             except AttributeError:
-                ens = 0  # np.zeros(self.state.size)
+                ens = 0  # np.zeros(self.bee.size)
             rxn_id = str(d.path_id)
             if rxn_id in rxn_paths:
                 rxn_paths[rxn_id]['pes'].append(abinitio_energy)
@@ -526,7 +528,8 @@ class db2catmap(object):
                 it contains the reference potential energy of the slab.
         """
         formation_energies = {}
-        for key in self.epot.keys():
+        missing_slab = []
+        for key in list(self.epot):
             E0 = 0
             if 'gas' in key:
                 species, site_name = key.split('_')  # Split key into name/site
@@ -537,6 +540,7 @@ class db2catmap(object):
                 try:
                     E0 -= self.reference_epot[site_name]
                 except KeyError:
+                    missing_slab.append(str(self.dbid[key]))
                     continue
             if 'slab' not in key:
                 composition = string2symbols(species.replace('-', ''))
@@ -545,9 +549,11 @@ class db2catmap(object):
                     E0 -= self.reference_epot[atom]
                 formation_energies[key] = E0
                 if abs(E0) / len(composition) > 3.:
-                    print('Warning! Large formation energy.',
-                          self.dbid[key], key, str(E0 / len(composition)) +
-                          ' eV per atom')
+                    warnings.warn('Large formation energy: ' +
+                                  str(E0 / len(composition)) +
+                                  ' eV per atom. ' + str(self.dbid[key]) +
+                                  ': ' + key)
+        print('Missing slabs: ' + ','.join(missing_slab))
         return formation_energies
 
     def _get_BEEstd(self):
@@ -558,7 +564,7 @@ class db2catmap(object):
         de_dict = {}
         std_dict = {}
         for key in self.ens:
-            de = np.zeros(self.state.size)
+            de = np.zeros(self.bee.size)
             if 'gas' in key:
                 species, site_name = key.split('_')  # Split key into name/site
             else:
@@ -578,9 +584,10 @@ class db2catmap(object):
                 sigma = np.std(de)
                 std_dict[key] = sigma
                 if sigma / len(composition) > 0.3:
-                    print("Warning! Large BEEF 1 sigma.",
-                          self.dbid[key], key,
-                          str(sigma / len(composition)) + ' eV per atom.')
+                    msg = "Large BEEF 1 sigma: " + \
+                        str(sigma / len(composition)) + " eV per atom. " + \
+                        str(self.dbid[key]) + ": " + key
+                    warnings.warn(msg)
         return de_dict, std_dict
 
     def get_ellipses(self, ads_x, ads_y,
@@ -609,7 +616,7 @@ class db2catmap(object):
                 continue
             key_x = self._create_state(slab, ads_x, site_x)
             if isinstance(key_x, list):
-                de_x = np.zeros(self.state.size)
+                de_x = np.zeros(self.bee.size)
                 continue_outer = False
                 for k_x in key_x:
                     if k_x in self.de_dict:
@@ -630,7 +637,7 @@ class db2catmap(object):
                 continue
             if np.isclose(de_x, 0).all() or np.isclose(de_y, 0).all():
                 continue
-            width, height, angle = BEE.get_ellipse(de_x, de_y)
+            width, height, angle = self.bee.get_ellipse(de_x, de_y)
             widths[slab] = width
             heights[slab] = height
             angles[slab] = angle
@@ -705,9 +712,13 @@ class db2catmap(object):
                 continue
             tst = np.argmax(pes)
             if warn:
-                print('Warning!', species, m, round(dbond * rtol, 3),
-                      round(shortest, 3), roughness,
-                      len(localmaxs), len(localmins), len(images))
+                warnings.warn("Warning! " + species + "*" + m + " " +
+                              str(round(dbond * rtol, 3)) + " AA. " +
+                              str(round(shortest, 3)) + " AA. " +
+                              str(roughness) + " eV. " +
+                              str(len(localmaxs)) + " local maxima. " +
+                              str(len(localmins)) + " local minima. " +
+                              str(len(images)) + " images.")
             if key not in abinitio_energies:
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
@@ -890,9 +901,9 @@ class db2catmap(object):
         Parameters
         ----------
         key : str
-            exact key of the species to be inserted self.formation_energy
-        descriptor : str or list
-            species names of descriptors.
+            exact key of the species to be inserted self.freq
+        frequencies : list
+            list of frequencies.
         slope : list
         """
         state = {key: frequencies}
@@ -907,9 +918,9 @@ class db2catmap(object):
         It is advisable to use a smaller than default beef_size.
         """
         if self.beef_size >= 2000:
-            Warning("It is advisable to use a smaller than default beef_size" +
-                    "for BEEF ensemble propagation through the micro-kinetic" +
-                    "model.")
+            warnings.warn("It is advisable to use a smaller than default " +
+                          "beef_size for BEEF ensemble propagation through" +
+                          "the micro-kinetic model.")
         raise NotImplementedError("Coming in 2018.")
         # Create a header.
         # headerlist = ['surface_name', 'phase', 'site_name',
@@ -917,8 +928,21 @@ class db2catmap(object):
         #              'frequencies', 'reference', 'coverage', 'std']
         # header = '\t'.join(headerlist)
 
-    def make_input_file(self, file_name, site_specific=False,
-                        covariance=None):
+    def db_attach_formation_energy(self, fname):
+        """ Update a database file to append formation energies.
+
+        Parameters
+        ----------
+            fname : str
+                path and filename of ase database.
+        """
+        c = ase.db.connect(fname)
+        for key in tqdm(list(self.formation_energies)):
+            if 'gas' not in str(key):
+                c.update(int(self.dbid[key]),
+                         delta_energy=float(self.formation_energies[key]))
+
+    def make_input_file(self, file_name, site_specific=False, covariance=None):
         """ Saves the catmap input file.
 
         Parameters
@@ -1113,7 +1137,7 @@ class db2catmap(object):
                 facet_name = facet.replace('(', '').replace(')', '')
                 path_facet = path_surface + '/' + facet_name
                 DeltaE = 0.
-                de = np.zeros(self.state.size)
+                de = np.zeros(self.bee.size)
                 ea = 0.
                 intermediates_exist = True
                 # Find reactant structures and energies
