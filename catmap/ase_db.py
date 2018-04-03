@@ -928,7 +928,7 @@ class db2catmap(object):
         #              'frequencies', 'reference', 'coverage', 'std']
         # header = '\t'.join(headerlist)
 
-    def db_attach_formation_energy(self, fname):
+    def db_attach_formation_energy(self, fname, key_name):
         """ Update a database file to append formation energies.
 
         Parameters
@@ -939,8 +939,8 @@ class db2catmap(object):
         c = ase.db.connect(fname)
         for key in tqdm(list(self.formation_energies)):
             if 'gas' not in str(key):
-                c.update(int(self.dbid[key]),
-                         delta_energy=float(self.formation_energies[key]))
+                kvp = {key_name: float(self.formation_energies[key])}
+                c.update(int(self.dbid[key]), **kvp)
 
     def make_input_file(self, file_name, site_specific=False, covariance=None):
         """ Saves the catmap input file.
