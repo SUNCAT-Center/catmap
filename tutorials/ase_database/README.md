@@ -3,14 +3,17 @@
 A general tutorial in using ase-db can be found [here](https://wiki.fysik.dtu.dk/ase/tutorials/db/db.html),
 and documentation can be found [here](https://wiki.fysik.dtu.dk/ase/ase/db/db.html).
 
+Go to [this Jupyter Notebook](https://wiki.fysik.dtu.dk/ase/ase/db/db.html) to proceed with CatMAP's tutorial on importing ase-db data, calculation formation energies, and exporting the CatMAP input data file.
+
 ## How to make an ase-db readable by the db2catmap module in Catmap
 
 In the end of your calculation script, you can add the lines:
     
+    import ase.db
     c = ase.db.connect('my_path_and_filename.db')
     c.write(atoms, species='OH', ads='OH-1', name='Pt', phase='fcc',
             facet='(111)', supercell='2x2', layers=3, site='top',
-            n=1, data={'BEEFvdW_contribs': contribs})
+            n=1, data={'BEEFvdW_contribs': contribs})  # contribs are the 32 non-selfconsistent energies.
 
 which will write a row to your db file. If the db is not there already,
 it will be created. The above keys are recommended for relaxed slab and adsorbate structures.
@@ -18,7 +21,7 @@ If the structure is a clean slab, put an empty string `''` in `species` and/or t
 
 For surfaces, the db2catmap module recognizes the following keys:
 
- - `energy` (immutable key retreived from the calculator)
+ - `energy` (immutable key retreived from an attached calculator)
  - `n`
  - `species`
  - `name`
@@ -32,17 +35,15 @@ For surfaces, the db2catmap module recognizes the following keys:
  - `data['frequencies']`
 
 `site` is not recognized by default, but can be switched on by the option `site_specific` as seen further below.
+Please also see the end of this page if you are using jvoss/ase-espresso.
 
 ## How to import the data
 
-An example script is provided in this folder, which you can run like so:
+An example jupyter notebook is provided in this folder. You can run it by
 
-    python generate_input.py my_input.txt
-
-This will save a catmap input file in `my_input.txt`.
-Look at the code in `generate_input.py`, and you will see it carries out four tasks:
+These will save a catmap input file in `my_input.txt`. Look at the code and you will see the procedure can be itemized in four tasks:
 1) Define search filters. This is needed if some data has to be filtered out.
-    E.g. if some data was calculated with different parameters than other data. 
+    E.g. if some data was calculated with different parameters than other data.
 2) Import data from ase databases.
 3) Store references and calculate formation energies.
 4) Export catmap input file.
@@ -57,18 +58,18 @@ Importing data from correctly formatted .db files is done like so:
     project.get_molecules('molecules.db', selection=['fmax<0.05'])
     project.get_surfaces('surfaces.db', selection=['fmax<0.05'], site_specific=False)
 
-The `site_specific` option accepts `True`, `False` or a string. In the latter case, the site is recognized only if it matches the string.
+The `site_specific` option accepts `True`, `False` or a string. In the latter case, the `site` key is recognized only if the value matches the string, while all other sites are treated as identical.
 
-Your data is now stored in dictionaries that are attached to your db2catmap object. 
+Your data is now stored in dictionaries that are attached to your db2catmap object.
 
 ## Get formation energies and export to catmap format.
 
 Formation energies are calculated like so:
 
-    references = (('H', 'H2_gas'), ('O', 'H2O_gas'), ('C', 'CO_gas'),))
-    project.calc_formation_energies(references=references)
+    references = (('H', 'H2_gas'), ('O', 'H2O_gas'), ('C', 'CO_gas'),)
+    project.calc_formation_energies(references)
 
-If you dont specify any references, the defaults will use H2 (g), H2O (g) and CH4 (g) and assume you have the potential energies of those molecules. 
+`references` is a required parameter, that should contain gas phase references. If a gas phase reference is dependent on another, order the dependent one after the latter.
 
     project.make_input_file(file_name)
 
@@ -84,7 +85,6 @@ A convenient way of storing the frequencies is along with the atoms object in th
     frequencies = vib.get_frequencies()
     c_out.write(atoms, data={'frequencies': frequencies})
 
-The field `data` always contains a dictionary. Use it with the key `frequencies` to make them accessible to the asedb2catmap module.
 Importing frequencies is handled by the methods `get_surfaces` and `get_molecules`, which we have already used. It is necessary to pass the parameter `frequency_db` to it to import frequencies along with atomic structures like so:
 
     project.get_molecules('molecules.db', frequency_db='frequencies.db', selection=['fmax<0.05'])
@@ -96,10 +96,7 @@ paths using the key `path_id`, which can be generated using the uuid module.
 Doing this after a NEB calculation can be done like so:
 
     path_id = uuid4().hex
-    im = 0
-    for atoms in images:
-        im += 1
-        epot = atoms.get_potential_energy()
+    for im, atoms in enumerate(images):
         c_out.write(atoms, path_id=path_id, image=im)
 
 Transition states and paths have the mandatory key value pairs:
@@ -119,9 +116,10 @@ To add formation energies of transition states to your catmap input, you can use
 
 ## Issues with ASE-incompatible calculators
 
-ase-espresso is not fully compatible with the ase database module.
+ase-espresso is not fully compatible with ASE and it's database module.
 A workaround is to store the energy and forces in a `SinglePointDFTCalculator` like so:
 
+    from ase.calculators.singlepoint import SinglePointDFTCalculator
     epot = atoms.get_potential_energy()
     forces = atoms.get_forces()
     relaxed_atoms = atoms.copy()
@@ -131,7 +129,4 @@ A workaround is to store the energy and forces in a `SinglePointDFTCalculator` l
     relaxed_atoms.set_calculator(spcalc)
     c.write(relaxed_atoms, ...)
 
-`SinglePointDFTCalculator` can be imported from `ase.calculators.singlepoint`
-
 Currently, the db2catmap module also recognizes the energy from the key `epot`, if a calculator is not attached.
-

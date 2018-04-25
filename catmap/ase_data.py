@@ -39,7 +39,7 @@ Description:
         Recommended keys in "data":
         ---------------------------
             "BEEFvdW_contribs" : list
-                32 non-selfconsistent BEEF-vdW energies (Not the ensemble).
+                32 non-selfconsistent BEEF-vdW energies.
             "frequencies" : list
                 vibrational frequencies.
 
@@ -161,7 +161,7 @@ class db2catmap(object):
         self.ens.update(surf_ens)
         self.dbid.update(surf_dbid)
 
-    def calc_formation_energies(self, references):
+    def calc_formation_energies(self, references, return_slabs=False):
         """ Method for generating formation energies.
 
         Parameters
@@ -179,7 +179,20 @@ class db2catmap(object):
          self.reference_ens] = self._get_refs()
         #
         self.de_dict, self.std = self._get_BEEstd()
-        self.formation_energies = self._get_formation_energies()
+        self.formation_energies = self._get_formation_energies(
+            return_slabs=return_slabs)
+
+    def correction(self, key, correction):
+        """ Apply energy correction to a formation energy.
+
+        Parameters
+        ----------
+        key : str
+            Key from self.formation_energies
+        correction : float
+            Energy correction to be added.
+        """
+        self.formation_energies[key] += correction
 
     def _db2mol(self, fname, selection=[], freq_path=None):
         """ Returns four dictionaries containing:
@@ -469,7 +482,7 @@ class db2catmap(object):
     def _mol2ref(self, references):
         """ Returns two dictionaries containing:
             abinitio energy references for atoms
-            32 non-selfconsitent perturbations for atoms.
+            ensemble non-selfconsistent perturbations for atoms.
         """
         atomic_e = {}
         atomic_ens = {}
@@ -480,15 +493,17 @@ class db2catmap(object):
             atomic_e[key] = self.epot[species]
             atomic_ens[key] = np.array(self.ens[species])
             composition = string2symbols(species.split('_')[0])
-            n = 0.
-            for symbol in composition:
+            unique_element, count = np.unique(composition, return_counts=True)
+            n = None
+            for i, symbol in enumerate(unique_element):
                 if symbol == key:
-                    n += 1
+                    n = count[i]
                 else:
-                    atomic_e[key] -= atomic_e[symbol]
-                    atomic_ens[key] -= np.array(atomic_ens[symbol])
-            atomic_e[key] /= n
-            atomic_ens[key] /= n
+                    atomic_e[key] -= atomic_e[symbol] * float(count[i])
+                    atomic_ens[key] = atomic_ens[key] - \
+                        np.array(atomic_ens[symbol]) * float(count[i])
+            atomic_e[key] = atomic_e[key] / float(n)
+            atomic_ens[key] = atomic_ens[key] / float(n)
         return atomic_e, atomic_ens
 
     def _get_refs(self):
@@ -510,7 +525,7 @@ class db2catmap(object):
                 ref_ens[key] = self.ens[key]
         return ref_dict, ref_ens
 
-    def _get_formation_energies(self):
+    def _get_formation_energies(self, return_slabs=False):
         """ Returns a dictionary with formation energies of adsorbates.
 
         Dependencies
@@ -553,6 +568,9 @@ class db2catmap(object):
                                   str(E0 / len(composition)) +
                                   ' eV per atom. ' + str(self.dbid[key]) +
                                   ': ' + key)
+                if return_slabs:
+                    self.ads_slab_pairs.update({(self.dbid[key],
+                                                 self.dbid[site_name])})
         print('Missing slabs: ' + ','.join(missing_slab))
         return formation_energies
 

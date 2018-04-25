@@ -8,7 +8,7 @@ Description
 
 Input
 ----
-    argv[1] : string
+    file_name : string
         Output filename, e.g. my_input.txt
 
 
@@ -55,7 +55,7 @@ Example
     python generate_input.py my_input.txt
 """
 from sys import argv
-from catmap.ase_db import db2catmap
+from catmap.ase_data import db2catmap
 
 # Initialize thermodynamics module.
 project = db2catmap()
@@ -99,5 +99,5 @@ project.calc_formation_energies(references=(('H', 'H2_gas'),
 # The defaults are as hydrogen, water and methane.
 
 # Step 4: Save catmap input file.
-file_name = argv[1]
+file_name = 'my_input.txt'
 project.make_input_file(file_name, site_specific='facet')
