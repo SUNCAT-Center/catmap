@@ -684,13 +684,17 @@ class db2catmap(object):
 
         Parameters
         ----------
-        de_dict  dict    contains beef perturbations of adsorbates on slabs,
-                            where keys are named: adsorbate_name_phase_facet
-        ref_de   dict    contains beef perturbations of references,
-                            where keys are refernce elements, e.g: 'C','H',
-                            and also slabs references: name_phase_facet
-        ads_x    string  adsorbate first dimension
-        ads_y    string  adsorbate second dimension
+        de_dict : dict
+            contains beef perturbations of adsorbates on slabs,
+            where keys are named: adsorbate_name_phase_facet
+        ref_de : dict
+            contains beef perturbations of references,
+            where keys are refernce elements, e.g: 'C','H',
+            and also slabs references.
+        ads_x : str
+            adsorbate first dimension
+        ads_y : str
+            adsorbate second dimension
         """
         widths = {}
         heights = {}
@@ -1163,6 +1167,22 @@ class db2catmap(object):
             parent folder name.
         reactions : list
             catmap's rxn_expressions. A list of strings.
+        surfaces : list
+            List of catalyst names.
+        site : str
+            Site name.
+        mol_db : str
+            Path and filename of database containing gas species
+        slab_db : str
+            Path and filename of database containing slabs
+        ads_db : str
+            Path and filename of database containing adsorbate/slab structures.
+        ts_db : str
+            Path and filename of database containing reaction paths.
+        publication : str
+            Author or publication reference.
+        url : str
+            url to publication.
         """
         # Create a header
         spreadsheet = [['chemical_composition', 'facet', 'reactants',
