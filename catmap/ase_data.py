@@ -161,7 +161,7 @@ class db2catmap(object):
         self.ens.update(surf_ens)
         self.dbid.update(surf_dbid)
 
-    def calc_formation_energies(self, references, return_slabs=False):
+    def calc_formation_energies(self, references):
         """ Method for generating formation energies.
 
         Parameters
@@ -179,11 +179,10 @@ class db2catmap(object):
          self.reference_ens] = self._get_refs()
         #
         self.de_dict, self.std = self._get_BEEstd()
-        self.formation_energies = self._get_formation_energies(
-            return_slabs=return_slabs)
+        self.formation_energies = self._get_formation_energies()
 
     def correction(self, key, correction):
-        """ Apply energy correction to a formation energy.
+        """Apply energy correction to a formation energy.
 
         Parameters
         ----------
@@ -193,6 +192,48 @@ class db2catmap(object):
             Energy correction to be added.
         """
         self.formation_energies[key] += correction
+
+    def db_attach_reference_id(self, slab_db, ads_db):
+        slab_dict = self._slabs()
+        c_ads = ase.db.connect(ads_db)
+        for key in slab_dict:
+            slab_id = int(slab_dict[key]['id'])
+            for ads_id in slab_dict[key]['ads_ids']:
+                c_ads.update(ads_id, slab_id=slab_id)
+
+    def _slabs(self):
+        """Return a dictionary constaining keys of slabs and dictionaries with
+        associated adsorbate keys.
+
+        Parameters
+        ----------
+
+        """
+        ads_slab_pairs = {}
+        missing_slab = []
+        for key in list(self.epot):
+            if 'gas' in key:
+                continue
+            n, species, cat, pha, lattice, fac, cell, site = key.split('_')
+            site_name = '_'.join(['0_', cat, pha, lattice, fac, cell,
+                                  'slab'])
+            if 'slab' not in key:
+                ads = species + '_' + site
+                dbid = self.dbid[key]
+                try:
+                    slab_id = self.dbid[site_name]
+                except KeyError:
+                    missing_slab.append(str(self.dbid[key]))
+                    continue
+                if site_name not in ads_slab_pairs:
+                    ads_slab_pairs.update({site_name: {'id': slab_id,
+                                                       'species': [ads],
+                                                       'ads_ids': [dbid]}})
+                else:
+                    ads_slab_pairs[site_name]['species'].append(ads)
+                    ads_slab_pairs[site_name]['ads_ids'].append(dbid)
+        print('Missing slabs: ' + ','.join(missing_slab))
+        return ads_slab_pairs
 
     def _db2mol(self, fname, selection=[], freq_path=None):
         """ Returns four dictionaries containing:
@@ -307,35 +348,12 @@ class db2catmap(object):
             if '-' in species:
                 continue
             ads = str(d.ads)
-            name = str(d.name)
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
             else:
                 abinitio_energy = float(d.epot)
-            if 'supercell' in d:
-                cell = str(d.supercell)
-            else:
-                cell = 'XxY'
-            if 'layers' in d:
-                cell += 'x' + str(d.layers)
-            if 'phase' in d:
-                phase = str(d.phase)
-            elif 'crystal' in d:
-                phase = str(d.crystal)
-            else:
-                phase = ''
-            if 'surf_lattice' in d:
-                surf_lattice = str(d.surf_lattice)
-            else:
-                surf_lattice = ''
-            if 'facet' in d:
-                facet = str(d.facet)
-            else:
-                str(d.facet)
-            if 'n' in d:
-                n = int(d.n)
-            else:
-                n = 1
+            [n, name, phase, surf_lattice, facet,
+             cell] = self._get_adsorbate_fields(d)
             if species == '' or ('ads' in d and
                                  (ads == 'slab' or ads == 'clean')):
                 species = ''
@@ -376,23 +394,76 @@ class db2catmap(object):
                 ens_dict[key] = ens
         return abinitio_energies, freq_dict, ens_dict, dbids
 
+    def _get_adsorbate_fields(self, d):
+        """Return a set of fields characterizing an adsorbate state.
+
+        Parameters
+        ----------
+        d : dictionary
+            ASE database row.
+
+        Returns
+        ----------
+        n : str
+            Number of adsorbates.
+        name : str
+            Name of catalyst.
+        phase : str
+            Crystal structure.
+        surf_lattice : str
+            Name of surface structure.
+        facet : str
+            Facet <hkl>
+        cell : str
+            Slab size <XxYxL>, where L denotes layers.
+        """
+        name = str(d.name)
+        if 'supercell' in d:
+            cell = str(d.supercell)
+        else:
+            cell = 'XxY'
+        if 'layers' in d:
+            cell += 'x' + str(d.layers)
+        if 'crystal' in d:
+            phase = str(d.crystal)
+        elif 'phase' in d:
+            phase = str(d.phase)
+        elif 'spacegroup' in d:
+            phase = str(d.spacegroup)
+        else:
+            phase = ''
+        if 'surf_lattice' in d:
+            surf_lattice = str(d.surf_lattice)
+        else:
+            surf_lattice = ''
+        if 'facet' in d:
+            facet = str(d.facet)
+        else:
+            str(d.facet)
+        if 'n' in d:
+            n = int(d.n)
+        else:
+            n = 1
+        return n, name, phase, surf_lattice, facet, cell
+
     def _db2pes(self, fname, selection=[], site_specific=False):
-        """ Returns a dictionary containing potential energy surfaces and metadata.
+        """Returns a dictionary containing potential energy surfaces and
+        meta data.
 
-            File dependencies
-            -----------------
-            fname : ase.db file.
+        Dependencies
+        ----------
+        fname : ase.db file.
 
-            Parameters
-            ----------
-            fname : str
-                path/filname.
-            selection : list of strings.
-                Optional ase.db selection strings.
-            site_specific : boolean
-                If True: Dinstinguish sites using the site key value pair, and
-                stores a the potential energy of adsorbates on each site.
-                Else: Use the minimum ab initio energy, disregarding the site.
+        Parameters
+        ----------
+        fname : str
+            path/filname.
+        selection : list of strings.
+            Optional ase.db selection strings.
+        site_specific : boolean
+            If True: Dinstinguish sites using the site key value pair, and
+            stores a the potential energy of adsorbates on each site.
+            Else: Use the minimum ab initio energy, disregarding the site.
         """
         c = ase.db.connect(fname)
         s = c.select(selection)
@@ -525,7 +596,7 @@ class db2catmap(object):
                 ref_ens[key] = self.ens[key]
         return ref_dict, ref_ens
 
-    def _get_formation_energies(self, return_slabs=False):
+    def _get_formation_energies(self):
         """ Returns a dictionary with formation energies of adsorbates.
 
         Dependencies
@@ -568,9 +639,6 @@ class db2catmap(object):
                                   str(E0 / len(composition)) +
                                   ' eV per atom. ' + str(self.dbid[key]) +
                                   ': ' + key)
-                if return_slabs:
-                    self.ads_slab_pairs.update({(self.dbid[key],
-                                                 self.dbid[site_name])})
         print('Missing slabs: ' + ','.join(missing_slab))
         return formation_energies
 
@@ -759,8 +827,6 @@ class db2catmap(object):
     def scaling_analysis(self, x, y, lattice=None, site_x=None, site_y=None):
         """Returns the scaling relation information between the species
         x and y on the surface geometry 'lattice' and site.
-        The outputs are in order: slope, intercept, which are floats,
-        followed by X and Y, which are lists of formation energies.
 
         Parameters
         ----------
@@ -776,6 +842,19 @@ class db2catmap(object):
         site_y='site' : str
             Site of y. If _db2surf was run with site_specific=False, use the
             default value, None or 'site'.
+
+        Returns
+        ----------
+        slope : float
+            Scaling relation slope.
+        intercept : float
+            Scaling relation intercept.
+        X : list
+            List of formation energies.
+        Y : list
+            List of formation energies.
+        labels : list
+            List of keys referring to slabs.
         """
         X = []
         Y = []
