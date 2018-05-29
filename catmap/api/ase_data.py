@@ -62,7 +62,11 @@ import csv
 from tqdm import tqdm
 
 
-class db2catmap(object):
+class energy_landscape(object):
+    """Class for converting raw data from ASE db to an energy txt output.
+    The class is made for treating atomic structures in the db as points on
+    or over a global potential energy surface.
+    """
     def __init__(self, beef_size=2000, beef_seed=0):
         """Initialize class."""
         self.bee = bee(size=beef_size, seed=beef_seed)
@@ -232,7 +236,8 @@ class db2catmap(object):
                 else:
                     ads_slab_pairs[site_name]['species'].append(ads)
                     ads_slab_pairs[site_name]['ads_ids'].append(dbid)
-        print('Missing slabs: ' + ','.join(missing_slab))
+        if len(missing_slab) > 0:
+            print('Missing slabs: ' + ','.join(missing_slab))
         return ads_slab_pairs
 
     def _db2mol(self, fname, selection=[], freq_path=None):
@@ -557,7 +562,6 @@ class db2catmap(object):
         """
         atomic_e = {}
         atomic_ens = {}
-        print(references)
         for t in references:
             key = t[0]
             species = t[1]
@@ -639,7 +643,8 @@ class db2catmap(object):
                                   str(E0 / len(composition)) +
                                   ' eV per atom. ' + str(self.dbid[key]) +
                                   ': ' + key)
-        print('Missing slabs: ' + ','.join(missing_slab))
+        if len(missing_slab) > 0:
+            print('Missing slabs: ' + ','.join(missing_slab))
         return formation_energies
 
     def _get_BEEstd(self):
@@ -824,8 +829,9 @@ class db2catmap(object):
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
                 ens_dict[key] = self.rxn_paths[rxn_id]['ens'][tst]
-        incomplete = ','.join([str(int(a)) for a in np.unique(calculate)])
-        print('Incomplete:', incomplete)
+        if len(calculate) > 0:
+            incomplete = ','.join([str(int(a)) for a in np.unique(calculate)])
+            print('Incomplete:', incomplete)
         return abinitio_energies, freq_dict, ens_dict, dbids
 
     def scaling_analysis(self, x, y, lattice=None, site_x=None, site_y=None):
@@ -1043,7 +1049,8 @@ class db2catmap(object):
                 kvp = {key_name: float(self.formation_energies[key])}
                 c.update(int(self.dbid[key]), **kvp)
 
-    def make_input_file(self, file_name, site_specific=False, covariance=None):
+    def make_input_file(self, file_name, site_specific=False,
+                        catalyst_specific=False, covariance=None):
         """ Saves the catmap input file.
 
         Parameters
@@ -1085,6 +1092,8 @@ class db2catmap(object):
                     std = np.NaN
             else:
                 n, name, cat, pha, lattice, facet, cell, site = key.split('_')
+                if catalyst_specific and not catalyst_specific == cat:
+                    continue
             if 'slab' not in key:  # Do not include empty site energy (0)
                 try:
                     freq_key = key
@@ -1154,6 +1163,7 @@ class db2catmap(object):
         input.write(input_file)
         # Close the file.
         input.close()
+        print("Formation energies exported to " + file_name)
 
     def make_nested_folders(self, project, reactions, surfaces=None,
                             site='site', mol_db=None,

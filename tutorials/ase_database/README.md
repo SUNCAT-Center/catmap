@@ -1,31 +1,34 @@
 # ASE Database
 
+This tutorial will introduce you to the CatMAP API for ASE databases.
+The ASE-db API is made to interpret the atomic structures in your ase-db files as points in a potential energy landscape, on which the kinetic model is built. The `catmap.api.energy_landscape` class handles imports from the databases, calculation of formation energies for unique stable molecules and adsorbate states, and finally exports them to catmap energy txt files, as presented in tutorial 1.
+
 A general tutorial in using ase-db can be found [here](https://wiki.fysik.dtu.dk/ase/tutorials/db/db.html),
 and documentation can be found [here](https://wiki.fysik.dtu.dk/ase/ase/db/db.html).
 
 Go to [this Jupyter Notebook](https://wiki.fysik.dtu.dk/ase/ase/db/db.html) to proceed with CatMAP's tutorial on importing ase-db data, calculation formation energies, and exporting the CatMAP input data file.
 
-## How to make an ase-db readable by the db2catmap module in Catmap
+## How to make an ase-db readable by the `energy_landscape` module in CatMAP
 
 In the end of your calculation script, you can add the lines:
     
     import ase.db
     c = ase.db.connect('my_path_and_filename.db')
-    c.write(atoms, species='OH', ads='OH-1', name='Pt', phase='fcc',
-            facet='(111)', supercell='2x2', layers=3, site='top',
+    c.write(atoms, species='OH', name='Pt',
+            facet='(111)', supercell='2x2', site='top',
             n=1, data={'BEEFvdW_contribs': contribs})  # contribs are the 32 non-selfconsistent energies.
 
 which will write a row to your db file. If the db is not there already,
 it will be created. The above keys are recommended for relaxed slab and adsorbate structures.
 If the structure is a clean slab, put an empty string `''` in `species` and/or the string `'clean'` in `ads`.
 
-For surfaces, the db2catmap module recognizes the following keys:
+For surfaces, the `energy_landscape` module recognizes and uses the following keys:
 
  - `energy` (immutable key retreived from an attached calculator)
  - `n`
  - `species`
  - `name`
- - `phase` or `crystal` (if both are present, `phase` will apply.)
+ - `phase`, `crystal` (if both are present, `phase` will apply.)
  - `facet`
  - `surf_lattice`
  - `supercell`
@@ -34,7 +37,7 @@ For surfaces, the db2catmap module recognizes the following keys:
  - `data['BEEFvdW_contribs']`
  - `data['frequencies']`
 
-`site` is not recognized by default, but can be switched on by the option `site_specific` as seen further below.
+`site` is not recognized by default, but can be switched on by a parameter `site_specific` as seen further below.
 Please also see the end of this page if you are using jvoss/ase-espresso.
 
 ## How to import the data
@@ -54,13 +57,14 @@ sufficient for your dataset. Make sure you filter calculator parameters such as
 XC-functional, basis sets cutoffs, k-point sampling, ect., when necessary.
 Importing data from correctly formatted .db files is done like so:
     
-    project = db2catmap()
+    from catmap.api.ase_data import energy_landscape
+    project = energy_landscape()
     project.get_molecules('molecules.db', selection=['fmax<0.05'])
     project.get_surfaces('surfaces.db', selection=['fmax<0.05'], site_specific=False)
 
 The `site_specific` option accepts `True`, `False` or a string. In the latter case, the `site` key is recognized only if the value matches the string, while all other sites are treated as identical.
 
-Your data is now stored in dictionaries that are attached to your db2catmap object.
+Your data is now stored in dictionaries that are attached to your `energy_landscape` object.
 
 ## Get formation energies and export to catmap format.
 
@@ -129,4 +133,4 @@ A workaround is to store the energy and forces in a `SinglePointDFTCalculator` l
     relaxed_atoms.set_calculator(spcalc)
     c.write(relaxed_atoms, ...)
 
-Currently, the db2catmap module also recognizes the energy from the key `epot`, if a calculator is not attached.
+Currently, the `energy_landscape` module also recognizes the energy from the key `epot`, if a calculator is not attached.

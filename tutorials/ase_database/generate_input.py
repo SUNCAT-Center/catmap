@@ -55,10 +55,10 @@ Example
     python generate_input.py my_input.txt
 """
 from sys import argv
-from catmap.ase_data import db2catmap
+from catmap.api.ase_data import energy_landscape
 
 # Initialize thermodynamics module.
-project = db2catmap()
+project = energy_landscape()
 
 # Step 1: Define search filters. These are needed to select comparable data.
 # They are typically calculation parameters, supercell sizes,
