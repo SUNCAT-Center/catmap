@@ -352,7 +352,10 @@ class energy_landscape(object):
             # Skip any transition states.
             if '-' in species:
                 continue
-            ads = str(d.ads)
+            if 'ads' in d:
+                ads = str(d.ads)
+            else:
+                ads = species
             if 'energy' in d:
                 abinitio_energy = float(d.energy)
             else:
@@ -444,7 +447,7 @@ class energy_landscape(object):
         if 'facet' in d:
             facet = str(d.facet)
         else:
-            str(d.facet)
+            facet = 'facet'
         if 'n' in d:
             n = int(d.n)
         else:
@@ -638,7 +641,7 @@ class energy_landscape(object):
                 for atom in composition:
                     E0 -= self.reference_epot[atom]
                 formation_energies[key] = E0
-                if abs(E0) / len(composition) > 3.:
+                if abs(E0) / len(composition) > 5.:
                     warnings.warn('Large formation energy: ' +
                                   str(E0 / len(composition)) +
                                   ' eV per atom. ' + str(self.dbid[key]) +
@@ -674,7 +677,7 @@ class energy_landscape(object):
                 de_dict[key] = de
                 sigma = np.std(de)
                 std_dict[key] = sigma
-                if sigma / len(composition) > 0.3:
+                if sigma / len(composition) > 0.5:
                     msg = "Large BEEF 1 sigma: " + \
                         str(sigma / len(composition)) + " eV per atom. " + \
                         str(self.dbid[key]) + ": " + key
