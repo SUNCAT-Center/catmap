@@ -50,14 +50,14 @@ Description:
         and energies.
 """
 import warnings
-from os import listdir, environ, mkdir
+from os import listdir, mkdir
 import os.path
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
 from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
-from catmap.bee import BEEFEnsemble as bee
+from catmap.api.bee import BEEFEnsemble as bee
 import csv
 from tqdm import tqdm
 
@@ -165,7 +165,7 @@ class energy_landscape(object):
         self.ens.update(surf_ens)
         self.dbid.update(surf_dbid)
 
-    def calc_formation_energies(self, references):
+    def calc_formation_energies(self, references, beef=True):
         """ Method for generating formation energies.
 
         Parameters
@@ -182,8 +182,9 @@ class energy_landscape(object):
         [self.reference_epot,
          self.reference_ens] = self._get_refs()
         #
-        self.de_dict, self.std = self._get_BEEstd()
         self.formation_energies = self._get_formation_energies()
+        if beef:
+            self.de_dict, self.std = self._get_BEEstd()
 
     def correction(self, key, correction):
         """Apply energy correction to a formation energy.
@@ -348,7 +349,8 @@ class energy_landscape(object):
         ens_dict = {}
         # Loop over states.
         for d in ssurf:
-            species = str(d.species)
+            [n, species, name, phase, surf_lattice, facet,
+             cell] = self._get_adsorbate_fields(d)
             # Skip any transition states.
             if '-' in species:
                 continue
@@ -360,11 +362,10 @@ class energy_landscape(object):
                 abinitio_energy = float(d.energy)
             else:
                 abinitio_energy = float(d.epot)
-            [n, name, phase, surf_lattice, facet,
-             cell] = self._get_adsorbate_fields(d)
             if species == '' or ('ads' in d and
                                  (ads == 'slab' or ads == 'clean')):
                 species = ''
+                ads = 'slab'
                 site = 'slab'
                 n = 0
             elif 'site' in d and site_specific:
@@ -372,15 +373,14 @@ class energy_landscape(object):
             else:
                 site = 'site'
             # Make key unique to a physical state of a site.
-            cat = name + '_' + phase
-            site_name = '_'.join([surf_lattice, facet, cell, site])
-            key = '_'.join([str(n), species, cat, site_name])
+            key = '_'.join([str(n), species, name, phase, surf_lattice,
+                            facet, cell, site])
             freq_key = key
             # Attempt to import the 32 BEEF perturbations.
             try:
                 contribs = d.data.BEEFvdW_contribs
                 ens = self.bee.get_ensemble_perturbations(contribs)
-            except (AttributeError, KeyError):
+            except AttributeError:
                 ens = 0
             if key not in abinitio_energies:
                 abinitio_energies[key] = abinitio_energy
@@ -425,6 +425,10 @@ class energy_landscape(object):
         cell : str
             Slab size <XxYxL>, where L denotes layers.
         """
+        if 'species' in d:
+            species = str(d.species)
+        else:
+            species = ''
         name = str(d.name)
         if 'supercell' in d:
             cell = str(d.supercell)
@@ -452,7 +456,7 @@ class energy_landscape(object):
             n = int(d.n)
         else:
             n = 1
-        return n, name, phase, surf_lattice, facet, cell
+        return n, species, name, phase, surf_lattice, facet, cell
 
     def _db2pes(self, fname, selection=[], site_specific=False):
         """Returns a dictionary containing potential energy surfaces and
@@ -569,7 +573,10 @@ class energy_landscape(object):
             key = t[0]
             species = t[1]
             atomic_e[key] = self.epot[species]
-            atomic_ens[key] = np.array(self.ens[species])
+            try:
+                atomic_ens[key] = np.array(self.ens[species])
+            except KeyError:
+                pass
             composition = string2symbols(species.split('_')[0])
             unique_element, count = np.unique(composition, return_counts=True)
             n = None
@@ -804,9 +811,8 @@ class energy_landscape(object):
                 print('Distances missing in reaction path.')
             if shortest > dbond * rtol:
                 warn = True
-                assert np.argmax(self.rxn_paths[rxn_id]['dbids']) == \
-                    np.argmax(self.rxn_paths[rxn_id]['images'])
-                calculate.append(max(self.rxn_paths[rxn_id]['dbids']))
+                s_last = np.argmax(self.rxn_paths[rxn_id]['images'])
+                calculate.append(self.rxn_paths[rxn_id]['dbids'][s_last])
                 continue
             tst = np.argmax(pes)
             if warn:
@@ -1023,7 +1029,7 @@ class energy_landscape(object):
                               slope=None, intercept=None):
         raise NotImplementedError("Coming in 2018.")
 
-    def make_ensemble_input_files(self, prefix, site_specific=False):
+    def make_ensemble_input_files(self, prefix, suffix, site_specific=False):
         """ Save catmap input files for ensemble models.
         It is advisable to use a smaller than default beef_size.
         """
@@ -1053,7 +1059,8 @@ class energy_landscape(object):
                 c.update(int(self.dbid[key]), **kvp)
 
     def make_input_file(self, file_name, site_specific=False,
-                        catalyst_specific=False, covariance=None):
+                        catalyst_specific=False, covariance=None,
+                        reference=None):
         """ Saves the catmap input file.
 
         Parameters
@@ -1082,6 +1089,10 @@ class energy_landscape(object):
         # List of lines in the output.
         lines = []
         for key in self.formation_energies.keys():  # Iterate through keys
+            if key in self.dbid and reference is None:
+                ref = int(self.dbid[key])
+            else:
+                ref = reference
             E = round(self.formation_energies[key], 4)
             if 'gas' in key:
                 name, site = key.split('_')  # Split key into name/site
@@ -1131,7 +1142,7 @@ class energy_landscape(object):
                             site_name = lattice
                 E = float(E)
                 outline = [surface, phase, site_name, name,
-                           E, list(frequency), environ['USER'], coverage, std]
+                           E, list(frequency), ref, coverage, std]
                 if covariance is not None:
                     if covariance[1] == name:
                         slab = '_'.join(['0_', cat, pha, lattice, facet, cell,
@@ -1140,18 +1151,18 @@ class energy_landscape(object):
                             width = round(self.width[slab], 4)
                             height = round(self.height[slab], 4)
                             angle = round(self.angle[slab], 4)
-                            reference = covariance[0]
+                            ellipse_ref = covariance[0]
                         else:
                             width = ''
                             height = ''
                             angle = ''
-                            reference = ''
+                            ellipse_ref = ''
                     else:
                         width = ''
                         height = ''
                         angle = ''
-                        reference = ''
-                    outline += [width, height, angle, reference]
+                        ellipse_ref = ''
+                    outline += [width, height, angle, ellipse_ref]
                 line = '\t'.join([str(w) for w in outline])
                 lines.append(line)
         # The file is easier to read if sorted (optional).
