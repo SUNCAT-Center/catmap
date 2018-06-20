@@ -49,7 +49,7 @@ from ase.thermochemistry import IdealGasThermo, HarmonicThermo, HinderedThermo
 from catmap.model import ReactionModel
 from . import data
 
-__version__ = "0.2.450"
+__version__ = "0.3.0"
 
 def griddata(*args, **kwargs):
     """Wrapper function to avoid annoying griddata errors"""
