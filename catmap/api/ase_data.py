@@ -59,7 +59,11 @@ from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from catmap.api.bee import BEEFEnsemble as bee
 import csv
-from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(interable):
+        return interable
 
 
 class energy_landscape(object):
@@ -414,6 +418,8 @@ class energy_landscape(object):
         ----------
         n : str
             Number of adsorbates.
+        species : str
+            Species name. Must be chemical formula.
         name : str
             Name of catalyst.
         phase : str
@@ -454,6 +460,8 @@ class energy_landscape(object):
             facet = 'facet'
         if 'n' in d:
             n = int(d.n)
+        elif species == '':
+            n = 0
         else:
             n = 1
         return n, species, name, phase, surf_lattice, facet, cell
@@ -573,10 +581,8 @@ class energy_landscape(object):
             key = t[0]
             species = t[1]
             atomic_e[key] = self.epot[species]
-            try:
+            if species in self.ens:
                 atomic_ens[key] = np.array(self.ens[species])
-            except KeyError:
-                pass
             composition = string2symbols(species.split('_')[0])
             unique_element, count = np.unique(composition, return_counts=True)
             n = None
@@ -585,10 +591,12 @@ class energy_landscape(object):
                     n = count[i]
                 else:
                     atomic_e[key] -= atomic_e[symbol] * float(count[i])
-                    atomic_ens[key] = atomic_ens[key] - \
-                        np.array(atomic_ens[symbol]) * float(count[i])
+                    if key in atomic_ens and symbol in atomic_ens:
+                        atomic_ens[key] = atomic_ens[key] - \
+                            np.array(atomic_ens[symbol]) * float(count[i])
             atomic_e[key] = atomic_e[key] / float(n)
-            atomic_ens[key] = atomic_ens[key] / float(n)
+            if key in atomic_ens:
+                atomic_ens[key] = atomic_ens[key] / float(n)
         return atomic_e, atomic_ens
 
     def _get_refs(self):
@@ -607,7 +615,8 @@ class energy_landscape(object):
         for key in self.epot.keys():
             if 'slab' in key:
                 ref_dict[key] = self.epot[key]
-                ref_ens[key] = self.ens[key]
+                if key in self.ens:
+                    ref_ens[key] = self.ens[key]
         return ref_dict, ref_ens
 
     def _get_formation_energies(self):
@@ -1090,7 +1099,7 @@ class energy_landscape(object):
         lines = []
         for key in self.formation_energies.keys():  # Iterate through keys
             if key in self.dbid and reference is None:
-                ref = int(self.dbid[key])
+                ref = self.dbid[key]
             else:
                 ref = reference
             E = round(self.formation_energies[key], 4)
