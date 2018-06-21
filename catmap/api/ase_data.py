@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Description:
     Module to convert ase.db files into a catmap input file
