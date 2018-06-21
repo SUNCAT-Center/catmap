@@ -16,7 +16,7 @@ import ast
 
 class CatalysisHub(object):
     """ API for importing energetic data from Catalysis-hub.org """
-    def __init__(self, username=None, password=None, limit=100):
+    def __init__(self, username=None, password=None, limit=200):
         self.root = "http://api.catalysis-hub.org/graphql"
         self.limit = limit
         self.username = username
@@ -65,41 +65,6 @@ class CatalysisHub(object):
 
         return reactions
 
-    def get_publication_data(self, publication, limit=1):
-        """Return a list of ASE-db unique_id's from a catalysishub query.
-
-        Parameters
-        ----------
-        reaction : str
-            GraphQL search string. This search string for the publications
-            table. The string must be enclosed in three double hyphens and
-            additional double hyphens must be preceeded by a backslash.
-        """
-        if 'first' not in publication:
-            publication += """, first: """ + str(limit)
-        query = \
-            """{
-              publications(""" + publication + """) {
-                edges {
-                  node {
-                    systems {
-                      uniqueId
-                    }
-                  }
-                }
-              }
-            }
-            """
-
-        data = requests.post(self.root, {'query': query}).json()
-        if 'errors' in data:
-            raise KeyError(data['errors'])
-
-        unique_ids = []
-        for dat in data['data']['publications']['edges'][0]['node']['systems']:
-            unique_ids.append(str(dat['uniqueId']))
-        return unique_ids
-
     def get_publication_id(self, publication):
         """Return a dictionary from a catalysishub query."""
         if 'first' not in publication:
@@ -123,8 +88,8 @@ class CatalysisHub(object):
         pub_id = data['data']['publications']['edges'][0]['node']['pubId']
         return pub_id
 
-    def get_reaction_energies(self, reactions,
-                              previous=None, site_specific=False):
+    def attach_reaction_energies(self, reactions,
+                                 previous=None, site_specific=False):
         """Return CatMAP energy_landscape object with formation energies.
 
         Parameters
@@ -195,6 +160,42 @@ class CatalysisHub(object):
                                      add_additional_information=True)
             images.append(atoms)
         return images
+
+    def get_publication_atoms(self, publication, limit=1):
+        """Return a list of ASE-db unique_id's from a catalysishub query.
+
+        Parameters
+        ----------
+        reaction : str
+            GraphQL search string. This search string for the publications
+            table. The string must be enclosed in three double hyphens and
+            additional double hyphens must be preceeded by a backslash.
+        """
+        if 'first' not in publication:
+            publication += """, first: """ + str(limit)
+        query = \
+            """{
+              publications(""" + publication + """) {
+                edges {
+                  node {
+                    systems {
+                      uniqueId
+                    }
+                  }
+                }
+              }
+            }
+            """
+
+        data = requests.post(self.root, {'query': query}).json()
+        if 'errors' in data:
+            raise KeyError(data['errors'])
+
+        unique_ids = []
+        for dat in data['data']['publications']['edges'][0]['node']['systems']:
+            unique_ids.append(str(dat['uniqueId']))
+
+        return self.get_atoms(unique_ids)
 
     def import_energies(self, unique_ids, previous=None, site_specific=False):
         """Return CatMAP energy_landscape object with potential energies.
