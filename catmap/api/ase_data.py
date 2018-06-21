@@ -1132,12 +1132,15 @@ class energy_landscape(object):
                     phase = ''
                     lattice = ''
                     site_name = 'gas'
-                    coverage = 0
+                    coverage = 0.
                 else:
                     surface = cat
                     phase = pha
-                    coverage = round(float(n) /
-                                     (float(cell[0]) * float(cell[2])), 3)
+                    try:
+                        coverage = round(float(n) /
+                                         (float(cell[0]) * float(cell[2])), 3)
+                    except ValueError:
+                        coverage = 0.
                     if site_specific is True:
                         site_name = lattice + '_' + site
                     elif site_specific is False:
