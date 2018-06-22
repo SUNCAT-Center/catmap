@@ -5,7 +5,7 @@ Requires a development branch of ASE: https://gitlab.com/ase/ase/tree/database
 """
 import requests
 import ase.db
-from .ase_data import energy_landscape
+from .ase_data import EnergyLandscape
 try:
     from tqdm import tqdm
 except ImportError:
@@ -17,7 +17,7 @@ import ast
 class CatalysisHub(object):
     """ API for importing energetic data from Catalysis-hub.org """
     def __init__(self, username=None, password=None, limit=200):
-        self.root = "http://api.catalysis-hub.org/graphql"
+        self.root = "https://api.catalysis-hub.org/graphql"
         self.limit = limit
         self.username = username
         self.password = password
@@ -110,9 +110,9 @@ class CatalysisHub(object):
             Else: Use the minimum ab initio energy, disregarding the site.
         """
         if previous is None:
-            el = energy_landscape()
+            energy_landscape = EnergyLandscape()
         else:
-            el = previous
+            energy_landscape = previous
 
         for rxn in reactions:
             node = rxn['node']
@@ -130,14 +130,17 @@ class CatalysisHub(object):
 
             key = '_'.join(['1', species, name, 'phase', 'surf',
                             facet, 'cell', site])
-            if key not in el.formation_energies:
-                el.formation_energies[key] = node['reactionEnergy'] / n
-                el.dbid[key] = rxn_id
-            elif el.formation_energies[key] > node['reactionEnergy'] / n:
-                el.formation_energies[key] = node['reactionEnergy'] / n
-                el.dbid[key] = rxn_id
+            if key not in energy_landscape.formation_energies:
+                energy_landscape.formation_energies[key] = \
+                    node['reactionEnergy'] / n
+                energy_landscape.dbid[key] = rxn_id
+            elif (energy_landscape.formation_energies[key] >
+                  node['reactionEnergy'] / n):
+                energy_landscape.formation_energies[key] = \
+                    node['reactionEnergy'] / n
+                energy_landscape.dbid[key] = rxn_id
 
-        return el
+        return energy_landscape
 
     def get_atoms(self, unique_ids):
         """Return a list of atoms objects.
@@ -218,9 +221,9 @@ class CatalysisHub(object):
             Else: Use the minimum ab initio energy, disregarding the site.
         """
         if previous is None:
-            el = energy_landscape()
+            energy_landscape = EnergyLandscape()
         else:
-            el = previous
+            energy_landscape = previous
 
         if self.c is None:
             self.c = ase.db.connect('postgresql://' +
@@ -237,7 +240,7 @@ class CatalysisHub(object):
             else:
                 try:
                     n, species, name, phase, surf_lattice, facet, cell = \
-                        el._get_adsorbate_fields(d)
+                        energy_landscape._get_adsorbate_fields(d)
                 except AttributeError:
                     for key in d:
                         print(key, d[key])
@@ -254,11 +257,11 @@ class CatalysisHub(object):
                 key = '_'.join([str(n), species, name, phase, surf_lattice,
                                 facet, cell, site])
             epot = float(d.energy)
-            if key not in el.epot:
-                el.epot[key] = epot
-                el.dbid[key] = uid
-            elif el.epot[key] > epot:
-                el.epot[key] = epot
-                el.dbid[key] = uid
+            if key not in energy_landscape.epot:
+                energy_landscape.epot[key] = epot
+                energy_landscape.dbid[key] = uid
+            elif energy_landscape.epot[key] > epot:
+                energy_landscape.epot[key] = epot
+                energy_landscape.dbid[key] = uid
 
-        return el
+        return energy_landscape

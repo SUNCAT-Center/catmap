@@ -65,7 +65,7 @@ except ImportError:
         return interable
 
 
-class energy_landscape(object):
+class EnergyLandscape(object):
     """Class for converting raw data from ASE db to an energy txt output.
     The class is made for treating atomic structures in the db as points on
     or over a global potential energy surface.
@@ -300,21 +300,21 @@ class energy_landscape(object):
             except AttributeError:
                 ens = 0
             # Store the most stable state of each molecule.
-            if species_name+'_gas' not in abinitio_energies:
+            if species_name + '_gas' not in abinitio_energies:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
-                dbids[species_name+'_gas'] = int(d.id)
-                ens_dict[species_name+'_gas'] = ens
+                dbids[species_name + '_gas'] = int(d.id)
+                ens_dict[species_name + '_gas'] = ens
                 if freq_path is not None:
                     try:
-                        d_freq = c_freq.get(['formula='+species_name])
+                        d_freq = c_freq.get(['formula=' + species_name])
                         frequencies = d_freq.data.frequencies
                         freq_dict.update({species_name + '_gas': frequencies})
                     except KeyError:
                         continue
             elif abinitio_energies[species_name+'_gas'] > abinitio_energy:
                 abinitio_energies[species_name+'_gas'] = abinitio_energy
-                dbids[species_name+'_gas'] = int(d.id)
-                ens_dict[species_name+'_gas'] = ens
+                dbids[species_name + '_gas'] = int(d.id)
+                ens_dict[species_name + '_gas'] = ens
         return abinitio_energies, freq_dict, ens_dict, dbids
 
     def _db2surf(self, fname, selection=[], freq_path=None,
@@ -391,9 +391,9 @@ class energy_landscape(object):
                 ens_dict[key] = ens
                 if species != '' and ads != 'slab' and freq_path is not None:
                     try:
-                        freqsearch = ['species='+species, 'name='+name]
+                        freqsearch = ['species=' + species, 'name=' + name]
                         if site_specific is True:
-                            freqsearch.append('site='+site)
+                            freqsearch.append('site=' + site)
                         d_freq = c_freq.get(freqsearch)
                         frequencies = d_freq.data.frequencies
                         freq_dict.update({freq_key: frequencies})
@@ -837,7 +837,7 @@ class energy_landscape(object):
                 ens_dict[key] = self.rxn_paths[rxn_id]['ens'][tst]
                 if freq_path is not None:
                     try:
-                        d_freq = c_freq.get('path_id='+rxn_id)
+                        d_freq = c_freq.get('path_id=' + rxn_id)
                         frequencies = d_freq.data.frequencies
                         freq_dict.update({key: frequencies})
                     except KeyError:
