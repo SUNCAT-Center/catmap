@@ -16,11 +16,19 @@ import ast
 
 class CatalysisHub(object):
     """ API for importing energetic data from Catalysis-hub.org """
-    def __init__(self, username=None, password=None, limit=200):
+    def __init__(self, username=None, password=None, limit=100):
         self.root = "https://api.catalysis-hub.org/graphql"
-        self.limit = limit
+
+        self.protocol_prefix = 'postgresql://'
+        self.port = '5432'
+        self.path = '/catalysishub'
+        self.database_address = 'catalysishub.c8gwuc8jwb7l' + \
+                                '.us-west-2.rds.' + \
+                                'amazonaws.com' + ':' + self.port + self.path
         self.username = username
         self.password = password
+
+        self.limit = limit
         self.c = None
 
     def get_reactions(self, reaction):
@@ -142,7 +150,7 @@ class CatalysisHub(object):
 
         return energy_landscape
 
-    def get_atoms(self, unique_ids):
+    def get_atoms(self, unique_ids, limit=100):
         """Return a list of atoms objects.
 
         Parameters
@@ -151,12 +159,14 @@ class CatalysisHub(object):
             Unique id's of atoms objects in the catalysishub database.
         """
         if self.c is None:
-            self.c = ase.db.connect('postgresql://' +
+            self.c = ase.db.connect(self.protocol_prefix +
                                     self.username + ':' +
-                                    self.password +
-                                    '@catalysishub.c8gwuc8jwb7l' +
-                                    '.us-west-2.rds.' +
-                                    'amazonaws.com:5432/catalysishub')
+                                    self.password + '@' +
+                                    self.database_address)
+
+        if limit is not None and len(unique_ids) > limit:
+            unique_ids = unique_ids[:limit]
+
         images = []
         for uid in tqdm(unique_ids):
             atoms = self.c.get_atoms(['unique_id=' + uid],
@@ -164,7 +174,7 @@ class CatalysisHub(object):
             images.append(atoms)
         return images
 
-    def get_publication_atoms(self, publication, limit=1):
+    def get_publication_atoms(self, publication, limit=10):
         """Return a list of ASE-db unique_id's from a catalysishub query.
 
         Parameters
@@ -174,8 +184,6 @@ class CatalysisHub(object):
             table. The string must be enclosed in three double hyphens and
             additional double hyphens must be preceeded by a backslash.
         """
-        if 'first' not in publication:
-            publication += """, first: """ + str(limit)
         query = \
             """{
               publications(""" + publication + """) {
@@ -198,7 +206,7 @@ class CatalysisHub(object):
         for dat in data['data']['publications']['edges'][0]['node']['systems']:
             unique_ids.append(str(dat['uniqueId']))
 
-        return self.get_atoms(unique_ids)
+        return self.get_atoms(unique_ids, limit=limit)
 
     def import_energies(self, unique_ids, previous=None, site_specific=False):
         """Return CatMAP energy_landscape object with potential energies.
@@ -226,12 +234,10 @@ class CatalysisHub(object):
             energy_landscape = previous
 
         if self.c is None:
-            self.c = ase.db.connect('postgresql://' +
+            self.c = ase.db.connect(self.protocol_prefix +
                                     self.username + ':' +
-                                    self.password +
-                                    '@catalysishub.c8gwuc8jwb7l' +
-                                    '.us-west-2.rds.' +
-                                    'amazonaws.com:5432/catalysishub')
+                                    self.password + '@' +
+                                    self.database_address)
 
         for uid in tqdm(unique_ids):
             d = self.c.get(['unique_id=' + uid])

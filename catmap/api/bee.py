@@ -5,7 +5,7 @@ Input:
     32x1 array with non-selfconsistent energies.
 
 Output:
-    array with 2000 perturbations to the BEEF-vdW energy.
+    array with ensemble perturbations to the BEEF-vdW energy.
 """
 
 import numpy as np
