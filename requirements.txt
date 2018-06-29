@@ -4,3 +4,4 @@ matplotlib
 scipy
 ase
 graphviz
+tqdm

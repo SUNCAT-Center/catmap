@@ -60,7 +60,7 @@ from catmap.api.bee import BEEFEnsemble as bee
 import csv
 try:
     from tqdm import tqdm
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     def tqdm(interable):
         return interable
 
