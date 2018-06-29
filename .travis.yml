@@ -46,6 +46,7 @@ script:
   - pushd tutorials/electrochemistry/ORR_scaling && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
   - pushd tutorials/electrochemistry/ORR_thermo && coverage run --include='*catmap*' -a make_input.py && coverage run --include='*catmap*' -a mkm_job.py && popd
   - pushd tutorials/electrochemistry/electrons && coverage run --include='*catmap*' -a mkm_job.py && popd
+  - pushd tutorials/ase_database && coverage run --include='*catmap*' -a 1_tutorial.py && popd
   # lets give up on parallel test execution because current Travis VM only runs on 1.5 virtual cores.
   #- for job in $(jobs -p); do wait ${job} && echo "${job} passed" || echo "${job} failed";  done
   - coverage combine $(find . -name '*.coverage')
