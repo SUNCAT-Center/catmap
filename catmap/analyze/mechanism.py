@@ -2,7 +2,10 @@ from .analysis_base import *
 import numpy as np
 from math import log
 from catmap.functions import convert_formation_energies
-from graphviz import Digraph
+try:
+    from graphviz import Digraph
+except ImportError:
+    print('Warning! graphviz not imported.')
 from itertools import chain, product
 
 class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
