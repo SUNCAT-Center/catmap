@@ -61,8 +61,8 @@ import csv
 try:
     from tqdm import tqdm
 except (ImportError, ModuleNotFoundError):
-    def tqdm(interable):
-        return interable
+    def tqdm(iterable):
+        return iterable
 
 
 class EnergyLandscape(object):

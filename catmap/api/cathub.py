@@ -5,7 +5,7 @@ Requires a development branch of ASE: https://gitlab.com/ase/ase/tree/database
 """
 import requests
 import ase.db
-from .ase_data import EnergyLandscape
+from catmap.api.ase_data import EnergyLandscape
 try:
     from tqdm import tqdm
 except ImportError:
