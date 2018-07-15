@@ -42,6 +42,7 @@ name='python-catmap'
 packages = [
            'catmap',
            'catmap.analyze',
+           'catmap.api',
            'catmap.data',
            'catmap.mappers',
            'catmap.parsers',
