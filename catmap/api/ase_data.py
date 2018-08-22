@@ -527,17 +527,17 @@ class EnergyLandscape(object):
                 ens = self.bee.get_ensemble_perturbations(BEEFvdW_contribs)
             except AttributeError:
                 ens = 0  # np.zeros(self.bee.size)
-            try:
+            if 'path_id' in d:
                 rxn_id = str(d.path_id)
-            except KeyError:
+            else:
                 rxn_id = uuid4().hex
-            try:
+            if 'distance' in d:
                 distance = float(d.distance)
-            except KeyError:
+            else:
                 distance = np.nan
-            try:
+            if 'step' in d:
                 step = int(d.step)
-            except KeyError:
+            else:
                 step = np.nan
             if rxn_id in rxn_paths:
                 rxn_paths[rxn_id]['pes'].append(abinitio_energy)
