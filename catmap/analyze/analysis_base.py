@@ -124,7 +124,7 @@ class MapPlot:
                 n_ticks = 8,
                 plot_function = None,
                 colorbar = True,
-                colormap = plt.cm.jet,
+                colormap = plt.cm.Spectral_r,
                 axis_label_decimals = 2,
                 log_scale = False,
                 descriptor_labels = ['X_descriptor','Y_descriptor'],
