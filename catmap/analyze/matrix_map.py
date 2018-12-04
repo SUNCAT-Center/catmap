@@ -1,6 +1,7 @@
 from .analysis_base import *
 from .vector_map import *
 
+
 class MatrixMap(VectorMap):
     """
     .. todo:: __doc__
