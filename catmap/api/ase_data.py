@@ -54,11 +54,12 @@ import os.path
 from uuid import uuid4
 import numpy as np
 import ase.db
-from ase.atoms import string2symbols
+from ase.symbols import string2symbols
 from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from catmap.api.bee import BEEFEnsemble as bee
-import csv
+
+
 try:
     from tqdm import tqdm
 except (ImportError, ModuleNotFoundError):
@@ -202,13 +203,16 @@ class EnergyLandscape(object):
         """
         self.formation_energies[key] += correction
 
-    def db_attach_reference_id(self, slab_db, ads_db):
+    def db_attach_reference_id(self, slab_db, ads_db, overwrite=True):
         slab_dict = self._slabs()
         c_ads = ase.db.connect(ads_db)
         for key in slab_dict:
             slab_id = int(slab_dict[key]['id'])
             for ads_id in slab_dict[key]['ads_ids']:
-                c_ads.update(ads_id, slab_id=slab_id)
+                if overwrite:
+                    c_ads.update(ads_id, slab_id=slab_id)
+                elif 'slab_id' not in c_ads.get(ads_id):
+                    c_ads.update(ads_id, slab_id=slab_id)
 
     def _slabs(self):
         """Return a dictionary constaining keys of slabs and dictionaries with
@@ -1068,7 +1072,7 @@ class EnergyLandscape(object):
         #              'frequencies', 'reference', 'coverage', 'std']
         # header = '\t'.join(headerlist)
 
-    def db_attach_formation_energy(self, fname, key_name):
+    def db_attach_formation_energy(self, fname, key_name, overwrite=True):
         """ Update a database file to append formation energies.
 
         Parameters
@@ -1079,8 +1083,12 @@ class EnergyLandscape(object):
         c = ase.db.connect(fname)
         for key in tqdm(list(self.formation_energies)):
             if 'gas' not in str(key):
-                kvp = {key_name: float(self.formation_energies[key])}
-                c.update(int(self.dbid[key]), **kvp)
+                if overwrite:
+                    kvp = {key_name: float(self.formation_energies[key])}
+                    c.update(int(self.dbid[key]), **kvp)
+                elif key_name not in c.get(int(self.dbid[key])):
+                    kvp = {key_name: float(self.formation_energies[key])}
+                    c.update(int(self.dbid[key]), **kvp)
 
     def make_input_file(self, file_name, site_specific='facet',
                         catalyst_specific=False, covariance=None,

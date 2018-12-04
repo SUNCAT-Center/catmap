@@ -2,7 +2,7 @@ import numpy as np
 import catmap
 import re
 from copy import copy
-from ase.atoms import string2symbols
+from ase.symbols import string2symbols
 import warnings
 
 def get_composition(species_string):
