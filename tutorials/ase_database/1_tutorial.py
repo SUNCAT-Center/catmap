@@ -30,7 +30,7 @@ energy_landscape.get_surfaces('surfaces.db', selection=search_filter_slab, site_
 
 # The `site_specific` option accepts `True`, `False` or a string. In the latter case, the `site` key is recognized only if the value matches the string, while all other sites are treated as identical.
 # 
-# Your data is now stored in dictionaries that are attached to your db2catmap object.
+# Your data is now stored in dictionaries that are attached to your `EnergyLandscape` object.
 # 
 # ## Get formation energies and export to catmap format.
 # 

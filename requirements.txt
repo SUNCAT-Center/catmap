@@ -2,6 +2,6 @@ numpy
 mpmath
 matplotlib
 scipy
-ase
+ase>=3.17.0
 graphviz
 tqdm
