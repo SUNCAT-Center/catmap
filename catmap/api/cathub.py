@@ -1,8 +1,13 @@
 """
-API for catalysis-hub.org
+API for catalysis-hub.org.
 
-Requires a development branch of ASE: https://gitlab.com/ase/ase/tree/database
+For building of micro-kinetic models using catalysis-hub data.
+
+This module serves to build an EnergyLandscape object, importing the necessary
+data from catalysis-hub.org.
 """
+import warnings
+import io
 import requests
 import ase.db
 from catmap.api.ase_data import EnergyLandscape
@@ -16,111 +21,94 @@ import ast
 
 class CatalysisHub(object):
     """ API for importing energetic data from Catalysis-hub.org """
-    def __init__(self, username=None, password=None, limit=100):
+    def __init__(self):
+        # Address of catalysis-hub.
         self.root = "https://api.catalysis-hub.org/graphql"
-
         self.protocol_prefix = 'postgresql://'
         self.port = '5432'
         self.path = '/catalysishub'
         self.database_address = 'catalysishub.c8gwuc8jwb7l' + \
                                 '.us-west-2.rds.' + \
                                 'amazonaws.com' + ':' + self.port + self.path
-        self.username = username
-        self.password = password
 
-        self.limit = limit
-        self.c = None
-
-    def get_reactions(self, reaction):
-        """Return a list of reaction dictionaries from a catalysishub query.
+    def publication_energy_landscape(self, publication, references,
+                                     site_specific=False, limit=100):
+        """Return CatMAP EnergyLandscape object with potential energies
+        from a publication query.
 
         Parameters
         ----------
-        reaction : str
-            GraphQL search string. This search string for the reactions table.
-            The string must be enclosed in three double hyphens and additional
-            double hyphens must be preceeded by a backslash.
+        publication : str
+            Title of publication.
+        references : list
+            List of gas phase references, e.g. ['H2', 'H2O', 'CH4']
+        site_specific : bool
+            TRUE distinguishes between adsorbate sites.
+        limit : int
+            Maximum number of formation energies to return.
+
+        Returns
+        ----------
+            EnergyLandscape : object
+                CatMAP EnergyLandscape object.
         """
-        if 'first' not in reaction:
-            reaction += """, first: """ + str(self.limit)
+        pub_string = """ title: \"""" + publication + """\" """ + \
+            """ first: """ + str(limit) + """ """
+        pubid = self.find_pubid(pub_string)
 
-        query = \
-            """
-            query{reactions
-            """ + \
-            """(""" + reaction + """) {
-                totalCount
-                edges {
-                  node {
-                      id
-                      reactants
-                      products
-                      facet
-                      sites
-                      reactionEnergy
-                      activationEnergy
-                      surfaceComposition
-                    }
-                  }
-                }
-              }
-            """
-        data = requests.post(self.root, {'query': query}).json()
-        if 'errors' in data:
-            raise KeyError(data['errors'])
+        ref_q = '~' + ' + ~'.join(references)
 
-        reactions = data['data']['reactions']['edges']
+        query_string = """ reactants: \" """ + ref_q + """ \" pubId: \"""" + \
+            pubid + """\" first: """ + str(limit) + """ """
 
-        return reactions
+        reactions = self.get_reactions(query_string)
+        energy_landscape = self.attach_reaction_energies(reactions)
 
-    def get_publication_id(self, publication):
-        """Return a dictionary from a catalysishub query."""
-        if 'first' not in publication:
-            publication += """, first: """ + str(self.limit)
+        return energy_landscape
 
-        query = \
-            """{
-              publications(""" + publication + """) {
-                edges {
-                  node {
-                    pubId
-                  }
-                }
-              }
-            }
-            """
-        data = requests.post(self.root, {'query': query}).json()
-        if 'errors' in data:
-            raise KeyError(data['errors'])
+    def get_publication_atoms(self, publication, limit=100):
+        """
+        Parameters
+        ----------
+        publication : str
+            Title of publication.
+        limit : int
+            Maximum number of atoms objects to return.
 
-        pub_id = data['data']['publications']['edges'][0]['node']['pubId']
-        return pub_id
+        Returns
+        ----------
+        images : list
+            List of ASE Atoms objects.
+        """
+        pub_string = """ title: \"""" + publication + """\" """ + \
+            """ first: """ + str(limit) + """ """
 
-    def attach_reaction_energies(self, reactions,
-                                 previous=None, site_specific=False):
-        """Return CatMAP energy_landscape object with formation energies.
+        unique_ids = self.get_publication_uids(pub_string)
+        images = self.get_atoms_from_uids(unique_ids, limit=limit)
+
+        return images
+
+    def attach_reaction_energies(self, reactions, energy_landscape=None,
+                                 site_specific=False):
+        """Return CatMAP EnergyLandscape object with formation energies.
 
         Parameters
         ----------
-        fname : str
-            Path and filename of candidate ase database file.
-        database_ids : list
-            Database ids.
-        prediction : list
-            Predicted means in the same order as database_ids.
-        uncertainty : list
-            Predicted uncertainties in the same order as database_ids.
-        catmap : object
-            CatMAP energy_landscape object.
+        reactions : str
+            reactions GraphQL string.
+        energy_landscape : object
+            CatMAP EnergyLandscape object.
         site_specific : bool
             If True: Dinstinguish sites using the site key value pair, and
             stores a the potential energy of adsorbates on each site.
             Else: Use the minimum ab initio energy, disregarding the site.
+
+        Returns
+        ----------
+            CatMAP EnergyLandscape object.
         """
-        if previous is None:
+        if energy_landscape is None:
             energy_landscape = EnergyLandscape()
-        else:
-            energy_landscape = previous
 
         for rxn in reactions:
             node = rxn['node']
@@ -150,40 +138,144 @@ class CatalysisHub(object):
 
         return energy_landscape
 
-    def get_atoms(self, unique_ids, limit=100):
+    def get_reactions(self, reaction):
+        """Return a list of reaction dictionaries from a catalysishub query.
+
+        Parameters
+        ----------
+        reaction : str
+            GraphQL search string. This search string for the reactions table.
+            The string must be enclosed in three double hyphens and additional
+            double hyphens must be preceeded by a backslash.
+        """
+        if 'first' not in reaction:
+            reaction += """, first: 100 """
+            warnings.warn("Appending 'first: 100' to query." +
+                          "A limit is mandatory")
+
+        # GraphQL query to reactions table.
+        query = \
+            """
+            query{reactions
+            """ + \
+            """(""" + reaction + """) {
+                totalCount
+                edges {
+                  node {
+                      id
+                      reactants
+                      products
+                      facet
+                      sites
+                      reactionEnergy
+                      activationEnergy
+                      surfaceComposition
+                      reactionSystems {
+                              name
+                              aseId
+                              }
+                    }
+                  }
+                }
+              }
+            """
+        data = requests.post(self.root, {'query': query}).json()
+        if 'errors' in data:
+            raise KeyError(data['errors'])
+
+        reactions = data['data']['reactions']['edges']
+
+        return reactions
+
+    def find_pubid(self, publication):
+        """Return a publication id (pubid) from a catalysishub
+        publication query.
+
+        Parameters
+        ----------
+        publication : str
+            GraphQL search string to the publications table.
+        """
+        if 'first' not in publication:
+            publication += """, first: 100 """
+            warnings.warn("Appending 'first: 100' to query." +
+                          "A limit is mandatory")
+
+        query = \
+            """{
+              publications(""" + publication + """) {
+                edges {
+                  node {
+                    pubId
+                  }
+                }
+              }
+            }
+            """
+        data = requests.post(self.root, {'query': query}).json()
+        if 'errors' in data:
+            raise KeyError(data['errors'])
+
+        pub_id = data['data']['publications']['edges'][0]['node']['pubId']
+        return pub_id
+
+    def get_atoms_from_uids(self, unique_ids, limit=100):
         """Return a list of atoms objects.
 
         Parameters
         ----------
         unique_ids : list
             Unique id's of atoms objects in the catalysishub database.
+        limit : int
+            Maximum number of atoms objects to return.
         """
-        if self.c is None:
-            self.c = ase.db.connect(self.protocol_prefix +
-                                    self.username + ':' +
-                                    self.password + '@' +
-                                    self.database_address)
-
-        if limit is not None and len(unique_ids) > limit:
-            unique_ids = unique_ids[:limit]
 
         images = []
-        for uid in tqdm(unique_ids):
-            atoms = self.c.get_atoms(['unique_id=' + uid],
-                                     add_additional_information=True)
+        for uid in tqdm(unique_ids[:limit]):
+            query = \
+                """
+                query{
+              systems(uniqueId: \"""" + uid + """\") {
+                      totalCount
+                      edges {
+                              node {
+                                      id
+                                      uniqueId
+                                      energy
+                                      Trajdata
+                                      }
+                              }
+                              }
+                              }
+                """
+            systems = requests.post(self.root, {'query': query}).json()
+
+            for j, _ in enumerate(systems['data']):
+                with io.StringIO() as tmp_file:
+                    system = systems['data']['systems']['edges'][j].pop('node')
+                    atoms_dict = system.pop('Trajdata')
+                    tmp_file.write(atoms_dict)
+                    tmp_file.seek(0)
+                    atoms = ase.io.read(tmp_file, format='json')
+                    atoms.info['key_value_pairs'] = {}
+                    atoms.info['key_value_pairs']['cathub_id'] = \
+                        system.pop('id')
             images.append(atoms)
         return images
 
-    def get_publication_atoms(self, publication, limit=10):
+    def get_publication_uids(self, publication):
         """Return a list of ASE-db unique_id's from a catalysishub query.
 
         Parameters
         ----------
         reaction : str
-            GraphQL search string. This search string for the publications
-            table. The string must be enclosed in three double hyphens and
-            additional double hyphens must be preceeded by a backslash.
+            GraphQL search string to the publications table.
         """
+        if 'first' not in publication:
+            publication += """, first: 100 """
+            warnings.warn("Appending 'first: 100' to query." +
+                          "A limit is mandatory")
+
         query = \
             """{
               publications(""" + publication + """) {
@@ -206,68 +298,4 @@ class CatalysisHub(object):
         for dat in data['data']['publications']['edges'][0]['node']['systems']:
             unique_ids.append(str(dat['uniqueId']))
 
-        return self.get_atoms(unique_ids, limit=limit)
-
-    def import_energies(self, unique_ids, previous=None, site_specific=False):
-        """Return CatMAP energy_landscape object with potential energies.
-
-        Parameters
-        ----------
-        fname : str
-            Path and filename of candidate ase database file.
-        database_ids : list
-            Database ids.
-        prediction : list
-            Predicted means in the same order as database_ids.
-        uncertainty : list
-            Predicted uncertainties in the same order as database_ids.
-        catmap : object
-            CatMAP energy_landscape object.
-        site_specific : bool
-            If True: Dinstinguish sites using the site key value pair, and
-            stores a the potential energy of adsorbates on each site.
-            Else: Use the minimum ab initio energy, disregarding the site.
-        """
-        if previous is None:
-            energy_landscape = EnergyLandscape()
-        else:
-            energy_landscape = previous
-
-        if self.c is None:
-            self.c = ase.db.connect(self.protocol_prefix +
-                                    self.username + ':' +
-                                    self.password + '@' +
-                                    self.database_address)
-
-        for uid in tqdm(unique_ids):
-            d = self.c.get(['unique_id=' + uid])
-            if str(d.state) == 'gas':
-                key = str(d.formula) + '_gas'
-            else:
-                try:
-                    n, species, name, phase, surf_lattice, facet, cell = \
-                        energy_landscape._get_adsorbate_fields(d)
-                except AttributeError:
-                    for key in d:
-                        print(key, d[key])
-                    raise
-                # layers are inconsistent in catalysishub.
-                x, y = cell[0], cell[2]
-                cell = 'x'.join([x, y])
-                if str(d.state) == 'star':
-                    site = 'slab'
-                elif site_specific and 'site' in d:
-                    site = str(d.site)
-                else:
-                    site = 'site'
-                key = '_'.join([str(n), species, name, phase, surf_lattice,
-                                facet, cell, site])
-            epot = float(d.energy)
-            if key not in energy_landscape.epot:
-                energy_landscape.epot[key] = epot
-                energy_landscape.dbid[key] = uid
-            elif energy_landscape.epot[key] > epot:
-                energy_landscape.epot[key] = epot
-                energy_landscape.dbid[key] = uid
-
-        return energy_landscape
+        return unique_ids
