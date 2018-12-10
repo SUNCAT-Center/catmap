@@ -49,8 +49,9 @@ Description:
         and energies.
 """
 import warnings
-from os import listdir, mkdir
+from os import mkdir
 import os.path
+from uuid import uuid4
 import numpy as np
 import ase.db
 from ase.atoms import string2symbols
@@ -526,13 +527,23 @@ class EnergyLandscape(object):
                 ens = self.bee.get_ensemble_perturbations(BEEFvdW_contribs)
             except AttributeError:
                 ens = 0  # np.zeros(self.bee.size)
-            rxn_id = str(d.path_id)
+            if 'path_id' in d:
+                rxn_id = str(d.path_id)
+            else:
+                rxn_id = uuid4().hex
+            if 'distance' in d:
+                distance = float(d.distance)
+            else:
+                distance = np.nan
+            if 'step' in d:
+                step = int(d.step)
+            else:
+                step = np.nan
             if rxn_id in rxn_paths:
                 rxn_paths[rxn_id]['pes'].append(abinitio_energy)
                 rxn_paths[rxn_id]['dbids'].append(dbid)
                 rxn_paths[rxn_id]['ens'].append(ens)
-                # try:
-                rxn_paths[rxn_id]['distance'].append(float(d.distance))
+                rxn_paths[rxn_id]['distance'].append(distance)
                 # except AttributeError:
                 #    d0 = c.get(rxn_paths[rxn_id]['dbids'][0])
                 #    atoms0 = c.get_atoms(rxn_paths[rxn_id]['dbids'][0])
@@ -565,8 +576,8 @@ class EnergyLandscape(object):
                                      'dbids': [dbid],
                                      'ens': [ens],
                                      'site': site,
-                                     'images': [int(d.step)],
-                                     'distance': [float(d.distance)]}
+                                     'images': [step],
+                                     'distance': [distance]}
         return rxn_paths
 
     def _mol2ref(self, references):
@@ -785,52 +796,57 @@ class EnergyLandscape(object):
             key = '1_' + species + '_' + m + '_' + site
             images = self.rxn_paths[rxn_id]['images']
             pes = np.array(self.rxn_paths[rxn_id]['pes'])
-            s = np.argsort(images)
-            # Look for local minima and maxima.
-            localmins = np.where(np.r_[True, pes[s][1:] < pes[s][:-1]] &
-                                 np.r_[pes[s][:-1] < pes[s][1:], True])[0]
-            localmaxs = np.where(np.r_[True, pes[s][1:] > pes[s][:-1]] &
-                                 np.r_[pes[s][:-1] > pes[s][1:], True])[0]
-            # Measure path roughness
-            differences = np.diff(pes[s])
-            roughness = np.std(differences)
-            # For fixed bond length (drag) calculations
-            g1, g2 = species.split('-')
-            dbond = covalent_radii[atomic_numbers[g1[0]]]
-            if len(g2) > 0:
-                dbond += covalent_radii[atomic_numbers[g2[0]]]
-            else:
-                # Assume the bond is with the surface.
+            if len(images) > 1:
+                s = np.argsort(images)
+                # Look for local minima and maxima.
+                localmins = np.where(np.r_[True, pes[s][1:] < pes[s][:-1]] &
+                                     np.r_[pes[s][:-1] < pes[s][1:], True])[0]
+                localmaxs = np.where(np.r_[True, pes[s][1:] > pes[s][:-1]] &
+                                     np.r_[pes[s][:-1] > pes[s][1:], True])[0]
+                # Measure path roughness
+                differences = np.diff(pes[s])
+                roughness = np.std(differences)
+                # For fixed bond length (drag) calculations
+                g1, g2 = species.split('-')
+                dbond = covalent_radii[atomic_numbers[g1[0]]]
+                if len(g2) > 0:
+                    dbond += covalent_radii[atomic_numbers[g2[0]]]
+                else:
+                    # Assume the bond is with the surface.
+                    try:
+                        dbond += covalent_radii[atomic_numbers[
+                            m.split('_')[0]]]
+                    except KeyError:
+                        print("Bond not defined.")
+                if len(np.unique(images)) != len(images):
+                    warn = True
+                    print('non unique image number!')
+                    print('Warning!', species, m, roughness,
+                          len(localmaxs), len(localmins), images)
+                    continue
+                if (len(localmaxs) > 1 or
+                    len(localmins) > 2 or
+                   len(localmins) == 1):
+                    warn = True
                 try:
-                    dbond += covalent_radii[atomic_numbers[m.split('_')[0]]]
+                    shortest = np.nanmin(self.rxn_paths[rxn_id]['distance'])
+                    if shortest > dbond * rtol:
+                        warn = True
+                        s_last = np.argmax(self.rxn_paths[rxn_id]['images'])
+                        calculate.append(
+                            self.rxn_paths[rxn_id]['dbids'][s_last])
+                        continue
                 except KeyError:
-                    print("Bond not defined.")
-            if len(np.unique(images)) != len(images):
-                warn = True
-                print('non unique image number!')
-                print('Warning!', species, m, roughness,
-                      len(localmaxs), len(localmins), images)
-                continue
-            if len(localmaxs) > 1 or len(localmins) > 2 or len(localmins) == 1:
-                warn = True
-            try:
-                shortest = np.min(self.rxn_paths[rxn_id]['distance'])
-            except KeyError:
-                print('Distances missing in reaction path.')
-            if shortest > dbond * rtol:
-                warn = True
-                s_last = np.argmax(self.rxn_paths[rxn_id]['images'])
-                calculate.append(self.rxn_paths[rxn_id]['dbids'][s_last])
-                continue
+                    print('Distances missing in reaction path.')
+                if warn:
+                    warnings.warn("Warning! " + species + "*" + m + " " +
+                                  str(round(dbond * rtol, 3)) + " AA. " +
+                                  str(round(shortest, 3)) + " AA. " +
+                                  str(roughness) + " eV. " +
+                                  str(len(localmaxs)) + " local maxima. " +
+                                  str(len(localmins)) + " local minima. " +
+                                  str(len(images)) + " images.")
             tst = np.argmax(pes)
-            if warn:
-                warnings.warn("Warning! " + species + "*" + m + " " +
-                              str(round(dbond * rtol, 3)) + " AA. " +
-                              str(round(shortest, 3)) + " AA. " +
-                              str(roughness) + " eV. " +
-                              str(len(localmaxs)) + " local maxima. " +
-                              str(len(localmins)) + " local minima. " +
-                              str(len(images)) + " images.")
             if key not in abinitio_energies:
                 abinitio_energies[key] = pes[tst]
                 dbids[key] = self.rxn_paths[rxn_id]['dbids'][tst]
@@ -1066,7 +1082,7 @@ class EnergyLandscape(object):
                 kvp = {key_name: float(self.formation_energies[key])}
                 c.update(int(self.dbid[key]), **kvp)
 
-    def make_input_file(self, file_name, site_specific=False,
+    def make_input_file(self, file_name, site_specific='facet',
                         catalyst_specific=False, covariance=None,
                         reference=None):
         """ Saves the catmap input file.
@@ -1193,8 +1209,18 @@ class EnergyLandscape(object):
     def make_nested_folders(self, project, reactions, surfaces=None,
                             site='site', mol_db=None,
                             slab_db=None, ads_db=None, ts_db=None,
-                            publication='', url=''):
+                            publication='', url='', xc='xc', code='code'):
         """Saves a nested directory structure.
+        The folder structure for catalysis-hub.org should be
+        <project>
+            <code>
+                <xc>
+                    <catalyst>
+                        <facet>
+                            <reaction>@<site>
+                                <species>.traj or
+                                <species>_<slab>.traj or
+                                'TS'.traj
 
         Parameters
         ----------
@@ -1219,12 +1245,16 @@ class EnergyLandscape(object):
         url : str
             url to publication.
         """
+        data_folder = project + '/' + code + '/' + xc
+
         # Create a header
-        spreadsheet = [['chemical_composition', 'facet', 'reactants',
-                        'products', 'reaction_energy',
-                        'beef_standard_deviation',
-                        'activation_energy', 'DFT_code', 'DFT_functional',
-                        'reference', 'url']]
+        # spreadsheet = [['chemical_composition', 'facet', 'reactants',
+        #                'products', 'reaction_energy',
+        #                'beef_standard_deviation',
+        #                'activation_energy', 'DFT_code', 'DFT_functional',
+        #                'reference', 'url']]
+
+        # Connect to databases.
         if surfaces is None:
             surfaces = [s for s in self.reference_epot.keys() if 'slab' in s]
         if mol_db is None:
@@ -1243,51 +1273,55 @@ class EnergyLandscape(object):
             c_slab = ase.db.connect(slab_db)
         if ts_db is not None:
             c_ts = ase.db.connect(ts_db)
+
+        # Iterate over surfaces
         Nsurf = 0
         Nrxn = 0
-        # Loop over reaction expressions.
-        for i in range(len(reactions)):
-            # Separate left and right side of reaction, and ts if applicable.
-            states = reactions[i].replace(' ', '').split('<->')
-            if len(states) == 1:
-                states = states[0].split('->')
+        for slabkey in surfaces:
+            totraj = {}
+            [n, species, name, phase,
+             lattice, facet, cell, slab] = slabkey.split('_')
+            catalyst_name = name.replace('/', '') + '_' + phase
+            path_surface = data_folder + '/' + catalyst_name
+            facet_name = facet.replace('(', '').replace(')', '')
+            path_facet = path_surface + '/' + facet_name
+
+            # Loop over reaction expressions.
+            for i, rxn in enumerate(reactions):
+                # Separate left and right side of reaction, and ts.
+                states = rxn.replace(' ', '').split('<->')
                 if len(states) == 1:
-                    states = states[0].split('<-')
-            elif len(states) < 3:
-                states = [states[0]] + states[-1].split('->')
-                if len(states) < 3:
-                    states = states[0].split('<-') + states[1:]
-            # List individual species.
-            reactants = states[0].split('+')
-            tstates = states[1].split('+')
-            products = states[-1].split('+')
-            pspecies = []
-            rspecies = []
-            for specie in reactants:
-                if '_g' in specie:
-                    rspecies.append(specie.split('_')[0] + 'gas')
-                elif '*_' in specie:
-                    rspecies.append('star')
-                else:
-                    rspecies.append(specie.split('_')[0] + 'star')
-            for specie in products:
-                if '_g' in specie:
-                    pspecies.append(specie.split('_')[0] + 'gas')
-                elif '*_' in specie:
-                    pspecies.append('star')
-                else:
-                    pspecies.append(specie.split('_')[0] + 'star')
-            rname = '_'.join(rspecies)
-            pname = '_'.join(pspecies)
-            reaction_name = '__'.join([rname, pname])
-            path_reaction = project + '/' + reaction_name
-            for slabkey in surfaces:
-                totraj = {}
-                [n, species, name, phase,
-                 lattice, facet, cell, slab] = slabkey.split('_')
-                path_surface = path_reaction + '/' + name.replace('/', '')
-                facet_name = facet.replace('(', '').replace(')', '')
-                path_facet = path_surface + '/' + facet_name
+                    states = states[0].split('->')
+                    if len(states) == 1:
+                        states = states[0].split('<-')
+                elif len(states) < 3:
+                    states = [states[0]] + states[-1].split('->')
+                    if len(states) < 3:
+                        states = states[0].split('<-') + states[1:]
+                # List individual species.
+                reactants = states[0].split('+')
+                tstates = states[1].split('+')
+                products = states[-1].split('+')
+                pspecies = []
+                rspecies = []
+                for specie in reactants:
+                    if '_g' in specie:
+                        rspecies.append(specie.split('_')[0] + 'gas')
+                    elif '*_' in specie:
+                        rspecies.append('star')
+                    else:
+                        rspecies.append(specie.split('_')[0] + 'star')
+                for specie in products:
+                    if '_g' in specie:
+                        pspecies.append(specie.split('_')[0] + 'gas')
+                    elif '*_' in specie:
+                        pspecies.append('star')
+                    else:
+                        pspecies.append(specie.split('_')[0] + 'star')
+                rname = '_'.join(rspecies)
+                pname = '_'.join(pspecies)
+                reaction_name = '__'.join([rname, pname])
+                path_reaction = path_facet + '/' + reaction_name
                 DeltaE = 0.
                 de = np.zeros(self.bee.size)
                 ea = 0.
@@ -1302,14 +1336,14 @@ class EnergyLandscape(object):
                         n = 1
                     if sitesymbol == 'g':
                         rkey = species + '_gas'
-                        fname = path_reaction + '/' + rkey
+                        fname = data_folder + '/gas/' + rkey
                     elif species == '*':
                         rkey = slabkey
-                        fname = path_facet + '/empty_surface'
+                        fname = path_reaction + '/empty_slab'
                     else:
                         rkey = '_'.join(['1', species.replace('*', ''), name,
                                          phase, lattice, facet, cell, site])
-                        fname = path_facet + '/' + species
+                        fname = path_reaction + '/' + species
                     if rkey not in self.dbid:
                         intermediates_exist = False
                         break
@@ -1333,7 +1367,7 @@ class EnergyLandscape(object):
                             continue
                         totraj.update({tskey:
                                        {'dbid': self.dbid[tskey],
-                                        'fname': path_facet + '/' + ts}})
+                                        'fname': path_reaction + '/' + ts}})
                         ea += self.formation_energies[tskey] - DeltaE
                 # Find product structures and energies.
                 for product in products:
@@ -1345,14 +1379,14 @@ class EnergyLandscape(object):
                         n = 1
                     if sitesymbol == 'g':
                         pkey = species + '_gas'
-                        fname = path_reaction + '/' + pkey
+                        fname = data_folder + '/gas/' + pkey
                     elif species == '*':
                         pkey = slabkey
-                        fname = path_facet + '/empty_surface'
+                        fname = path_reaction + '/empty_slab'
                     else:
                         pkey = '_'.join(['1', species.replace('*', ''), name,
                                          phase, lattice, facet, cell, site])
-                        fname = path_facet + '/' + species
+                        fname = path_reaction + '/' + species
                     if pkey not in self.dbid:
                         intermediates_exist = False
                         break
@@ -1364,23 +1398,12 @@ class EnergyLandscape(object):
                         de += n * self.de_dict[pkey]
                 # If all states are found for this surface, write.
                 if intermediates_exist:
-                    if not os.path.isdir(project):
-                        mkdir(project)
-                    if reaction_name not in listdir(project):
-                        mkdir(path_reaction)
-                    if name.replace('/', '') not in listdir(path_reaction):
-                        mkdir(path_surface)
-                    if facet_name not in listdir(path_surface):
-                        mkdir(path_facet)
                     # Loop over atomic structures to export.
                     for trajkey in totraj.keys():
                         fname = totraj[trajkey]['fname'] + '.traj'
                         if 'gas' in trajkey:
-                            if fname in os.listdir(path_reaction):
-                                continue
-                            else:
-                                atoms = c_mol.get_atoms(self.dbid[trajkey])
-                                d = c_mol.get(self.dbid[trajkey])
+                            atoms = c_mol.get_atoms(self.dbid[trajkey])
+                            d = c_mol.get(self.dbid[trajkey])
                         elif '-' in trajkey.split('_')[1]:
                             atoms = c_ts.get_atoms(self.dbid[trajkey])
                             d = c_ts.get(self.dbid[trajkey])
@@ -1397,20 +1420,25 @@ class EnergyLandscape(object):
                             atoms.set_calculator(calc)
                         fname = fname.replace('(', '').replace(')', '')
                         # Save trajectory file.
+                        folder_structure = fname.split('/')
+                        for depth in range(1, len(folder_structure)-1):
+                            directory = '/'.join(folder_structure[:depth+1])
+                            if not os.path.isdir(directory):
+                                mkdir(directory)
                         atoms.write(fname)
                     # Store rows for spreadsheet.
-                    std = np.std(de)
-                    spreadsheet.append([name, facet, rname, pname,
-                                        DeltaE, std, ea,
-                                        'Quantum Espresso',
-                                        'BEEF-vdW', publication, url])
+                    # std = np.std(de)
+                    # spreadsheet.append([name, facet, rname, pname,
+                    #                     DeltaE, std, ea,
+                    #                     code, xc,
+                    #                     publication, url])
                     # width, height, angle, covariance
-                    Nsurf += 1
+                    Nrxn += 1
                 else:
                     continue
-            Nrxn += 1
-        with open(project + '/data.csv', 'wb') as f:
-            writer = csv.writer(f)
-            writer.writerows(spreadsheet)
+        Nsurf += 1
+        # with open(project + '/data.csv', 'wb') as f:
+        #     writer = csv.writer(f)
+        #     writer.writerows(spreadsheet)
         print(Nrxn, 'reactions imported.')
         print(Nsurf, 'surfaces saved.')

@@ -1,26 +1,28 @@
-#Standard dependencies
+# Standard dependencies
 import os
 import sys
 import inspect
 import time
 try:
     import cPickle as pickle
-except:
+except (ImportError, ModuleNotFoundError):
     import _pickle as pickle
 
 import re
 from copy import copy
 from string import Template
 
-#Non-standard dependencies
+# Non-standard dependencies
 import numpy as np
 try:
     from scipy.interpolate import InterpolatedUnivariateSpline as spline
 except ImportError:
-    def spline_wrapper(x_data, y_data, k=3):  # input kwarg k is intentionally ignored
+    # input kwarg k is intentionally ignored.
+    def spline_wrapper(x_data, y_data, k=3):
         # behaves like scipy.interpolate.InterpolatedUnivariateSpline for k=1
         def spline_func(x):
-            return np.interp(x, map(float,x_data), map(float,y_data))  # loss of precision here
+            # loss of precision here
+            return np.interp(x, map(float,x_data), map(float,y_data))
         return spline_func
     spline = spline_wrapper
 
