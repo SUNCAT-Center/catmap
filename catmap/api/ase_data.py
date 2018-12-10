@@ -1229,6 +1229,8 @@ class EnergyLandscape(object):
                                 <species>.traj or
                                 <species>_<slab>.traj or
                                 'TS'.traj
+                    <gas>
+                        <species>.traj>
 
         Parameters
         ----------
@@ -1406,9 +1408,10 @@ class EnergyLandscape(object):
                         de += n * self.de_dict[pkey]
                 # If all states are found for this surface, write.
                 if intermediates_exist:
-                    # Loop over atomic structures to export.
+                    # Loop over states to export.
                     for trajkey in totraj.keys():
                         fname = totraj[trajkey]['fname'] + '.traj'
+                        # Load the atomic structure from appropriate db.
                         if 'gas' in trajkey:
                             atoms = c_mol.get_atoms(self.dbid[trajkey])
                             d = c_mol.get(self.dbid[trajkey])
@@ -1421,12 +1424,17 @@ class EnergyLandscape(object):
                         else:
                             atoms = c_ads.get_atoms(self.dbid[trajkey])
                             d = c_ads.get(self.dbid[trajkey])
-                        # If a calculator is not attached, attach a dummy.
                         if atoms.calc is None:
+                            # Require a calculator.
                             calc = SinglePointDFTCalculator(atoms)
                             calc.results['energy'] = float(d.epot)
                             atoms.set_calculator(calc)
-                        fname = fname.replace('(', '').replace(')', '')
+                        if 'data' not in atoms.info:
+                            atoms.info['data'] = {}
+                        if trajkey in self.freq:
+                            # Attach vibrational frequencies.
+                            atoms.info['data'].update(
+                                {'frequencies': self.freq[trajkey]})
                         # Save trajectory file.
                         folder_structure = fname.split('/')
                         for depth in range(1, len(folder_structure)-1):
