@@ -49,8 +49,7 @@ Description:
         and energies.
 """
 import warnings
-from os import mkdir
-import os.path
+import os
 from uuid import uuid4
 import numpy as np
 import ase.db
@@ -1229,6 +1228,7 @@ class EnergyLandscape(object):
                                 <species>.traj or
                                 <species>_<slab>.traj or
                                 'TS'.traj
+                        <catalyst>_<phase>_<bulk>
                     <gas>
                         <species>.traj>
 
@@ -1288,12 +1288,11 @@ class EnergyLandscape(object):
         Nsurf = 0
         Nrxn = 0
         for slabkey in surfaces:
-            totraj = {}
             [n, species, name, phase,
              lattice, facet, cell, slab] = slabkey.split('_')
-            catalyst_name = name.replace('/', '') + '_' + phase
+            catalyst_name = name.replace('/', '-') + '_' + phase
             path_surface = data_folder + '/' + catalyst_name
-            facet_name = facet.replace('(', '').replace(')', '')
+            facet_name = facet.replace('(', '').replace(')', '') + '_' + cell
             path_facet = path_surface + '/' + facet_name
 
             # Loop over reaction expressions.
@@ -1308,48 +1307,28 @@ class EnergyLandscape(object):
                     states = [states[0]] + states[-1].split('->')
                     if len(states) < 3:
                         states = states[0].split('<-') + states[1:]
+
                 # List individual species.
-                reactants = states[0].split('+')
-                tstates = states[1].split('+')
-                products = states[-1].split('+')
-                pspecies = []
-                rspecies = []
-                for specie in reactants:
-                    if '_g' in specie:
-                        rspecies.append(specie.split('_')[0] + 'gas')
-                    elif '*_' in specie:
-                        rspecies.append('star')
-                    else:
-                        rspecies.append(specie.split('_')[0] + 'star')
-                for specie in products:
-                    if '_g' in specie:
-                        pspecies.append(specie.split('_')[0] + 'gas')
-                    elif '*_' in specie:
-                        pspecies.append('star')
-                    else:
-                        pspecies.append(specie.split('_')[0] + 'star')
-                rname = '_'.join(rspecies)
-                pname = '_'.join(pspecies)
+                rname, reactants = self._state2species(states[0])
+                pname, products = self._state2species(states[-1])
+
                 reaction_name = '__'.join([rname, pname])
                 path_reaction = path_facet + '/' + reaction_name
                 DeltaE = 0.
                 de = np.zeros(self.bee.size)
                 ea = 0.
                 intermediates_exist = True
+                totraj = {}
                 # Find reactant structures and energies
                 for reactant in reactants:
                     species, sitesymbol = reactant.split('_')
-                    if species[0].isdigit():
-                        n = int(species[0])
-                        species = species[1:]
-                    else:
-                        n = 1
+                    n, species = self._coefficient_species(species)
                     if sitesymbol == 'g':
                         rkey = species + '_gas'
                         fname = data_folder + '/gas/' + rkey
                     elif species == '*':
                         rkey = slabkey
-                        fname = path_reaction + '/empty_slab'
+                        fname = path_facet + '/empty_slab'
                     else:
                         rkey = '_'.join(['1', species.replace('*', ''), name,
                                          phase, lattice, facet, cell, site])
@@ -1367,6 +1346,7 @@ class EnergyLandscape(object):
                     continue
                 # Find transition state structures and energies.
                 if ts_db is not None:
+                    tstates = states[1].split('+')
                     for ts in tstates:
                         if '-' not in ts:
                             continue
@@ -1377,7 +1357,7 @@ class EnergyLandscape(object):
                             continue
                         totraj.update({tskey:
                                        {'dbid': self.dbid[tskey],
-                                        'fname': path_reaction + '/' + ts}})
+                                        'fname': path_reaction + '/TS'}})
                         ea += self.formation_energies[tskey] - DeltaE
                 # Find product structures and energies.
                 for product in products:
@@ -1392,7 +1372,7 @@ class EnergyLandscape(object):
                         fname = data_folder + '/gas/' + pkey
                     elif species == '*':
                         pkey = slabkey
-                        fname = path_reaction + '/empty_slab'
+                        fname = path_facet + '/empty_slab'
                     else:
                         pkey = '_'.join(['1', species.replace('*', ''), name,
                                          phase, lattice, facet, cell, site])
@@ -1440,7 +1420,7 @@ class EnergyLandscape(object):
                         for depth in range(1, len(folder_structure)-1):
                             directory = '/'.join(folder_structure[:depth+1])
                             if not os.path.isdir(directory):
-                                mkdir(directory)
+                                os.mkdir(directory)
                         atoms.write(fname)
                     # Store rows for spreadsheet.
                     # std = np.std(de)
@@ -1452,9 +1432,68 @@ class EnergyLandscape(object):
                     Nrxn += 1
                 else:
                     continue
-        Nsurf += 1
+            Nsurf += 1
         # with open(project + '/data.csv', 'wb') as f:
         #     writer = csv.writer(f)
         #     writer.writerows(spreadsheet)
         print(Nrxn, 'reactions imported.')
         print(Nsurf, 'surfaces saved.')
+
+    def _state2species(self, state):
+        """Parse one side of a CatMAP rxn expression, i.e. a chemical state.
+
+        Parameters
+        ----------
+        state : str
+            Left or right side of CatMAP rxn expression, excluding arrows.
+
+        Returns
+        ----------
+        state_name : str
+            Name of chemical state formatted for folder naming.
+        slist : list
+            List of species. <coefficient><structure formula or Hill formula>.
+        """
+        slist = state.split('+')
+        species = []
+        for specie in slist:
+            if '_g' in specie:
+                # Gas species.
+                species.append(specie.split('_')[0] + 'gas')
+            elif '*_' in specie:
+                # Empty sites.
+                species.append(specie.split('_')[0].replace('*', 'star'))
+            else:
+                # Adsorbates.
+                species.append(specie.split('_')[0] + 'star')
+        return '_'.join(species), slist
+
+    def _coefficient_species(self, species):
+        """Return the stochiometric coefficient and the species type.
+
+        Parameters
+        ----------
+        species : str
+            <coefficient><structure formula or Hill formula>.
+
+        Returns
+        ----------
+        n : int
+            Stochiometric coefficient.
+        species : str
+            Species name.
+        """
+        i = 0
+        n = 1
+        if species[0] == '-':
+            # Negative coefficient allowed.
+            i += 1
+            n = -1
+        while species[i].isdigit():
+            i += 1
+        if i > 1:
+            n = int(species[:i])
+        elif i == 1 and n != -1:
+            n = int(species[0])
+
+        return n, species[i:]
