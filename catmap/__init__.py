@@ -1,102 +1,86 @@
-# Standard dependencies
+#!/usr/bin/env python
+"""Catalysis Micro-kinetic Analysis Package (CatMAP)"""
+
 import os
-import sys
-import inspect
-import time
 try:
-    import cPickle as pickle
-except (ImportError, ModuleNotFoundError):
-    import _pickle as pickle
-
-import re
-from copy import copy
-from string import Template
-
-# Non-standard dependencies
-import numpy as np
-try:
-    from scipy.interpolate import InterpolatedUnivariateSpline as spline
+    from setuptools import setup
 except ImportError:
-    # input kwarg k is intentionally ignored.
-    def spline_wrapper(x_data, y_data, k=3):
-        # behaves like scipy.interpolate.InterpolatedUnivariateSpline for k=1
-        def spline_func(x):
-            # loss of precision here
-            return np.interp(x, map(float,x_data), map(float,y_data))
-        return spline_func
-    spline = spline_wrapper
-
-import matplotlib as mpl
-mpl.use('Agg')
-import pylab as plt
-import matplotlib.transforms as mtransforms
-from matplotlib.mlab import griddata as mlab_griddata
-
-def griddata(*args, **kwargs):
-    """Wrapper function to avoid annoying griddata errors"""
-    try:
-        return mlab_griddata(*args, **kwargs)
-    except RuntimeError:
-        kwargs['interp'] = 'linear'
-        return mlab_griddata(*args, **kwargs)
-
-import mpmath as mp
-from ase.symbols import string2symbols
-from ase.thermochemistry import IdealGasThermo, HarmonicThermo
-try:
-    from ase.build import molecule
-except ImportError:
-    from ase.structure import molecule
-from ase.thermochemistry import IdealGasThermo, HarmonicThermo, HinderedThermo
-from catmap.model import ReactionModel
-from . import data
-
+    from distutils.core import setup
 __version__ = "0.3.0"
 
-def griddata(*args, **kwargs):
-    """Wrapper function to avoid annoying griddata errors"""
-    try:
-        return mlab_griddata(*args, **kwargs)
-    except RuntimeError:
-        kwargs['interp'] = 'linear'
-        return mlab_griddata(*args, **kwargs)
+maintainer = 'Andrew J. Medford'
+maintainer_email = 'ajmedfor@slac.stanford.edu'
+author = maintainer
+author_email = maintainer_email
+description =  __doc__
+classifiers = [
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Environment :: X11 Applications :: GTK',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Developers',
+        'OSI Approved :: GNU General Public License (GPL)',
+        'Natural Language :: English',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: POSIX :: Windows',
+        'Programming Language :: Fortran',
+        'Programming Language :: Python',
+        'Topic :: Education',
+        'Topic :: Scientific/Engineering :: Chemistry',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Topic :: Scientific/Engineering :: Visualization',
+              ]
+requires = ['ase',
+            'matplotlib',
+            'mpmath',
+            'numpy',
+            'graphviz'
+                   ]
+license = 'COPYING.txt'
+long_description = open('README.md').read()
+name='python-catmap'
+packages = [
+           'catmap',
+           'catmap.analyze',
+           'catmap.api',
+           'catmap.data',
+           'catmap.mappers',
+           'catmap.parsers',
+           'catmap.scalers',
+           'catmap.solvers',
+           'catmap.thermodynamics',
+           ]
+package_dir = {'catmap':'catmap'}
+package_data = {'catmap':[]}
+platforms = ['linux', 'windows']
+if os.name == 'nt':
+    scripts = []
+else:
+    scripts = [
+        'tools/catmap'
+              ]
 
-def load(setup_file):
-    rxm = ReactionModel(setup_file = setup_file)
-    return rxm
+url = 'https://github.com/ajmedford/catmap'
 
-modified = []
-class ReactionModelWrapper:
-    #def __getattribute__(self,attr):
-        #"Force use of custom getattr"
-        #return object.__getattr__(self,attr)
-
-    def __getattr__(self,attr):
-        "Return the value of the reaction model instance if its there. Otherwise return the instances own value (or none if the instance does not have the attribute defined and the attribute is not private)"
-        if attr == '_rxm':
-            return object.__getattribute__(self,attr)
-
-        elif hasattr(self._rxm,attr):
-            return getattr(self._rxm,attr)
-        else:
-            if attr in self.__dict__:
-                val =  object.__getattribute__(self,attr)
-                del self.__dict__[attr]
-                #this makes sure that the attr is read from _rxm
-                setattr(self._rxm,attr,val)
-                return val
-            elif attr.startswith('_'):
-                raise AttributeError("Attribute {attr} in invalid".format(**locals()))
-            else:
-                return None
-
-    def __setattr__(self,attr,val):
-        "Set attribute for the instance as well as the reaction_model instance"
-        accumulate = ['_required','_log_strings','_function_strings']
-        if attr == '_rxm':
-            self.__dict__[attr] = val
-        elif attr in accumulate:
-            self._rxm.__dict__[attr].update(val)
-        else:
-            setattr(self._rxm,attr,val)
-
+setup(
+      author="Andrew J. Medford",
+      author_email="andrew.medford@chbe.gatech.edu",
+      description=description,
+      license=license,
+      long_description=long_description,
+      maintainer=maintainer,
+      maintainer_email=maintainer_email,
+      name=name,
+      package_data=package_data,
+      package_dir=package_dir,
+      packages=packages,
+      platforms=platforms,
+      scripts=scripts,
+      url="https://github.com/SUNCAT-Center/catmap",
+      version=__version__,
+      install_requires = ['ase>=3.17',
+            'matplotlib',
+            'mpmath',
+            'numpy',
+            'graphviz']
+      )
