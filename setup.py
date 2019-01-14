@@ -63,8 +63,8 @@ else:
 url = 'https://github.com/ajmedford/catmap'
 
 setup(
-      author=author,
-      author_email=author_email,
+      author="Andrew J. Medford",
+      author_email="andrew.medford@chbe.gatech.edu",
       description=description,
       license=license,
       long_description=long_description,
@@ -76,6 +76,6 @@ setup(
       packages=packages,
       platforms=platforms,
       scripts=scripts,
-      url=url,
+      url="https://github.com/SUNCAT-Center/catmap",
       version=version,
       )
