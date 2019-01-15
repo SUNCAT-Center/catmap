@@ -8,21 +8,21 @@ and documentation can be found [here](https://wiki.fysik.dtu.dk/ase/ase/db/db.ht
 
 Go to [this Jupyter Notebook](https://wiki.fysik.dtu.dk/ase/ase/db/db.html) to proceed with CatMAP's tutorial on importing ase-db data, calculation formation energies, and exporting the CatMAP input data file.
 
-## How to make an ase-db readable by the `energy_landscape` module in CatMAP
+## How to make an ASE-db readable by the `EnergyLandscape` module in CatMAP
 
 In the end of your calculation script, you can add the lines:
     
     import ase.db
     c = ase.db.connect('my_path_and_filename.db')
     c.write(atoms, species='OH', name='Pt',
-            facet='(111)', supercell='2x2', site='top',
             n=1, data={'BEEFvdW_contribs': contribs})  # contribs are the 32 non-selfconsistent energies.
 
-which will write a row to your db file. If the db is not there already,
-it will be created. The above keys are recommended for relaxed slab and adsorbate structures.
+which will write a row to your db file. If the db is not there already, it will be created. 
+This will contain is all the basic information you need.
+
 If the structure is a clean slab, put an empty string `''` in `species` and/or the string `'clean'` in `ads`.
 
-For surfaces, the `energy_landscape` module recognizes and uses the following keys:
+For more advanced features the below keys are needed. The `EnergyLandscape` module recognizes and uses the following keys:
 
  - `energy` (immutable key retreived from an attached calculator)
  - `n`
@@ -38,9 +38,8 @@ For surfaces, the `energy_landscape` module recognizes and uses the following ke
  - `data['frequencies']`
 
 `site` is not recognized by default, but can be switched on by a parameter `site_specific` as seen further below.
-Please also see the end of this page if you are using jvoss/ase-espresso.
 
-## How to import the data
+## How to make the CatMAP energy data file from the ASE-db.
 
 An example jupyter notebook is provided in this folder. You can run it by
 
@@ -120,7 +119,7 @@ To add formation energies of transition states to your catmap input, you can use
 
 ## Issues with ASE-incompatible calculators
 
-ase-espresso is not fully compatible with ASE and it's database module.
+jvoss/ase-espresso is not fully compatible with ASE and it's database module.
 A workaround is to store the energy and forces in a `SinglePointDFTCalculator` like so:
 
     from ase.calculators.singlepoint import SinglePointDFTCalculator
@@ -133,4 +132,8 @@ A workaround is to store the energy and forces in a `SinglePointDFTCalculator` l
     relaxed_atoms.set_calculator(spcalc)
     c.write(relaxed_atoms, ...)
 
-Currently, the `energy_landscape` module also recognizes the energy from the key `epot`, if a calculator is not attached.
+Currently, the `EnergyLandscape` module also recognizes the energy from the key `epot`, if a calculator is not attached.
+
+## Retrieving data from catalysis-hub.org.
+
+Please see tutorial 2.

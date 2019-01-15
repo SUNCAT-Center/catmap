@@ -121,7 +121,7 @@ class MapPlot:
         defaults = dict(resolution_enhancement=1,
                         min=None,
                         max=None,
-                        n_ticks=8,
+                        n_ticks=6,
                         plot_function=None,
                         colorbar=True,
                         colormap=plt.cm.YlGnBu_r,

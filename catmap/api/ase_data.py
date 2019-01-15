@@ -49,16 +49,16 @@ Description:
         and energies.
 """
 import warnings
-from os import mkdir
-import os.path
+import os
 from uuid import uuid4
 import numpy as np
 import ase.db
-from ase.atoms import string2symbols
+from ase.symbols import string2symbols
 from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from catmap.api.bee import BEEFEnsemble as bee
-import csv
+
+
 try:
     from tqdm import tqdm
 except (ImportError, ModuleNotFoundError):
@@ -202,13 +202,16 @@ class EnergyLandscape(object):
         """
         self.formation_energies[key] += correction
 
-    def db_attach_reference_id(self, slab_db, ads_db):
+    def db_attach_reference_id(self, slab_db, ads_db, overwrite=True):
         slab_dict = self._slabs()
         c_ads = ase.db.connect(ads_db)
         for key in slab_dict:
             slab_id = int(slab_dict[key]['id'])
             for ads_id in slab_dict[key]['ads_ids']:
-                c_ads.update(ads_id, slab_id=slab_id)
+                if overwrite:
+                    c_ads.update(ads_id, slab_id=slab_id)
+                elif 'slab_id' not in c_ads.get(ads_id):
+                    c_ads.update(ads_id, slab_id=slab_id)
 
     def _slabs(self):
         """Return a dictionary constaining keys of slabs and dictionaries with
@@ -1068,7 +1071,7 @@ class EnergyLandscape(object):
         #              'frequencies', 'reference', 'coverage', 'std']
         # header = '\t'.join(headerlist)
 
-    def db_attach_formation_energy(self, fname, key_name):
+    def db_attach_formation_energy(self, fname, key_name, overwrite=True):
         """ Update a database file to append formation energies.
 
         Parameters
@@ -1079,8 +1082,12 @@ class EnergyLandscape(object):
         c = ase.db.connect(fname)
         for key in tqdm(list(self.formation_energies)):
             if 'gas' not in str(key):
-                kvp = {key_name: float(self.formation_energies[key])}
-                c.update(int(self.dbid[key]), **kvp)
+                if overwrite:
+                    kvp = {key_name: float(self.formation_energies[key])}
+                    c.update(int(self.dbid[key]), **kvp)
+                elif key_name not in c.get(int(self.dbid[key])):
+                    kvp = {key_name: float(self.formation_energies[key])}
+                    c.update(int(self.dbid[key]), **kvp)
 
     def make_input_file(self, file_name, site_specific='facet',
                         catalyst_specific=False, covariance=None,
@@ -1221,6 +1228,9 @@ class EnergyLandscape(object):
                                 <species>.traj or
                                 <species>_<slab>.traj or
                                 'TS'.traj
+                        <catalyst>_<phase>_<bulk>
+                    <gas>
+                        <species>.traj>
 
         Parameters
         ----------
@@ -1278,12 +1288,11 @@ class EnergyLandscape(object):
         Nsurf = 0
         Nrxn = 0
         for slabkey in surfaces:
-            totraj = {}
             [n, species, name, phase,
              lattice, facet, cell, slab] = slabkey.split('_')
-            catalyst_name = name.replace('/', '') + '_' + phase
+            catalyst_name = name.replace('/', '-') + '_' + phase
             path_surface = data_folder + '/' + catalyst_name
-            facet_name = facet.replace('(', '').replace(')', '')
+            facet_name = facet.replace('(', '').replace(')', '') + '_' + cell
             path_facet = path_surface + '/' + facet_name
 
             # Loop over reaction expressions.
@@ -1298,48 +1307,28 @@ class EnergyLandscape(object):
                     states = [states[0]] + states[-1].split('->')
                     if len(states) < 3:
                         states = states[0].split('<-') + states[1:]
+
                 # List individual species.
-                reactants = states[0].split('+')
-                tstates = states[1].split('+')
-                products = states[-1].split('+')
-                pspecies = []
-                rspecies = []
-                for specie in reactants:
-                    if '_g' in specie:
-                        rspecies.append(specie.split('_')[0] + 'gas')
-                    elif '*_' in specie:
-                        rspecies.append('star')
-                    else:
-                        rspecies.append(specie.split('_')[0] + 'star')
-                for specie in products:
-                    if '_g' in specie:
-                        pspecies.append(specie.split('_')[0] + 'gas')
-                    elif '*_' in specie:
-                        pspecies.append('star')
-                    else:
-                        pspecies.append(specie.split('_')[0] + 'star')
-                rname = '_'.join(rspecies)
-                pname = '_'.join(pspecies)
+                rname, reactants = self._state2species(states[0])
+                pname, products = self._state2species(states[-1])
+
                 reaction_name = '__'.join([rname, pname])
                 path_reaction = path_facet + '/' + reaction_name
                 DeltaE = 0.
                 de = np.zeros(self.bee.size)
                 ea = 0.
                 intermediates_exist = True
+                totraj = {}
                 # Find reactant structures and energies
                 for reactant in reactants:
                     species, sitesymbol = reactant.split('_')
-                    if species[0].isdigit():
-                        n = int(species[0])
-                        species = species[1:]
-                    else:
-                        n = 1
+                    n, species = self._coefficient_species(species)
                     if sitesymbol == 'g':
                         rkey = species + '_gas'
                         fname = data_folder + '/gas/' + rkey
                     elif species == '*':
                         rkey = slabkey
-                        fname = path_reaction + '/empty_slab'
+                        fname = path_facet + '/empty_slab'
                     else:
                         rkey = '_'.join(['1', species.replace('*', ''), name,
                                          phase, lattice, facet, cell, site])
@@ -1357,6 +1346,7 @@ class EnergyLandscape(object):
                     continue
                 # Find transition state structures and energies.
                 if ts_db is not None:
+                    tstates = states[1].split('+')
                     for ts in tstates:
                         if '-' not in ts:
                             continue
@@ -1367,7 +1357,7 @@ class EnergyLandscape(object):
                             continue
                         totraj.update({tskey:
                                        {'dbid': self.dbid[tskey],
-                                        'fname': path_reaction + '/' + ts}})
+                                        'fname': path_reaction + '/TS'}})
                         ea += self.formation_energies[tskey] - DeltaE
                 # Find product structures and energies.
                 for product in products:
@@ -1382,7 +1372,7 @@ class EnergyLandscape(object):
                         fname = data_folder + '/gas/' + pkey
                     elif species == '*':
                         pkey = slabkey
-                        fname = path_reaction + '/empty_slab'
+                        fname = path_facet + '/empty_slab'
                     else:
                         pkey = '_'.join(['1', species.replace('*', ''), name,
                                          phase, lattice, facet, cell, site])
@@ -1398,9 +1388,10 @@ class EnergyLandscape(object):
                         de += n * self.de_dict[pkey]
                 # If all states are found for this surface, write.
                 if intermediates_exist:
-                    # Loop over atomic structures to export.
+                    # Loop over states to export.
                     for trajkey in totraj.keys():
                         fname = totraj[trajkey]['fname'] + '.traj'
+                        # Load the atomic structure from appropriate db.
                         if 'gas' in trajkey:
                             atoms = c_mol.get_atoms(self.dbid[trajkey])
                             d = c_mol.get(self.dbid[trajkey])
@@ -1413,18 +1404,23 @@ class EnergyLandscape(object):
                         else:
                             atoms = c_ads.get_atoms(self.dbid[trajkey])
                             d = c_ads.get(self.dbid[trajkey])
-                        # If a calculator is not attached, attach a dummy.
                         if atoms.calc is None:
+                            # Require a calculator.
                             calc = SinglePointDFTCalculator(atoms)
                             calc.results['energy'] = float(d.epot)
                             atoms.set_calculator(calc)
-                        fname = fname.replace('(', '').replace(')', '')
+                        if 'data' not in atoms.info:
+                            atoms.info['data'] = {}
+                        if trajkey in self.freq:
+                            # Attach vibrational frequencies.
+                            atoms.info['data'].update(
+                                {'frequencies': self.freq[trajkey]})
                         # Save trajectory file.
                         folder_structure = fname.split('/')
                         for depth in range(1, len(folder_structure)-1):
                             directory = '/'.join(folder_structure[:depth+1])
                             if not os.path.isdir(directory):
-                                mkdir(directory)
+                                os.mkdir(directory)
                         atoms.write(fname)
                     # Store rows for spreadsheet.
                     # std = np.std(de)
@@ -1436,9 +1432,68 @@ class EnergyLandscape(object):
                     Nrxn += 1
                 else:
                     continue
-        Nsurf += 1
+            Nsurf += 1
         # with open(project + '/data.csv', 'wb') as f:
         #     writer = csv.writer(f)
         #     writer.writerows(spreadsheet)
         print(Nrxn, 'reactions imported.')
         print(Nsurf, 'surfaces saved.')
+
+    def _state2species(self, state):
+        """Parse one side of a CatMAP rxn expression, i.e. a chemical state.
+
+        Parameters
+        ----------
+        state : str
+            Left or right side of CatMAP rxn expression, excluding arrows.
+
+        Returns
+        ----------
+        state_name : str
+            Name of chemical state formatted for folder naming.
+        slist : list
+            List of species. <coefficient><structure formula or Hill formula>.
+        """
+        slist = state.split('+')
+        species = []
+        for specie in slist:
+            if '_g' in specie:
+                # Gas species.
+                species.append(specie.split('_')[0] + 'gas')
+            elif '*_' in specie:
+                # Empty sites.
+                species.append(specie.split('_')[0].replace('*', 'star'))
+            else:
+                # Adsorbates.
+                species.append(specie.split('_')[0] + 'star')
+        return '_'.join(species), slist
+
+    def _coefficient_species(self, species):
+        """Return the stochiometric coefficient and the species type.
+
+        Parameters
+        ----------
+        species : str
+            <coefficient><structure formula or Hill formula>.
+
+        Returns
+        ----------
+        n : int
+            Stochiometric coefficient.
+        species : str
+            Species name.
+        """
+        i = 0
+        n = 1
+        if species[0] == '-':
+            # Negative coefficient allowed.
+            i += 1
+            n = -1
+        while species[i].isdigit():
+            i += 1
+        if i > 1:
+            n = int(species[:i])
+        elif i == 1 and n != -1:
+            n = int(species[0])
+
+        return n, species[i:]

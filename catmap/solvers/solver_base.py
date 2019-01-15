@@ -3,7 +3,7 @@ from catmap.model import ReactionModel
 from catmap import ReactionModelWrapper
 import numpy as np
 import mpmath as mp
-from ase.atoms import string2symbols
+from ase.symbols import string2symbols
 
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=None):
