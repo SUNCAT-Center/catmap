@@ -8,8 +8,15 @@
 
 ### pip/setup.py
 
-CatMap can be installed directly via pip: `pip install --upgrade https://github.com/medford-research/catmap/zipball/master
-` or download/clone the repository and run `python setup.py install` as of the repository root folder.
+CatMap can be installed directly via pip: 
+
+    pip install --upgrade https://github.com/medford-research/catmap/zipball/master
+    
+or download/clone the repository and run 
+
+    python setup.py install
+
+as of the repository root folder.
 
 ### via add-to Path
 
