@@ -54,7 +54,7 @@ packages = [
 package_dir = {'catmap':'catmap'}
 package_data = {'catmap':[]}
 platforms = ['linux', 'windows']
-if os.name == 'nt':__version__ = "0.3.1"
+if os.name == 'nt':
     scripts = []
 else:
     scripts = [
@@ -78,7 +78,7 @@ setup(
       platforms=platforms,
       scripts=scripts,
       url=url,
-      version=version,
+      version=__version__,
       install_requires = ['ase>=3.17',
             'matplotlib',
             'mpmath',
