@@ -1,4 +1,4 @@
-from ase.atoms import string2symbols
+from ase.symbols import string2symbols
 
 abinitio_energies = {
         'CO_gas': -626.611970497, 

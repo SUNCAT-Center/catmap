@@ -111,38 +111,38 @@ class MapPlot:
     :param aspect: 
     :type aspect:
 
-    :param subplots_adjust_kwargs: Dictionary of keyword arguments for adjusting matplotlib subplots
+    :param subplots_adjust_kwargs: Dictionary of keyword arguments for
+        adjusting matplotlib subplots
     :type subplots_adjust_kwargs: dict
 
     .. todo:: Some missing descriptions
     """
     def __init__(self):
-        defaults = dict(
-                resolution_enhancement = 1,
-                min = None,
-                max = None,
-                n_ticks = 8,
-                plot_function = None,
-                colorbar = True,
-                colormap = plt.cm.jet,
-                axis_label_decimals = 2,
-                log_scale = False,
-                descriptor_labels = ['X_descriptor','Y_descriptor'],
-                default_descriptor_pt_args = {'marker':'o'},
-                default_descriptor_label_args = {},
-                descriptor_pt_args = {},
-                descriptor_label_args = {},
-                include_descriptors = False,
-                plot_size = 4,
-                aspect = None,
-                subplots_adjust_kwargs = {'hspace':0.35,'wspace':0.35,
-                    'bottom':0.15}
-                )
+        defaults = dict(resolution_enhancement=1,
+                        min=None,
+                        max=None,
+                        n_ticks=6,
+                        plot_function=None,
+                        colorbar=True,
+                        colormap=plt.cm.YlGnBu_r,
+                        axis_label_decimals=2,
+                        log_scale=False,
+                        descriptor_labels=['X_descriptor', 'Y_descriptor'],
+                        default_descriptor_pt_args={'marker': 'o'},
+                        default_descriptor_label_args={},
+                        descriptor_pt_args={},
+                        descriptor_label_args={},
+                        include_descriptors=False,
+                        plot_size=4,
+                        aspect=None,
+                        subplots_adjust_kwargs={'hspace': 0.35,
+                                                'wspace': 0.35,
+                                                'bottom': 0.15})
 
         for key in defaults:
             val = defaults[key]
-            if not hasattr(self,key):
-                setattr(self,key,val)
+            if not hasattr(self, key):
+                setattr(self, key, val)
             elif getattr(self,key) is None:
                 setattr(self,key,val)
 
