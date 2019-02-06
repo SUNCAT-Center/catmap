@@ -10,7 +10,7 @@
 
 CatMap can be installed directly via pip: 
 
-    pip install --upgrade https://github.com/medford-research/catmap/zipball/master
+    pip install --upgrade https://github.com/SUNCAT-Center/catmap/zipball/master
     
 or download/clone the repository and run 
 
