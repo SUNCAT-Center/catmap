@@ -7,7 +7,7 @@ import catmap
 from catmap import ReactionModelWrapper
 from catmap.model import ReactionModel
 
-from catmap.functions import get_composition
+from catmap.functions import get_composition, cartesian_product 
 
 class ParserBase(ReactionModelWrapper):
     def __init__(self,reaction_model=None):
@@ -143,7 +143,7 @@ class ParserBase(ReactionModelWrapper):
                 cart_product.append(possibles)
             
             ref_sets = []
-            for prod in catmap.functions.cartesian_product(*cart_product):
+            for prod in cartesian_product(*cart_product):
                 refdict = {}
                 for ai,pi in zip(all_atoms,prod):
                     refdict[ai] = pi

@@ -6,7 +6,8 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-from catmap import __version__ as version
+#from catmap import __version__ as version
+__version__ = "0.3.1"
 
 maintainer = 'Andrew J. Medford'
 maintainer_email = 'ajmedfor@slac.stanford.edu'
@@ -77,5 +78,10 @@ setup(
       platforms=platforms,
       scripts=scripts,
       url=url,
-      version=version,
+      version=__version__,
+      install_requires = ['ase>=3.17',
+            'matplotlib',
+            'mpmath',
+            'numpy',
+            'graphviz']
       )
