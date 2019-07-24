@@ -9,8 +9,7 @@ except:
     norm = None
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import os
-import math
+
 plt = catmap.plt
 pickle= catmap.pickle
 np = catmap.np
