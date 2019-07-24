@@ -1382,7 +1382,6 @@ def harmonic_to_shomate(frequencies,Tmin,Tmax,resolution):
         dS = dS*(_kJmol2eV/1e3) #eV/K
         return dH, dS, Cp_ref
     
-    from matplotlib import pyplot as plt
     return fit_shomate(Ts,Cps,Hs,Ss)
 
    
