@@ -1,6 +1,6 @@
 from .scaler_base import *
 from catmap.data import regular_expressions
-from catmap.functions import parse_constraint
+from catmap.functions import parse_constraint, linear_regression, scaling_coefficient_matrix
 from math import isnan
 import pylab as plt
 
@@ -103,7 +103,7 @@ class GeneralizedLinearScaler(ScalerBase):
             and return the coefficient matrix for the adsorbates only.
         """
         n_ads = len(self.parameter_names)
-        C = catmap.functions.scaling_coefficient_matrix(
+        C = scaling_coefficient_matrix(
                 self.parameter_dict, self.descriptor_dict, 
                 self.surface_names, 
                 self.parameter_names,
@@ -211,9 +211,9 @@ class GeneralizedLinearScaler(ScalerBase):
                     raise ValueError("Not enough parameters for " + TS)
                 x,y = zip(*valid_xy)
                 if params and len(params) == 1:
-                    m,b = catmap.functions.linear_regression(x,y,params[0])
+                    m,b = linear_regression(x,y,params[0])
                 elif params is None:
-                    m,b = catmap.functions.linear_regression(x,y)
+                    m,b = linear_regression(x,y)
                 else:
                     raise UserWarning('Invalid params')
 

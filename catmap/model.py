@@ -166,6 +166,7 @@ class ReactionModel:
             self._h = mp.mpf('4.135667516e-15')  # eV s (from NIST)
             self._mpfloat = mp.mpf
             self._matrix = mp.matrix
+            #self._Axb_solver = mp.qr_solve
             self._Axb_solver = mp.lu_solve
             self._math.infnorm = lambda x: mp.norm(x, 'inf')
         elif self.numerical_representation in ['numpy', 'python']:

@@ -8,6 +8,7 @@ try:
 except:
     norm = None
 from matplotlib.ticker import MaxNLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 import math
 plt = catmap.plt
@@ -353,15 +354,10 @@ class MapPlot:
                         for lab in cbar_labels]
                 plot.set_clim(min_val,max_val)
                 fig = ax.get_figure()
-                axpos = list(ax.get_position().bounds)
-                xsize = axpos[2]*0.04
-                ysize = axpos[3]
-                xp = axpos[0]+axpos[2]+0.04*axpos[2]
-                yp = axpos[1]
-                cbar_box = [xp,yp,xsize,ysize]
-                cbar_ax = fig.add_axes(cbar_box)
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.05)
                 cbar = fig.colorbar(mappable=plot,ticks=cbar_nums,
-                        cax=cbar_ax,extend=plot_args['extend'])
+                        cax=cax,extend=plot_args['extend'])
                 cbar.ax.set_yticklabels(cbar_labels)
                 if getattr(self,'colorbar_label',None):
                     cbar_kwargs = getattr(self,'colorbar_label_kwargs',{'rotation':-90})
@@ -458,7 +454,9 @@ class MapPlot:
 
             kwargs['overlay_map'] = overlay_map
             self.__dict__.update(old_dict)
+            
             self.plot_single(mapp,i,ax=ax_list[plotnum],**kwargs)
+
             plotnum+=1
 
         return fig

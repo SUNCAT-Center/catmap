@@ -243,10 +243,16 @@ class NewtonRoot:
             Jx = J(x0)
             try:
                 s = self._Axb(Jx, fxn)
-            except ZeroDivisionError:
-                cancel = True
-                break
-            # damping step size TODO: better strategy (hard task)
+            except:
+                try:
+                    s = mp.qr_solve(Jx, fxn)[0]
+                except ZeroDivisionError:
+                    cancel = True
+                    break
+                except TypeError:
+                    cancel = True
+                    break
+                # damping step size TODO: better strategy (hard task)
             l = self._mpfloat('1.0')
             x1 = x0 + l*s
             damp_iter = 0
