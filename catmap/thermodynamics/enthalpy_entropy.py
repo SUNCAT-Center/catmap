@@ -1276,6 +1276,7 @@ def fit_shomate(Ts, Cps, Hs, Ss, params0=[], plot_file = None):
         return None
         #leastsq = lambda resid, initial, **kwargs: [initial, True]
     
+    Ts, Cps, Hs, Ss = [np.array(_) for _ in [Ts,Cps,Hs,Ss]]
     ts = Ts/1000.
      
     # H-collocation matrix
