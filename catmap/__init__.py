@@ -41,7 +41,10 @@ def griddata(*args, **kwargs):
         return sp_griddata(*args, **kwargs)
 
 import mpmath as mp
-from ase.symbols import string2symbols
+try:
+    from ase.symbols import string2symbols
+except:
+    from ase.atoms import string2symbols
 from ase.thermochemistry import IdealGasThermo, HarmonicThermo
 try:
     from ase.build import molecule

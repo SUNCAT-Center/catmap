@@ -2,7 +2,7 @@ import numpy as np
 import catmap
 import re
 from copy import copy
-from ase.symbols import string2symbols
+from catmap import string2symbols
 import warnings
 
 def get_composition(species_string):
