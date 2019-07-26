@@ -288,8 +288,8 @@ class ThermoCorrections(ReactionModelWrapper):
         for gas in gas_names:
             if gas in shomate_params.keys():
                 params = shomate_params[gas]
-                loc = list(filter(None.__ne__,[_ if ((temperature>=params[_]['T_min'] and temperature<=params[_]['T_max']) or\
-                             (temperature<params[_]['T_min'] and params[_]['T_min']<300)) else None for _ in range(len(params))]))
+                loc = [_ for _ in [_ if ((temperature>=params[_]['T_min'] and temperature<=params[_]['T_max']) or\
+                             (temperature<params[_]['T_min'] and params[_]['T_min']<300)) else None for _ in range(len(params))] if _ is not None]
                 if len(loc) > 0:
                     params = params[loc[0]]
                     if (temperature >= params['T_min'] and temperature <= params['T_max']):
