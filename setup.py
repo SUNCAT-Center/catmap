@@ -2,12 +2,15 @@
 """Catalysis Micro-kinetic Analysis Package (CatMAP)"""
 
 import os
+import sys
+
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 #from catmap import __version__ as version
 __version__ = "0.3.1"
+__python_version__ = sys.version
 
 maintainer = 'Andrew J. Medford'
 maintainer_email = 'ajmedfor@slac.stanford.edu'
@@ -84,4 +87,5 @@ setup(
             'mpmath',
             'numpy',
             'graphviz']
+      install_requires += ['ase' if sys.version >= '3.5' else 'ase==3.12']
       )
