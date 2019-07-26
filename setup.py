@@ -39,7 +39,7 @@ requires = ['matplotlib',
             'mpmath',
             'numpy',
             'graphviz',
-            'ase' if sys.version >= '3.5' else 'ase==3.12']
+            'ase' if sys.version >= '3.5' else 'ase==3.17']
 
 license = 'COPYING.txt'
 long_description = open('README.md').read()
