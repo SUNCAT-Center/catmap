@@ -34,12 +34,14 @@ classifiers = [
         'Topic :: Scientific/Engineering :: Physics',
         'Topic :: Scientific/Engineering :: Visualization',
               ]
-requires = ['ase',
+
+requires = ['ase>=3.17',
             'matplotlib',
             'mpmath',
             'numpy',
-            'graphviz'
-                   ]
+            'graphviz']
+requires += ['ase' if sys.version >= '3.5' else 'ase==3.12']
+
 license = 'COPYING.txt'
 long_description = open('README.md').read()
 name='python-catmap'
@@ -82,10 +84,5 @@ setup(
       scripts=scripts,
       url=url,
       version=__version__,
-      install_requires = ['ase>=3.17',
-            'matplotlib',
-            'mpmath',
-            'numpy',
-            'graphviz']
-      install_requires += ['ase' if sys.version >= '3.5' else 'ase==3.12']
+      install_requires = requires
       )
