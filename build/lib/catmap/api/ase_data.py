@@ -53,7 +53,7 @@ import os
 from uuid import uuid4
 import numpy as np
 import ase.db
-from catmap import string2symbols
+from ase.symbols import string2symbols
 from ase.data import covalent_radii, atomic_numbers
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from catmap.api.bee import BEEFEnsemble as bee

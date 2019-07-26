@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-from ase.symbols import string2symbols
+from catmap import string2symbols
 import string
 
 

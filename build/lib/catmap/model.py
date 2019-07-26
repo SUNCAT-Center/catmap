@@ -1059,7 +1059,7 @@ class ReactionModel:
                 elif isinstance(prefactor,dict):
                     A_site = prefactor["A_site"]
                     if prefactor["type"] == "non-activated":
-                        from catmap import string2symbols
+                        from ase.symbols import string2symbols
                         from ase.data import atomic_masses
                         from ase.data import atomic_numbers
                         assert len(rxn) == 2 #if not, rxn is not non-activated

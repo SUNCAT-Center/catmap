@@ -1,4 +1,4 @@
-from ase.symbols import string2symbols
+from catmap import string2symbols
 
 abinitio_energies = {
         'CO_gas': -626.611970497, 

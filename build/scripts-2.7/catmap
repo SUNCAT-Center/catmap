@@ -1,0 +1,5 @@
+#!/home/ggusmao3/.pyenv/versions/miniconda2-latest/bin/python
+
+if __name__ == '__main__':
+    from catmap.cli import main
+    main()
