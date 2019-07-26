@@ -2,12 +2,15 @@
 """Catalysis Micro-kinetic Analysis Package (CatMAP)"""
 
 import os
+import sys
+
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 #from catmap import __version__ as version
 __version__ = "0.3.1"
+__python_version__ = sys.version
 
 maintainer = 'Andrew J. Medford'
 maintainer_email = 'ajmedfor@slac.stanford.edu'
@@ -31,12 +34,13 @@ classifiers = [
         'Topic :: Scientific/Engineering :: Physics',
         'Topic :: Scientific/Engineering :: Visualization',
               ]
-requires = ['ase',
-            'matplotlib',
+
+requires = ['matplotlib',
             'mpmath',
             'numpy',
-            'graphviz'
-                   ]
+            'graphviz',
+            'ase' if sys.version >= '3.5' else 'ase==3.17']
+
 license = 'COPYING.txt'
 long_description = open('README.md').read()
 name='python-catmap'
@@ -79,9 +83,5 @@ setup(
       scripts=scripts,
       url=url,
       version=__version__,
-      install_requires = ['ase>=3.17',
-            'matplotlib',
-            'mpmath',
-            'numpy',
-            'graphviz']
+      install_requires = requires
       )

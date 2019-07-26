@@ -34,7 +34,7 @@ class ThermodynamicScaler(ScalerBase):
         elif 'logPressure' in self.descriptor_names:
             P = 10**thermo_state['logPressure']
         else:
-            P = 1
+            P = 1.
 
         if 'pressure' in self.descriptor_names or 'logPressure' in self.descriptor_names:
             if self.pressure_mode == 'static':

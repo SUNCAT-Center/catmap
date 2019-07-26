@@ -56,6 +56,9 @@ class MeanFieldSolver(SolverBase):
         """
         return list of turnover frequencies of all the gas-phase species
         :param rates: list of rates of each rxn
+        ineq_cons = {'type': 'ineq',
+                   'fun' : lambda x: x,
+                   'jac' : lambda x: np.eye(*np.shape(x))}
         :type rates: list
         :param verify_coverages: verify that the species has a certain value for the coverage
         :type verify_coverages: bool, optional

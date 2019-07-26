@@ -23,8 +23,8 @@ before_install:
   - conda install --yes -n condaenv pip
   - source activate condaenv
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
+  # - sudo rm -rf /dev/shm
+  # - sudo ln -s /run/shm /dev/shm
 # Install packages
 install:
   - if [ "x${WITH_SCIPY}" == "xtrue" ]; then conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose; else conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy matplotlib nose; fi

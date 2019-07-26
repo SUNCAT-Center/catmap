@@ -94,9 +94,18 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
 
                     if self.energy_type == 'free_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
+
                     elif self.energy_type == 'potential_energy':
                         energy_dict = self.scaler.get_free_energies(xy)
                         energy_dict.update(self.scaler.get_electronic_energies(xy))
+
+                    elif self.energy_type == 'enthalpy':
+                        energy_dict = self.scaler.get_total_enthalpies(xy)
+
+                    elif self.energy_type == 'entropy':
+                        energy_dict = self.scaler.get_entropies(xy)
+                        for k in energy_dict.keys():
+                            energy_dict[k] *= self.temperature 
 
                     elif self.energy_type == 'interacting_energy':
 
@@ -129,7 +138,10 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         for key in energy_dict:
                             if key.endswith('_g'):
                                 P = self.gas_pressures[self.gas_names.index(key)]
-                                energy_dict[key] += self._kB*self.temperature*log(P)
+                                if P > 0.:
+                                    energy_dict[key] += self._kB*self.temperature*log(P)
+                                else:
+                                    pass
                    
                     if self.coverage_correction == True:
                         if not self.coverage_map:
@@ -145,6 +157,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
                         if valid == False:
                             raise UserWarning('No coverages found for '+str(xy)+' in map')
                     
+                    a = self._enthalpy_dict
                     params = self.adsorption_to_reaction_energies(energy_dict)
                     self.energies = [0]
                     self.barriers = []
@@ -228,6 +241,10 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
             ax.set_ylabel('$\Delta G$ [eV]')
         elif self.energy_type == 'potential_energy':
             ax.set_ylabel('$\Delta E$ [eV]')
+        elif self.energy_type == 'enthalpy':
+                    ax.set_ylabel('$\Delta H$ [eV]')
+        elif self.energy_type == 'entropy':
+                    ax.set_ylabel('$T\Delta S$ [eV]')            
         if self.energy_type == 'interacting_energy':
             ax.set_ylabel('$\Delta G_{interacting}$ [eV]')
         fig.subplots_adjust(**self.subplots_adjust_kwargs)

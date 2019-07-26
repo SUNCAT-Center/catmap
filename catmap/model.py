@@ -166,6 +166,7 @@ class ReactionModel:
             self._h = mp.mpf('4.135667516e-15')  # eV s (from NIST)
             self._mpfloat = mp.mpf
             self._matrix = mp.matrix
+            #self._Axb_solver = mp.qr_solve
             self._Axb_solver = mp.lu_solve
             self._math.infnorm = lambda x: mp.norm(x, 'inf')
         elif self.numerical_representation in ['numpy', 'python']:
@@ -1058,7 +1059,7 @@ class ReactionModel:
                 elif isinstance(prefactor,dict):
                     A_site = prefactor["A_site"]
                     if prefactor["type"] == "non-activated":
-                        from ase.symbols import string2symbols
+                        from catmap import string2symbols
                         from ase.data import atomic_masses
                         from ase.data import atomic_numbers
                         assert len(rxn) == 2 #if not, rxn is not non-activated
@@ -1284,11 +1285,11 @@ class ReactionModel:
                 if log_interpolate == True:
                     Zdata_log = np.array(
                             [np.log(abs(float(zn))) for zn in Zdata])
-                    z_sign = np.sign(griddata(xData,yData,Zdata,xi,yi))
-                    z_num = griddata(xData,yData,Zdata_log,xi,yi)
+                    z_sign = np.sign(griddata((xData,yData),Zdata,(xi[None,:],yi[:,None]),method='cubic'))
+                    z_num = griddata((xData,yData),Zdata_log,(xi[None,:],yi[:,None]),method='cubic')
                     zi = np.exp(z_num)*z_sign
                 else:
-                    zi = griddata(xData,yData,Zdata,xi,yi)
+                    zi = griddata((xData,yData),Zdata,(xi[None,:],yi[:,None]),method='cubic')
                 maparray[:,:,i] = zi
         return maparray
 
