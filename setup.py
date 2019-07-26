@@ -35,12 +35,11 @@ classifiers = [
         'Topic :: Scientific/Engineering :: Visualization',
               ]
 
-requires = ['ase>=3.17',
-            'matplotlib',
+requires = ['matplotlib',
             'mpmath',
             'numpy',
-            'graphviz']
-requires += ['ase' if sys.version >= '3.5' else 'ase==3.12']
+            'graphviz',
+            'ase' if sys.version >= '3.5' else 'ase==3.12']
 
 license = 'COPYING.txt'
 long_description = open('README.md').read()
