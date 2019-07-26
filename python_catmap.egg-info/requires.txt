@@ -1,5 +1,0 @@
-matplotlib
-mpmath
-numpy
-graphviz
-ase==3.12
