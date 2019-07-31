@@ -12,7 +12,7 @@ descriptor_names = ['H_s','OH_s']
 
 descriptor_ranges = [[-1,1],[-2,3]]
 
-resolution = [15, 15]
+resolution = [17, 17]
 
 temperature = 300
 

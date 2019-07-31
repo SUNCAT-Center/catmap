@@ -1,7 +1,11 @@
 from catmap import ReactionModel
 from catmap import analyze
 import numpy as np
-import cPickle as pickle
+
+try:
+    import cPickle as pickle
+except:
+    import _pickle as pickle # Python 3.x
 
 
 include_overbinding = False
