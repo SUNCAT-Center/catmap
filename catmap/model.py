@@ -1150,7 +1150,7 @@ class ReactionModel:
         exec(self._log_imports) #needed for testing evaluation of log file
         #load in pickled data at the beginning
         header += 'binary_data = ' + 'pickle.load(open("' + \
-                                                self.data_file +'"))\n\n'
+                                                self.data_file +'","rb"))\n\n'
         header += 'locals().update(binary_data)\n\n'
         for attr in dir(self):
             if (not attr.startswith('_') and

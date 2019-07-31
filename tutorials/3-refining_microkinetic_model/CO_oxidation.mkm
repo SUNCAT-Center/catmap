@@ -28,7 +28,7 @@ descriptor_names= ['O_s','CO_s'] #descriptor names
 
 descriptor_ranges = [[-1,3],[-0.5,4]]
 
-resolution = 29
+resolution = 34
 
 temperature = 500 #Temperature of the reaction
 
