@@ -286,10 +286,12 @@ class ReactionModel:
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self, attr)
             try:
+                print('python saving file ',self.data_file)
                 pickle.dump(pickled_data, open(self.data_file, 'wb'))
-            except:
-                # Fallback workaround for Py3
-                pickle.dump(pickled_data, open(self.data_file, 'wb'))
+            except Exception as err:
+                # dump error
+                print('pickle cannot write', self.data_file,'file')
+                print(err)
 
             # Make logfile
             log_txt = self._log_imports
@@ -436,6 +438,7 @@ class ReactionModel:
         Load in output data from external files.
         """
         if os.path.exists(self.data_file):
+            # print(self.data_file)
             try:
                 pickled_data = pickle.load(open(self.data_file, 'rb'), encoding="latin1")
             except:
@@ -1152,17 +1155,22 @@ class ReactionModel:
         header += 'binary_data = ' + 'pickle.load(open("' + \
                                                 self.data_file +'","rb",encoding="latin1"))\n\n'
         header += 'locals().update(binary_data)\n\n'
+        # debug=''
         for attr in dir(self):
+            if 'pickle' in attr: # to avoid confusing error
+                continue
             if (not attr.startswith('_') and
                     not callable(getattr(self,attr)) and
                     attr not in self._classes):
                 val = repr(getattr(self,attr))
+
                 new_line = ''
                 if attr not in self._pickle_attrs:
                     new_line = attr + ' = '+ val+ '\n\n'
                 else:
                     new_line += attr + ' = binary_data[' + attr + ']'
-                if "pickle" not in new_line: # error happend while executing pickle = <module ... 
+                if new_line: # error happend while executing pickle = <module ... 
+                    # debug+=new_line+'\n'
                     try:
                         if 'binary_data[' not in new_line:
                             #pickled data fails since it is saved after logfile
@@ -1171,6 +1179,10 @@ class ReactionModel:
                     except Exception as err:
                         print(err)
                         self.log('header_fail',save_txt = new_line)
+        # print(dir(self))
+        # f = open("debug_new_line.txt","w")
+        # f.write(debug)
+        # f.close()
         return header
 
     def _token(self):
