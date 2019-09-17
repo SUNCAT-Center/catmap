@@ -151,7 +151,7 @@ class ReactionModel:
                     )
                 )
             ))
-
+        
         # Ensure resolution has the proper dimensions.
         if not hasattr(self.resolution, '__iter__'):
             self.resolution = [self.resolution]*len(self.descriptor_names)
@@ -197,7 +197,6 @@ class ReactionModel:
         else:
             raise AttributeError(
                 'Numerical representation must be mpmath, numpy, or python.')
-
         # Set up interaction model.
         if self.adsorbate_interaction_model == 'first_order':
             interaction_model = \
@@ -287,7 +286,7 @@ class ReactionModel:
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self, attr)
             try:
-                pickle.dump(pickled_data, open(self.data_file, 'w'))
+                pickle.dump(pickled_data, open(self.data_file, 'wb'))
             except:
                 # Fallback workaround for Py3
                 pickle.dump(pickled_data, open(self.data_file, 'wb'))
@@ -381,7 +380,8 @@ class ReactionModel:
         globs = {}
         locs = defaults
 
-        exec(compile(open(setup_file, 'r').read(), '<string>', 'exec'), globs, locs)
+        compileObject = compile(open(setup_file,'rb').read(), setup_file, 'exec')
+        exec(compileObject, globs, locs)
         for var in locs.keys():
             if var in self._classes:
                 #black magic to auto-import classes
@@ -437,9 +437,9 @@ class ReactionModel:
         """
         if os.path.exists(self.data_file):
             try:
-                pickled_data = pickle.load(open(self.data_file, 'r'))
+                pickled_data = pickle.load(open(self.data_file, 'rb'), encoding="latin1")
             except:
-                pickled_data = pickle.load(open(self.data_file, 'rb'))
+                pickled_data = pickle.load(open(self.data_file, 'rb'), encoding="latin1")
             for attr in pickled_data:
                 if not overwrite:
                     if getattr(self, attr, None) is None:  # Don't over-write
@@ -926,9 +926,9 @@ class ReactionModel:
         out_txt += longtable
 
         subs_dict['summary_txt'] = out_txt
-
+        # print("hi\n",out_txt)
         summary = Template(latex_template).substitute(subs_dict)
-
+        # print(summary)
         f = open(self.summary_file,'w')
         f.write(summary)
         f.close()
@@ -1150,7 +1150,7 @@ class ReactionModel:
         exec(self._log_imports) #needed for testing evaluation of log file
         #load in pickled data at the beginning
         header += 'binary_data = ' + 'pickle.load(open("' + \
-                                                self.data_file +'","rb"))\n\n'
+                                                self.data_file +'","rb",encoding="latin1"))\n\n'
         header += 'locals().update(binary_data)\n\n'
         for attr in dir(self):
             if (not attr.startswith('_') and
@@ -1162,13 +1162,14 @@ class ReactionModel:
                     new_line = attr + ' = '+ val+ '\n\n'
                 else:
                     new_line += attr + ' = binary_data[' + attr + ']'
-                if new_line:
+                if "pickle" not in new_line: # error happend while executing pickle = <module ... 
                     try:
                         if 'binary_data[' not in new_line:
                             #pickled data fails since it is saved after logfile
                             exec(new_line)
                             header+= new_line
-                    except:
+                    except Exception as err:
+                        print(err)
                         self.log('header_fail',save_txt = new_line)
         return header
 
