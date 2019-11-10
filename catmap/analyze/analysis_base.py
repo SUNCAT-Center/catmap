@@ -11,7 +11,7 @@ from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 plt = catmap.plt
-pickle= catmap.pickle
+pickle = catmap.pickle
 np = catmap.np
 spline = catmap.spline
 mtransforms = catmap.mtransforms

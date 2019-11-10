@@ -10,7 +10,6 @@ from . import functions
 import re
 from .data import regular_expressions
 string2symbols = catmap.string2symbols
-pickle = catmap.pickle
 plt = catmap.plt
 
 
@@ -278,7 +277,8 @@ class ReactionModel:
             for attr in dir(self):
                 if (not attr.startswith('_') and
                         not callable(getattr(self, attr)) and
-                        attr not in self._classes):
+                        attr not in self._classes and
+                        not inspect.ismodule(getattr(self,attr))):
                     if (len(repr(getattr(self, attr))) >
                             self._max_log_line_length):
                         # Line is too long for logfile -> put into pickle
@@ -286,11 +286,11 @@ class ReactionModel:
             pickled_data = {}
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self, attr)
-            try:
-                pickle.dump(pickled_data, open(self.data_file, 'w'))
-            except:
+            if sys.version_info[0]<3:
+                catmap.pickle.dump(pickled_data, open(self.data_file, 'w'))
+            else:
                 # Fallback workaround for Py3
-                pickle.dump(pickled_data, open(self.data_file, 'wb'))
+                catmap.pickle.dump(pickled_data, open(self.data_file, 'wb',protocol=2))
 
             # Make logfile
             log_txt = self._log_imports
@@ -380,8 +380,8 @@ class ReactionModel:
 
         globs = {}
         locs = defaults
-
-        exec(compile(open(setup_file, 'r').read(), '<string>', 'exec'), globs, locs)
+        
+        exec(compile(open(setup_file, 'rb').read(), '<string>', 'exec'), globs, locs)
         for var in locs.keys():
             if var in self._classes:
                 #black magic to auto-import classes
@@ -437,9 +437,9 @@ class ReactionModel:
         """
         if os.path.exists(self.data_file):
             try:
-                pickled_data = pickle.load(open(self.data_file, 'r'))
+                pickled_data = catmap.pickle.load(open(self.data_file, 'r'))
             except:
-                pickled_data = pickle.load(open(self.data_file, 'rb'))
+                pickled_data = catmap.pickle.load(open(self.data_file, 'rb'))
             for attr in pickled_data:
                 if not overwrite:
                     if getattr(self, attr, None) is None:  # Don't over-write
@@ -1155,7 +1155,9 @@ class ReactionModel:
         for attr in dir(self):
             if (not attr.startswith('_') and
                     not callable(getattr(self,attr)) and
-                    attr not in self._classes):
+                    attr not in self._classes and
+                    not inspect.ismodule(getattr(self,attr))):
+                print(attr)
                 val = repr(getattr(self,attr))
                 new_line = ''
                 if attr not in self._pickle_attrs:
