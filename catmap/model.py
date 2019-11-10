@@ -290,7 +290,7 @@ class ReactionModel:
                 catmap.pickle.dump(pickled_data, open(self.data_file, 'w'))
             else:
                 # Fallback workaround for Py3
-                catmap.pickle.dump(pickled_data, open(self.data_file, 'wb',protocol=2))
+                catmap.pickle.dump(pickled_data, open(self.data_file, 'wb',2))
 
             # Make logfile
             log_txt = self._log_imports
