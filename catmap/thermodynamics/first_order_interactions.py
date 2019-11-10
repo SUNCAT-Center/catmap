@@ -270,7 +270,8 @@ class FirstOrderInteractions(ReactionModelWrapper):
                     if cvg_Ed_Eint_i not in required_params_dict[reqd]:
                         required_params_dict[reqd] += [cvg_Ed_Eint_i]
             
-            for key in required_params_dict.keys():
+            for key in list(required_params_dict.keys()):
+                print(key)
                 keylist = eval(key)
                 cvgs = required_params_dict[key]
                 if len(keylist) == 1:
@@ -332,7 +333,7 @@ class FirstOrderInteractions(ReactionModelWrapper):
 
             for key in cross_keys_3:
                 params = eval(key)
-                params = [pi for pi in params if pi not in fitting_info.keys()+user_inputs]
+                params = [pi for pi in params if pi not in list(fitting_info.keys())+user_inputs]
                 assert len(params) <= 1 #if not then something is very weird.
                 if params:
                     param = params[0]
