@@ -200,6 +200,9 @@ oxidation example.
 First order adsorption energy model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. WARNING::
+    Many instructions below this point are depricated. The first-order model itself is also not recommended, since it cannot technically be integrated. It is recommended to instead use the second-order interaction model (as described in https://pubs.acs.org/doi/abs/10.1021/jacs.5b12087) along with the "numerical_differential+integral" fitting mode, which will fit to the integral adsorption energies as well as the differences between integral adsorption energies used to compute the differential adsorption energies. However, instabilities may ensue, so it may be necessary to use only "numerical_differential" or "integral" mode instead, and the fits should be carefully manually inspected before putting too much faith in the models.
+
 In this model we assume that adsorption energies follow the following
 relationship:
 
