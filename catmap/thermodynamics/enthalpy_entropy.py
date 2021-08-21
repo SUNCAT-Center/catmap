@@ -980,6 +980,37 @@ class ThermoCorrections(ReactionModelWrapper):
                             self._kB*self.temperature))/boltz_sum
         return cvgs
 
+    def boltzmann_numbers(self,energy_dict):
+        """Generates Boltzmann numbers for each site.
+        A Boltzmann number is given by 
+        x_i =  exp(-G_i/kT)
+        """
+        #change the reference
+        reservoirs = getattr(self,'atomic_reservoir_dict',None)
+        if reservoirs:
+            comp_dict = {}
+            for sp in energy_dict.keys():
+                comp_dict[sp] = self.species_definitions[sp]['composition']
+            energy_dict = self.convert_formation_energies(
+                    energy_dict,reservoirs,comp_dict)[0]
+
+        #calculate numbers 
+        numbers = [0]*len(self.adsorbate_names)
+        for site in self.site_names:
+            if site not in energy_dict:
+                energy_dict[site] = 0
+            relevant_ads = [a for a in self.adsorbate_names if 
+                    self.species_definitions[a]['site'] == site]
+            free_energies = [energy_dict[a] for a in relevant_ads]+[energy_dict[site]]
+            for ads in relevant_ads:
+                if ads in self.adsorbate_names:
+                    i_overall = self.adsorbate_names.index(ads)
+                    i_rel = relevant_ads.index(ads)
+                    if self.species_definitions[site]['type'] not in ['gas']:
+                        numbers[i_overall] = self._math.exp(-free_energies[i_rel]/(
+                            self._kB*self.temperature))
+        return numbers
+
     def static_pressure(self):
         self.gas_pressures = [self.species_definitions[g]['pressure'] for g in self.gas_names]
 
