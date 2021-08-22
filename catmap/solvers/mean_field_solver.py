@@ -465,7 +465,6 @@ class MeanFieldSolver(SolverBase):
             if dcdt_str.endswith('= '):
                 dcdt_str += '0'
             dcdt_strings.append(dcdt_str)
-
         all_strings = rate_strings + dcdt_strings
         return all_strings
 

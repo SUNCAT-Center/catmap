@@ -88,15 +88,15 @@ class SteadyStateSolver(MeanFieldSolver):
     def change_x_to_theta(self, x):
         """Convert numbers to coverages, which is not reversible."""
         # TODO: Check if the last points is always the coverage of the free sides
-        x_including_surface = x + self._mpfloat(1.0)
+        x_including_surface = x + [ self._mpfloat(1.0) ]
         assert len(x_including_surface) == len(x) + 1
         sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
         theta = [self._math.power(n, 2) / sum_sq_numbers for n in x_including_surface]
-        return theta
+        return theta[:-1]
 
     def get_conversion_matrix(self, x, coverage):
         """Construct a diagonal matrix M that has all the dtheta/dx terms."""
-        x_including_surface = x + self._mpfloat(1.0)
+        x_including_surface = x + [ self._mpfloat(1.0) ]
         assert len(x_including_surface) == len(x) + 1
         sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
         dtheta_dx_matrix = self._math.diag(
@@ -104,20 +104,17 @@ class SteadyStateSolver(MeanFieldSolver):
                     * (self._mpfloat(1) - coverage[i]) for i in range(len(coverage))])
         return dtheta_dx_matrix
 
-    def get_steady_state_numbers(self,rxn_parameters,steady_state_fn, jacobian_fn,
-            c0=None,findrootArgs={}):
+    def get_steady_state_numbers(self,rxn_parameters,steady_state_fn, jacobian_fn, c0=None):
         """ Returns the Steady State Numbers for the given reaction parameters.
 
         :param rxn_parameters: Sequence of reaction parameters.
         :type rxn_parameters: [float]
-        :param steady_state_fn: **TODO**
-        :type steady_state_fn: **TODO**
-        :param jacobian_fn: **TODO**
-        :type jacobian_fn: **TODO**
+        :param steady_state_fn: Steady state as a function of theta
+        :type steady_state_fn: function
+        :param jacobian_fn: Jacobian as a function of numbers
+        :type jacobian_fn: function
         :param c0: Initial numbers 
         :type c0: list
-        :param findrootArgs: *deprecated*
-
         """
 
         if c0 is None:
@@ -135,8 +132,6 @@ class SteadyStateSolver(MeanFieldSolver):
         # This coversion is done by constructing a diagonal matrix M
         # which contains dtheta/dnumber for each intermediate
         dtheta_dx_matrix = self.get_conversion_matrix(c0, theta)
-        # The Jacobian is not a function of the number of sites
-        self.steady_state_jacobian = jacobian_fn * dtheta_dx_matrix
 
         #Enter root finding algorithm
         f = steady_state_fn
@@ -152,6 +147,7 @@ class SteadyStateSolver(MeanFieldSolver):
                 )
         solver_kwargs['J'] = jacobian_fn
         solver_kwargs['theta'] = theta
+        solver_kwargs['dtheta_dx_matrix'] = dtheta_dx_matrix
 
         iterations = solver(f,c0, self._matrix, self._mpfloat,
                             self._Axb_solver, **solver_kwargs)
@@ -179,7 +175,7 @@ class SteadyStateSolver(MeanFieldSolver):
                         resid = float(error))
                 raise ValueError('Out of iterations (resid='+\
                         str(float(error))+')')
-            self._coverage = self.change_x_to_theta(x) 
+            self._coverage = self.change_x_to_theta(list(x)) 
             self._error = error
 
         if coverages:
@@ -313,8 +309,13 @@ class SteadyStateSolver(MeanFieldSolver):
         """
         if refresh_rate_constants:
             self.get_rate_constants(rxn_parameters,[0]*len(self.adsorbate_names))
-        return self.get_steady_state_coverage(rxn_parameters,self.ideal_steady_state_function,
-                self.ideal_steady_state_jacobian,c0,findrootArgs)
+        if self.use_numbers_solver:
+            print('Using the numbers solver')
+            return self.get_steady_state_numbers(rxn_parameters, self.ideal_steady_state_function,
+                    self.ideal_steady_state_jacobian, c0)
+        else:
+            return self.get_steady_state_coverage(rxn_parameters,self.ideal_steady_state_function,
+                    self.ideal_steady_state_jacobian,c0,findrootArgs)
 
     def get_interacting_coverages(self,rxn_parameters,c0=None,
             interaction_strength=1.0,findrootArgs={}):
@@ -380,8 +381,12 @@ class SteadyStateSolver(MeanFieldSolver):
             boltz_cvgs = [[0]*len(self.adsorbate_names)] #include empty coverage as possible guess
             for ref_dict in self.atomic_reservoir_list:
                 self.atomic_reservoir_dict = ref_dict
-                cvgs = self.thermodynamics.boltzmann_coverages(energy_dict)
+                if self.use_numbers_solver:
+                    cvgs = self.thermodynamics.boltzmann_numbers(energy_dict)
+                else:
+                    cvgs = self.thermodynamics.boltzmann_coverages(energy_dict)
                 boltz_cvgs.append(cvgs)
+            
 
         else:
             boltz_cvgs = [self.thermodynamics.boltzmann_coverages(energy_dict)]

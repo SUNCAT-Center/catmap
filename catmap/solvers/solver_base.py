@@ -324,6 +324,8 @@ class NewtonRootNumbers:
 
         self.norm = kwargs['norm']
         self.verbose = kwargs['verbose']
+        self.theta = kwargs['theta']
+        self.dtheta_dx_matrix = kwargs['dtheta_dx_matrix']
         self.max_damping = 10
 
     def __iter__(self):
@@ -335,7 +337,7 @@ class NewtonRootNumbers:
         # The Jacobian which depends on the numbers
         J = self.J
         # Coverage from kwargs
-        theta = self.kwargs['theta']
+        theta = self.theta 
         # Get in explicit form the objective function
         fx = self._matrix(f(theta))
         fxnorm = norm(fx)
@@ -343,11 +345,13 @@ class NewtonRootNumbers:
         cancel = False
         # Initial guess in x
         x0 = self._matrix(self.x0)
+        # dtheta_dx matrix to convert Jacobian to x space
+        dtheta_dx = self._matrix(self.dtheta_dx_matrix)
 
         while not cancel:
             # get direction of descent
             fxn = -fx
-            Jx = J(x0)
+            Jx = J(theta) * dtheta_dx
             try:
                 s = self._Axb(Jx, fxn)
             except:
@@ -370,7 +374,6 @@ class NewtonRootNumbers:
                         print("Solver: Found stationary point.")
                     cancel = True
                     break
-                x1 = self._matrix(self.constraint(x1))
                 fx = self._matrix(f(list(x1)))
                 newnorm = norm(fx)
                 if newnorm <= fxnorm:
