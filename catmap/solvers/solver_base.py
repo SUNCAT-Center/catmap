@@ -275,3 +275,110 @@ class NewtonRoot:
                 x1 = x0 + l*s
             yield (x0, fxnorm)
 
+
+class NewtonRootNumbers:
+    """
+    Hacked from MDNewton in mpmath/calculus/optimization.py in order
+    to allow for constraints on the solution.
+
+    Find the root of a vector function numerically using Newton's method.
+
+    f is a vector function representing a nonlinear equation system.
+
+    x0 is the starting point close to the root.
+
+    J is a function returning the Jacobian matrix for a point.
+
+    Supports overdetermined systems.
+
+    Use the 'norm' keyword to specify which norm to use. Defaults to max-norm.
+    The function to calculate the Jacobian matrix can be given using the
+    keyword 'J'. Otherwise it will be calculated numerically.
+
+    Please note that this method converges only locally. Especially for high-
+    dimensional systems it is not trivial to find a good starting point being
+    close enough to the root.
+
+    It is recommended to use a faster, low-precision solver from SciPy [1] or
+    OpenOpt [2] to get an initial guess. Afterwards you can use this method for
+    root-polishing to any precision.
+
+    [1] http://scipy.org
+
+    [2] http://openopt.org
+    """
+
+    maxsteps = 10
+
+    def __init__(self, f, x0, matrix, mpfloat, Axb_solver, **kwargs):
+        self._matrix = matrix
+        self._mpfloat = mpfloat
+        self._Axb = Axb_solver
+        self.f = f
+        self.x0 = x0
+
+        if 'J' in kwargs:
+            self.J = kwargs['J']
+        else:
+            raise ValueError('No method for estimating Jacobian.')
+
+        self.norm = kwargs['norm']
+        self.verbose = kwargs['verbose']
+        self.max_damping = 10
+
+    def __iter__(self):
+        # Note that this is the objective function 
+        # That still depends on theta
+        f = self.f
+        # Define the norm
+        norm = self.norm
+        # The Jacobian which depends on the numbers
+        J = self.J
+        # Coverage from kwargs
+        theta = self.kwargs['theta']
+        # Get in explicit form the objective function
+        fx = self._matrix(f(theta))
+        fxnorm = norm(fx)
+        # Cancel if we have reached the right answer
+        cancel = False
+        # Initial guess in x
+        x0 = self._matrix(self.x0)
+
+        while not cancel:
+            # get direction of descent
+            fxn = -fx
+            Jx = J(x0)
+            try:
+                s = self._Axb(Jx, fxn)
+            except:
+                try:
+                    s = mp.qr_solve(Jx, fxn)[0]
+                except ZeroDivisionError:
+                    cancel = True
+                    break
+                except TypeError:
+                    cancel = True
+                    break
+                # damping step size TODO: better strategy (hard task)
+            l = self._mpfloat('1.0')
+            x1 = x0 + l*s
+            damp_iter = 0
+            while True:
+                damp_iter += 1
+                if x1.tolist() == x0.tolist() or damp_iter > self.max_damping:
+                    if self.verbose > 1:
+                        print("Solver: Found stationary point.")
+                    cancel = True
+                    break
+                x1 = self._matrix(self.constraint(x1))
+                fx = self._matrix(f(list(x1)))
+                newnorm = norm(fx)
+                if newnorm <= fxnorm:
+                    # new x accepted
+                    fxnorm = newnorm
+                    x0 = x1
+                    break
+                l /= 2.0
+                x1 = x0 + l*s
+            yield (x0, fxnorm)
+

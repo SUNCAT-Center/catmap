@@ -11,6 +11,7 @@ import math
 from string import Template
 import random
 import re
+import mpmath
 
 class SteadyStateSolver(MeanFieldSolver):
 
@@ -83,6 +84,113 @@ class SteadyStateSolver(MeanFieldSolver):
             return self.get_ideal_coverages(rxn_parameters,c0,True,findrootArgs)
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
+
+    def change_x_to_theta(self, x):
+        """Convert numbers to coverages, which is not reversible."""
+        # TODO: Check if the last points is always the coverage of the free sides
+        x_including_surface = x + self._mpfloat(1.0)
+        assert len(x_including_surface) == len(x) + 1
+        sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
+        theta = [self._math.power(n, 2) / sum_sq_numbers for n in x_including_surface]
+        return theta
+
+    def get_conversion_matrix(self, x, coverage):
+        """Construct a diagonal matrix M that has all the dtheta/dx terms."""
+        x_including_surface = x + self._mpfloat(1.0)
+        assert len(x_including_surface) == len(x) + 1
+        sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
+        dtheta_dx_matrix = self._math.diag(
+                    [  self._mpfloat(2.) * x[i] / sum_sq_numbers 
+                    * (self._mpfloat(1) - coverage[i]) for i in range(len(coverage))])
+        return dtheta_dx_matrix
+
+    def get_steady_state_numbers(self,rxn_parameters,steady_state_fn, jacobian_fn,
+            c0=None,findrootArgs={}):
+        """ Returns the Steady State Numbers for the given reaction parameters.
+
+        :param rxn_parameters: Sequence of reaction parameters.
+        :type rxn_parameters: [float]
+        :param steady_state_fn: **TODO**
+        :type steady_state_fn: **TODO**
+        :param jacobian_fn: **TODO**
+        :type jacobian_fn: **TODO**
+        :param c0: Initial numbers 
+        :type c0: list
+        :param findrootArgs: *deprecated*
+
+        """
+
+        if c0 is None:
+            raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
+        self._rxn_parameters = rxn_parameters
+
+        # Populate coverages otherwise return an error
+        coverages = None
+
+        # The steady state function is a function of the coverages
+        self.steady_state_function = steady_state_fn
+        # Find the coverages from the numbers
+        theta = self.change_x_to_theta(c0)
+        # Convert the Jacobian into one that is dependent on the numbers
+        # This coversion is done by constructing a diagonal matrix M
+        # which contains dtheta/dnumber for each intermediate
+        dtheta_dx_matrix = self.get_conversion_matrix(c0, theta)
+        # The Jacobian is not a function of the number of sites
+        self.steady_state_jacobian = jacobian_fn * dtheta_dx_matrix
+
+        #Enter root finding algorithm
+        f = steady_state_fn
+
+        # The solver that will be used as the root finding algorithm
+        solver = NewtonRootNumbers
+        # Populate the kwargs 
+        # The norm that is used to check the error
+        norm = self._math.infnorm
+        solver_kwargs = dict(
+                norm = norm,
+                verbose = self.verbose,
+                )
+        solver_kwargs['J'] = jacobian_fn
+        solver_kwargs['theta'] = theta
+
+        iterations = solver(f,c0, self._matrix, self._mpfloat,
+                            self._Axb_solver, **solver_kwargs)
+        coverages = None
+        maxiter = self.max_rootfinding_iterations
+        iterations.maxiter = maxiter
+        i = 0
+        x = c0
+        for x,error in iterations:
+            self.log('rootfinding_status',
+                    n_iter=i,
+                    resid=float(error),
+                    priority=1)
+            i+=1
+            # Break if the error is small
+            if error < self.tolerance:
+                self.log('rootfinding_success',
+                        n_iter = i,
+                        priority = 1)
+                break
+            # Break if the maximum number of iterations is reached
+            if i >= maxiter:
+                self.log('rootfinding_maxiter',
+                        n_iter=i,
+                        resid = float(error))
+                raise ValueError('Out of iterations (resid='+\
+                        str(float(error))+')')
+            self._coverage = self.change_x_to_theta(x) 
+            self._error = error
+
+        if coverages:
+            self._coverage = [c for c in coverages]
+            return [c for c in coverages]
+        else:
+            self.log('rootfinding_cancel',
+                    n_iter=i,
+                    resid=float(error))
+            raise ValueError('Solver cancellation. (resid='+\
+                    str(float(error))+')')
 
     def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn,
             c0=None,findrootArgs={}):
