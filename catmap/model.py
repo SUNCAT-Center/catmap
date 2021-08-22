@@ -376,7 +376,7 @@ class ReactionModel:
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
-                numerical_solver = 'coverages',
+                use_numbers_solver = True,
                 data_file = 'data.pkl')
 
         globs = {}
