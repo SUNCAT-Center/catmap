@@ -20,6 +20,8 @@ class MeanFieldSolver(SolverBase):
                             "stagnated or diverging (residual = ${resid})."+\
                             " Assuming Jacobian is 0.",
                             }
+        # Create a log file of the solver 
+        self.outer_solver_log = 'outer_solver.log'
 
     def get_rxn_rates(self,coverages,rate_constants):
         """

@@ -85,23 +85,32 @@ class SteadyStateSolver(MeanFieldSolver):
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
 
-    def change_x_to_theta(self, x):
-        """Convert numbers to coverages, which is not reversible."""
-        # TODO: Check if the last points is always the coverage of the free sides
-        x_including_surface = x + [ self._mpfloat(1.0) ]
-        assert len(x_including_surface) == len(x) + 1
-        sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
-        theta = [self._math.power(n, 2) / sum_sq_numbers for n in x_including_surface]
-        return theta[:-1]
+    def change_x_to_theta(self, x_including_surface):
+        """ Convert numbers to coverages, which is not reversible.
+            :param x_including_surface: Sequence of numbers.
+            :type x_including_surface: [float]
+        """
+        sum_sq_numbers = self._math.fsum([ self._math.power(n, 2) for n in x_including_surface ])
+        theta = [ self._math.power(n, 2) / sum_sq_numbers for n in x_including_surface ]
+        return theta
 
-    def get_conversion_matrix(self, x, coverage):
-        """Construct a diagonal matrix M that has all the dtheta/dx terms."""
-        x_including_surface = x + [ self._mpfloat(1.0) ]
-        assert len(x_including_surface) == len(x) + 1
+    def get_conversion_matrix(self, x_including_surface):
+        """Construct a matrix M that has all the dtheta/dx terms.
+            :param x_including_surface: Sequence of numbers.
+            :type x_including_surface: [float]
+        """
+        # Get theta from x values
+        coverages = self.change_x_to_theta(x_including_surface)
+        # Get the dtheta/dx terms
         sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
+        # Populate the diagonal of M with the dtheta/dx terms
         dtheta_dx_matrix = self._math.diag(
-                    [  self._mpfloat(2.) * x[i] / sum_sq_numbers 
-                    * (self._mpfloat(1) - coverage[i]) for i in range(len(coverage))])
+                    [  self._mpfloat(2.) * x_including_surface[i] / sum_sq_numbers for i in range(len(coverages)) ] )
+        # Add extra term for the off-diagonal elements 
+        for i in range(dtheta_dx_matrix.rows):
+            dtheta_dx_matrix[i, i] -= self._math.power(x_including_surface[i], 2) / self._math.power(sum_sq_numbers, 2) * \
+                                        self._mpfloat(2) * x_including_surface[i]
+        # The dtheta/dx matrix has all the terms for all the species + empty sites
         return dtheta_dx_matrix
 
     def get_steady_state_numbers(self,rxn_parameters,steady_state_fn, jacobian_fn, c0=None):
@@ -111,7 +120,7 @@ class SteadyStateSolver(MeanFieldSolver):
         :type rxn_parameters: [float]
         :param steady_state_fn: Steady state as a function of theta
         :type steady_state_fn: function
-        :param jacobian_fn: Jacobian as a function of numbers
+        :param jacobian_fn: Jacobian as a function of the coverage 
         :type jacobian_fn: function
         :param c0: Initial numbers 
         :type c0: list
@@ -126,47 +135,65 @@ class SteadyStateSolver(MeanFieldSolver):
 
         # The steady state function is a function of the coverages
         self.steady_state_function = steady_state_fn
-        # Find the coverages from the numbers
-        theta = self.change_x_to_theta(c0)
-        # Convert the Jacobian into one that is dependent on the numbers
-        # This coversion is done by constructing a diagonal matrix M
-        # which contains dtheta/dnumber for each intermediate
-        dtheta_dx_matrix = self.get_conversion_matrix(c0, theta)
 
-        #Enter root finding algorithm
+        # Objective function which is a function of the coverage
         f = steady_state_fn
 
         # The solver that will be used as the root finding algorithm
         solver = NewtonRootNumbers
-        # Populate the kwargs 
+
         # The norm that is used to check the error
         norm = self._math.infnorm
+
+        # Populate the kwargs 
         solver_kwargs = dict(
                 norm = norm,
                 verbose = self.verbose,
                 )
-        solver_kwargs['J'] = jacobian_fn
-        solver_kwargs['theta'] = theta
-        solver_kwargs['dtheta_dx_matrix'] = dtheta_dx_matrix
 
-        iterations = solver(f,c0, self._matrix, self._mpfloat,
-                            self._Axb_solver, **solver_kwargs)
+        # The Jacobian function which is dependent on theta
+        solver_kwargs['J'] = jacobian_fn
+
+        # Conversion functions for converting x to theta 
+        solver_kwargs['conversion_function'] = self.change_x_to_theta
+        solver_kwargs['dtheta_dx_function'] = self.get_conversion_matrix
+
+        # Writes inner loop details to separate file
+        solver_kwargs['verbose'] = 2
+
+        # Before starting the calculation check if the job is a return job
+        # That is, some part of this code has already used this function
+        # and is returning the coverages instead of the numbers
+        # The simple condition to check this is to see if the norm is lower
+        # than the tolerance
+        if norm(f(c0)) <= self.tolerance:
+            self._coverage = c0
+            return c0
+
+        iterations = solver(f, c0, self._matrix, self._mpfloat,
+                            self._math.qr_solve, **solver_kwargs)
+
         coverages = None
+
         maxiter = self.max_rootfinding_iterations
         iterations.maxiter = maxiter
+
         i = 0
         x = c0
-        for x,error in iterations:
+        for x, error in iterations:
+            print (f"{i} \t {error}", file=open(self.outer_solver_log, 'a'))
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
                     priority=1)
             i+=1
-            # Break if the error is small
             if error < self.tolerance:
                 self.log('rootfinding_success',
                         n_iter = i,
                         priority = 1)
+                self._error = error
+                coverages = self.change_x_to_theta(list(x))
+                coverages = coverages[:-1]
                 break
             # Break if the maximum number of iterations is reached
             if i >= maxiter:
@@ -175,9 +202,8 @@ class SteadyStateSolver(MeanFieldSolver):
                         resid = float(error))
                 raise ValueError('Out of iterations (resid='+\
                         str(float(error))+')')
-            self._coverage = self.change_x_to_theta(list(x)) 
-            self._error = error
 
+        print("", file=open(self.outer_solver_log, 'a'))
         if coverages:
             self._coverage = [c for c in coverages]
             return [c for c in coverages]
