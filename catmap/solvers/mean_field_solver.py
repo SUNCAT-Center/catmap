@@ -467,7 +467,24 @@ class MeanFieldSolver(SolverBase):
             if dcdt_str.endswith('= '):
                 dcdt_str += '0'
             dcdt_strings.append(dcdt_str)
+        if self.use_numbers_solver:
+            # Add dcdt for the slab
+            BaseRateString = f"dtheta_dt[{i+1}] = "
+            # The last dtheta/dt must just be the negative of
+            # previous dtheta/dt's
+            for i, ads in enumerate(self.adsorbate_names):
+                for j, rxn in enumerate(self.elementary_rxns):
+                    rxnCounts = [1.0*rxn[0].count(ads), -1.0*rxn[-1].count(ads)]
+                    rxnOrder = [o for o in rxnCounts if o]
+                    if rxnOrder:
+                        rxnOrder = rxnOrder[0]
+                        BaseRateString += f" + {rxnOrder}*r[{j}]"
+            if BaseRateString.endswith('= '):
+                dcdt_str += '0'
+            dcdt_strings.append(BaseRateString)
+
         all_strings = rate_strings + dcdt_strings
+        
         return all_strings
 
     def jacobian_equations(self,adsorbate_interactions=True):
@@ -507,8 +524,18 @@ class MeanFieldSolver(SolverBase):
                 J_strings.append('kfkBT['+str(i)+'] = kf['+str(i)+']/kBT')
                 J_strings.append('krkBT['+str(i)+'] = kr['+str(i)+']/kBT')
 
-        for i,ads_i in enumerate(self.adsorbate_names):
-            for j,ads_j in enumerate(self.adsorbate_names):
+        # if self.use_numbers_solver:
+        #     adsorbate_names = self.adsorbate_names + self.site_names
+        #     # Remove 'g' if adsorbate_names if present
+        #     if 'g' in adsorbate_names:
+        #         adsorbate_names = [a for a in adsorbate_names if a != 'g']
+        #         adsorbate_names = tuple(adsorbate_names)
+        #     self.adsorbate_names = adsorbate_names
+        # else:
+        adsorbate_names = self.adsorbate_names
+
+        for i,ads_i in enumerate(adsorbate_names):
+            for j,ads_j in enumerate(adsorbate_names):
                 J_str = 'J['+str(i)+']['+str(j)+'] = 0'
                 for k,rxn in enumerate(self.elementary_rxns):
                     rxnCounts = [-1.0*rxn[0].count(ads_i),

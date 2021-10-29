@@ -164,12 +164,14 @@ templates['ideal_mean_field_steady_state'] = r"""
 def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
 
     r = [0]*len(kf)
-    dtheta_dt = [0]*len(theta)
-    
+    dtheta_dt = [0]*len(theta) + [0]
     ${steady_state_expressions}
 
     r = matrix(r)
     dtheta_dt = matrix(dtheta_dt)
+
+    if dtheta_dt.rows == len(theta)+1:
+        dtheta_dt = dtheta_dt[:-1] 
     
     return dtheta_dt
 """

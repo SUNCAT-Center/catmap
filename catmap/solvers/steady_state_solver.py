@@ -130,6 +130,9 @@ class SteadyStateSolver(MeanFieldSolver):
             raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
         self._rxn_parameters = rxn_parameters
 
+        # Add the slab boltzmann number over here
+        c0.append(self._mpfloat(1.))
+
         # Populate coverages otherwise return an error
         coverages = None
 

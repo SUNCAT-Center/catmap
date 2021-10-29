@@ -325,12 +325,10 @@ class NewtonRootNumbers:
         # This f is the steady state function taking in coverages
         self.f = f
 
-        # The x0 that comes in as an initial guess is missing 
-        # the exp(0) term from the Boltzmann averaging. 
-        self.x0 = x0 + [ self._mpfloat(1.) ]
+        self.x0 = x0
 
         # The Jacobian matrix which is a function of coverages
-        self.J = kwargs['J']
+        self.J = self.J_numerical # kwargs['J']
 
         # Convergence criteria
         self.norm = kwargs['norm']
@@ -341,11 +339,9 @@ class NewtonRootNumbers:
         self.conversion_function = kwargs['conversion_function']
         self.dtheta_dx_function = kwargs['dtheta_dx_function']
 
-    def remove_surface_term(self, x):
-        """
-        Remove the surface from the coverages.
-        """
-        return x[:-1]
+    def J_numerical(self, theta):
+        numerical = catmap.functions.numerical_jacobian(self.f, theta, self._matrix, 1e-50)
+        return numerical
 
     def __iter__(self):
         # Note that this is the objective function 
@@ -372,29 +368,35 @@ class NewtonRootNumbers:
         cancel = False
 
         while not cancel:
-            # get the objective function 
-            theta_without_surface = self.remove_surface_term(theta)
-            fx = self._matrix(f(theta_without_surface))
+            fx = self._matrix(f(theta))
+
+            assert fx.rows == len(theta)
+
             # Get the norm of the objective function
-            # this number is out error
+            # this number is our error
             fxnorm = norm(fx)
 
             # get direction of descent
             fxn = -fx
-            # get the shape of J and dthetadx
-            # trim theta_dx such that it is the same shape as J
-            dtheta_dx = dtheta_dx[:-1, :-1]
 
-            # make sure we have the right dimensions
+            print('fx:', fx)
+            print('Jtheta:', J(theta))
+            print('theta:', theta)
+
             assert dtheta_dx.rows == J(theta).rows
             assert dtheta_dx.cols == J(theta).cols
             Jx =  J(theta) * dtheta_dx
 
+            print('dthetadx:', dtheta_dx)
+            print('Jx:', Jx)
+            print(ADSADSAD)
+
+
+            # Premultiply Jx and fxn by the transpose of J
+            Jx = Jx.transpose() * Jx
+            fxn = Jx.transpose() * fxn
             # Solve the inner problem
             s = self._Axb(Jx, fxn)[0]
-
-            # Do no change the value of the theta_s term
-            s = self._matrix( list(s) + [ self._mpfloat(0.) ] )
 
             # damping step size
             l = self._mpfloat('1.0')
@@ -435,31 +437,3 @@ class NewtonRootNumbers:
                 x1 = x0 + l*s
             
             yield (x0, fxnorm)
-
-        # #the following is useful for debugging/benchmarking
-        # #analytical derivatives, and should be commented out
-        # #for any production code.
-        # import time
-        # def J(x): #Use this to confirm the analytical jacobian is correct
-        #     t0 = time.time()
-        #     analytical = kwargs['J'](x)
-        #     t_a = time.time() - t0
-        #     t0 = time.time()
-        #     numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-300)
-        #     t_n = time.time() - t0
-        #     error = analytical - numerical
-        #     error = error.tolist()
-        #     max_error = -1
-        #     max_pos = None
-        #     for i,ei in enumerate(error):
-        #         for j,ej in enumerate(ei):
-        #             if abs(ej) > 1e-10:
-        #                 print('big error', ej, [i,j], file=open(self.logfile, 'a'))
-        #                 pass
-        #             if abs(ej) > max_error:
-        #                 max_error = abs(ej)
-        #                 max_pos = [i,j]
-        #     print('max_error', max_error, max_pos, file=open(self.logfile, 'a'))
-        #     print('t_analytic/t_numerical', t_a/t_n, file=open(self.logfile, 'a'))
-        #     return numerical
-        # self.J = J
