@@ -274,7 +274,7 @@ class MeanFieldSolver(SolverBase):
         """
         return r"\begin{verbatim}" + "\n".join(self.rate_equations()) + "\n\end{verbatim}"
 
-    def rate_equation_term(self,species_list,rate_constant_string,d_wrt=None):
+    def rate_equation_term(self,species_list,rate_string,d_wrt=None,specific_ads_names=None):
         """
         Function to compose a term in the rate equation - e.g. kf[1]*theta[0]*p[0]
         :param species_list: list of species in rate equations
@@ -284,17 +284,29 @@ class MeanFieldSolver(SolverBase):
         #This clause allows for multiple site types.
         site_indices={}
 
+        # Special case of adsorbate names for the numbers-solver
+        # or when specific_ads_names is not None
+        if specific_ads_names is not None:
+            adsorbate_names = specific_ads_names
+        else:
+            adsorbate_names = self.adsorbate_names
+
+        # Separate the species_list into gas, adsorbates and sites
         gas_idxs = [self.gas_names.index(gas)
                 for gas in species_list if gas in self.gas_names]
-        ads_idxs = [self.adsorbate_names.index(ads)
-                for ads in species_list if ads in self.adsorbate_names]
         sites = [s for s in species_list
                 if s in self.site_names] #allows for multiple site types
+        # Create an adsorbate list by making sure that the adsorbates do not
+        # include elements already present in the sites list.
+        ads_idxs = []
+        for ads in species_list:
+            if ads in adsorbate_names and ads not in self.site_names:
+                ads_idxs.append(self.adsorbate_names.index(ads))
         if len(gas_idxs+ads_idxs+sites) != len(species_list):
             raise ValueError('Undefined species in '+','.join(species_list))
 
-        rate_string = rate_constant_string
-
+        # If the derivative is not required, simply return the rate string
+        # based on the sum of pressures and coverages of the relevant species
         if not d_wrt:
             for id in gas_idxs:
                 rate_string += '*p['+str(id)+']'
@@ -304,7 +316,7 @@ class MeanFieldSolver(SolverBase):
                 rate_string += '*s['+str(self.site_names.index(s))+']'
             return rate_string
         else:
-            d_idx = self.adsorbate_names.index(d_wrt)
+            d_idx = adsorbate_names.index(d_wrt)
             d_site = self.species_definitions[d_wrt]['site']
             if (d_idx in ads_idxs #expression is a function of d_wrt
                     and d_site not in sites): #empty site not there -> easy
@@ -455,8 +467,26 @@ class MeanFieldSolver(SolverBase):
             rateString = 'r['+str(i)+'] = '+fRate_string + ' - ' + rRate_string
             rate_strings.append(rateString)
 
+        # Populate dtheta/dt for each adsorbate; when using the numbers
+        # solver make sure to include dtheta/dt corresponding to the bare
+        # surface as that would be used in the optimiser routine.
         dcdt_strings = []
-        for i,ads in enumerate(self.adsorbate_names):
+        if self.use_numbers_solver:
+            # Iterate over both adsorbates and the bare surface
+            # while taking out the 'g' species
+            surface_names = self.site_names
+            surface_names = list(surface_names)
+            surface_names.remove('g')
+            surface_names = tuple(surface_names)
+            species_iterate = self.adsorbate_names + surface_names 
+        else:
+            species_iterate = self.adsorbate_names
+
+        # Iterate over species_iterate to get the required dcdt strings
+        for i,ads in enumerate(species_iterate):
+            # If we are using the numbers solver, this matrix will have
+            # dimensions of n+1 x n+1 where n is the number of adsorbates
+            # else it will have dimensions of n x n
             dcdt_str = 'dtheta_dt['+str(i)+'] = '
             for j,rxn in enumerate(self.elementary_rxns):
                 rxnCounts = [-1.0*rxn[0].count(ads), 1.0*rxn[-1].count(ads)]
@@ -467,21 +497,6 @@ class MeanFieldSolver(SolverBase):
             if dcdt_str.endswith('= '):
                 dcdt_str += '0'
             dcdt_strings.append(dcdt_str)
-        if self.use_numbers_solver:
-            # Add dcdt for the slab
-            BaseRateString = f"dtheta_dt[{i+1}] = "
-            # The last dtheta/dt must just be the negative of
-            # previous dtheta/dt's
-            for i, ads in enumerate(self.adsorbate_names):
-                for j, rxn in enumerate(self.elementary_rxns):
-                    rxnCounts = [1.0*rxn[0].count(ads), -1.0*rxn[-1].count(ads)]
-                    rxnOrder = [o for o in rxnCounts if o]
-                    if rxnOrder:
-                        rxnOrder = rxnOrder[0]
-                        BaseRateString += f" + {rxnOrder}*r[{j}]"
-            if BaseRateString.endswith('= '):
-                dcdt_str += '0'
-            dcdt_strings.append(BaseRateString)
 
         all_strings = rate_strings + dcdt_strings
         
@@ -524,27 +539,43 @@ class MeanFieldSolver(SolverBase):
                 J_strings.append('kfkBT['+str(i)+'] = kf['+str(i)+']/kBT')
                 J_strings.append('krkBT['+str(i)+'] = kr['+str(i)+']/kBT')
 
-        # if self.use_numbers_solver:
-        #     adsorbate_names = self.adsorbate_names + self.site_names
-        #     # Remove 'g' if adsorbate_names if present
-        #     if 'g' in adsorbate_names:
-        #         adsorbate_names = [a for a in adsorbate_names if a != 'g']
-        #         adsorbate_names = tuple(adsorbate_names)
-        #     self.adsorbate_names = adsorbate_names
-        # else:
-        adsorbate_names = self.adsorbate_names
+        if self.use_numbers_solver:
+            # In case we use the numbers solver, the Jacobian matrix
+            # needs to be n+1 x n+1 just like the steady state equations
+            adsorbate_names = self.adsorbate_names + self.site_names
+            # Remove 'g' if adsorbate_names if present
+            if 'g' in adsorbate_names:
+                adsorbate_names = [a for a in adsorbate_names if a != 'g']
+                # Remove any duplicates from adsorbate_names
+                adsorbate_names = list(set(adsorbate_names))
+                adsorbate_names = tuple(adsorbate_names)
+        else:
+            # Standard CatMAP solver needs only an nxn Jacobian matrix
+            adsorbate_names = self.adsorbate_names
 
-        for i,ads_i in enumerate(adsorbate_names):
-            for j,ads_j in enumerate(adsorbate_names):
+        # Create the Jacobian matrix by iterating over the adsorbate_names
+        for i, ads_i in enumerate(adsorbate_names):
+            for j, ads_j in enumerate(adsorbate_names):
+                # Populate the Jacobian matrix based on the 
+                # required dimensions
                 J_str = 'J['+str(i)+']['+str(j)+'] = 0'
-                for k,rxn in enumerate(self.elementary_rxns):
+                # Iterate over the elementary reactions such that 
+                # we get how much of the species are present
+                for k, rxn in enumerate(self.elementary_rxns):
+                    # Determine if there is coverage of species 
+                    # across a column of the Jacobian matrix
+                    # So that the derivative may be taken.
                     rxnCounts = [-1.0*rxn[0].count(ads_i),
-                            1.0*rxn[-1].count(ads_i)]
+                                  1.0*rxn[-1].count(ads_i)]
+                    # If there is a species in the rxn, then it will 
+                    # be considered as a part of the Jacobian matrix
+                    # And we will need its derivative.
                     rxnOrder = [o for o in rxnCounts if o]
                     if rxnOrder:
                         rxnOrder = rxnOrder[0]
-                        fRate_string = self.rate_equation_term(rxn[0],'kf['+str(k)+']',ads_j)
-                        rRate_string = self.rate_equation_term(rxn[-1],'kr['+str(k)+']',ads_j)
+                        # Take the derivative across a column
+                        fRate_string = self.rate_equation_term(rxn[0], 'kf['+str(k)+']', ads_j, adsorbate_names)
+                        rRate_string = self.rate_equation_term(rxn[-1], 'kr['+str(k)+']', ads_j, adsorbate_names)
                         if adsorbate_interactions == True:
                             dfRate_string = self.rate_equation_term(rxn[0],'(kfkBT['+str(k)+'])*dEf['+str(k)+']['+str(j)+']')
                             drRate_string = self.rate_equation_term(rxn[-1],'(krkBT['+str(k)+'])*dEr['+str(k)+']['+str(j)+']')

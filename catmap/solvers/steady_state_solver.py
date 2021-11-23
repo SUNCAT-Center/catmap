@@ -108,8 +108,10 @@ class SteadyStateSolver(MeanFieldSolver):
                     [  self._mpfloat(2.) * x_including_surface[i] / sum_sq_numbers for i in range(len(coverages)) ] )
         # Add extra term for the off-diagonal elements 
         for i in range(dtheta_dx_matrix.rows):
-            dtheta_dx_matrix[i, i] -= self._math.power(x_including_surface[i], 2) / self._math.power(sum_sq_numbers, 2) * \
-                                        self._mpfloat(2) * x_including_surface[i]
+            for k in range(dtheta_dx_matrix.cols):
+                dtheta_dx_matrix[i, k] -= self._math.power(x_including_surface[i], 2) \
+                                         / self._math.power(sum_sq_numbers, 2) * \
+                                            self._mpfloat(2) * x_including_surface[k]
         # The dtheta/dx matrix has all the terms for all the species + empty sites
         return dtheta_dx_matrix
 
@@ -127,7 +129,7 @@ class SteadyStateSolver(MeanFieldSolver):
         """
 
         if c0 is None:
-            raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
+            raise ValueError("No initial numbers supplied. Mapper must supply initial guess")
         self._rxn_parameters = rxn_parameters
 
         # Add the slab boltzmann number over here
@@ -137,9 +139,9 @@ class SteadyStateSolver(MeanFieldSolver):
         coverages = None
 
         # The steady state function is a function of the coverages
-        self.steady_state_function = steady_state_fn
-
+        # f(theta):
         # Objective function which is a function of the coverage
+        self.steady_state_function = steady_state_fn
         f = steady_state_fn
 
         # The solver that will be used as the root finding algorithm
@@ -173,9 +175,12 @@ class SteadyStateSolver(MeanFieldSolver):
             self._coverage = c0
             return c0
 
+        # Run the solver; iterations is a generator
         iterations = solver(f, c0, self._matrix, self._mpfloat,
                             self._math.qr_solve, **solver_kwargs)
 
+        # coverages will be set to the coverages when the solver
+        # has converged
         coverages = None
 
         maxiter = self.max_rootfinding_iterations
@@ -522,6 +527,14 @@ class SteadyStateSolver(MeanFieldSolver):
 
             #make steady-state expressions
             ss_eqs = self.rate_equations()
+            # If we are using the numbers solver, the length of the 
+            # steady state function needs to be one more than that of the 
+            # number of adsorbates.
+            if self.use_numbers_solver:
+                self._function_substitutions['theta_length'] = len(self.adsorbate_names) + 1
+            else:
+                self._function_substitutions['theta_length'] = len(self.adsorbate_names)
+
             self._function_substitutions['steady_state_expressions'] = '\n    '.join(ss_eqs)
 
             #make jacobian expressions

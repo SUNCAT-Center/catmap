@@ -164,7 +164,7 @@ templates['ideal_mean_field_steady_state'] = r"""
 def ideal_mean_field_steady_state(kf,kr,theta,p,mpf,matrix):
 
     r = [0]*len(kf)
-    dtheta_dt = [0]*len(theta) + [0]
+    dtheta_dt = [0]*${theta_length}
     ${steady_state_expressions}
 
     r = matrix(r)
@@ -206,7 +206,7 @@ def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_ene
 templates['ideal_mean_field_jacobian'] = r"""
 def ideal_mean_field_jacobian(kf,kr,theta,p,mpf,matrix):
     ${n_adsorbates}
-    J = [[0 for i in range(n_adsorbates)] for j in range(n_adsorbates)]
+    J = [[0 for i in range(${theta_length})] for j in range(${theta_length})]
 
     ${jacobian_expressions_no_derivatives}
 

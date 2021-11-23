@@ -325,10 +325,11 @@ class NewtonRootNumbers:
         # This f is the steady state function taking in coverages
         self.f = f
 
+        # x0 is the starting coverage
         self.x0 = x0
 
         # The Jacobian matrix which is a function of coverages
-        self.J = self.J_numerical # kwargs['J']
+        self.J = kwargs['J']
 
         # Convergence criteria
         self.norm = kwargs['norm']
@@ -340,6 +341,7 @@ class NewtonRootNumbers:
         self.dtheta_dx_function = kwargs['dtheta_dx_function']
 
     def J_numerical(self, theta):
+        """Pass the coverages with the f to get the numerical Jacobian."""
         numerical = catmap.functions.numerical_jacobian(self.f, theta, self._matrix, 1e-50)
         return numerical
 
@@ -347,20 +349,25 @@ class NewtonRootNumbers:
         # Note that this is the objective function 
         # That still depends on theta
         f = self.f
+
         # Define the norm
         norm = self.norm
+
         # The Jacobian which depends on coverage 
         J = self.J
+
         # Initial guess in x
         x0 = self._matrix(self.x0)
 
         # conversion function that changes x within the iteration to theta
         conversion_function = lambda x: self.conversion_function(list(x))
+
         # matrix to get_dtheta_dx
         dtheta_dx_function = lambda x: self.dtheta_dx_function(list(x))
 
         # get the initial coverages
         theta = conversion_function(x0)
+
         # dtheta_dx matrix to convert Jacobian to x space
         dtheta_dx = dtheta_dx_function(x0)
 
@@ -389,12 +396,15 @@ class NewtonRootNumbers:
 
             print('dthetadx:', dtheta_dx)
             print('Jx:', Jx)
-            print(ADSADSAD)
-
 
             # Premultiply Jx and fxn by the transpose of J
             Jx = Jx.transpose() * Jx
             fxn = Jx.transpose() * fxn
+
+            # After premultiplying
+            print('After premultiplying...')
+            print('Jx:', Jx)
+            print('fxn:', fxn)
             # Solve the inner problem
             s = self._Axb(Jx, fxn)[0]
 
