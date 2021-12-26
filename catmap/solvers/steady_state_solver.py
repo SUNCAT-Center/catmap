@@ -133,14 +133,13 @@ class SteadyStateSolver(MeanFieldSolver):
         self._rxn_parameters = rxn_parameters
 
         # Add the slab boltzmann number over here
-        c0.append(self._mpfloat(1.))
+        c0.append(self._mpfloat('1.'))
 
         # Populate coverages otherwise return an error
         coverages = None
 
         # The steady state function is a function of the coverages
-        # f(theta):
-        # Objective function which is a function of the coverage
+        # f(theta); Objective function which is a function of the coverage
         self.steady_state_function = steady_state_fn
         f = steady_state_fn
 
@@ -175,9 +174,12 @@ class SteadyStateSolver(MeanFieldSolver):
             self._coverage = c0
             return c0
 
+        # Store the decimal precision
+        solver_kwargs['precision'] = self.decimal_precision
+
         # Run the solver; iterations is a generator
-        iterations = solver(f, c0, self._matrix, self._mpfloat,
-                            self._math.qr_solve, **solver_kwargs)
+        iterations = solver(f, c0, self._math, self._matrix, self._mpfloat,
+                            self._math.lu_solve, **solver_kwargs)
 
         # coverages will be set to the coverages when the solver
         # has converged

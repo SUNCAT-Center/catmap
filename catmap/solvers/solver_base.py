@@ -4,6 +4,7 @@ from catmap import ReactionModelWrapper
 import numpy as np
 import mpmath as mp
 from catmap import string2symbols
+import logging
 
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=None):
@@ -310,12 +311,15 @@ class NewtonRootNumbers:
 
     maxsteps = 10
 
-    def __init__(self, f, x0, matrix, mpfloat, Axb_solver, **kwargs):
+    def __init__(self, f, x0, math, matrix, mpfloat, Axb_solver, **kwargs):
         # Store an inner log file and get what to store 
         self.logfile = 'newton.log' 
+        logging.basicConfig(filename=self.logfile, encoding='utf-8', level=logging.DEBUG)
+        self.log = logging
         self.verbose = kwargs['verbose']
 
         # Get the information about how the math should be handled
+        self._math = math
         self._matrix = matrix
         self._mpfloat = mpfloat
         
@@ -340,6 +344,9 @@ class NewtonRootNumbers:
         self.conversion_function = kwargs['conversion_function']
         self.dtheta_dx_function = kwargs['dtheta_dx_function']
 
+        # Store the precision
+        self.precision = mp.power(self._mpfloat('10'), -1 * kwargs['precision'])
+
     def J_numerical(self, theta):
         """Pass the coverages with the f to get the numerical Jacobian."""
         numerical = catmap.functions.numerical_jacobian(self.f, theta, self._matrix, 1e-50)
@@ -358,15 +365,20 @@ class NewtonRootNumbers:
 
         # Initial guess in x
         x0 = self._matrix(self.x0)
+        self.log.info(f"\n Initial x0 guess: \n {x0}")
 
         # conversion function that changes x within the iteration to theta
         conversion_function = lambda x: self.conversion_function(list(x))
-
         # matrix to get_dtheta_dx
         dtheta_dx_function = lambda x: self.dtheta_dx_function(list(x))
 
         # get the initial coverages
         theta = conversion_function(x0)
+        theta = self._matrix(theta)
+
+        # Check to make sure that the sum of coverages is not greater than 1
+        assert mp.fabs(mp.fsum(theta)) - self._mpfloat('1.0') < self.precision, "The sum of coverages is greater than 1.0"
+        self.log.info(f"\n Initial theta guess: \n {theta}")
 
         # dtheta_dx matrix to convert Jacobian to x space
         dtheta_dx = dtheta_dx_function(x0)
@@ -376,7 +388,10 @@ class NewtonRootNumbers:
 
         while not cancel:
             fx = self._matrix(f(theta))
-
+            # Ensure that the sum of fx is 0
+            assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
+            # Check if the objective function is the 
+            # same length as theta 
             assert fx.rows == len(theta)
 
             # Get the norm of the objective function
@@ -386,27 +401,52 @@ class NewtonRootNumbers:
             # get direction of descent
             fxn = -fx
 
-            print('fx:', fx)
-            print('Jtheta:', J(theta))
-            print('theta:', theta)
+            Jtheta = J(theta)
 
-            assert dtheta_dx.rows == J(theta).rows
-            assert dtheta_dx.cols == J(theta).cols
-            Jx =  J(theta) * dtheta_dx
+            # Perform checks on the Jacobian(theta) matrix
+            assert dtheta_dx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
+            assert dtheta_dx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
+            # The sum over all columns of the Jacobian 
+            # matrix must be 0. This is because the term would be 
+            # d/dtheta_i (sum_i f_i)
+            # where sum_i f_i = 0
+            for i in range(dtheta_dx.cols):
+                assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
 
-            print('dthetadx:', dtheta_dx)
-            print('Jx:', Jx)
+            # Find Jx by taking the dot product of J(theta)
+            # and dtheta/dx
+            Jx =  Jtheta * dtheta_dx
+
+            # The Jacobian in x-space must also have the same
+            # checks as Jacobian in theta-space
+            assert Jx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
+            assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
+            for i in range(Jx.cols):
+                assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
+            self.log.info(f"\n Jx: \n {Jx}")
 
             # Premultiply Jx and fxn by the transpose of J
-            Jx = Jx.transpose() * Jx
-            fxn = Jx.transpose() * fxn
+            # Jx = Jx.transpose() * Jx
+            # fxn = Jx.transpose() * fxn
+            # self.log.info(f"\n Jx.transpose() * Jx: \n {Jx}")
+            # self.log.info(f"\n Jx.transpose() * fxn: \n {fxn}")
 
-            # After premultiplying
-            print('After premultiplying...')
-            print('Jx:', Jx)
-            print('fxn:', fxn)
             # Solve the inner problem
-            s = self._Axb(Jx, fxn)[0]
+            # To get s, we will use the Moore-Penrose inverse of Jx
+            # Start by doing and SVD of Jx
+            U, S, V = self._math.svd_r(Jx)
+            # Find the pseudo-inverse of S by taking the
+            # reciprocal of each non-zero diagonal element while leaving
+            # the zeros in place, then taking the transpose of that matrix
+            S_inv = []
+            for i in range(len(S)):
+                if mp.fabs(S[i]) < self.precision:
+                    S_inv.append(self._mpfloat('0.0'))
+                else:
+                    S_inv.append(self._mpfloat('1.0') / S[i])
+            S_plus = self._math.diag(S_inv)
+            Jx_plus = V.T * S_plus.T * U.T
+            s = Jx_plus * fxn 
 
             # damping step size
             l = self._mpfloat('1.0')
@@ -417,25 +457,18 @@ class NewtonRootNumbers:
                 damp_iter += 1
                 if x1.tolist() == x0.tolist():
                     if self.verbose > 1:
-                        print("Found stationary point.", file=open(self.logfile, 'a'))
-                        print('Jx: \n', Jx, file=open(self.logfile, 'a'))
-                        print("", file=open(self.logfile, 'a'))
+                        self.log.info(msg=f"\n x1 == x0, stationary point.")
                     cancel = True
                     break
                 if damp_iter > self.max_damping:
                     if self.verbose > 1:
-                        print("Damping exceeds threshold.", file=open(self.logfile, 'a'))
-                        print(f"Inner loop iterations:{damp_iter}", file=open(self.logfile, 'a'))
-                        print(f"New Norm: {newnorm} \nOld Norm: {fxnorm}", file=open(self.logfile, 'a'))
-                        print("", file=open(self.logfile, 'a'))
+                        self.log.info(msg=f"\n Damping step size exceeded max_damping.")
                     cancel = True
                     break
 
                 # Convert to theta space for new iteration
                 theta = conversion_function(x1)
-                dtheta_dx = dtheta_dx_function(x1)
-                theta_without_surface = self.remove_surface_term(theta)
-                fx = self._matrix(f(theta_without_surface))
+                fx = self._matrix(f(theta))
                 newnorm = norm(fx)
 
                 if newnorm <= fxnorm:
@@ -443,7 +476,33 @@ class NewtonRootNumbers:
                     fxnorm = newnorm
                     x0 = x1
                     break
-                l /= self._mpfloat(2.0)
+                l /= self._mpfloat('2.0')
                 x1 = x0 + l*s
             
             yield (x0, fxnorm)
+
+    #the following is useful for debugging/benchmarking
+    #analytical derivatives, and should be commented out
+    #for any production code.
+    # import time
+    # def J_confirm(self, theta): #Use this to confirm the analytical jacobian is correct
+    #     # Get the analytical Jacobian
+    #     analytical = self.J_analytical(theta)
+    #     # Get the numerical Jacobian
+    #     numerical = self.J_numerical(theta) 
+    #     # Compare the analytical and numerical Jacobian
+    #     error = analytical - numerical
+    #     error = error.tolist()
+    #     # Set bounds on the max and min errors
+    #     max_error = -1
+    #     max_pos = None
+    #     for i,ei in enumerate(error):
+    #         for j,ej in enumerate(ei):
+    #             if abs(ej) > 1e-10:
+    #                 print('big error', ej, [i,j])
+    #                 pass
+    #             if abs(ej) > max_error:
+    #                 max_error = abs(ej)
+    #                 max_pos = [i,j]
+    #     print('max_error', max_error, max_pos)
+    #     return numerical 
