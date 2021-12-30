@@ -12,6 +12,7 @@ from string import Template
 import random
 import re
 import mpmath
+import csv
 
 class SteadyStateSolver(MeanFieldSolver):
 
@@ -135,6 +136,13 @@ class SteadyStateSolver(MeanFieldSolver):
         # Add the slab boltzmann number over here
         c0.append(self._mpfloat('1.'))
 
+        # Write out a csv file with the initial guess
+        # the format of the csv file is a list of self._descriptors
+        # and the initial guess c0 as the output
+        with open('initial_guess.csv', 'a') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(self._descriptors + self.change_x_to_theta(c0))
+
         # Populate coverages otherwise return an error
         coverages = None
 
@@ -192,6 +200,9 @@ class SteadyStateSolver(MeanFieldSolver):
         x = c0
         for x, error in iterations:
             print (f"{i} \t {error}", file=open(self.outer_solver_log, 'a'))
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [ i ]  + [ error ])
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
@@ -425,7 +436,11 @@ class SteadyStateSolver(MeanFieldSolver):
             
 
         else:
-            boltz_cvgs = [self.thermodynamics.boltzmann_coverages(energy_dict)]
+            if self.use_numbers_solver:
+                boltz_cvgs = [self.thermodynamics.boltzmann_numbers(energy_dict)]
+            else:
+                boltz_cvgs = [self.thermodynamics.boltzmann_coverages(energy_dict)]
+            
 
         return boltz_cvgs
 

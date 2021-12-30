@@ -983,7 +983,10 @@ class ThermoCorrections(ReactionModelWrapper):
     def boltzmann_numbers(self,energy_dict):
         """Generates Boltzmann numbers for each site.
         A Boltzmann number is given by 
-        x_i =  exp(-G_i/kT)
+        x_i =  exp(-G_i/2kT)
+        The factor of two in the denominator is because x_i^2 is 
+        what is used in the coverage expressions and that is what we
+        are trying to replicate here.
         """
         #change the reference
         reservoirs = getattr(self,'atomic_reservoir_dict',None)
@@ -1008,7 +1011,7 @@ class ThermoCorrections(ReactionModelWrapper):
                     i_rel = relevant_ads.index(ads)
                     if self.species_definitions[site]['type'] not in ['gas']:
                         numbers[i_overall] = self._math.exp(-free_energies[i_rel]/(
-                            self._kB*self.temperature))
+                            self._kB*self.temperature*2))
         return numbers
 
     def static_pressure(self):

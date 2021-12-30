@@ -333,11 +333,12 @@ class NewtonRootNumbers:
         self.x0 = x0
 
         # The Jacobian matrix which is a function of coverages
-        self.J = kwargs['J']
+        self.J = self.J_confirm # kwargs['J']
+        self.J_analytical = kwargs['J']
 
         # Convergence criteria
         self.norm = kwargs['norm']
-        self.max_damping = 100
+        self.max_damping = 500
 
         # conversion from coverages to numbers and conversion 
         # dtheta/dx matrix to get the Jacobian matrix 
@@ -351,6 +352,31 @@ class NewtonRootNumbers:
         """Pass the coverages with the f to get the numerical Jacobian."""
         numerical = catmap.functions.numerical_jacobian(self.f, theta, self._matrix, 1e-50)
         return numerical
+
+    #the following is useful for debugging/benchmarking
+    #analytical derivatives, and should be commented out
+    #for any production code.
+    def J_confirm(self, theta): #Use this to confirm the analytical jacobian is correct
+        # Get the analytical Jacobian
+        analytical = self.J_analytical(theta)
+        # Get the numerical Jacobian
+        numerical = self.J_numerical(theta) 
+        # Compare the analytical and numerical Jacobian
+        error = analytical - numerical
+        error = error.tolist()
+        # Set bounds on the max and min errors
+        max_error = -1
+        max_pos = None
+        for i,ei in enumerate(error):
+            for j,ej in enumerate(ei):
+                if abs(ej) > 1e-10:
+                    # print('big error', ej, [i,j])
+                    pass
+                if abs(ej) > max_error:
+                    max_error = abs(ej)
+                    max_pos = [i,j]
+        # print('max_error', max_error, max_pos)
+        return analytical 
 
     def __iter__(self):
         # Note that this is the objective function 
@@ -377,7 +403,7 @@ class NewtonRootNumbers:
         theta = self._matrix(theta)
 
         # Check to make sure that the sum of coverages is not greater than 1
-        assert mp.fabs(mp.fsum(theta)) - self._mpfloat('1.0') < self.precision, "The sum of coverages is greater than 1.0"
+        assert mp.fabs(mp.fsum(theta) - self._mpfloat('1.0')) < self.precision, "The sum of coverages is greater than 1.0"
         self.log.info(f"\n Initial theta guess: \n {theta}")
 
         # dtheta_dx matrix to convert Jacobian to x space
@@ -480,29 +506,3 @@ class NewtonRootNumbers:
                 x1 = x0 + l*s
             
             yield (x0, fxnorm)
-
-    #the following is useful for debugging/benchmarking
-    #analytical derivatives, and should be commented out
-    #for any production code.
-    # import time
-    # def J_confirm(self, theta): #Use this to confirm the analytical jacobian is correct
-    #     # Get the analytical Jacobian
-    #     analytical = self.J_analytical(theta)
-    #     # Get the numerical Jacobian
-    #     numerical = self.J_numerical(theta) 
-    #     # Compare the analytical and numerical Jacobian
-    #     error = analytical - numerical
-    #     error = error.tolist()
-    #     # Set bounds on the max and min errors
-    #     max_error = -1
-    #     max_pos = None
-    #     for i,ei in enumerate(error):
-    #         for j,ej in enumerate(ei):
-    #             if abs(ej) > 1e-10:
-    #                 print('big error', ej, [i,j])
-    #                 pass
-    #             if abs(ej) > max_error:
-    #                 max_error = abs(ej)
-    #                 max_pos = [i,j]
-    #     print('max_error', max_error, max_pos)
-    #     return numerical 
