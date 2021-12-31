@@ -324,13 +324,24 @@ class MeanFieldSolver(SolverBase):
                 ads_idxs.remove(d_idx) #reduce order by 1
                 if multiplier != 1:
                     rate_string = str(multiplier)+'*'+rate_string
+
             elif (d_site in sites #empty site appears,
-                    and d_idx not in ads_idxs): #but not the adsorbate
+                    and d_idx not in ads_idxs #but not the adsorbate
+                    and self.use_numbers_solver): # for the numbers solver
                 multiplier = sites.count(d_site)
-                multiplier = -1*multiplier #this accounds for the
-                #fact that d_site/d_ads = -1
+                if d_wrt not in self.site_names:
+                    multiplier = -1*multiplier #dsite/dtheta_* is negative is not site derivative
                 sites.remove(d_site) #reduce the order of site by 1
                 rate_string = str(multiplier)+'*'+rate_string
+
+            elif (d_site in sites #empty site appears,
+                    and d_idx not in ads_idxs #but not the adsorbate
+                    and not self.use_numbers_solver):
+                multiplier = sites.count(d_site)
+                multiplier = -1*multiplier #this accounds for the fact that d_site/d_ads = -1
+                sites.remove(d_site) #reduce the order of site by 1
+                rate_string = str(multiplier)+'*'+rate_string
+
             elif (d_site in sites #function of adsorbate
                     and d_idx in ads_idxs): #and function of site (1-theta_i)
                 #need to use chain rule...
@@ -547,14 +558,19 @@ class MeanFieldSolver(SolverBase):
             if 'g' in adsorbate_names:
                 adsorbate_names = [a for a in adsorbate_names if a != 'g']
                 # Remove any duplicates from adsorbate_names
-                adsorbate_names = list(set(adsorbate_names))
                 adsorbate_names = tuple(adsorbate_names)
         else:
             # Standard CatMAP solver needs only an nxn Jacobian matrix
             adsorbate_names = self.adsorbate_names
+        
+        with open('adsorbate_names.log','w') as f:
+            f.write(str(adsorbate_names))
+
 
         # Create the Jacobian matrix by iterating over the adsorbate_names
+        # The first index is for the row
         for i, ads_i in enumerate(adsorbate_names):
+            # The second index is for the column
             for j, ads_j in enumerate(adsorbate_names):
                 # Populate the Jacobian matrix based on the 
                 # required dimensions
@@ -562,18 +578,17 @@ class MeanFieldSolver(SolverBase):
                 # Iterate over the elementary reactions such that 
                 # we get how much of the species are present
                 for k, rxn in enumerate(self.elementary_rxns):
-                    # Determine if there is coverage of species 
-                    # across a column of the Jacobian matrix
-                    # So that the derivative may be taken.
+                    # Get the number of ads_i in the forward and reverse
+                    # reaction, to be used to construct f from the rate
+                    # equations
                     rxnCounts = [-1.0*rxn[0].count(ads_i),
                                   1.0*rxn[-1].count(ads_i)]
-                    # If there is a species in the rxn, then it will 
-                    # be considered as a part of the Jacobian matrix
-                    # And we will need its derivative.
                     rxnOrder = [o for o in rxnCounts if o]
+                    # In the following, the drdx term is constructed 
+                    # and then multiplied by the reaction order to get
+                    # the df/dx term.
                     if rxnOrder:
                         rxnOrder = rxnOrder[0]
-                        # Take the derivative across a column
                         fRate_string = self.rate_equation_term(rxn[0], 'kf['+str(k)+']', ads_j, adsorbate_names)
                         rRate_string = self.rate_equation_term(rxn[-1], 'kr['+str(k)+']', ads_j, adsorbate_names)
                         if adsorbate_interactions == True:

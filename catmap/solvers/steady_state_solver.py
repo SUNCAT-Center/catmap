@@ -112,7 +112,7 @@ class SteadyStateSolver(MeanFieldSolver):
             for k in range(dtheta_dx_matrix.cols):
                 dtheta_dx_matrix[i, k] -= self._math.power(x_including_surface[i], 2) \
                                          / self._math.power(sum_sq_numbers, 2) * \
-                                            self._mpfloat(2) * x_including_surface[k]
+                                            self._mpfloat('2.') * x_including_surface[k]
         # The dtheta/dx matrix has all the terms for all the species + empty sites
         return dtheta_dx_matrix
 
@@ -133,15 +133,18 @@ class SteadyStateSolver(MeanFieldSolver):
             raise ValueError("No initial numbers supplied. Mapper must supply initial guess")
         self._rxn_parameters = rxn_parameters
 
-        # Add the slab boltzmann number over here
-        c0.append(self._mpfloat('1.'))
-
-        # Write out a csv file with the initial guess
-        # the format of the csv file is a list of self._descriptors
-        # and the initial guess c0 as the output
-        with open('initial_guess.csv', 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(self._descriptors + self.change_x_to_theta(c0))
+        # Add the slab boltzmann number over here in case the length 
+        # of c0 is less than the the len(adsorbate_names) + 1
+        if len(c0) == len(self.adsorbate_names):
+            initial_run = True 
+            c0.append(self._mpfloat('1.'))
+        elif len(c0) == len(self.adsorbate_names) + 1:
+            initial_run = False
+        elif len(c0) > len(self.adsorbate_names) + 1:
+            initial_run = False
+            c0 = c0[:len(self.adsorbate_names) + 1]
+        else:
+            raise ValueError("Issue with the length of c0.")
 
         # Populate coverages otherwise return an error
         coverages = None
@@ -156,6 +159,23 @@ class SteadyStateSolver(MeanFieldSolver):
 
         # The norm that is used to check the error
         norm = self._math.infnorm
+
+        # Before starting the calculation check if the job is a return job
+        # That is, some part of this code has already used this function
+        # and is returning the coverages instead of the numbers
+        # The simple condition to check this is to see if the norm is lower
+        # than the tolerance
+        if norm(f(c0)) <= self.tolerance:
+            self._coverage = c0
+            return c0
+
+        # Write out a csv file with the initial guess
+        # the format of the csv file is a list of self._descriptors
+        # and the initial guess c0 as the output
+        if initial_run:
+            with open('initial_guess.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + self.change_x_to_theta(c0))
 
         # Populate the kwargs 
         solver_kwargs = dict(
@@ -173,15 +193,6 @@ class SteadyStateSolver(MeanFieldSolver):
         # Writes inner loop details to separate file
         solver_kwargs['verbose'] = 2
 
-        # Before starting the calculation check if the job is a return job
-        # That is, some part of this code has already used this function
-        # and is returning the coverages instead of the numbers
-        # The simple condition to check this is to see if the norm is lower
-        # than the tolerance
-        if norm(f(c0)) <= self.tolerance:
-            self._coverage = c0
-            return c0
-
         # Store the decimal precision
         solver_kwargs['precision'] = self.decimal_precision
 
@@ -197,7 +208,6 @@ class SteadyStateSolver(MeanFieldSolver):
         iterations.maxiter = maxiter
 
         i = 0
-        x = c0
         for x, error in iterations:
             print (f"{i} \t {error}", file=open(self.outer_solver_log, 'a'))
             with open('error_log.csv', 'a') as csvfile:
@@ -214,6 +224,13 @@ class SteadyStateSolver(MeanFieldSolver):
                         priority = 1)
                 self._error = error
                 coverages = self.change_x_to_theta(list(x))
+
+                # Store the coverages for debugging
+                with open('solution.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(self._descriptors + coverages)
+
+                # We dont need the coverage of the free sites to be stored
                 coverages = coverages[:-1]
                 break
             # Break if the maximum number of iterations is reached
@@ -544,6 +561,8 @@ class SteadyStateSolver(MeanFieldSolver):
 
             #make steady-state expressions
             ss_eqs = self.rate_equations()
+            with open('steady_state_equations.log', 'w') as handle:
+                handle.write('\n'.join(ss_eqs))
             # If we are using the numbers solver, the length of the 
             # steady state function needs to be one more than that of the 
             # number of adsorbates.
@@ -556,9 +575,14 @@ class SteadyStateSolver(MeanFieldSolver):
 
             #make jacobian expressions
             jac_eqs = self.jacobian_equations(adsorbate_interactions=True)
+            from pprint import pprint
+            with open('jacobian_eqs.log','w') as handle:
+                handle.write('\n'.join(jac_eqs))
             self._function_substitutions['jacobian_expressions'] = '\n    '.join(jac_eqs)
             jac_eqs_nd = self.jacobian_equations(adsorbate_interactions=False)
             self._function_substitutions['jacobian_expressions_no_derivatives'] = '\n    '.join(jac_eqs_nd)
+            with open('jacobian_eqs_noderiv.log','w') as handle:
+                handle.write('\n'.join(jac_eqs_nd))
 
             def indent_string(string,levels):
                 lines = string.split('\n')

@@ -183,38 +183,38 @@ class NewtonRoot:
         if 'J' in kwargs:
             self.J = kwargs['J']
 
-            #the following is useful for debugging/benchmarking
-            #analytical derivatives, and should be commented out
-            #for any production code.
-#            import time
-#            def J(x): #Use this to confirm the analytical jacobian is correct
-#                t0 = time.time()
-#                analytical = kwargs['J'](x)
-#                t_a = time.time() - t0
-#                t0 = time.time()
-#                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-300)
-#                t_n = time.time() - t0
-#                error = analytical - numerical
-#                error = error.tolist()
-#                max_error = -1
-#                max_pos = None
-#                for i,ei in enumerate(error):
-#                    for j,ej in enumerate(ei):
-#                        if abs(ej) > 1e-10:
-#                            print 'big error', ej, [i,j]
-#                            pass
-#                        if abs(ej) > max_error:
-#                            max_error = abs(ej)
-#                            max_pos = [i,j]
-#                print 'max_error', max_error, max_pos
-#                print 't_analytic/t_numerical', t_a/t_n
-#                return numerical
-#            self.J = J
+            # the following is useful for debugging/benchmarking
+            # analytical derivatives, and should be commented out
+            # for any production code.
+            # import time
+            # def J(x): #Use this to confirm the analytical jacobian is correct
+            #     t0 = time.time()
+            #     analytical = kwargs['J'](x)
+            #     t_a = time.time() - t0
+            #     t0 = time.time()
+            #     numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-300)
+            #     t_n = time.time() - t0
+            #     error = analytical - numerical
+            #     error = error.tolist()
+            #     max_error = -1
+            #     max_pos = None
+            #     for i,ei in enumerate(error):
+            #         for j,ej in enumerate(ei):
+            #             if abs(ej) > 1e-10:
+            #                 print('big error', ej, [i,j])
+            #                 pass
+            #             if abs(ej) > max_error:
+            #                 max_error = abs(ej)
+            #                 max_pos = [i,j]
+            #     print('max_error', max_error, max_pos)
+            #     print('t_analytic/t_numerical', t_a/t_n)
+            #     return numerical
+            # self.J = J
 
-#            def J_numerical(x): #Use this to confirm the analytical jacobian is correct
-#                numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-50)
-#                return numerical
-#            self.J = J_numerical
+            # def J_numerical(x): #Use this to confirm the analytical jacobian is correct
+            #     numerical = catmap.functions.numerical_jacobian(f,x,matrix,1e-50)
+            #     return numerical
+            # self.J = J_numerical
 
 
         else:
@@ -338,7 +338,7 @@ class NewtonRootNumbers:
 
         # Convergence criteria
         self.norm = kwargs['norm']
-        self.max_damping = 500
+        self.max_damping = 10
 
         # conversion from coverages to numbers and conversion 
         # dtheta/dx matrix to get the Jacobian matrix 
@@ -370,12 +370,12 @@ class NewtonRootNumbers:
         for i,ei in enumerate(error):
             for j,ej in enumerate(ei):
                 if abs(ej) > 1e-10:
-                    # print('big error', ej, [i,j])
+                    print('big error', ej, [i,j])
                     pass
                 if abs(ej) > max_error:
                     max_error = abs(ej)
                     max_pos = [i,j]
-        # print('max_error', max_error, max_pos)
+        # print('max_error', max_pos, max_error)
         return analytical 
 
     def __iter__(self):
@@ -432,12 +432,15 @@ class NewtonRootNumbers:
             # Perform checks on the Jacobian(theta) matrix
             assert dtheta_dx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
             assert dtheta_dx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
+
             # The sum over all columns of the Jacobian 
             # matrix must be 0. This is because the term would be 
             # d/dtheta_i (sum_i f_i)
             # where sum_i f_i = 0
-            for i in range(dtheta_dx.cols):
+            for i in range(Jtheta.cols):
                 assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
+            for i in range(dtheta_dx.cols):
+                assert mp.fabs(mp.fsum(dtheta_dx[:, i])) < self.precision, "dtheta_dx column is not zero"
 
             # Find Jx by taking the dot product of J(theta)
             # and dtheta/dx
