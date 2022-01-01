@@ -189,6 +189,7 @@ class SteadyStateSolver(MeanFieldSolver):
         # Conversion functions for converting x to theta 
         solver_kwargs['conversion_function'] = self.change_x_to_theta
         solver_kwargs['dtheta_dx_function'] = self.get_conversion_matrix
+        solver_kwargs['fix_x_star'] = self.fix_x_star
 
         # Writes inner loop details to separate file
         solver_kwargs['verbose'] = 2
@@ -198,7 +199,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
         # Run the solver; iterations is a generator
         iterations = solver(f, c0, self._math, self._matrix, self._mpfloat,
-                            self._math.lu_solve, **solver_kwargs)
+                            self._math.qr_solve, **solver_kwargs)
 
         # coverages will be set to the coverages when the solver
         # has converged

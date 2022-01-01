@@ -334,34 +334,34 @@ class MeanFieldSolver(SolverBase):
                 if multiplier != 1:
                     rate_string = str(multiplier)+'*'+rate_string
             
-            # elif (len(ads_idxs)>0 #adsorbate is present
-            #       and d_site not in sites #empty site not there
-            #       and d_wrt in self.site_names): #differentiation wrt site
-            #       # d_wrt is an empty site and it is differentiating
-            #       # an adsorbate.
-            #       # Need to use chain rule here to get the derivative 
-            #       # of each adsorbate with respect to the site.
-            #     temp_rate_string = ''
-            #     for ie, ads_idx in enumerate(ads_idxs):
-            #         # get the other adsorbates by getting 
-            #         # all other index of ads_idxs expect ie
-            #         other_ads_idxs = []
-            #         for je in range(len(ads_idxs)):
-            #             if je != ie:
-            #                 other_ads_idxs.append(ads_idxs[je])
-            #         # the rate string will just be the coverage of
-            #         # the other adsorbates multiplied to each other
-            #         # multiplied by a -1 because the derivative with
-            #         # respect to the site is negative of that of the 
-            #         # adsorbate.
-            #         if other_ads_idxs:
-            #             temp_rate_string += '*'.join(['theta['+str(i)+']' for i in other_ads_idxs])
-            #             if ie != len(ads_idxs)-1:
-            #                 temp_rate_string += '+'
-            #         else:
-            #             temp_rate_string = '1'
-            #     rate_string += '*-1*('+temp_rate_string + ')'
-            #     ads_idxs = [] #no more adsorbates
+            elif (len(ads_idxs)>0 #adsorbate is present
+                  and d_site not in sites #empty site not there
+                  and d_wrt in self.site_names): #differentiation wrt site
+                  # d_wrt is an empty site and it is differentiating
+                  # an adsorbate.
+                  # Need to use chain rule here to get the derivative 
+                  # of each adsorbate with respect to the site.
+                temp_rate_string = ''
+                for ie, ads_idx in enumerate(ads_idxs):
+                    # get the other adsorbates by getting 
+                    # all other index of ads_idxs expect ie
+                    other_ads_idxs = []
+                    for je in range(len(ads_idxs)):
+                        if je != ie:
+                            other_ads_idxs.append(ads_idxs[je])
+                    # the rate string will just be the coverage of
+                    # the other adsorbates multiplied to each other
+                    # multiplied by a -1 because the derivative with
+                    # respect to the site is negative of that of the 
+                    # adsorbate.
+                    if other_ads_idxs:
+                        temp_rate_string += '*'.join(['theta['+str(i)+']' for i in other_ads_idxs])
+                        if ie != len(ads_idxs)-1:
+                            temp_rate_string += '+'
+                    else:
+                        temp_rate_string = '1'
+                rate_string += '*-1*('+temp_rate_string + ')'
+                ads_idxs = [] #no more adsorbates
 
             elif (d_site in sites #empty site appears,
                   and d_idx not in ads_idxs): #but not the adsorbate

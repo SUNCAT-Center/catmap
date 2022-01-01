@@ -348,15 +348,18 @@ class NewtonRootNumbers:
         # Store the precision
         self.precision = mp.power(self._mpfloat('10'), -1 * kwargs['precision'])
 
+        # Decide if x_star is fixed or free
+        self.fix_x_star = kwargs['fix_x_star']
+
     def J_numerical(self, theta):
         """Pass the coverages with the f to get the numerical Jacobian."""
         numerical = catmap.functions.numerical_jacobian(self.f, theta, self._matrix, 1e-50)
         return numerical
 
-    #the following is useful for debugging/benchmarking
-    #analytical derivatives, and should be commented out
-    #for any production code.
-    def J_confirm(self, theta): #Use this to confirm the analytical jacobian is correct
+    def J_confirm(self, theta):
+        """The following is useful for debugging/benchmarking
+        analytical derivatives, and should be commented out
+        for any production code."""
         # Get the analytical Jacobian
         analytical = self.J_analytical(theta)
         # Get the numerical Jacobian
@@ -370,7 +373,7 @@ class NewtonRootNumbers:
         for i,ei in enumerate(error):
             for j,ej in enumerate(ei):
                 if abs(ej) > 1e-10:
-                    print('big error', ej, [i,j])
+                    # print('big error', ej, [i,j])
                     pass
                 if abs(ej) > max_error:
                     max_error = abs(ej)
@@ -379,15 +382,23 @@ class NewtonRootNumbers:
         return analytical 
 
     def __iter__(self):
-        # Note that this is the objective function 
-        # That still depends on theta
-        f = self.f
+        if not self.fix_x_star:
+            # Note that this is the objective function 
+            # That still depends on theta
+            f = self.f
+            # The Jacobian which depends on coverage 
+            J = self.J
+            # matrix to get_dtheta_dx
+            dtheta_dx_function = lambda x: self.dtheta_dx_function(list(x))
+        else:
+            # In case a fixed x_star is required, truncate the steady
+            # state function, the jacobian in both theta and x spaces
+            f = lambda theta: self.f(theta)[:-1]
+            J = lambda theta: self.J(theta)[:-1,:-1]
+            dtheta_dx_function = lambda theta: self.dtheta_dx_function(theta)[:-1,:-1]
 
         # Define the norm
         norm = self.norm
-
-        # The Jacobian which depends on coverage 
-        J = self.J
 
         # Initial guess in x
         x0 = self._matrix(self.x0)
@@ -395,8 +406,6 @@ class NewtonRootNumbers:
 
         # conversion function that changes x within the iteration to theta
         conversion_function = lambda x: self.conversion_function(list(x))
-        # matrix to get_dtheta_dx
-        dtheta_dx_function = lambda x: self.dtheta_dx_function(list(x))
 
         # get the initial coverages
         theta = conversion_function(x0)
@@ -406,19 +415,22 @@ class NewtonRootNumbers:
         assert mp.fabs(mp.fsum(theta) - self._mpfloat('1.0')) < self.precision, "The sum of coverages is greater than 1.0"
         self.log.info(f"\n Initial theta guess: \n {theta}")
 
-        # dtheta_dx matrix to convert Jacobian to x space
-        dtheta_dx = dtheta_dx_function(x0)
-
         # Cancel if we have reached the right answer
         cancel = False
 
         while not cancel:
+
             fx = self._matrix(f(theta))
-            # Ensure that the sum of fx is 0
-            assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
-            # Check if the objective function is the 
-            # same length as theta 
-            assert fx.rows == len(theta)
+            if not self.fix_x_star:
+                # Ensure that the sum of fx is 0
+                assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
+
+                # Check if the objective function is the 
+                # same length as theta 
+                assert fx.rows == len(theta)
+            
+            if self.fix_x_star:
+                assert fx.rows == len(theta) - 1
 
             # Get the norm of the objective function
             # this number is our error
@@ -427,55 +439,68 @@ class NewtonRootNumbers:
             # get direction of descent
             fxn = -fx
 
+            # Get the Jacobian matrix as a function of theta
             Jtheta = J(theta)
+
+            # dtheta_dx matrix to convert Jacobian to x space
+            dtheta_dx = dtheta_dx_function(x0)
 
             # Perform checks on the Jacobian(theta) matrix
             assert dtheta_dx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
             assert dtheta_dx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
 
-            # The sum over all columns of the Jacobian 
-            # matrix must be 0. This is because the term would be 
-            # d/dtheta_i (sum_i f_i)
-            # where sum_i f_i = 0
-            for i in range(Jtheta.cols):
-                assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
-            for i in range(dtheta_dx.cols):
-                assert mp.fabs(mp.fsum(dtheta_dx[:, i])) < self.precision, "dtheta_dx column is not zero"
+            if not self.fix_x_star:
+                # The sum over all columns of the Jacobian 
+                # matrix must be 0. This is because the term would be 
+                # d/dtheta_i (sum_i f_i)
+                # where sum_i f_i = 0
+                for i in range(Jtheta.cols):
+                    assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
+                for i in range(dtheta_dx.cols):
+                    assert mp.fabs(mp.fsum(dtheta_dx[:, i])) < self.precision, "dtheta_dx column is not zero"
 
             # Find Jx by taking the dot product of J(theta)
             # and dtheta/dx
             Jx =  Jtheta * dtheta_dx
 
-            # The Jacobian in x-space must also have the same
-            # checks as Jacobian in theta-space
-            assert Jx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
-            assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
-            for i in range(Jx.cols):
-                assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
-            self.log.info(f"\n Jx: \n {Jx}")
+            if not self.fix_x_star:
+                # The Jacobian in x-space must also have the same
+                # checks as Jacobian in theta-space
+                assert Jx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
+                assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
+                for i in range(Jx.cols):
+                    assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
+                self.log.info(f"\n Jx: \n {Jx}")
 
-            # Premultiply Jx and fxn by the transpose of J
-            # Jx = Jx.transpose() * Jx
-            # fxn = Jx.transpose() * fxn
-            # self.log.info(f"\n Jx.transpose() * Jx: \n {Jx}")
-            # self.log.info(f"\n Jx.transpose() * fxn: \n {fxn}")
-
-            # Solve the inner problem
-            # To get s, we will use the Moore-Penrose inverse of Jx
-            # Start by doing and SVD of Jx
-            U, S, V = self._math.svd_r(Jx)
-            # Find the pseudo-inverse of S by taking the
-            # reciprocal of each non-zero diagonal element while leaving
-            # the zeros in place, then taking the transpose of that matrix
-            S_inv = []
-            for i in range(len(S)):
-                if mp.fabs(S[i]) < self.precision:
-                    S_inv.append(self._mpfloat('0.0'))
-                else:
-                    S_inv.append(self._mpfloat('1.0') / S[i])
-            S_plus = self._math.diag(S_inv)
-            Jx_plus = V.T * S_plus.T * U.T
-            s = Jx_plus * fxn 
+            if self.fix_x_star:
+                # Premultiply Jx and fxn by the transpose of J
+                # Jx = Jx.transpose() * Jx
+                # fxn = Jx.transpose() * fxn
+                # self.log.info(f"\n Jx.transpose() * Jx: \n {Jx}")
+                # self.log.info(f"\n Jx.transpose() * fxn: \n {fxn}")
+                s = self._Axb(Jx, fxn)[0]
+                # Add 0 to the s matrix such that the empty site
+                # coverage is never updated
+                s = list(s)
+                s.append(self._mpfloat('0.0'))
+                s = self._matrix(s)
+            else:
+                # Solve the inner problem
+                # To get s, we will use the Moore-Penrose inverse of Jx
+                # Start by doing and SVD of Jx
+                U, S, V = self._math.svd_r(Jx)
+                # Find the pseudo-inverse of S by taking the
+                # reciprocal of each non-zero diagonal element while leaving
+                # the zeros in place, then taking the transpose of that matrix
+                S_inv = []
+                for i in range(len(S)):
+                    if mp.fabs(S[i]) < self.precision:
+                        S_inv.append(self._mpfloat('0.0'))
+                    else:
+                        S_inv.append(self._mpfloat('1.0') / S[i])
+                S_plus = self._math.diag(S_inv)
+                Jx_plus = V.T * S_plus.T * U.T
+                s = Jx_plus * fxn 
 
             # damping step size
             l = self._mpfloat('1.0')
