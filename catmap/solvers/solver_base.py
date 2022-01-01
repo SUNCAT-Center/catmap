@@ -421,6 +421,7 @@ class NewtonRootNumbers:
         while not cancel:
 
             fx = self._matrix(f(theta))
+
             if not self.fix_x_star:
                 # Ensure that the sum of fx is 0
                 assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
@@ -480,7 +481,7 @@ class NewtonRootNumbers:
                 # self.log.info(f"\n Jx.transpose() * fxn: \n {fxn}")
                 s = self._Axb(Jx, fxn)[0]
                 # Add 0 to the s matrix such that the empty site
-                # coverage is never updated
+                # x value for empty site is never updated
                 s = list(s)
                 s.append(self._mpfloat('0.0'))
                 s = self._matrix(s)

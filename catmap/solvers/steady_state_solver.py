@@ -284,6 +284,10 @@ class SteadyStateSolver(MeanFieldSolver):
         f_resid = lambda x: self.get_residual(x,True,False)
         norm = self._math.infnorm
 
+        with open('initial_guess.csv', 'a') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(self._descriptors + self.change_x_to_theta(c0))
+
         if self.internally_constrain_coverages == True:
             constraint = self.constrain_coverages
         else:
@@ -317,6 +321,9 @@ class SteadyStateSolver(MeanFieldSolver):
         i = 0
         x = c0
         for x,error in iterations:
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [ i ]  + [ error ])
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
@@ -325,6 +332,10 @@ class SteadyStateSolver(MeanFieldSolver):
             if error < self.tolerance:
                 if f_resid(x) < self.tolerance:
                     coverages = self.constrain_coverages(x)
+                    # Store the coverages for debugging
+                    with open('solution.csv', 'a') as csvfile:
+                        writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                        writer.writerow(self._descriptors + coverages)
                     self.log('rootfinding_success',
                             n_iter = i,
                             priority = 1)
