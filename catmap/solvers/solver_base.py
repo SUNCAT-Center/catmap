@@ -382,6 +382,10 @@ class NewtonRootNumbers:
         return analytical 
 
     def __iter__(self):
+        # There are two possible routines for finding the root
+        # through the multi-dimensional Newton method.
+        # The first is to consider all x as independent variables
+        # The second is to consider x_star = 1 and change the other 
         if not self.fix_x_star:
             # Note that this is the objective function 
             # That still depends on theta
@@ -395,14 +399,14 @@ class NewtonRootNumbers:
             # state function, the jacobian in both theta and x spaces
             f = lambda theta: self.f(theta)[:-1]
             J = lambda theta: self.J(theta)[:-1,:-1]
-            dtheta_dx_function = lambda theta: self.dtheta_dx_function(theta)[:-1,:-1]
+            dtheta_dx_function = lambda x: self.dtheta_dx_function(x)[:-1,:-1]
 
         # Define the norm
         norm = self.norm
 
         # Initial guess in x
         x0 = self._matrix(self.x0)
-        self.log.info(f"\n Initial x0 guess: \n {x0}")
+        # self.log.info(f"\n Initial x0 guess: \n {x0}")
 
         # conversion function that changes x within the iteration to theta
         conversion_function = lambda x: self.conversion_function(list(x))
@@ -413,12 +417,13 @@ class NewtonRootNumbers:
 
         # Check to make sure that the sum of coverages is not greater than 1
         assert mp.fabs(mp.fsum(theta) - self._mpfloat('1.0')) < self.precision, "The sum of coverages is greater than 1.0"
-        self.log.info(f"\n Initial theta guess: \n {theta}")
+        # self.log.info(f"\n Initial theta guess: \n {theta}")
 
         # Cancel if we have reached the right answer
         cancel = False
 
         while not cancel:
+            # Begin the outer loop iteration
 
             fx = self._matrix(f(theta))
 
@@ -471,7 +476,7 @@ class NewtonRootNumbers:
                 assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
                 for i in range(Jx.cols):
                     assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
-                self.log.info(f"\n Jx: \n {Jx}")
+                # self.log.info(f"\n Jx: \n {Jx}")
 
             if self.fix_x_star:
                 # Premultiply Jx and fxn by the transpose of J
@@ -479,7 +484,12 @@ class NewtonRootNumbers:
                 # fxn = Jx.transpose() * fxn
                 # self.log.info(f"\n Jx.transpose() * Jx: \n {Jx}")
                 # self.log.info(f"\n Jx.transpose() * fxn: \n {fxn}")
-                s = self._Axb(Jx, fxn)[0]
+                try:
+                    s = self._Axb(Jx, fxn)# [0]
+                except Exception as e:
+                    self.log.info(f"\n Jx: \n {Jx}")
+                    # self.log.info(f"\n fxn: \n {fxn}")
+                    raise ValueError("Jx and fxn are not compatible")
                 # Add 0 to the s matrix such that the empty site
                 # x value for empty site is never updated
                 s = list(s)

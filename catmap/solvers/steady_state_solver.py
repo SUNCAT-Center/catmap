@@ -199,7 +199,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
         # Run the solver; iterations is a generator
         iterations = solver(f, c0, self._math, self._matrix, self._mpfloat,
-                            self._math.qr_solve, **solver_kwargs)
+                            self._math.lu_solve, **solver_kwargs)
 
         # coverages will be set to the coverages when the solver
         # has converged
@@ -233,6 +233,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
                 # We dont need the coverage of the free sites to be stored
                 coverages = coverages[:-1]
+                numbers = x[:-1]
                 break
             # Break if the maximum number of iterations is reached
             if i >= maxiter:
@@ -245,6 +246,7 @@ class SteadyStateSolver(MeanFieldSolver):
         print("", file=open(self.outer_solver_log, 'a'))
         if coverages:
             self._coverage = [c for c in coverages]
+            self._numbers = [n for n in numbers]
             return [c for c in coverages]
         else:
             self.log('rootfinding_cancel',
@@ -587,7 +589,6 @@ class SteadyStateSolver(MeanFieldSolver):
 
             #make jacobian expressions
             jac_eqs = self.jacobian_equations(adsorbate_interactions=True)
-            from pprint import pprint
             with open('jacobian_eqs.log','w') as handle:
                 handle.write('\n'.join(jac_eqs))
             self._function_substitutions['jacobian_expressions'] = '\n    '.join(jac_eqs)

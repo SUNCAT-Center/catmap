@@ -261,12 +261,23 @@ class MinResidMapper(MapperBase):
         #been checked). Number can't be higher than having a
         #1 in every direction.
 
+        if self.use_numbers_solver and self.coverage_map is not None:
+            # The numbers solver does not currently have implemented
+            # support for reading in solutions from previous runs.
+            raise NotImplementedError('Delete .pickle and .log file for using numbers solver')
+
         if self.coverage_map is None:
             initial_guess_coverage_map = None
             self._coverage_map = []
         else:
             initial_guess_coverage_map = [c for c in self.coverage_map]
             self._coverage_map = []
+        
+        if self.use_numbers_solver:
+            # In case of the numbers solver, we also need to store the
+            # intermediate numbers result, for when we need to bisect
+            # or pass on the coverage of an adjacent point.
+            self._numbers_map = []
 
         #Clause for obtaining initial coverages from an initial guess map
         if initial_guess_coverage_map:
@@ -341,29 +352,42 @@ class MinResidMapper(MapperBase):
             new_possibilities = []
             tried = []
             for i_poss,poss in enumerate(possibilities): #sort by residual to
-                r,sol_pt,c = poss
-                                                    #use best guesses first
+                # In the case of the default solver, c is a coverage
+                # but in the case of the numbers solver, c is a number
+                r, sol_pt, c = poss
+
+                #use best guesses first
                 self.log('minresid_status',
                         priority=1,
                         n_iter=i_poss,
                         old_pt=self.print_point(
                             sol_pt,self.descriptor_decimal_precision))
 
-
                 if sol_pt not in tried:
                     try:
-                        if bisect == False or this_pt == sol_pt: #don't
-                                                #bisect if the point is itself
-                            self.get_point_output(
-                                    this_pt,c)
+                        if bisect == False or this_pt == sol_pt: 
+                            #don't bisect if the point is itself
+                            # Calculate the coverage
+                            self.get_point_output(this_pt, c)
+
                             point_coverages = self._coverage
+                            if self.use_numbers_solver:
+                                # Store the numbers for later use
+                                point_numbers = self._numbers
+
                             if point_coverages:
-                                self._coverage_map.append(
-                                        [this_pt,point_coverages])
+                                self._coverage_map.append([this_pt,point_coverages])
+                                if self.use_numbers_solver:
+                                    self._numbers_map.append([this_pt,point_numbers])
                                 self.log('minresid_success',n_iter=i_poss,
                                       old_pt=self.print_point(
                                       sol_pt,self.descriptor_decimal_precision))
+
                         else:
+                            if self.use_numbers_solver:
+                                # Bisection not implemented for the numbers
+                                raise NotImplementedError('Bisection not implemented for the numbers solver')
+
                             point_coverages = self.bisect_descriptor_line(
                                     this_pt,sol_pt,c)
                             if point_coverages:
@@ -387,6 +411,7 @@ class MinResidMapper(MapperBase):
                                     sol_pt,self.descriptor_decimal_precision),
                                 resid=resid_str,
                                 old_resid=float(r))
+
                         try:
                             resid = float(resid)
                             if this_pt != sol_pt:
@@ -441,12 +466,22 @@ class MinResidMapper(MapperBase):
                                             self._coverage_map,
                                             sol_pt,
                                             self.descriptor_decimal_precision)
+                                    if self.use_numbers_solver:
+                                        sol_numbers = self.retrieve_data(
+                                                self._numbers_map,
+                                                sol_pt,
+                                                self.descriptor_decimal_precision)
                                 else:
+                                    # Note that in case of the numbers solver
+                                    # the Bolzmann coverage is actually a 
+                                    # "Boltzmann number"
                                     boltz_cvgs = self.get_initial_coverage(
                                             this_pt)
+
                                     if self.max_initial_guesses is not None:
                                         max_initial_guesses = min(len(boltz_cvgs),self.max_initial_guesses)
                                         boltz_cvgs = boltz_cvgs[:max_initial_guesses]
+
                                     sol_cvgs = None
                                     for cvg in boltz_cvgs:
                                         self._coverage = cvg
@@ -455,15 +490,20 @@ class MinResidMapper(MapperBase):
                                         resid = self.solver.get_residual(cvg)
                                         possibilities.append(
                                                 [resid,sol_pt,cvg])
+
                                     checked_dirs[k] = 1
 
                                 if sol_cvgs:
                                     self._coverage = sol_cvgs
+                                    if self.use_numbers_solver:
+                                        self._numbers = sol_numbers
                                     params = self.scaler.get_rxn_parameters(
                                             sol_pt)
                                     resid = self.solver.get_residual(sol_cvgs)
-                                    possibilities.append(
-                                            [resid,sol_pt,sol_cvgs])
+                                    if self.use_numbers_solver:
+                                        possibilities.append([resid,sol_pt,sol_numbers])
+                                    else:
+                                        possibilities.append([resid,sol_pt,sol_cvgs])
                                     checked_dirs[k] = 1
                             else: #point is not in map. make it "checked"
                                 checked_dirs[k] = 1
