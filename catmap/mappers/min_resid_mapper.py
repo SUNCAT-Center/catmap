@@ -428,8 +428,8 @@ class MinResidMapper(MapperBase):
 
             return new_possibilities
 
-    #Function to iterate through all points and use current
-    #information to make the best guess
+        #Function to iterate through all points and use current
+        #information to make the best guess
         def minresid_iteration(isMapped):
             """Go through all points and check the local solutions in
             order of minimum to maximum residual"""

@@ -152,8 +152,6 @@ class SteadyStateSolver(MeanFieldSolver):
         # and is returning the coverages instead of the numbers
         # The simple condition to check this is to see if the norm is lower
         # than the tolerance
-        # print(f(self.change_x_to_theta(c0)))
-        # kill_in_steady_state
         if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
             self._coverage = self.change_x_to_theta(c0)[:-1]
             return c0
@@ -266,10 +264,6 @@ class SteadyStateSolver(MeanFieldSolver):
         f = steady_state_fn
         f_resid = lambda x: self.get_residual(x,True,False)
         norm = self._math.infnorm
-
-        with open('initial_guess.csv', 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(self._descriptors + self.change_x_to_theta(c0))
 
         if self.internally_constrain_coverages == True:
             constraint = self.constrain_coverages

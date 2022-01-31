@@ -979,6 +979,12 @@ class ThermoCorrections(ReactionModelWrapper):
                     if self.species_definitions[site]['type'] not in ['gas']:
                         cvgs[i_overall] = self._math.exp(-free_energies[i_rel]/(
                             self._kB*self.temperature))/boltz_sum
+
+        # Write out the Boltzmann coverages
+        with open('initial_guess.csv', 'a') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(self._descriptors + cvgs)
+
         return cvgs
 
     def boltzmann_numbers(self,energy_dict):
