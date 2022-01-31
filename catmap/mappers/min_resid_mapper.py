@@ -388,16 +388,17 @@ class MinResidMapper(MapperBase):
                                 # Bisection not implemented for the numbers
                                 raise NotImplementedError('Bisection not implemented for the numbers solver')
 
-                            point_coverages = self.bisect_descriptor_line(
-                                    this_pt,sol_pt,c)
+                            point_coverages = self.bisect_descriptor_line(this_pt,sol_pt,c)
                             if point_coverages:
-                                self._coverage_map.append(
-                                        [this_pt,point_coverages])
+                                self._coverage_map.append([this_pt,point_coverages])
+
                             self.log('minresid_success',n_iter=i_poss,
                                     old_pt=sol_pt)
                         return None
 
                     except ValueError as strerror:
+                        # Any ValueError during the coverage finding loop
+                        # is processed here
                         strerror = str(strerror)
                         resid = strerror.split('resid=')[-1]
                         resid = resid.split(')')[0]
@@ -438,7 +439,7 @@ class MinResidMapper(MapperBase):
                     possibilities = []
                     this_pt = [d1Vals[i],d2Vals[j]]
                     self._descriptors = this_pt
-                    if isMapped[i,j] < maxNum: #the point has not been foind yet
+                    if isMapped[i,j] < maxNum: #the point has not been found yet
                         #Get the list of possible guess coverages based
                         #on the search directions
                         checked_dirs = [int(bi)
@@ -474,9 +475,8 @@ class MinResidMapper(MapperBase):
                                 else:
                                     # Note that in case of the numbers solver
                                     # the Bolzmann coverage is actually a 
-                                    # "Boltzmann number"
-                                    boltz_cvgs = self.get_initial_coverage(
-                                            this_pt)
+                                    # "Boltzmann number" which include the slab
+                                    boltz_cvgs = self.get_initial_coverage(this_pt)
 
                                     if self.max_initial_guesses is not None:
                                         max_initial_guesses = min(len(boltz_cvgs),self.max_initial_guesses)
@@ -485,8 +485,7 @@ class MinResidMapper(MapperBase):
                                     sol_cvgs = None
                                     for cvg in boltz_cvgs:
                                         self._coverage = cvg
-                                        params = self.scaler.get_rxn_parameters(
-                                                sol_pt)
+                                        params = self.scaler.get_rxn_parameters(sol_pt)
                                         resid = self.solver.get_residual(cvg)
                                         possibilities.append(
                                                 [resid,sol_pt,cvg])
@@ -507,19 +506,20 @@ class MinResidMapper(MapperBase):
                                     checked_dirs[k] = 1
                             else: #point is not in map. make it "checked"
                                 checked_dirs[k] = 1
-                           #Now we have the "possibilities" for guess coverages
-                           #and their residuals
+
+                        #Now we have the "possibilities" for guess coverages
+                        #and their residuals
                         possibilities = check_by_minresid(
                                 possibilities,this_pt,bisect=False)
                         #Try without bisection since it is much faster
                         if possibilities and self.max_bisections>0:
                             #This implies the non-bisecting attempts failed.
-                           if self.verbose > 0:
+                            if self.verbose > 0:
                                print('Unable to find solution at ' + \
                                        self.print_point(this_pt) + \
                                        ' from current information.'+ \
                                        ' Attempting bisection.')
-                           possibilities = check_by_minresid(
+                            possibilities = check_by_minresid(
                                    possibilities,
                                    this_pt,
                                    bisect=True)
@@ -527,16 +527,16 @@ class MinResidMapper(MapperBase):
                                 possibilities is not None and
                                 self.max_bisections>0
                                 ):
-                           if self.verbose > 0:
-                               print('Unable to find solution at '+ \
+                            if self.verbose > 0:
+                                print('Unable to find solution at '+ \
                                        self.print_point(this_pt)+ \
                                        ' from current information. '+\
                                        'No nearby points for bisection.')
 
                         if possibilities is None:
+                            #Set this value above the max number
                             isMapped[i,j] = int(
                                     '1'+str(np.binary_repr(maxNum)),2)
-                            #Set this value above the max number
 
                         if isMapped[i,j] < maxNum:
                             #could not find solution. Add number to indicate
@@ -550,7 +550,7 @@ class MinResidMapper(MapperBase):
 
             return isMapped
 
-    #Perform minresid iterations
+        #Perform minresid iterations
         if not self._coverage_map:
             self._coverage_map = []
         norm_new = np.linalg.norm(isMapped)

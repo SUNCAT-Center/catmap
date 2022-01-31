@@ -128,26 +128,13 @@ class SteadyStateSolver(MeanFieldSolver):
         :param c0: Initial numbers 
         :type c0: list
         """
-
         if c0 is None:
             raise ValueError("No initial numbers supplied. Mapper must supply initial guess")
         self._rxn_parameters = rxn_parameters
 
-        # Add the slab boltzmann number over here in case the length 
-        # of c0 is less than the the len(adsorbate_names) + 1
-        if len(c0) == len(self.adsorbate_names):
-            initial_run = True 
-            c0.append(self._mpfloat('1.'))
-        elif len(c0) == len(self.adsorbate_names) + 1:
-            initial_run = False
-        elif len(c0) > len(self.adsorbate_names) + 1:
-            initial_run = False
-            c0 = c0[:len(self.adsorbate_names) + 1]
-        else:
-            raise ValueError("Issue with the length of c0.")
-
-        # Populate coverages otherwise return an error
-        coverages = None
+        # The length of the initial numbers guess must include the
+        # adsorbates as well as the slab value of exp(0).
+        assert len(c0) == len(self.adsorbate_names) + 1
 
         # The steady state function is a function of the coverages
         # f(theta); Objective function which is a function of the coverage
@@ -165,17 +152,11 @@ class SteadyStateSolver(MeanFieldSolver):
         # and is returning the coverages instead of the numbers
         # The simple condition to check this is to see if the norm is lower
         # than the tolerance
-        if norm(f(c0)) <= self.tolerance:
-            self._coverage = c0
+        # print(f(self.change_x_to_theta(c0)))
+        # kill_in_steady_state
+        if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
+            self._coverage = self.change_x_to_theta(c0)[:-1]
             return c0
-
-        # Write out a csv file with the initial guess
-        # the format of the csv file is a list of self._descriptors
-        # and the initial guess c0 as the output
-        if initial_run:
-            with open('initial_guess.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + self.change_x_to_theta(c0))
 
         # Populate the kwargs 
         solver_kwargs = dict(
@@ -233,7 +214,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
                 # We dont need the coverage of the free sites to be stored
                 coverages = coverages[:-1]
-                numbers = x[:-1]
+                numbers = x
                 break
             # Break if the maximum number of iterations is reached
             if i >= maxiter:
@@ -388,7 +369,6 @@ class SteadyStateSolver(MeanFieldSolver):
         if refresh_rate_constants:
             self.get_rate_constants(rxn_parameters,[0]*len(self.adsorbate_names))
         if self.use_numbers_solver:
-            print('Using the numbers solver')
             return self.get_steady_state_numbers(rxn_parameters, self.ideal_steady_state_function,
                     self.ideal_steady_state_jacobian, c0)
         else:
@@ -411,8 +391,12 @@ class SteadyStateSolver(MeanFieldSolver):
                 pass
             else:
                 raise ValueError('System does not have enough parameters for interactions')
-        cvgs =  self.get_steady_state_coverage(rxn_parameters,self.interacting_steady_state_function,
-            self.interacting_steady_state_jacobian,c0,findrootArgs)
+        if self.use_numbers_solver:
+            cvgs =  self.get_steady_state_numbers(rxn_parameters,self.interacting_steady_state_function,
+                self.interacting_steady_state_jacobian,c0)
+        else:
+            cvgs =  self.get_steady_state_coverage(rxn_parameters,self.interacting_steady_state_function,
+                self.interacting_steady_state_jacobian,c0,findrootArgs)
         return cvgs
 
     def bisect_interaction_strength(self,rxn_parameters,valid_strength,valid_coverages,target_strength,max_bisections,findrootArgs={}):
@@ -456,7 +440,14 @@ class SteadyStateSolver(MeanFieldSolver):
         if not self.atomic_reservoir_dict:
             #check all possibilities, return min residual
             min_resid = 1e99
-            boltz_cvgs = [[0]*len(self.adsorbate_names)] #include empty coverage as possible guess
+            if self.use_numbers_solver:
+                # include empty coverage as possible guess
+                # The 1.0 added at the end is to account for the slab
+                boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names) + [self._mpfloat('1.0')]] 
+            else:
+                #include empty coverage as possible guess
+                boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names)] 
+
             for ref_dict in self.atomic_reservoir_list:
                 self.atomic_reservoir_dict = ref_dict
                 if self.use_numbers_solver:
@@ -481,7 +472,7 @@ class SteadyStateSolver(MeanFieldSolver):
             :TODO:
         """
 
-        if validate_coverages == True:
+        if validate_coverages == True and not self.use_numbers_solver:
             coverages = self.constrain_coverages(coverages)
         self._coverage = coverages
         if refresh_rate_constants == True:

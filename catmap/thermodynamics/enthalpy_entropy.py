@@ -15,6 +15,7 @@ HarmonicThermo = catmap.HarmonicThermo
 HinderedThermo = catmap.HinderedThermo
 molecule = catmap.molecule
 np = catmap.np
+import csv
 # copy = catmap.copy
 
 class ThermoCorrections(ReactionModelWrapper):
@@ -1012,6 +1013,17 @@ class ThermoCorrections(ReactionModelWrapper):
                     if self.species_definitions[site]['type'] not in ['gas']:
                         numbers[i_overall] = self._math.exp(-free_energies[i_rel]/(
                             self._kB*self.temperature*2))
+        # At the end, add 1 to the numbers list because the free site has 
+        # a coverage of exp(0)
+        numbers.append(self._mpfloat('1.0'))
+
+        # Write out a csv file with the initial guess
+        # the format of the csv file is a list of self._descriptors
+        # and the initial guess c0 as the output
+        with open('initial_guess.csv', 'a') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(self._descriptors + self.solver.change_x_to_theta(numbers))
+
         return numbers
 
     def static_pressure(self):

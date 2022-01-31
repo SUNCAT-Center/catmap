@@ -47,8 +47,13 @@ class MeanFieldSolver(SolverBase):
             raise ValueError('Input coverages to use as an initial guess '+\
                     'for the solver.')
         if verify_coverages == True:
-            coverages = self.get_coverage(
-                    rxn_parameters,coverages,**coverage_kwargs)
+            if self.use_numbers_solver:
+                numbers = self._numbers
+                coverages = self.get_coverage(
+                        rxn_parameters,numbers,**coverage_kwargs)
+            else:
+                coverages = self.get_coverage(
+                        rxn_parameters,coverages,**coverage_kwargs)
         self._coverage = coverages
         rate_constants = self.get_rate_constants(rxn_parameters,coverages)
         rates =  self.get_rxn_rates(coverages,rate_constants)
@@ -324,9 +329,9 @@ class MeanFieldSolver(SolverBase):
             # Also get the site in which the adsorbate is present
             d_site = self.species_definitions[d_wrt]['site']
 
-            if (d_idx in ads_idxs #expression is a function of d_wrt
-                and d_site not in sites #empty site not there -> easy
-                and d_wrt not in sites): #not differentiation wrt site
+            if (d_idx in ads_idxs # expression is a function of d_wrt
+                and d_site not in sites # empty site not there
+                and d_wrt not in sites): # not differentiation wrt site
                 # d_wrt is an adsorbate but there is no site term
                 # in the rate equation. 
                 multiplier = ads_idxs.count(d_idx) #get order
@@ -334,9 +339,9 @@ class MeanFieldSolver(SolverBase):
                 if multiplier != 1:
                     rate_string = str(multiplier)+'*'+rate_string
             
-            elif (len(ads_idxs)>0 #adsorbate is present
-                  and d_site not in sites #empty site not there
-                  and d_wrt in self.site_names): #differentiation wrt site
+            elif (len(ads_idxs)>0 # adsorbate is present
+                  and d_site not in sites # empty site not there
+                  and d_wrt in self.site_names): # differentiation wrt site
                   # d_wrt is an empty site and it is differentiating
                   # an adsorbate.
                   # Need to use chain rule here to get the derivative 
@@ -363,8 +368,8 @@ class MeanFieldSolver(SolverBase):
                 rate_string += '*-1*('+temp_rate_string + ')'
                 ads_idxs = [] #no more adsorbates
 
-            elif (d_site in sites #empty site appears,
-                  and d_idx not in ads_idxs): #but not the adsorbate
+            elif (d_site in sites # empty site appears,
+                  and d_idx not in ads_idxs): # but not the adsorbate
                 # There is an empty site in the rate equation but
                 # there is no adsorbate term in the rate equation
                 # and the numbers solver is used
@@ -637,10 +642,13 @@ class MeanFieldSolver(SolverBase):
                         fRate_string = self.rate_equation_term(rxn[0], 'kf['+str(k)+']', ads_j, adsorbate_names)
                         rRate_string = self.rate_equation_term(rxn[-1], 'kr['+str(k)+']', ads_j, adsorbate_names)
                         if adsorbate_interactions == True:
-                            dfRate_string = self.rate_equation_term(rxn[0],'(kfkBT['+str(k)+'])*dEf['+str(k)+']['+str(j)+']')
-                            drRate_string = self.rate_equation_term(rxn[-1],'(krkBT['+str(k)+'])*dEr['+str(k)+']['+str(j)+']')
-                            fRate_string += ' + ' + dfRate_string
-                            rRate_string += ' - ' + drRate_string
+                            if ads_i not in self.site_names and ads_j not in self.site_names:
+                                # If one of the "adsorbates" is an empty site then 
+                                # there should be no inclusion of adsorbate-adsorbate interaction
+                                dfRate_string = self.rate_equation_term(rxn[0],'(kfkBT['+str(k)+'])*dEf['+str(k)+']['+str(j)+']')
+                                drRate_string = self.rate_equation_term(rxn[-1],'(krkBT['+str(k)+'])*dEr['+str(k)+']['+str(j)+']')
+                                fRate_string += ' + ' + dfRate_string
+                                rRate_string += ' - ' + drRate_string
                         if fRate_string != '0' and rRate_string != '0':
                             dr_dx = '('+fRate_string + ' - ' + rRate_string+')'
                         elif fRate_string != '0':

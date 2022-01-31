@@ -44,8 +44,16 @@ class SolverBase(ReactionModelWrapper):
         if True in [v in self.mapper._solver_output 
                 for v in self.output_variables]:
             cvgs = self._coverage
-            self._coverage = list(self.solver.get_coverage( 
-                    rxn_parameters,c0=cvgs)) #verify coverage
+            # If the numbers solver is being used
+            # make sure to pass along the numbers and not 
+            # the coverage as an initial guess
+            if self.use_numbers_solver:
+                numbers = self._numbers
+                self._coverage = list(self.solver.get_coverage( 
+                        rxn_parameters,c0=numbers)) #verify coverage
+            else:
+                self._coverage = list(self.solver.get_coverage( 
+                        rxn_parameters,c0=cvgs)) #verify coverage
 
             self._rate = list(self.solver.get_rate(rxn_parameters,
                     coverages=self._coverage))
@@ -424,7 +432,6 @@ class NewtonRootNumbers:
 
         while not cancel:
             # Begin the outer loop iteration
-
             fx = self._matrix(f(theta))
 
             if not self.fix_x_star:

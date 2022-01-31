@@ -74,6 +74,9 @@ def rate_constants(rxn_parameters,theta,gas_energies,site_energies,T,F,mpf,matri
     ${n_adsorbates}
     ${n_transition_states}
     n_tot = n_adsorbates+n_transition_states
+    # Account for the numbers solver where the extra coverage 
+    # of the clean slab might be needed
+    theta = theta[:n_adsorbates]
     if len(theta) == n_adsorbates:
         theta = list(theta) + [0]*n_transition_states #put transition-state coverages to 0
     elif len(theta) != n_adsorbates+n_transition_states:
@@ -150,12 +153,15 @@ def interacting_mean_field_steady_state(rxn_parameters,theta,p,gas_energies,site
             mpf,matrix,mpexp,mpsqrt,include_derivatives=False)
    
     r = [0]*len(kf)
-    dtheta_dt = [0]*len(theta)
+    dtheta_dt = [0]*${theta_length}
     
     ${steady_state_expressions}
  
     r = matrix(r)
     dtheta_dt = matrix(dtheta_dt)
+
+    if dtheta_dt.rows == len(theta)+1:
+        dtheta_dt = dtheta_dt[:-1] 
 
     return dtheta_dt
 """
@@ -190,7 +196,7 @@ def interacting_mean_field_jacobian(rxn_parameters,theta,p,gas_energies,site_ene
     kBT = kB*T
 
 
-    J = [[0 for i in range(n_adsorbates)] for j in range(n_adsorbates)]
+    J = [[0 for i in range(${theta_length})] for j in range(${theta_length})]
 
     ${rate_constants_with_derivatives}
 
