@@ -137,7 +137,7 @@ def elementary_rates(rate_constants,theta,p,mpf,matrix):
     kr = rate_constants[len(rate_constants)//2:]
 
     r = matrix([0]*len(kf))
-    dtheta_dt = matrix([0]*len(theta))
+    dtheta_dt = matrix([0]*${theta_length})
     
     ${steady_state_expressions}
     

@@ -154,7 +154,12 @@ class SteadyStateSolver(MeanFieldSolver):
         # than the tolerance
         if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
             self._coverage = self.change_x_to_theta(c0)[:-1]
-            return c0
+            self._numbers = c0
+            # Store the coverages for debugging
+            with open('solution.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + self.change_x_to_theta(c0))
+            return self.change_x_to_theta(c0)[:-1] 
 
         # Populate the kwargs 
         solver_kwargs = dict(

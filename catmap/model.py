@@ -284,6 +284,8 @@ class ReactionModel:
                         # Line is too long for logfile -> put into pickle
                         self._pickle_attrs.append(attr)
             pickled_data = {}
+            if self.use_numbers_solver:
+                self._pickle_attrs.append('numbers_map')
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self, attr)
             if sys.version_info[0]<3:
@@ -1159,7 +1161,6 @@ class ReactionModel:
                     not callable(getattr(self,attr)) and
                     attr not in self._classes and
                     not inspect.ismodule(getattr(self,attr))):
-                print(attr)
                 val = repr(getattr(self,attr))
                 new_line = ''
                 if attr not in self._pickle_attrs:

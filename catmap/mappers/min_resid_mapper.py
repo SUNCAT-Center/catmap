@@ -105,9 +105,18 @@ class MinResidMapper(MapperBase):
 
         """
         #Check to see if point has already been solved
-        current= self.retrieve_data(self._coverage_map,
-                descriptors,
-                self.descriptor_decimal_precision)
+        if self.use_numbers_solver:
+            # If it has already been solved, it must have 
+            # a numbers_map
+            current = self.retrieve_data(self._numbers_map,
+                                         descriptors,
+                                         self.descriptor_decimal_precision)
+            # set as the _numbers attribute
+            self._numbers = current
+        else:
+            current= self.retrieve_data(self._coverage_map,
+                    descriptors,
+                    self.descriptor_decimal_precision)
         if current:
             return current
         if self.force_recompilation:
@@ -262,11 +271,9 @@ class MinResidMapper(MapperBase):
             quantity1 = current_quantity
 
             if self.use_numbers_solver:
-                self._coverage_map.append([ solved_descriptors,
-                                            self.solver.change_x_to_theta(current_quantity)[:-1]
-                                         ])
+                current_coverage = self.solver.change_x_to_theta(current_quantity)
+                self._coverage_map.append([ solved_descriptors, current_coverage[:-1]])
                 self._numbers_map.append([ solved_descriptors, self._numbers])
-
             else:
                 self._coverage_map.append([solved_descriptors,current_quantity])
 
@@ -311,28 +318,50 @@ class MinResidMapper(MapperBase):
         #1 in every direction.
 
         if self.use_numbers_solver and self.coverage_map is not None:
-            # The numbers solver does not currently have implemented
-            # support for reading in solutions from previous runs.
-            raise NotImplementedError('Delete .pickle and .log file for using numbers solver')
-
-        if self.coverage_map is None:
-            initial_guess_coverage_map = None
+            # It is a numbers solver run and if the coverage map and numbers
+            # map has been stored from the previous run then use those
+            if self.numbers_map is None:
+                # The numbers solver does not currently have implemented
+                # support for reading in solutions from previous runs.
+                raise NotImplementedError('Delete .pickle and .log file for using numbers solver')
+            # We should have all the initial guesses needed to 
+            # perform the CatMAP calculation now 
+            self._numbers_map = []
             self._coverage_map = []
-        else:
+            initial_guess_coverage_map = [c for c in self.coverage_map]
+            initial_guess_numbers_map = [n for n in self.numbers_map]
+
+        elif self.use_numbers_solver and self.coverage_map is None:
+            # The numbers solver is being used but it is not a repeat run
+            initial_guess_coverage_map = None
+            self._numbers_map = []
+            self._coverage_map = []
+
+        elif not self.use_numbers_solver and self.coverage_map is not None:
+            # Not using the numbers solver and it is a repeat run
             initial_guess_coverage_map = [c for c in self.coverage_map]
             self._coverage_map = []
         
-        if self.use_numbers_solver:
-            # In case of the numbers solver, we also need to store the
-            # intermediate numbers result, for when we need to bisect
-            # or pass on the coverage of an adjacent point.
-            self._numbers_map = []
-
+        elif not self.use_numbers_solver and self.coverage_map is None:
+            # Neither a numbers solver nor a repeat run
+            initial_guess_coverage_map = None
+            self._coverage_map = []
+        else:
+            raise ValueError('Invalid combination of options, \
+                delete .pickle and .log file and try again')
+        
         #Clause for obtaining initial coverages from an initial guess map
         if initial_guess_coverage_map:
+
             initial_guess_coverage_map = sorted(initial_guess_coverage_map)
             initial_guess_coverage_map.reverse()
-            for point,guess_coverage in initial_guess_coverage_map:
+
+            if self.use_numbers_solver:
+                initial_guess_quantities = initial_guess_numbers_map
+            else:
+                initial_guess_quantities = initial_guess_coverage_map
+
+            for point,guess_coverage in initial_guess_quantities:
                 #Re-organize the values of guess coverages to match the
                 #adsorbates for this system (if they came from the results
                 #of another simulation)
@@ -355,15 +384,21 @@ class MinResidMapper(MapperBase):
                         new_guess_coverage[n] = cvg
                     guess_coverage = new_guess_coverage
                 elif len(guess_coverage) > len(self.adsorbate_names):
-                    if self.verbose:
-                        print('Length of guess coverage vector is longer than \
-                                the number of adsorbates.  \
-                                Discarding extra coverages.')
-                    new_guess_coverage = mp.matrix(1,len(self.adsorbate_names))
-                    for n,cvg in enumerate(guess_coverage[0:len(
-                        new_guess_coverage)]):
-                        new_guess_coverage[n] = cvg
-                    guess_coverage = new_guess_coverage
+                    if self.use_numbers_solver and len(guess_coverage) == len(self.adsorbate_names)+1:
+                        # No issue here as the slab x value is also saved.
+                        cut_coverage = False
+                    else:
+                        cut_coverage = True
+                    if cut_coverage:
+                        if self.verbose:
+                            print('Length of guess coverage vector is longer than \
+                                    the number of adsorbates.  \
+                                    Discarding extra coverages.')
+                        new_guess_coverage = mp.matrix(1,len(self.adsorbate_names))
+                        for n,cvg in enumerate(guess_coverage[0:len(
+                            new_guess_coverage)]):
+                            new_guess_coverage[n] = cvg
+                        guess_coverage = new_guess_coverage
 
                 #If the point is of interest (in the d1/d2 vals) then use the
                 #coverages from the initial guess map to try to find
@@ -378,11 +413,18 @@ class MinResidMapper(MapperBase):
                     j = [np.round(d2V,n)
                             for d2V in d2Vals].index(np.round(point[1],n))
                     try:
-                        self._coverage = guess_coverage
-                        self.get_point_output(
-                                point,guess_coverage)
-                        point_coverages = self._coverage
-                        self._coverage_map.append([point,point_coverages])
+                        if not self.use_numbers_solver:
+                            self._coverage = guess_coverage
+                            self.get_point_output(point,guess_coverage)
+                            point_coverages = self._coverage
+                            self._coverage_map.append([point,point_coverages])
+                        elif self.use_numbers_solver:
+                            self.get_point_output(point,guess_coverage)
+                            self._numbers_map.append([point, self._numbers])
+                            point_coverage = self.solver.change_x_to_theta(guess_coverage)[:-1]
+                            self._coverage_map.append([point, self._coverage])
+                        else:
+                            raise ValueError('Unknown solver type')
                         isMapped[i,j] = int('1'+str(np.binary_repr(maxNum)), 2)
                         #Set this value above the max number
                         self.log('initial_success')
@@ -610,7 +652,7 @@ class MinResidMapper(MapperBase):
         norm_new = np.linalg.norm(isMapped)
         norm_old = -1
         minresiditer = 0
-        while norm_new > norm_old: #Iterate thorough until  no new information.
+        while norm_new > norm_old: #Iterate thorough until no new information.
             m,n = isMapped.shape
             n_unmapped = 0 #Count how many points remain unmapped
             for i in range(0,m):
@@ -636,11 +678,29 @@ class MinResidMapper(MapperBase):
                     n_iter = minresiditer,
                     pt = 'mapper')
 
+        # Remove duplicates and store the numbers map
+        # for the numbers solver
         nodups = []
+        if self.use_numbers_solver:
+            nodups_numbers = []
         pts = []
         for pt,cvgs in self._coverage_map:
             if pt not in pts:
                 pts.append(pt)
                 nodups.append([pt,cvgs])
+                if self.use_numbers_solver:
+                    nodups_numbers.append(
+                        [ pt,
+                        self.retrieve_data(
+                            self._numbers_map,
+                            pt,
+                            self.descriptor_decimal_precision ) 
+                            ])
         self._coverage_map = nodups #remove duplicate points
-        return self._coverage_map
+        if self.use_numbers_solver:
+            # Return both the coverage map and the
+            # numbers map if the numbers solver is used
+            self.numbers_map = nodups_numbers
+            return self._coverage_map, self.numbers_map
+        else:
+            return self._coverage_map
