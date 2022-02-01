@@ -133,55 +133,76 @@ class MinResidMapper(MapperBase):
         return cvgs
 
     def bisect_descriptor_line(self, new_descriptors, old_descriptors,
-            initial_guess_coverages):
-        """Find coverages at point new_descriptors given that coverages are
-        initial_guess_coverages at old_descriptors by incrementally halving
-        the distance between points upon failure to converge.
+            initial_guess_quantity):
+        """Find a quantity, either coverages or x at point new_descriptors
+        given that coverages or x are initial_guess_quantity at old_descriptors 
+        by incrementally halving the distance between points upon failure 
+        to converge.
 
             :param new_descriptors: list of descriptors that fails
             :type new_descriptors: [float]
             :param old_descriptors: list of descriptors that is known to work
             :type old_descriptors: [float]
-            :param inititial_guess_coverages: List of best of guess for coverages
-            :type initial_guess_coverages: [float]
+            :param inititial_guess_quantity: List of best of guess for coverages
+            :type initial_guess_quantity: [float]
 
         """
 
         def extrapolate_coverages(
-                descriptors0, coverages0, descriptors1, coverages1, descriptors2):
+                descriptors0, quantities0, descriptors1, quantities1, descriptors2):
             """Helper function to linearly extrapolate guess from two points."""
-            dx = mp.matrix(coverages1) - mp.matrix(coverages0)
+            dx = mp.matrix(quantities1) - mp.matrix(quantities0)
             dY = mp.matrix(descriptors1) - mp.matrix(descriptors0)
             dy = mp.sqrt(mp.fsum([mp.power(y,2) for y in dY]))
             dY2 = mp.matrix(descriptors2) - mp.matrix(descriptors0)
             dy2 = mp.sqrt(mp.fsum([mp.power(y,2) for y in dY2]))
             m = mp.matrix([mp.fdiv(dxi,dy) for dxi in dx])
-            coverages2 = mp.matrix(coverages0) + m*dy2
+            coverages2 = mp.matrix(quantities0) + m*dy2
             return coverages2
 
-        def get_next_valid_coverages(
-                new_descriptors, old_descriptors, old_coverages):
+        def get_next_valid_coverages(new_descriptors, old_descriptors, old_quantity):
             """
             Helper function to get the closest point where the old guesses converge.
             """
+
+            # Keep track of quantities
             current_descriptors = new_descriptors
+            quantity = old_quantity
+
+            if self.use_numbers_solver:
+                coverages = self.solver.change_x_to_theta(quantity)
+            else:
+                coverages = quantity
+
+            # Keep track of iterations
             VCiter = 0
             VCconverged = False
-            coverages = old_coverages
+
             while VCconverged == False and VCiter < self.max_bisections:
                 VCiter += 1
+
                 try:
-                    self.get_point_output(
-                            current_descriptors, coverages)
+                    self.get_point_output(current_descriptors, quantity)
                     coverages = self._coverage
+
+                    if self.use_numbers_solver:
+                        numbers = self._numbers
+
+                    # If we have gotten so far then we have a valid point
                     VCconverged = True
+
                     self.log('bisection_success',
                             old_pt = self.print_point(old_descriptors),
                             new_pt = self.print_point(current_descriptors),
                             n_iter = VCiter)
-                    return current_descriptors, coverages
+
+                    if self.use_numbers_solver:
+                        return current_descriptors, numbers
+                    else:
+                        return current_descriptors, coverages
 
                 except ValueError:
+                    # The bisection did not work
                     resid = float(self.solver.get_residual(coverages))
                     self.log('bisection_fail',
                             old_pt = self.print_point(old_descriptors),
@@ -190,9 +211,11 @@ class MinResidMapper(MapperBase):
                             resid = resid)
 
                 if VCconverged == False:
+                    # Bisect again
                     current_descriptors = [(float(d1)+float(d2))/float(2.0)
                             for d1,d2
                             in zip(old_descriptors,current_descriptors)]
+
             if VCconverged == False:
                 raise ValueError('Could not find a valid solution at ' + \
                         self.print_point(current_descriptors) + \
@@ -200,42 +223,68 @@ class MinResidMapper(MapperBase):
                         self.print_point(old_descriptors) + \
                         ' after '+str(self.max_bisections)+' bisections.' + \
                         ' (resid=' + str(float(resid)) +'))')
-            return current_descriptors, coverages
 
-        #Iterate to next point via bisections
+            if self.use_numbers_solver:
+                return current_descriptors, numbers
+            else:
+                return current_descriptors, coverages
+
+        # Iterate to next point via bisections
         PCiter =0
         solved_descriptors = old_descriptors
         current_descriptors = new_descriptors
-        current_cvgs = initial_guess_coverages
+        current_quantity = initial_guess_quantity
+
+        # Store the coverages
         coverage_map = []
+
+        # Carry out the bisection
+        # quantity can refer to either coverages or x
         PCconverged = False
-        descriptors0 = None #Variables for extrapolation...
+        descriptors0 = None 
         descriptors1 = None
-        coverages0 = None
-        coverages1 = None
+        quantity0 = None
+        quantity1 = None
+
+        # Begin the bisection loop
         while PCconverged == False and PCiter <= 2**self.max_bisections:
             PCiter+=1
             descriptors0 = solved_descriptors
-            coverages0 = current_cvgs
-            solved_descriptors,current_cvgs = get_next_valid_coverages(
-                    current_descriptors,solved_descriptors,current_cvgs)
+            quantity0 = current_quantity
+
+            # Current quantity is a coverage or x value depending on solver
+            solved_descriptors, current_quantity = get_next_valid_coverages(
+                                                    current_descriptors,
+                                                    solved_descriptors,
+                                                    current_quantity)
+
             descriptors1 = solved_descriptors
-            coverages1 = current_cvgs
-            self._coverage_map.append([solved_descriptors,current_cvgs])
+            quantity1 = current_quantity
+
+            if self.use_numbers_solver:
+                self._coverage_map.append([ solved_descriptors,
+                                            self.solver.change_x_to_theta(current_quantity)[:-1]
+                                         ])
+                self._numbers_map.append([ solved_descriptors, self._numbers])
+
+            else:
+                self._coverage_map.append([solved_descriptors,current_quantity])
+
             if solved_descriptors == new_descriptors:
                 PCconverged = True
-                return current_cvgs
+                return current_quantity
+
             elif self.extrapolate_coverages == True:
-                current_cvgs = extrapolate_coverages(
+                current_quantity = extrapolate_coverages(
                         descriptors0,
-                        coverages0,
+                        quantity0,
                         descriptors1,
-                        coverages1,
+                        quantity1,
                         current_descriptors)
                 #extrapolate coverages as initial guess
 
         if PCconverged == True:
-            return current_cvgs
+            return current_quantity
         else:
             raise ValueError(str(self.max_bisections) + ' bisections were not '+\
                     'sufficient to move from ' + \
@@ -384,16 +433,21 @@ class MinResidMapper(MapperBase):
                                       sol_pt,self.descriptor_decimal_precision))
 
                         else:
-                            if self.use_numbers_solver:
-                                # Bisection not implemented for the numbers
-                                raise NotImplementedError('Bisection not implemented for the numbers solver')
+                            # In the case of the numbers solver we will bisect the value of x
+                            # to generate a new initial guess.
+                            point_coverages = self.bisect_descriptor_line(this_pt, sol_pt, c)
 
-                            point_coverages = self.bisect_descriptor_line(this_pt,sol_pt,c)
                             if point_coverages:
-                                self._coverage_map.append([this_pt,point_coverages])
+                                if self.use_numbers_solver:
+                                    point_numbers = point_coverages
+                                    point_coverages = self.solver.change_x_to_theta(point_coverages)
+                                    point_coverages = point_coverages[:-1]
+                                    self._numbers_map.append([this_pt, point_numbers])
 
-                            self.log('minresid_success',n_iter=i_poss,
-                                    old_pt=sol_pt)
+                                self._coverage_map.append([this_pt, point_coverages])
+
+                            self.log('minresid_success', n_iter=i_poss, old_pt=sol_pt)
+
                         return None
 
                     except ValueError as strerror:
