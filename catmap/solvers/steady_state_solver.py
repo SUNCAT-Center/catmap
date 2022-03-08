@@ -86,14 +86,45 @@ class SteadyStateSolver(MeanFieldSolver):
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
 
-    def change_x_to_theta(self, x_including_surface):
+    def change_x_to_theta(self, x_including_surface, return_sum_sq_numbers=False):
         """ Convert numbers to coverages, which is not reversible.
             :param x_including_surface: Sequence of numbers.
             :type x_including_surface: [float]
         """
-        sum_sq_numbers = self._math.fsum([ self._math.power(n, 2) for n in x_including_surface ])
-        theta = [ self._math.power(n, 2) / sum_sq_numbers for n in x_including_surface ]
-        return theta
+        # Each site has its own coverage which will
+        # Split the adsorbate names into the different sites
+        # The subtraction of 1 is to remove the 'g' site
+        num_sites = len(self.site_names) - 1
+
+        # Group together the x for each site
+        site_list = [ [] for i in range(num_sites) ]
+        site_names = list(self.site_names)
+        site_names.remove('g')
+        species_list = list(self.adsorbate_names) + site_names
+        species_index = []
+
+        # Iterate over all the species
+        for i, ads in enumerate(species_list):
+            site = self.species_definitions[ads]['site']
+            site_index = site_names.index(site)
+            site_list[site_index].append(x_including_surface[i])
+            species_index.append(site_index)
+
+        # Sum over squares for each site
+        sum_sq_numbers = [ [] for i in range(num_sites) ]
+        for i, site_x in enumerate(site_list):
+            sum_sq_numbers[i] = self._math.fsum([ self._math.power(n,2) for n in site_x ])
+        
+        # Get the coverages by dividing by the sum of squares
+        theta = []
+        for i, x in enumerate(x_including_surface):
+            coverage = self._math.power(x,2) / sum_sq_numbers[species_index[i]]
+            theta.append(coverage)
+
+        if return_sum_sq_numbers:
+            return theta, sum_sq_numbers, species_index
+        else: 
+            return theta
 
     def get_conversion_matrix(self, x_including_surface):
         """Construct a matrix M that has all the dtheta/dx terms.
@@ -101,18 +132,29 @@ class SteadyStateSolver(MeanFieldSolver):
             :type x_including_surface: [float]
         """
         # Get theta from x values
-        coverages = self.change_x_to_theta(x_including_surface)
-        # Get the dtheta/dx terms
-        sum_sq_numbers = self._math.fsum([self._math.power(n, 2) for n in x_including_surface])
+        coverages, sum_sq_numbers, species_index = self.change_x_to_theta(x_including_surface, 
+                                                                          return_sum_sq_numbers=True)
+
         # Populate the diagonal of M with the dtheta/dx terms
-        dtheta_dx_matrix = self._math.diag(
-                    [  self._mpfloat(2.) * x_including_surface[i] / sum_sq_numbers for i in range(len(coverages)) ] )
-        # Add extra term for the off-diagonal elements 
+        dtheta_dx_matrix = self._math.matrix(len(coverages), len(coverages))
+
         for i in range(dtheta_dx_matrix.rows):
             for k in range(dtheta_dx_matrix.cols):
-                dtheta_dx_matrix[i, k] -= self._math.power(x_including_surface[i], 2) \
-                                         / self._math.power(sum_sq_numbers, 2) * \
-                                            self._mpfloat('2.') * x_including_surface[k]
+                if i == k:
+                    # This is a diagonal element and so has the 
+                    # additional delta_{ik} term
+                    # In order to use the right denominator, get the
+                    # surface index
+                    dtheta_dx_matrix[i,k] += self._mpfloat('2.0') * x_including_surface[i] \
+                                           / sum_sq_numbers[species_index[i]]
+                # This extra term is to to account for the influence of
+                # all other x's on a particular theta value, this 
+                # term is present only if the species index of both
+                # the x's i and k are the same
+                if species_index[i] == species_index[k]:
+                    dtheta_dx_matrix[i, k] -= self._math.power(x_including_surface[i], 2) \
+                                            / self._math.power(sum_sq_numbers[species_index[k]], 2) * \
+                                                self._mpfloat('2.') * x_including_surface[k]
         # The dtheta/dx matrix has all the terms for all the species + empty sites
         return dtheta_dx_matrix
 
@@ -132,9 +174,13 @@ class SteadyStateSolver(MeanFieldSolver):
             raise ValueError("No initial numbers supplied. Mapper must supply initial guess")
         self._rxn_parameters = rxn_parameters
 
+        # Get the number of empty sites, remove 1 because we do 
+        # not want to include 'g' in the sites
+        esites = len(self.site_names) - 1
+
         # The length of the initial numbers guess must include the
         # adsorbates as well as the slab value of exp(0).
-        assert len(c0) == len(self.adsorbate_names) + 1
+        assert len(c0) == len(self.adsorbate_names) + esites
 
         # The steady state function is a function of the coverages
         # f(theta); Objective function which is a function of the coverage
@@ -153,13 +199,13 @@ class SteadyStateSolver(MeanFieldSolver):
         # The simple condition to check this is to see if the norm is lower
         # than the tolerance
         if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
-            self._coverage = self.change_x_to_theta(c0)[:-1]
+            self._coverage = self.change_x_to_theta(c0)#[:-esites]
             self._numbers = c0
             # Store the coverages for debugging
             with open('solution.csv', 'a') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(self._descriptors + self.change_x_to_theta(c0))
-            return self.change_x_to_theta(c0)[:-1] 
+            return self.change_x_to_theta(c0)#[:-esites] 
 
         # Populate the kwargs 
         solver_kwargs = dict(
@@ -174,6 +220,8 @@ class SteadyStateSolver(MeanFieldSolver):
         solver_kwargs['conversion_function'] = self.change_x_to_theta
         solver_kwargs['dtheta_dx_function'] = self.get_conversion_matrix
         solver_kwargs['fix_x_star'] = self.fix_x_star
+        solver_kwargs['esites'] = esites
+        solver_kwargs['max_damping'] = self.max_damping_iterations 
 
         # Writes inner loop details to separate file
         solver_kwargs['verbose'] = 2
@@ -183,7 +231,7 @@ class SteadyStateSolver(MeanFieldSolver):
 
         # Run the solver; iterations is a generator
         iterations = solver(f, c0, self._math, self._matrix, self._mpfloat,
-                            self._math.lu_solve, **solver_kwargs)
+                            self._math.qr_solve, **solver_kwargs)
 
         # coverages will be set to the coverages when the solver
         # has converged
@@ -216,7 +264,7 @@ class SteadyStateSolver(MeanFieldSolver):
                     writer.writerow(self._descriptors + coverages)
 
                 # We dont need the coverage of the free sites to be stored
-                coverages = coverages[:-1]
+                # coverages = coverages[:-esites]
                 numbers = x
                 break
             # Break if the maximum number of iterations is reached
@@ -440,9 +488,11 @@ class SteadyStateSolver(MeanFieldSolver):
             #check all possibilities, return min residual
             min_resid = 1e99
             if self.use_numbers_solver:
-                # include empty coverage as possible guess
-                # The 1.0 added at the end is to account for the slab
-                boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names) + [self._mpfloat('1.0')]] 
+                # no need to include empty coverage as possible guess
+                # As the Jacobian for such a guess will be singular
+                # sites = len(self.site_names) - 1 
+                # boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names) + [self._mpfloat('1.0')]*sites] 
+                boltz_cvgs = []
             else:
                 #include empty coverage as possible guess
                 boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names)] 
@@ -571,7 +621,12 @@ class SteadyStateSolver(MeanFieldSolver):
             # steady state function needs to be one more than that of the 
             # number of adsorbates.
             if self.use_numbers_solver:
-                self._function_substitutions['theta_length'] = len(self.adsorbate_names) + 1
+                # Determine the length of the surface based on the number of
+                # adsorbates and sites. Current implementation has the 'g' as a
+                # site, and that should not be included in the numbers solver.
+                # Hence the total number of theta's to solver for is 
+                # the number of adsorbate + sites -1 (to account for the 'g' site)
+                self._function_substitutions['theta_length'] = len(self.adsorbate_names) + len(self.site_names) - 1
             else:
                 self._function_substitutions['theta_length'] = len(self.adsorbate_names)
 

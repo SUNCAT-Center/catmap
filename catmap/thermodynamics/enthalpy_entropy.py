@@ -1021,7 +1021,9 @@ class ThermoCorrections(ReactionModelWrapper):
                             self._kB*self.temperature*2))
         # At the end, add 1 to the numbers list because the free site has 
         # a coverage of exp(0)
-        numbers.append(self._mpfloat('1.0'))
+        for site in self.site_names:
+            if site != 'g':
+                numbers.append(self._mpfloat('1.0'))
 
         # Write out a csv file with the initial guess
         # the format of the csv file is a list of self._descriptors

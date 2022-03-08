@@ -284,7 +284,6 @@ class NewtonRoot:
                 x1 = x0 + l*s
             yield (x0, fxnorm)
 
-
 class NewtonRootNumbers:
     """
     Hacked from MDNewton in mpmath/calculus/optimization.py in order
@@ -321,9 +320,6 @@ class NewtonRootNumbers:
 
     def __init__(self, f, x0, math, matrix, mpfloat, Axb_solver, **kwargs):
         # Store an inner log file and get what to store 
-        self.logfile = 'newton.log' 
-        logging.basicConfig(filename=self.logfile, encoding='utf-8', level=logging.DEBUG)
-        self.log = logging
         self.verbose = kwargs['verbose']
 
         # Get the information about how the math should be handled
@@ -346,7 +342,7 @@ class NewtonRootNumbers:
 
         # Convergence criteria
         self.norm = kwargs['norm']
-        self.max_damping = 10
+        self.max_damping = kwargs['max_damping']
 
         # conversion from coverages to numbers and conversion 
         # dtheta/dx matrix to get the Jacobian matrix 
@@ -358,6 +354,11 @@ class NewtonRootNumbers:
 
         # Decide if x_star is fixed or free
         self.fix_x_star = kwargs['fix_x_star']
+
+        # Decide on the number of empty sites
+        self.esites = kwargs['esites']
+        # The total coverage will be the number of empty sites * 1
+        self.total_coverage = self.esites * self._mpfloat('1.0')
 
     def J_numerical(self, theta):
         """Pass the coverages with the f to get the numerical Jacobian."""
@@ -374,6 +375,8 @@ class NewtonRootNumbers:
         numerical = self.J_numerical(theta) 
         # Compare the analytical and numerical Jacobian
         error = analytical - numerical
+        if self.fix_x_star:
+            error = error[:-self.esites,:-self.esites]
         error = error.tolist()
         # Set bounds on the max and min errors
         max_error = -1
@@ -381,13 +384,34 @@ class NewtonRootNumbers:
         for i,ei in enumerate(error):
             for j,ej in enumerate(ei):
                 if abs(ej) > 1e-10:
-                    # print('big error', ej, [i,j])
+                    print('big error', ej, [i,j])
                     pass
                 if abs(ej) > max_error:
                     max_error = abs(ej)
                     max_pos = [i,j]
         # print('max_error', max_pos, max_error)
         return analytical 
+
+    def moore_penrose_inverse(self, M):
+        """Determine the moore-penrose inverse of a matrix."""
+        # Take the SVD of M
+        U, S, V = self._math.svd_r(M)
+
+        # Take the inverse of S
+        S_inv = []
+        for i in range(len(S)):
+            if mp.fabs(S[i]) < self.precision:
+                S_inv.append(self._mpfloat('0.0'))
+            else:
+                S_inv.append(self._mpfloat('1.0') / S[i])
+
+        # S is a diagonal matrix
+        S_plus = self._math.diag(S_inv)
+
+        # Take the pseudo-inverse of M 
+        M_plus = V.T * S_plus * U.T
+
+        return M_plus
 
     def __iter__(self):
         # There are two possible routines for finding the root
@@ -405,16 +429,15 @@ class NewtonRootNumbers:
         else:
             # In case a fixed x_star is required, truncate the steady
             # state function, the jacobian in both theta and x spaces
-            f = lambda theta: self.f(theta)[:-1]
-            J = lambda theta: self.J(theta)[:-1,:-1]
-            dtheta_dx_function = lambda x: self.dtheta_dx_function(x)[:-1,:-1]
+            f = lambda theta: self.f(theta)[:-self.esites]
+            J = lambda theta: self.J(theta)[:-self.esites,:-self.esites]
+            dtheta_dx_function = lambda x: self.dtheta_dx_function(x)[:-self.esites,:-self.esites]
 
         # Define the norm
         norm = self.norm
 
         # Initial guess in x
         x0 = self._matrix(self.x0)
-        # self.log.info(f"\n Initial x0 guess: \n {x0}")
 
         # conversion function that changes x within the iteration to theta
         conversion_function = lambda x: self.conversion_function(list(x))
@@ -424,8 +447,7 @@ class NewtonRootNumbers:
         theta = self._matrix(theta)
 
         # Check to make sure that the sum of coverages is not greater than 1
-        assert mp.fabs(mp.fsum(theta) - self._mpfloat('1.0')) < self.precision, "The sum of coverages is greater than 1.0"
-        # self.log.info(f"\n Initial theta guess: \n {theta}")
+        assert mp.fabs(mp.fsum(theta) - self.total_coverage) < self.precision, "The sum of coverages is greater than 1.0"
 
         # Cancel if we have reached the right answer
         cancel = False
@@ -443,7 +465,7 @@ class NewtonRootNumbers:
                 assert fx.rows == len(theta)
             
             if self.fix_x_star:
-                assert fx.rows == len(theta) - 1
+                assert fx.rows == len(theta) - self.esites
 
             # Get the norm of the objective function
             # this number is our error
@@ -483,41 +505,31 @@ class NewtonRootNumbers:
                 assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
                 for i in range(Jx.cols):
                     assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
-                # self.log.info(f"\n Jx: \n {Jx}")
 
             if self.fix_x_star:
-                # Premultiply Jx and fxn by the transpose of J
-                # Jx = Jx.transpose() * Jx
-                # fxn = Jx.transpose() * fxn
-                # self.log.info(f"\n Jx.transpose() * Jx: \n {Jx}")
-                # self.log.info(f"\n Jx.transpose() * fxn: \n {fxn}")
                 try:
-                    s = self._Axb(Jx, fxn)# [0]
+                    s = self._Axb(Jx, fxn)[0]
                 except Exception as e:
-                    self.log.info(f"\n Jx: \n {Jx}")
-                    # self.log.info(f"\n fxn: \n {fxn}")
-                    raise ValueError("Jx and fxn are not compatible")
+                    try:
+                        Jx_plus = self.moore_penrose_inverse(M=Jx)
+                        s = Jx_plus * fxn
+                    except Exception as e:
+                        raise ValueError("Jx cannot be inverted because it is numerically singular")
+
                 # Add 0 to the s matrix such that the empty site
                 # x value for empty site is never updated
                 s = list(s)
-                s.append(self._mpfloat('0.0'))
+                for i in range(self.esites):
+                    s.append(self._mpfloat('0.0'))
                 s = self._matrix(s)
+
             else:
-                # Solve the inner problem
-                # To get s, we will use the Moore-Penrose inverse of Jx
-                # Start by doing and SVD of Jx
-                U, S, V = self._math.svd_r(Jx)
-                # Find the pseudo-inverse of S by taking the
-                # reciprocal of each non-zero diagonal element while leaving
-                # the zeros in place, then taking the transpose of that matrix
-                S_inv = []
-                for i in range(len(S)):
-                    if mp.fabs(S[i]) < self.precision:
-                        S_inv.append(self._mpfloat('0.0'))
-                    else:
-                        S_inv.append(self._mpfloat('1.0') / S[i])
-                S_plus = self._math.diag(S_inv)
-                Jx_plus = V.T * S_plus.T * U.T
+                # Since we are not fixing x_star, we are 
+                # solving an unconstrained problem, with more
+                # variables than equations, so we need to use
+                # a least-squares method, which starts with
+                # taking the Moore-Penrose inverse of Jx
+                Jx_plus = self.moore_penrose_inverse(M=Jx)
                 s = Jx_plus * fxn 
 
             # damping step size
@@ -526,15 +538,14 @@ class NewtonRootNumbers:
             damp_iter = 0
 
             while True:
-                damp_iter += 1
                 if x1.tolist() == x0.tolist():
                     if self.verbose > 1:
-                        self.log.info(msg=f"\n x1 == x0, stationary point.")
+                        print(f"x1 == x0, stationary point.")
                     cancel = True
                     break
                 if damp_iter > self.max_damping:
                     if self.verbose > 1:
-                        self.log.info(msg=f"\n Damping step size exceeded max_damping.")
+                        print(f"Damping step size exceeded max_damping.")
                     cancel = True
                     break
 
@@ -550,5 +561,6 @@ class NewtonRootNumbers:
                     break
                 l /= self._mpfloat('2.0')
                 x1 = x0 + l*s
+                damp_iter += 1
             
             yield (x0, fxnorm)

@@ -272,7 +272,12 @@ class MinResidMapper(MapperBase):
 
             if self.use_numbers_solver:
                 current_coverage = self.solver.change_x_to_theta(current_quantity)
-                self._coverage_map.append([ solved_descriptors, current_coverage[:-1]])
+                # Cutoff the empty sites to store only the 
+                # coverage of species in the coverage_map, the 
+                # subtraction by 1 is to remove 'g', which is 
+                # not included in the solver
+                # esites = len(self.site_names) - 1
+                self._coverage_map.append([ solved_descriptors, current_coverage])
                 self._numbers_map.append([ solved_descriptors, self._numbers])
             else:
                 self._coverage_map.append([solved_descriptors,current_quantity])
@@ -384,7 +389,8 @@ class MinResidMapper(MapperBase):
                         new_guess_coverage[n] = cvg
                     guess_coverage = new_guess_coverage
                 elif len(guess_coverage) > len(self.adsorbate_names):
-                    if self.use_numbers_solver and len(guess_coverage) == len(self.adsorbate_names)+1:
+                    right_size = len(self.adsorbate_names) + len(self.site_names) - 1
+                    if self.use_numbers_solver and len(guess_coverage) == right_size:
                         # No issue here as the slab x value is also saved.
                         cut_coverage = False
                     else:
@@ -394,7 +400,7 @@ class MinResidMapper(MapperBase):
                             print('Length of guess coverage vector is longer than \
                                     the number of adsorbates.  \
                                     Discarding extra coverages.')
-                        new_guess_coverage = mp.matrix(1,len(self.adsorbate_names))
+                        new_guess_coverage = mp.matrix(1,right_size)
                         for n,cvg in enumerate(guess_coverage[0:len(
                             new_guess_coverage)]):
                             new_guess_coverage[n] = cvg
@@ -421,7 +427,8 @@ class MinResidMapper(MapperBase):
                         elif self.use_numbers_solver:
                             self.get_point_output(point,guess_coverage)
                             self._numbers_map.append([point, self._numbers])
-                            point_coverage = self.solver.change_x_to_theta(guess_coverage)[:-1]
+                            # esites = len(self.site_names) - 1
+                            point_coverage = self.solver.change_x_to_theta(guess_coverage)#[:-esites]
                             self._coverage_map.append([point, self._coverage])
                         else:
                             raise ValueError('Unknown solver type')
@@ -483,7 +490,8 @@ class MinResidMapper(MapperBase):
                                 if self.use_numbers_solver:
                                     point_numbers = point_coverages
                                     point_coverages = self.solver.change_x_to_theta(point_coverages)
-                                    point_coverages = point_coverages[:-1]
+                                    # esites = len(self.site_names) - 1
+                                    # point_coverages = point_coverages[:-esites]
                                     self._numbers_map.append([this_pt, point_numbers])
 
                                 self._coverage_map.append([this_pt, point_coverages])
