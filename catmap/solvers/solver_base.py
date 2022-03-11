@@ -286,8 +286,8 @@ class NewtonRoot:
 
 class NewtonRootNumbers:
     """
-    Hacked from MDNewton in mpmath/calculus/optimization.py in order
-    to allow for constraints on the solution.
+    Hacked from MDNewton in mpmath/calculus/optimization.py to 
+    implement the numbers solver method.
 
     Find the root of a vector function numerically using Newton's method.
 
@@ -297,26 +297,7 @@ class NewtonRootNumbers:
 
     J is a function returning the Jacobian matrix for a point.
 
-    Supports overdetermined systems.
-
-    Use the 'norm' keyword to specify which norm to use. Defaults to max-norm.
-    The function to calculate the Jacobian matrix can be given using the
-    keyword 'J'. Otherwise it will be calculated numerically.
-
-    Please note that this method converges only locally. Especially for high-
-    dimensional systems it is not trivial to find a good starting point being
-    close enough to the root.
-
-    It is recommended to use a faster, low-precision solver from SciPy [1] or
-    OpenOpt [2] to get an initial guess. Afterwards you can use this method for
-    root-polishing to any precision.
-
-    [1] http://scipy.org
-
-    [2] http://openopt.org
     """
-
-    maxsteps = 10
 
     def __init__(self, f, x0, math, matrix, mpfloat, Axb_solver, **kwargs):
         # Store an inner log file and get what to store 
@@ -368,7 +349,12 @@ class NewtonRootNumbers:
     def J_confirm(self, theta):
         """The following is useful for debugging/benchmarking
         analytical derivatives, and should be commented out
-        for any production code."""
+        for any production code. This function makes sense
+        only if the value of x_star is not fixed."""
+
+        if self.fix_x_star:
+            return self.J_analytical(theta)
+        
         # Get the analytical Jacobian
         analytical = self.J_analytical(theta)
         # Get the numerical Jacobian
@@ -384,12 +370,12 @@ class NewtonRootNumbers:
         for i,ei in enumerate(error):
             for j,ej in enumerate(ei):
                 if abs(ej) > 1e-10:
-                    print('big error', ej, [i,j])
+                    print('big error in Jacobian:', ej, 'at position', [i,j])
+                    # print('analytical:', analytical[i,j], 'numerical:', numerical[i,j])
                     pass
                 if abs(ej) > max_error:
                     max_error = abs(ej)
                     max_pos = [i,j]
-        # print('max_error', max_pos, max_error)
         return analytical 
 
     def moore_penrose_inverse(self, M):
@@ -562,5 +548,8 @@ class NewtonRootNumbers:
                 l /= self._mpfloat('2.0')
                 x1 = x0 + l*s
                 damp_iter += 1
-            
-            yield (x0, fxnorm)
+
+            # Return the norm of the Jacobian as well
+            Jxnorm = norm(Jx)
+
+            yield (x0, fxnorm, Jxnorm)

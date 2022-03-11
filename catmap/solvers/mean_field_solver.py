@@ -174,7 +174,14 @@ class MeanFieldSolver(SolverBase):
         N_ads = len(all_ads)
         energies = rxn_parameters[:N_ads]
         eps_vector = rxn_parameters[N_ads:]
-        cvg = self._coverage + [0]*len(self.transition_state_names)
+        if self.use_numbers_solver:
+            # Chop the coverage by removing the number of empty sites
+            # if using the numbers solver
+            esites = len(self.site_names) - 1
+            coverage_ads = self._coverage[:-esites]
+        else:
+            coverage_ads = self._coverage
+        cvg = coverage_ads + [0]*len(self.transition_state_names)
         E_int = self.interaction_function(cvg,energies,eps_vector,self.thermodynamics.adsorbate_interactions.interaction_response_function,False,False)[1]
         return E_int
 
@@ -404,8 +411,13 @@ class MeanFieldSolver(SolverBase):
                     site_mult = sites.count(d_site)
 
                 ads_str = 'theta['+str(d_idx)+']'
-                # site_str = 's['+str(self.site_names.index(d_site))+']'
-                site_str = '*theta['+str(adsorbate_names.index(d_site))+']'
+                if self.use_numbers_solver:
+                    # Writing the steady state functions as a function
+                    # of the coverage of free sites works only if using
+                    # the numbers solver.
+                    site_str = '*theta['+str(adsorbate_names.index(d_site))+']'
+                else:
+                    site_str = 's['+str(self.site_names.index(d_site))+']'
 
                 sites = [s for s in sites if s != d_site] #remove d_site
                 #from the site list
@@ -457,8 +469,11 @@ class MeanFieldSolver(SolverBase):
             for iden in ads_idxs:
                 rate_string += '*theta['+str(iden)+']'
             for s in sites:
-                # rate_string += '*s['+str(self.site_names.index(s))+']'
-                rate_string += '*theta['+str(adsorbate_names.index(d_site))+']'
+                if self.use_numbers_solver:
+                    # Only useful when we consider sites as a free variable
+                    rate_string += '*theta['+str(adsorbate_names.index(s))+']'
+                else:
+                    rate_string += '*s['+str(self.site_names.index(s))+']'
 
             return rate_string
 

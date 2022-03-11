@@ -205,7 +205,7 @@ class SteadyStateSolver(MeanFieldSolver):
             with open('solution.csv', 'a') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(self._descriptors + self.change_x_to_theta(c0))
-            return self.change_x_to_theta(c0)#[:-esites] 
+            return self.change_x_to_theta(c0)
 
         # Populate the kwargs 
         solver_kwargs = dict(
@@ -241,11 +241,17 @@ class SteadyStateSolver(MeanFieldSolver):
         iterations.maxiter = maxiter
 
         i = 0
-        for x, error in iterations:
+        for x, error, Jxnorm in iterations:
+
+            # Store information for debugging and plotting
             print (f"{i} \t {error}", file=open(self.outer_solver_log, 'a'))
             with open('error_log.csv', 'a') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ i ]  + [ error ])
+                writer.writerow(self._descriptors + [ i, error])
+            with open('jacobian_norm.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [ i, Jxnorm])
+
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
@@ -609,6 +615,10 @@ class SteadyStateSolver(MeanFieldSolver):
             #make 2 versions of rate-constants function
             energy_expressions_noderivs = '\n    '.join(self.reaction_energy_equations(adsorbate_interactions = False))
             energy_expressions_derivs = '\n    '.join(self.reaction_energy_equations(adsorbate_interactions = True))
+            with open('elementary_rxn_energy_expressions.log','w') as f:
+                f.write(energy_expressions_noderivs)
+            with open('elementary_rxn_energy_expressions_derivs.log','w') as f:
+                f.write(energy_expressions_derivs)
 
             templates['rate_constants_no_derivatives'] = Template(templates['rate_constants']).safe_substitute({'elementary_step_energetics':energy_expressions_noderivs})
             templates['rate_constants_with_derivatives'] = Template(templates['rate_constants']).safe_substitute({'elementary_step_energetics':energy_expressions_derivs})
@@ -627,8 +637,10 @@ class SteadyStateSolver(MeanFieldSolver):
                 # Hence the total number of theta's to solver for is 
                 # the number of adsorbate + sites -1 (to account for the 'g' site)
                 self._function_substitutions['theta_length'] = len(self.adsorbate_names) + len(self.site_names) - 1
+                self._function_substitutions['number_of_adsorbates'] = len(self.adsorbate_names)
             else:
                 self._function_substitutions['theta_length'] = len(self.adsorbate_names)
+                self._function_substitutions['number_of_adsorbates'] = len(self.adsorbate_names)
 
             self._function_substitutions['steady_state_expressions'] = '\n    '.join(ss_eqs)
 
