@@ -317,8 +317,19 @@ class NewtonRootNumbers:
         # x0 is the starting coverage
         self.x0 = x0
 
+        # Decide if x_star is fixed or free
+        self.fix_x_star = kwargs['fix_x_star']
+
+        # Decide if the Jacobian should be checked
+        self.check_jacobian = kwargs.get('check_jacobian', True)
+
         # The Jacobian matrix which is a function of coverages
-        self.J = self.J_confirm # kwargs['J']
+        if self.check_jacobian:
+            self.J = self.J_confirm
+        else:
+            self.J = kwargs['J']
+
+        # Store also the analytical Jacobian
         self.J_analytical = kwargs['J']
 
         # Convergence criteria
@@ -333,13 +344,12 @@ class NewtonRootNumbers:
         # Store the precision
         self.precision = mp.power(self._mpfloat('10'), -1 * kwargs['precision'])
 
-        # Decide if x_star is fixed or free
-        self.fix_x_star = kwargs['fix_x_star']
 
         # Decide on the number of empty sites
         self.esites = kwargs['esites']
         # The total coverage will be the number of empty sites * 1
         self.total_coverage = self.esites * self._mpfloat('1.0')
+
 
     def J_numerical(self, theta):
         """Pass the coverages with the f to get the numerical Jacobian."""
@@ -352,9 +362,6 @@ class NewtonRootNumbers:
         for any production code. This function makes sense
         only if the value of x_star is not fixed."""
 
-        if self.fix_x_star:
-            return self.J_analytical(theta)
-        
         # Get the analytical Jacobian
         analytical = self.J_analytical(theta)
         # Get the numerical Jacobian
@@ -376,7 +383,10 @@ class NewtonRootNumbers:
                 if abs(ej) > max_error:
                     max_error = abs(ej)
                     max_pos = [i,j]
-        return analytical 
+        if self.fix_x_star:
+            return analytical[:-self.esites,:-self.esites], numerical[:-self.esites,:-self.esites]
+        else:
+            return analytical, numerical
 
     def moore_penrose_inverse(self, M):
         """Determine the moore-penrose inverse of a matrix."""
@@ -416,7 +426,10 @@ class NewtonRootNumbers:
             # In case a fixed x_star is required, truncate the steady
             # state function, the jacobian in both theta and x spaces
             f = lambda theta: self.f(theta)[:-self.esites]
-            J = lambda theta: self.J(theta)[:-self.esites,:-self.esites]
+            if not self.check_jacobian:
+                J = lambda theta: self.J(theta)[:-self.esites,:-self.esites]
+            else:
+                J = self.J # Checked in the function itself
             dtheta_dx_function = lambda x: self.dtheta_dx_function(x)[:-self.esites,:-self.esites]
 
         # Define the norm
@@ -461,7 +474,11 @@ class NewtonRootNumbers:
             fxn = -fx
 
             # Get the Jacobian matrix as a function of theta
-            Jtheta = J(theta)
+            if self.check_jacobian:
+                Jtheta, Jtheta_numerical = J(theta)
+            else:
+                Jtheta = J(theta)
+                Jtheta_numerical = None
 
             # dtheta_dx matrix to convert Jacobian to x space
             dtheta_dx = dtheta_dx_function(x0)
@@ -483,6 +500,11 @@ class NewtonRootNumbers:
             # Find Jx by taking the dot product of J(theta)
             # and dtheta/dx
             Jx =  Jtheta * dtheta_dx
+            if self.check_jacobian:
+                # Find the numerical equivalent of Jx
+                Jx_numerical = Jtheta_numerical * dtheta_dx
+            else:
+                Jx_numerical = None
 
             if not self.fix_x_star:
                 # The Jacobian in x-space must also have the same
@@ -552,4 +574,10 @@ class NewtonRootNumbers:
             # Return the norm of the Jacobian as well
             Jxnorm = norm(Jx)
 
-            yield (x0, fxnorm, Jxnorm)
+            # Return the norm of the numerical Jacobian
+            if self.check_jacobian:
+                Jx_numerical_norm = norm(Jx_numerical)
+            else:
+                Jx_numerical_norm = None
+
+            yield (x0, fxnorm, Jxnorm, Jx_numerical_norm)

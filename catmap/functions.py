@@ -91,6 +91,8 @@ def convert_formation_energies(energy_dict,atomic_references,composition_dict):
         E = energy_dict[key]
         for symb in composition:
             E -= ref_offsets[symb]*composition[symb]
+        if isinstance(E, np.ndarray):
+            E = E[0]
         new_data[key] = round(E,5)
     return new_data,ref_offsets
 

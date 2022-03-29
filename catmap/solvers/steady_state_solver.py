@@ -53,7 +53,10 @@ class SteadyStateSolver(MeanFieldSolver):
         :type coverages: [float]
 
         """
-
+        # Flatten the rxn_parameters
+        for i, param in enumerate(rxn_parameters):
+            if isinstance(param, np.ndarray):
+                rxn_parameters[i] = param[0]
         if self.adsorbate_interaction_model not in [None,'ideal']:
             memo = tuple(rxn_parameters) + tuple(coverages) + tuple(self._gas_energies)
         else:
@@ -222,6 +225,9 @@ class SteadyStateSolver(MeanFieldSolver):
         solver_kwargs['fix_x_star'] = self.fix_x_star
         solver_kwargs['esites'] = esites
         solver_kwargs['max_damping'] = self.max_damping_iterations 
+        if hasattr(self, 'check_jacobian'):
+            # Debugging tool to check if the Jacobian is correct
+            solver_kwargs['check_jacobian'] = self.check_jacobian
 
         # Writes inner loop details to separate file
         solver_kwargs['verbose'] = 2
@@ -241,7 +247,7 @@ class SteadyStateSolver(MeanFieldSolver):
         iterations.maxiter = maxiter
 
         i = 0
-        for x, error, Jxnorm in iterations:
+        for x, error, Jxnorm, Jxnorm_numer in iterations:
 
             # Store information for debugging and plotting
             print (f"{i} \t {error}", file=open(self.outer_solver_log, 'a'))
@@ -250,7 +256,7 @@ class SteadyStateSolver(MeanFieldSolver):
                 writer.writerow(self._descriptors + [ i, error])
             with open('jacobian_norm.csv', 'a') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ i, Jxnorm])
+                writer.writerow(self._descriptors + [ i, Jxnorm, Jxnorm_numer])
 
             self.log('rootfinding_status',
                     n_iter=i,
@@ -544,8 +550,12 @@ class SteadyStateSolver(MeanFieldSolver):
         """
             :TODO:
         """
-
-        memo = tuple(self._rxn_parameters) + tuple(self._gas_energies) + \
+        # Flatten the rxn_parameters
+        rxn_parameters = self._rxn_parameters
+        for i, param in enumerate(rxn_parameters):
+            if isinstance(param, np.ndarray):
+                rxn_parameters[i] = param[0]
+        memo = tuple(rxn_parameters) + tuple(self._gas_energies) + \
                 tuple(self._site_energies) + tuple(coverages) + tuple(self.gas_pressures+[self.temperature])
         if memo in self._steady_state_memoize:
             return self._steady_state_memoize[memo]

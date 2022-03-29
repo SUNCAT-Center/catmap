@@ -379,6 +379,7 @@ class ReactionModel:
                 decimal_precision = 75,
                 verbose = 1,
                 use_numbers_solver = False,
+                check_jacobian = False,
                 max_damping_iterations = 10,
                 fix_x_star = False,
                 data_file = 'data.pkl')
