@@ -202,12 +202,17 @@ class SteadyStateSolver(MeanFieldSolver):
         # The simple condition to check this is to see if the norm is lower
         # than the tolerance
         if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
-            self._coverage = self.change_x_to_theta(c0)#[:-esites]
+            self._coverage = self.change_x_to_theta(c0)
             self._numbers = c0
             # Store the coverages for debugging
             with open('solution.csv', 'a') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(self._descriptors + self.change_x_to_theta(c0))
+            # Write the norm error to file error file
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [ 0, norm(f(self.change_x_to_theta(c0)))])
+
             return self.change_x_to_theta(c0)
 
         # Populate the kwargs 
@@ -338,6 +343,14 @@ class SteadyStateSolver(MeanFieldSolver):
 
         if f_resid(c0) <= self.tolerance:
             self._coverage = c0
+            # Store the coverages for debugging
+            with open('solution.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + c0)
+            # Store the error in a file
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [ 0 ]  + [ f_resid(c0) ])
             return c0
 
         solver_kwargs = dict(
