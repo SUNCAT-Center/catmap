@@ -321,7 +321,15 @@ class NewtonRootNumbers:
         self.fix_x_star = kwargs['fix_x_star']
 
         # Decide if the Jacobian should be checked
-        self.check_jacobian = kwargs.get('check_jacobian', True)
+        if kwargs['DEBUG']:
+            # The Jacobian is checked based on the numerical Jacobian
+            # determined by finite differences at the same point
+            self.check_jacobian = True 
+            self.DEBUG = True
+        else:
+            # If not debugging, then don't check the Jacobian
+            self.check_jacobian = False
+            self.DEBUG = False
 
         # The Jacobian matrix which is a function of coverages
         if self.check_jacobian:
@@ -344,7 +352,6 @@ class NewtonRootNumbers:
         # Store the precision
         self.precision = mp.power(self._mpfloat('10'), -1 * kwargs['precision'])
 
-
         # Decide on the number of empty sites
         self.esites = kwargs['esites']
         # The total coverage will be the number of empty sites * 1
@@ -359,8 +366,8 @@ class NewtonRootNumbers:
     def J_confirm(self, theta):
         """The following is useful for debugging/benchmarking
         analytical derivatives, and should be commented out
-        for any production code. This function makes sense
-        only if the value of x_star is not fixed."""
+        for any production code. It is a modified form
+        of the J_confirm used in the solver above."""
 
         # Get the analytical Jacobian
         analytical = self.J_analytical(theta)
@@ -378,7 +385,6 @@ class NewtonRootNumbers:
             for j,ej in enumerate(ei):
                 if abs(ej) > 1e-10:
                     print('big error in Jacobian:', ej, 'at position', [i,j])
-                    # print('analytical:', analytical[i,j], 'numerical:', numerical[i,j])
                     pass
                 if abs(ej) > max_error:
                     max_error = abs(ej)
@@ -445,8 +451,9 @@ class NewtonRootNumbers:
         theta = conversion_function(x0)
         theta = self._matrix(theta)
 
-        # Check to make sure that the sum of coverages is not greater than 1
-        assert mp.fabs(mp.fsum(theta) - self.total_coverage) < self.precision, "The sum of coverages is greater than 1.0"
+        if self.DEBUG:
+            # Check to make sure that the sum of coverages is not greater than 1
+            assert mp.fabs(mp.fsum(theta) - self.total_coverage) < self.precision, "The sum of coverages is greater than 1.0"
 
         # Cancel if we have reached the right answer
         cancel = False
@@ -456,8 +463,9 @@ class NewtonRootNumbers:
             fx = self._matrix(f(theta))
 
             if not self.fix_x_star:
-                # Ensure that the sum of fx is 0
-                assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
+                if self.DEBUG:
+                    # Ensure that the sum of fx is 0
+                    assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
 
                 # Check if the objective function is the 
                 # same length as theta 
@@ -487,38 +495,43 @@ class NewtonRootNumbers:
             assert dtheta_dx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
             assert dtheta_dx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
 
-            if not self.fix_x_star:
-                # The sum over all columns of the Jacobian 
-                # matrix must be 0. This is because the term would be 
-                # d/dtheta_i (sum_i f_i)
-                # where sum_i f_i = 0
-                for i in range(Jtheta.cols):
-                    assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
-                for i in range(dtheta_dx.cols):
-                    assert mp.fabs(mp.fsum(dtheta_dx[:, i])) < self.precision, "dtheta_dx column is not zero"
-
             # Find Jx by taking the dot product of J(theta)
             # and dtheta/dx
             Jx =  Jtheta * dtheta_dx
+
             if self.check_jacobian:
                 # Find the numerical equivalent of Jx
                 Jx_numerical = Jtheta_numerical * dtheta_dx
             else:
                 Jx_numerical = None
 
-            if not self.fix_x_star:
-                # The Jacobian in x-space must also have the same
-                # checks as Jacobian in theta-space
-                assert Jx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
-                assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
-                for i in range(Jx.cols):
-                    assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
+            if self.DEBUG:
+                if not self.fix_x_star:
+                    # The sum over all columns of the Jacobian 
+                    # matrix must be 0. This is because the term would be 
+                    # d/dtheta_i (sum_i f_i)
+                    # where sum_i f_i = 0
+                    for i in range(Jtheta.cols):
+                        assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
+                    for i in range(dtheta_dx.cols):
+                        assert mp.fabs(mp.fsum(dtheta_dx[:, i])) < self.precision, "dtheta_dx column is not zero"
+
+                    # The Jacobian in x-space must also have the same
+                    # checks as Jacobian in theta-space
+                    assert Jx.rows == Jtheta.rows, "Jacobian and dtheta_dx have different number of rows"
+                    assert Jx.cols == Jtheta.cols, "Jacobian and dtheta_dx have different number of columns"
+                    for i in range(Jx.cols):
+                        assert mp.fabs(mp.fsum(Jx[:, i])) < self.precision, "Jacobian column is not zero"
+
 
             if self.fix_x_star:
                 try:
                     s = self._Axb(Jx, fxn)[0]
                 except Exception as e:
                     try:
+                        # Is the conventional solver fails used
+                        # the Moore-Penrose pseudo-inverse to approx
+                        # the inverse of the Jacobian
                         Jx_plus = self.moore_penrose_inverse(M=Jx)
                         s = Jx_plus * fxn
                     except Exception as e:
@@ -571,13 +584,9 @@ class NewtonRootNumbers:
                 x1 = x0 + l*s
                 damp_iter += 1
 
-            # Return the norm of the Jacobian as well
-            Jxnorm = norm(Jx)
-
-            # Return the norm of the numerical Jacobian
-            if self.check_jacobian:
-                Jx_numerical_norm = norm(Jx_numerical)
+            if self.DEBUG:
+                # Return the norm of the Jacobian as well
+                Jxnorm = norm(Jx)
+                yield (x0, fxnorm, Jxnorm, Jx_numerical_norm)
             else:
-                Jx_numerical_norm = None
-
-            yield (x0, fxnorm, Jxnorm, Jx_numerical_norm)
+                yield (x0, fxnorm)

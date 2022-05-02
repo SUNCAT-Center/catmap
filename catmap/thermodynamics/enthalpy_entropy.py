@@ -980,10 +980,15 @@ class ThermoCorrections(ReactionModelWrapper):
                         cvgs[i_overall] = self._math.exp(-free_energies[i_rel]/(
                             self._kB*self.temperature))/boltz_sum
 
-        # Write out the Boltzmann coverages
-        with open('initial_guess.csv', 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(self._descriptors + cvgs)
+        if self.DEBUG:
+            # Write out the Boltzmann coverages
+            with open('initial_guess.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _writeout_boltz = self.descriptors + cvgs
+                writer.writerow(_writeout_boltz)
 
         return cvgs
 
@@ -1025,12 +1030,18 @@ class ThermoCorrections(ReactionModelWrapper):
             if site != 'g':
                 numbers.append(self._mpfloat('1.0'))
 
-        # Write out a csv file with the initial guess
-        # the format of the csv file is a list of self._descriptors
-        # and the initial guess c0 as the output
-        with open('initial_guess.csv', 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(self._descriptors + self.solver.change_x_to_theta(numbers))
+        if self.DEBUG:
+            # Write out a csv file with the initial guess
+            # the format of the csv file is a list of self._descriptors
+            # and the initial guess c0 as the output
+            with open('initial_guess.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _boltz_writeout = self._descriptors \
+                                + self.solver.change_x_to_theta(numbers)
+                writer.writerow(_boltz_writeout)
 
         return numbers
 

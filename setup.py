@@ -65,6 +65,18 @@ else:
         'tools/catmap'
               ]
 
+tests = [
+    	"pgtest~=1.3",
+    	"pytest~=6.0",
+    	"pytest-regressions~=1.0"
+        ]
+extras_require =  {
+        "tests": [
+            "pgtest~=1.3",
+            "pytest~=6.0",
+            "pytest-regressions~=1.0"
+        ],
+    }
 url = 'https://github.com/ajmedford/catmap'
 
 setup(
@@ -83,5 +95,7 @@ setup(
       scripts=scripts,
       url=url,
       version=__version__,
-      install_requires = requires
+      install_requires = requires,
+      tests=tests,
+      extras_require=extras_require,
       )

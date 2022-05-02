@@ -682,9 +682,10 @@ class MeanFieldSolver(SolverBase):
         else:
             # Standard CatMAP solver needs only an nxn Jacobian matrix
             adsorbate_names = self.adsorbate_names
-        
-        with open('adsorbate_names.log','w') as f:
-            f.write(str(adsorbate_names))
+
+        if self.DEBUG: 
+            with open('adsorbate_names.log','w') as f:
+                f.write(str(adsorbate_names))
 
 
         # Create the Jacobian matrix by iterating over the adsorbate_names

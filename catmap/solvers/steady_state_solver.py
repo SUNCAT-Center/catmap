@@ -204,14 +204,29 @@ class SteadyStateSolver(MeanFieldSolver):
         if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
             self._coverage = self.change_x_to_theta(c0)
             self._numbers = c0
-            # Store the coverages for debugging
-            with open('solution.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + self.change_x_to_theta(c0))
-            # Write the norm error to file error file
-            with open('error_log.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ 0, norm(f(self.change_x_to_theta(c0)))])
+
+            if self.DEBUG:
+                # Store the coverages for debugging
+                with open('solution.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writeout = [ self._descriptors + self.change_x_to_theta(c0) ]
+                    writer.writerow(writeout)
+
+                # Write the norm error to file error file
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    # If it converges instantly, only the 
+                    # first row will be written because only one
+                    # iteration was needed.
+                    _norm_error = norm(f(self.change_x_to_theta(c0)))
+                    writeout = self._descriptors + [ 0, _norm_error]
+                    writer.writerow(writeout)
 
             return self.change_x_to_theta(c0)
 
@@ -230,9 +245,8 @@ class SteadyStateSolver(MeanFieldSolver):
         solver_kwargs['fix_x_star'] = self.fix_x_star
         solver_kwargs['esites'] = esites
         solver_kwargs['max_damping'] = self.max_damping_iterations 
-        if hasattr(self, 'check_jacobian'):
-            # Debugging tool to check if the Jacobian is correct
-            solver_kwargs['check_jacobian'] = self.check_jacobian
+
+        solver_kwargs['DEBUG'] = self.DEBUG 
 
         # Writes inner loop details to separate file
         solver_kwargs['verbose'] = 2
@@ -252,16 +266,29 @@ class SteadyStateSolver(MeanFieldSolver):
         iterations.maxiter = maxiter
 
         i = 0
-        for x, error, Jxnorm, Jxnorm_numer in iterations:
+        for data_iteration in iterations:
 
-            # Store information for debugging and plotting
-            print (f"{i} \t {error}", file=open(self.outer_solver_log, 'a'))
-            with open('error_log.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ i, error])
-            with open('jacobian_norm.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ i, Jxnorm, Jxnorm_numer])
+            # The data given out by the solver is 
+            # based on if the code is run in debug mode
+            if self.DEBUG:
+                x, error, Jxnorm, Jxnorm_numer = data_iteration 
+                # Store information for debugging and plotting
+                print (f"{i} \t {error}",
+                       file=open(self.outer_solver_log, 'a'))
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(self._descriptors + [ i, error])
+                with open('jacobian_norm.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(self._descriptors + [ i, Jxnorm, Jxnorm_numer])
+            else:
+                x, error = data_iteration
 
             self.log('rootfinding_status',
                     n_iter=i,
@@ -275,15 +302,19 @@ class SteadyStateSolver(MeanFieldSolver):
                 self._error = error
                 coverages = self.change_x_to_theta(list(x))
 
-                # Store the coverages for debugging
-                with open('solution.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                    writer.writerow(self._descriptors + coverages)
+                if self.DEBUG:
+                    # Store the coverages for debugging
+                    with open('solution.csv', 'a') as csvfile:
+                        writer = csv.writer(csvfile,
+                                            delimiter=',',
+                                            quotechar='|',
+                                            quoting=csv.QUOTE_MINIMAL)
+                        writer.writerow(self._descriptors + coverages)
 
                 # We dont need the coverage of the free sites to be stored
-                # coverages = coverages[:-esites]
                 numbers = x
                 break
+
             # Break if the maximum number of iterations is reached
             if i >= maxiter:
                 self.log('rootfinding_maxiter',
@@ -292,11 +323,14 @@ class SteadyStateSolver(MeanFieldSolver):
                 raise ValueError('Out of iterations (resid='+\
                         str(float(error))+')')
 
-        print("", file=open(self.outer_solver_log, 'a'))
+        if self.DEBUG:
+            print("", file=open(self.outer_solver_log, 'a'))
+
         if coverages:
             self._coverage = [c for c in coverages]
             self._numbers = [n for n in numbers]
             return [c for c in coverages]
+
         else:
             self.log('rootfinding_cancel',
                     n_iter=i,
@@ -343,14 +377,22 @@ class SteadyStateSolver(MeanFieldSolver):
 
         if f_resid(c0) <= self.tolerance:
             self._coverage = c0
-            # Store the coverages for debugging
-            with open('solution.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + c0)
-            # Store the error in a file
-            with open('error_log.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ 0 ]  + [ f_resid(c0) ])
+            if self.DEBUG:
+                # Store the coverages for debugging
+                with open('solution.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(self._descriptors + c0)
+                # Store the error in a file
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    _writeout = self._descriptors + [ 0 ]  + [ f_resid(c0) ]
+                    writer.writerow(_writeout)
             return c0
 
         solver_kwargs = dict(
@@ -376,9 +418,14 @@ class SteadyStateSolver(MeanFieldSolver):
         i = 0
         x = c0
         for x,error in iterations:
-            with open('error_log.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(self._descriptors + [ i ]  + [ error ])
+            if self.DEBUG:
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    _writeout = self._descriptors + [ i ] + [ error ]
+                    writer.writerow(_writeout)
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
@@ -387,10 +434,14 @@ class SteadyStateSolver(MeanFieldSolver):
             if error < self.tolerance:
                 if f_resid(x) < self.tolerance:
                     coverages = self.constrain_coverages(x)
-                    # Store the coverages for debugging
-                    with open('solution.csv', 'a') as csvfile:
-                        writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                        writer.writerow(self._descriptors + coverages)
+                    if self.DEBUG:
+                        # Store the coverages for debugging
+                        with open('solution.csv', 'a') as csvfile:
+                            writer = csv.writer(csvfile,
+                                                delimiter=',',
+                                                quotechar='|',
+                                                quoting=csv.QUOTE_MINIMAL)
+                            writer.writerow(self._descriptors + coverages)
                     self.log('rootfinding_success',
                             n_iter = i,
                             priority = 1)
@@ -638,18 +689,20 @@ class SteadyStateSolver(MeanFieldSolver):
             #make 2 versions of rate-constants function
             energy_expressions_noderivs = '\n    '.join(self.reaction_energy_equations(adsorbate_interactions = False))
             energy_expressions_derivs = '\n    '.join(self.reaction_energy_equations(adsorbate_interactions = True))
-            with open('elementary_rxn_energy_expressions.log','w') as f:
-                f.write(energy_expressions_noderivs)
-            with open('elementary_rxn_energy_expressions_derivs.log','w') as f:
-                f.write(energy_expressions_derivs)
+            if self.DEBUG:
+                with open('elementary_rxn_energy_expressions.log','w') as f:
+                    f.write(energy_expressions_noderivs)
+                with open('elementary_rxn_energy_expressions_derivs.log','w') as f:
+                    f.write(energy_expressions_derivs)
 
             templates['rate_constants_no_derivatives'] = Template(templates['rate_constants']).safe_substitute({'elementary_step_energetics':energy_expressions_noderivs})
             templates['rate_constants_with_derivatives'] = Template(templates['rate_constants']).safe_substitute({'elementary_step_energetics':energy_expressions_derivs})
 
             #make steady-state expressions
             ss_eqs = self.rate_equations()
-            with open('steady_state_equations.log', 'w') as handle:
-                handle.write('\n'.join(ss_eqs))
+            if self.DEBUG:
+                with open('steady_state_equations.log', 'w') as handle:
+                    handle.write('\n'.join(ss_eqs))
             # If we are using the numbers solver, the length of the 
             # steady state function needs to be one more than that of the 
             # number of adsorbates.
@@ -667,15 +720,17 @@ class SteadyStateSolver(MeanFieldSolver):
 
             self._function_substitutions['steady_state_expressions'] = '\n    '.join(ss_eqs)
 
-            #make jacobian expressions
+            # make jacobian expressions
             jac_eqs = self.jacobian_equations(adsorbate_interactions=True)
-            with open('jacobian_eqs.log','w') as handle:
-                handle.write('\n'.join(jac_eqs))
+            if self.DEBUG:
+                with open('jacobian_eqs.log','w') as handle:
+                    handle.write('\n'.join(jac_eqs))
             self._function_substitutions['jacobian_expressions'] = '\n    '.join(jac_eqs)
             jac_eqs_nd = self.jacobian_equations(adsorbate_interactions=False)
             self._function_substitutions['jacobian_expressions_no_derivatives'] = '\n    '.join(jac_eqs_nd)
-            with open('jacobian_eqs_noderiv.log','w') as handle:
-                handle.write('\n'.join(jac_eqs_nd))
+            if self.DEBUG:
+                with open('jacobian_eqs_noderiv.log','w') as handle:
+                    handle.write('\n'.join(jac_eqs_nd))
 
             def indent_string(string,levels):
                 lines = string.split('\n')
