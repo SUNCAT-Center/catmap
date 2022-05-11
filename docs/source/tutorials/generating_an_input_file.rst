@@ -246,10 +246,9 @@ When the term :math:`T*S_i` is approximated as sufficiently insignificant, the e
 We will use this simpler equation to demonstrate the example.
 
 In this simpler example we are using only electronic energies,
-which  means we are using the approximation that :math:`G_i = E_i` .
-
-Below, we will use :math:`E_i` for the relative formation energy. However,
-the approach and the input files work correctly when using :math:`G_i`,
+and will use the variable :math:`E_i` to emphasize that we are using an approximation
+for the free energy, recognizing that :math:`G_i ~ E_i` . However,
+the approach and the use of input files are the same when using a better estimate for :math:`G_i`,
 in which case :math:`-T*S_i` would be added directly after each :math:`U_i`.
 
 For example, say we want to find the
