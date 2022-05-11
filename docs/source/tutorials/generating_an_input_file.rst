@@ -46,9 +46,9 @@ of the header and first few lines are provided below:
 ::
 
     surface_name    site_name   species_name  formation_energy    bulk_structure  frequencies reference
-    None            gas         CH4             0                   None            []          By Definition
-    None            gas         H2O             0                   None            []          By Definition
-    None            gas         H2              0                   None            [4401]      By Definition
+    None            gas         CH4             0                   None            []          Defined as part of reference state for formation_energy of 0
+    None            gas         H2O             0                   None            []          Defined as part of reference state for formation_energy of 0
+    None            gas         H2              0                   None            [4401]      Defined as part of reference state for formation_energy of 0
     None            gas         CO              2.74                None            [2170]      Energy Environ. Sci., 3, 1311-1315 (2010)
     Pt              211         CO              1.113               fcc             []          J. Phys. Chem. C, 113 (24), 10548-10553 (2009)
 
@@ -134,13 +134,17 @@ formation\_energy
 ^^^^^^^^^^^^^^^^^
 
 This is the core of the input file since it defines the energetics of
-the system. It should be the "generalized formation energy" (see
+the system. It should be  a "relative free energy of formation" (see
 :ref:`Formation Energy Approach <formation_energy>`) of the "species\_name" on the "surface\_name" and
-"site\_name". These energies are usually very hard to come by, and must be
-computed by an electronic structure method such as DFT, or in some cases they
-can be measured experimentally. It is extremely important that all energies
-share a
-common thermodynamic reservoir for each atomic constituent (see :ref:`Formation
+"site\_name". A "relative free energy of formation" is different from a standard free energy of formation
+in that a "standard free energy of formation" uses pure elements as the reference states.
+In contrast, a "relative free energy of formation" can include heteroatomic molecules (such as CO)
+within the reference state, such that the relative energies of molecules in the reference state are set equal to 0.
+For species on surfaces, formation energies are often not available experimentally, and thus
+there is great value in computing them by an electronic structure method such as DFT. For gas phase species,
+experimental values are more accurate and can be used directly or as a correction for DFT values.
+To perform thermodynamic calculations, it is generally necessary that all energies
+share a common thermodynamic reference state for the species in the reaction mechanism. (see :ref:`Formation
 Energy Approach <formation_energy>`).
 
 frequencies
