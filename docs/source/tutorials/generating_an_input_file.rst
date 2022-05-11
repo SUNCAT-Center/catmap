@@ -205,20 +205,57 @@ Formation Energy Approach
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One key point for generating input files is that the energies are
-computed as a "generalized formation energy" relative to a *common
-reference*:
+computed as a "relative free energies of formation" relative to a *common
+reference* state:
 
-:math:`E_i = U_i - \sum_j (n_j R_j)`
+:math:`G_i = H_i - T*S_i - \sum_j (n_j R_j)`
 
-where :math:`E_i` is the "generalized formation energy" of species :math:`i`, :math:`U_i` is the
-raw/DFT energy of species :math:`i`, :math:`nj` is the number of atomic species :math:`j` in :math:`i`,
-and :math:`\left|R_j\right|` is the reference energy of that atomic species. Mathematically
+:math:`G_i` is the "relative Gibbs free energy of formation" of species :math:`i` .
+:math:`H_i` is the  enthalpy of species :math:`i` (see further below).
+:math:`S_i` is the  absolute entropy of species :math:`i` .
+:math:`nj` is the number of atomic species :math:`j` in :math:`i`,
+and :math:`\left|R_j\right|` is the reference Gibbs free energy of that atomic species. Mathematically
 this looks a little confusing (especially with such crude notation) but
-in practice it is pretty easy. For example, say we want to find the
+in practice it is pretty easy, provided that we are calculating for a specific Temperature, T.
+The calculation is even easier and less computationally expensive if the entropy of formation contribution is neglected.
+The general principle is similar to https://en.wikipedia.org/wiki/Born%E2%80%93Haber_cycle 
+and https://en.wikipedia.org/wiki/Hess%27s_law
+
+In practice, today, the value for :math:`H_i` is genreally approximated as being equal to the electronic energy.
+In this case, the equation becomes 
+
+:math:`G_i = U_i - T*S_i - \sum_j (n_j R_j)`
+
+Where :math:`U_i` is the raw/DFT energy of species :math:`i`, 
+
+The best practice and state of the art today is to include the entropy of formation, :math:`S_i` when calculating :math:`G_i`
+The value from :math:`T*S_i`  (and the values within :math:`\left|R_j\right|` ) will then include the values
+for the entropy contribtuions calculated at a given temperature based on the partition functions
+for vibrations, rotations, and the Sackur-Tetrode equation. The Sackur-Tetrode equation includes
+both the translational partition function contribution and a quantum configurational term.
+(The Sackur-Tetrode equation is often referred to as simply the "translational entropy", which can be misleading).
+
+Compuational calculation of the entropy contribution to :math:`G_i` has a significant computational expensive (because it
+requires more than single point calculations), and many studies do not require this level of accuracy even today
+since for many systems changes in :math:`U_i` affect the chemistry and kinetics more than changes in :math:`S_i`
+
+When the term :math:`T*S_i` is approximated as sufficiently insignificant, the equation reduces to:
+
+:math:`G_i = U_i - \sum_j (n_j R_j)`
+
+We will use this simpler equation to demonstrate the example.
+
+In this simpler example we are using only electronic energies,
+which  means we are using the approximation that :math:`G_i = E_i` .
+
+Below, we will use :math:`E_i` for the relative formation energy. However,
+the approach and the input files work correctly when using :math:`G_i`,
+in which case :math:`-T*S_i` would be added directly after each :math:`U_i`.
+
+For example, say we want to find the
 energy of gas-phase CO relative to carbon (C) in methane (|CH4|), oxygen
 (O) in |H2O|, and hydrogen (H) in molecular hydrogen (|H2|). We first
 compute the reference energies (:math:`\left|R_j\right|`) for each atomic species:
-
 
 .. math::
 
@@ -252,7 +289,7 @@ Then one could compute the barrier for :math:`{\rm{C-O}}` dissociation as:
 If this still doesn't make sense, try working through the
 `example <#example>`__ below.
 
-In principle the choice of reference species is arbitrary since the
+In principle the choice of reference states is arbitrary since the
 reference energies :math:`|R_j|` cancel out in any relative quantities. However, in
 many cases it is necessary to use some correction scheme for the
 gas-phase energies if they are poorly described by the level of theory
@@ -263,9 +300,15 @@ by DFT, so it would not make sense to use these to compute the reference
 energies :math:`|R_j|`.
 
 It is also worth re-iterating that the *same reference energies* :math:`|R_j|` *must
-be used for all energies in a given input file*. One can usually see
-which gas-phase species are used as references since their formation
-energies will be 0 by definition (see :ref:`overview <overview>`).
+be used for all energies in a given input file*. The best practice
+is to first set any pure element reactants in the system as having relative free energies of formation of 0
+and then to add in gases with one additional element as having relative free energies of formation of 0.
+Finally, other species (the remaining species with elements already used) will have relative free energies of formation defined based on these reference states
+as well as the math:`U_i` (or math:`U_i - T*S_i` ) computed values for these other / remaining species.
+When looking at an input file that has been created correctly, the gas-phase species that were used 
+as part of the reference state are easy to recognize since their relative formation
+energies will be set to 0. (see :ref:`overview <overview>`).
+
 
 .. _example:
 
