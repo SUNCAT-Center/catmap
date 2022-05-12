@@ -217,6 +217,7 @@ reference* state:
 and :math:`\left|R_j\right|` is the reference Gibbs free energy of that atomic species. Mathematically
 this looks a little confusing (especially with such crude notation) but
 in practice it is pretty easy, provided that we are calculating for a specific Temperature, T.
+The Temperature and Pressure and any other quantities used for defining the reference states should be reported.
 The calculation is even easier and less computationally expensive if the entropy of formation contribution is neglected.
 The general principle is similar to https://en.wikipedia.org/wiki/Born%E2%80%93Haber_cycle 
 and https://en.wikipedia.org/wiki/Hess%27s_law
