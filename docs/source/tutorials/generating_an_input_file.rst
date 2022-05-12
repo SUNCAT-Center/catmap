@@ -46,9 +46,9 @@ of the header and first few lines are provided below:
 ::
 
     surface_name    site_name   species_name  formation_energy    bulk_structure  frequencies reference
-    None            gas         CH4             0                   None            []          Defined as part of reference state for formation_energy of 0
-    None            gas         H2O             0                   None            []          Defined as part of reference state for formation_energy of 0
-    None            gas         H2              0                   None            [4401]      Defined as part of reference state for formation_energy of 0
+    None            gas         CH4             0                   None            []          Defined as part of reference state to have formation_energy of 0
+    None            gas         H2O             0                   None            []          Defined as part of reference state to have formation_energy of 0
+    None            gas         H2              0                   None            [4401]      Defined as part of reference state to have formation_energy of 0
     None            gas         CO              2.74                None            [2170]      Energy Environ. Sci., 3, 1311-1315 (2010)
     Pt              211         CO              1.113               fcc             []          J. Phys. Chem. C, 113 (24), 10548-10553 (2009)
 
