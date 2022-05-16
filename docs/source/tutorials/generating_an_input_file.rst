@@ -301,10 +301,14 @@ Formation Energy Approach and Temperature Dependence
 
 The below paragraphs are for informational purposes only.
 
+As noted above, a free energy of formation has several terms:
+
+:math:`G_i = H_i - T*S_i - \sum_j (n_j R_j)`
+
 In general, for formation energies, the Temperature and Pressure and any other quantities used for defining the 
 reference states should be reported in the manuscript (whether using a relative formation energy or a standard formation energy).
-The temperature dependence and entropy contributions are handled elsewhere in CatMAP.
-By default, those temperature dependences will be handled elsewhere in CatMAP.
+The temperature dependence and entropy contributions are handled elsewhere in CatMAP,
+and are thus not included in the "formation_energy" field of the input file.
 
 The best practice and state of the art today is to include the entropy of formation, :math:`S_i` when calculating :math:`G_i`
 The value from :math:`T*S_i`  (and the values within :math:`\left|R_j\right|` ) will then include the values
@@ -313,18 +317,20 @@ for vibrations, rotations, and the Sackur-Tetrode equation. The Sackur-Tetrode e
 both the translational partition function contribution and a quantum configurational term.
 (The Sackur-Tetrode equation is often referred to as simply the "translational entropy", which can be misleading).
 
-Compuational calculation of the entropy contribution to :math:`G_i` has a significant computational expense (because it
-requires more than single point calculations), and many studies do not require this level of accuracy even today
+Computational calculation of the entropy contribution to :math:`G_i` has a significant computational expense (because it
+requires more than single point calculations), and many studies do not require that level of accuracy 
 since for many systems changes in :math:`U_i` affect the chemistry and kinetics more than changes in :math:`S_i`
 
 When the term :math:`T*S_i` is approximated as sufficiently insignificant, the equation reduces to:
 
 :math:`G_i = U_i - \sum_j (n_j R_j)`
 
-However, CatMAP supports the better accuracy afforded by inclusion of the entropy term:
+However, CatMAP supports the better accuracy afforded by inclusion of an entropy term:
 CatMAP uses existing codes to calculate the entropy contributions of 
 for vibrational stretching modes and gas phase translations from statistical mechanics,
 and thus we include stretching mode vibrational frequencies near the end of the example below.
+In the future, even more accurate entropy terms may be included, but present day
+studies are adequately served by using stretching mode contributions for adsorbates.
 
 
 Example
