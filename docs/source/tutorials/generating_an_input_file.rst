@@ -216,11 +216,12 @@ reference* state:
 :math:`nj` is the number of atomic species :math:`j` in :math:`i`,
 and :math:`\left|R_j\right|` is the reference Gibbs free energy of that atomic species. Mathematically
 this looks a little confusing (especially with such crude notation) but
-in practice it is pretty easy, provided that we are calculating for a specific Temperature, T.
-The Temperature and Pressure and any other quantities used for defining the reference states should be reported.
-The calculation is even easier and less computationally expensive if the entropy of formation contribution is neglected.
+in practice it is pretty easy.
 The general principle is similar to https://en.wikipedia.org/wiki/Born%E2%80%93Haber_cycle 
 and https://en.wikipedia.org/wiki/Hess%27s_law
+In this part of CatMAP, we will
+only be specifying the 0K electronic contribution to the relative formation energies,
+and these do not have a temperature depndence.
 
 In practice, today, the value for :math:`H_i` is genreally approximated as being equal to the electronic energy.
 In this case, the equation becomes 
@@ -229,30 +230,16 @@ In this case, the equation becomes
 
 Where :math:`U_i` is the raw/DFT energy of species :math:`i`, 
 
-The best practice and state of the art today is to include the entropy of formation, :math:`S_i` when calculating :math:`G_i`
-The value from :math:`T*S_i`  (and the values within :math:`\left|R_j\right|` ) will then include the values
-for the entropy contribtuions calculated at a given temperature based on the partition functions
-for vibrations, rotations, and the Sackur-Tetrode equation. The Sackur-Tetrode equation includes
-both the translational partition function contribution and a quantum configurational term.
-(The Sackur-Tetrode equation is often referred to as simply the "translational entropy", which can be misleading).
-
-Compuational calculation of the entropy contribution to :math:`G_i` has a significant computational expensive (because it
-requires more than single point calculations), and many studies do not require this level of accuracy even today
-since for many systems changes in :math:`U_i` affect the chemistry and kinetics more than changes in :math:`S_i`
-
-When the term :math:`T*S_i` is approximated as sufficiently insignificant, the equation reduces to:
-
-:math:`G_i = U_i - \sum_j (n_j R_j)`
-
-We will use this simpler equation to demonstrate the example.
-
-In this simpler example we are using only electronic energies,
+Here, we will provide a simple example where we are using only electronic energies,
 and will use the variable :math:`E_i` to emphasize that we are using an approximation
-for the free energy, recognizing that :math:`G_i ~ E_i` . However,
+for the free energy, such that :math:`G_i ~ E_i` . However,
 the approach and the use of input files are the same when using a better estimate for :math:`G_i`,
 in which case :math:`-T*S_i` would be added directly after each :math:`U_i`.
+This example will not include Zero Point Energy correction terms in `U_i`, 
+but it is a best practice to include zero point energy correction terms in `U_i`
 
-For example, say we want to find the
+
+Now let's look at the example. Say we want to find the
 energy of gas-phase CO relative to carbon (C) in methane (|CH4|), oxygen
 (O) in |H2O|, and hydrogen (H) in molecular hydrogen (|H2|). We first
 compute the reference energies (:math:`\left|R_j\right|`) for each atomic species:
@@ -309,8 +296,32 @@ When looking at an input file that has been created correctly, the gas-phase spe
 as part of the reference state are easy to recognize since their relative formation
 energies will be set to 0. (see :ref:`overview <overview>`).
 
+Formation Energy Approach and Temperature Dependence
+----------------------------------------------------
+This paragraph is for informational purposes only.
 
-.. _example:
+In general, for formation energies, the Temperature and Pressure and any other quantities used for defining the 
+reference states should be reported in the manuscript (whether using a relative formation energy or a standard formation energy).
+The temperature dependence and entropy contributions are handled elsewhere in CatMAP.
+By default, those temperature dependences will be handled elsewhere in CatMAP.
+
+The best practice and state of the art today is to include the entropy of formation, :math:`S_i` when calculating :math:`G_i`
+The value from :math:`T*S_i`  (and the values within :math:`\left|R_j\right|` ) will then include the values
+for the entropy contribtuions calculated at a given temperature based on the partition functions
+for vibrations, rotations, and the Sackur-Tetrode equation. The Sackur-Tetrode equation includes
+both the translational partition function contribution and a quantum configurational term.
+(The Sackur-Tetrode equation is often referred to as simply the "translational entropy", which can be misleading).
+
+Compuational calculation of the entropy contribution to :math:`G_i` has a significant computational expense (because it
+requires more than single point calculations), and many studies do not require this level of accuracy even today
+since for many systems changes in :math:`U_i` affect the chemistry and kinetics more than changes in :math:`S_i`
+
+When the term :math:`T*S_i` is approximated as sufficiently insignificant, the equation reduces to:
+
+:math:`G_i = U_i - \sum_j (n_j R_j)`
+
+We use this simpler equation to demonstrate the example below.
+
 
 Example
 -------
