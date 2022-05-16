@@ -296,7 +296,8 @@ When looking at an input file that has been created correctly, the gas-phase spe
 as part of the reference state are easy to recognize since their relative formation
 energies will be set to 0. (see :ref:`overview <overview>`).
 
-.. Formation Energy Approach and Temperature Dependence::
+Formation Energy Approach and Temperature Dependence
+^^^^^^^^^^^
 
 The below paragraphs are for informational purposes only.
 
