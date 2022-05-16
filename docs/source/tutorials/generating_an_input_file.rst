@@ -206,7 +206,7 @@ Formation Energy Approach
 
 One key point for generating input files is that the energies are
 computed as a "relative free energies of formation" relative to a *common
-reference* state:
+reference* state. This relative free energy of formation is provided by:
 
 :math:`G_i = H_i - T*S_i - \sum_j (n_j R_j)`
 
@@ -219,9 +219,9 @@ this looks a little confusing (especially with such crude notation) but
 in practice it is pretty easy.
 The general principle is similar to https://en.wikipedia.org/wiki/Born%E2%80%93Haber_cycle 
 and https://en.wikipedia.org/wiki/Hess%27s_law
-In this part of CatMAP, we will
-only be specifying the 0K electronic contribution to the relative formation energies,
-and these do not have a temperature depndence.
+For this type of input file of CatMAP, we will
+be specifying the 0K electronic contribution to the relative formation energies,
+and these do not have a temperature depndence. How other terms become included will be explained later.
 
 In practice, today, the value for :math:`H_i` is generally approximated as being equal to the electronic energy.
 In this case, the equation becomes 
@@ -230,18 +230,16 @@ In this case, the equation becomes
 
 Where :math:`U_i` is the raw/DFT energy of species :math:`i`, 
 
-Here, we will provide a simple example where we are using only electronic energies,
-and will use the variable :math:`E_i` to emphasize that we are using an approximation
-for the free energy, such that :math:`G_i ~ E_i` . However,
-the approach and the use of input files are the same when using a better estimate for :math:`G_i`,
-in which case :math:`-T*S_i` would be added directly after each :math:`U_i`.
+Here, we will provide a simple example of how to provide the electronic energies information
+that CatMAP needs to calculate this contribution for the relative free energy of formation.
+We  will use the variable :math:`E_i` to emphasize that this term, based on `U_i`, represents
+the electronic energy contribution for :math:`G_i` . 
 
 In CatMAP, the the Zero Point Energy (ZPE) correction terms should not be included in `U_i`, 
-While the ZPE correction terms for `U_i` will be added later by CatMAP based on
-the vibrational frequencies provided. 
+The ZPE correction terms for `U_i` will be added later by CatMAP based on
+the vibrational frequencies provided.  The :math:`-T*S_i` term will also be added later by CatMAP
 
-
-Now let's look at the example. Say we want to find the
+Let's look at an example. Say we want to find the
 energy of gas-phase CO relative to carbon (C) in methane (|CH4|), oxygen
 (O) in |H2O|, and hydrogen (H) in molecular hydrogen (|H2|). We first
 compute the reference energies (:math:`\left|R_j\right|`) for each atomic species:
@@ -255,12 +253,12 @@ compute the reference energies (:math:`\left|R_j\right|`) for each atomic specie
 (where again U is a "raw" energy from an ab-initio calculation, or a
 "regular" formation energy from NIST).
 
-Now we can compute the "generalized formation energy" of CO as:
+Now we can compute the electronic contribution to the relative formation energy of CO as:
 
 :math:`E_{\rm{CO}} = U_{\rm{CO}} - R_{\rm{C}} - R_{\rm{O}}`
 
 In the case where CO is adsorbed to a surface, say Pt(211), we can
-compute a "generalized" formation energy relative to the clean surface:
+compute the electronic contribution to the relative formation energy relative to the clean surface:
 
 :math:`E_{{\rm{CO}}*@{\rm{Pt}}(211)} = U_{{\rm{Pt}}(211)+{\rm{CO}}*} - U_{{\rm{Pt}}(211)} - R_{\rm{C}} - R_{\rm{O}}`
 
