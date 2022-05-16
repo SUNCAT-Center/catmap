@@ -325,7 +325,7 @@ When the term :math:`T*S_i` is approximated as sufficiently insignificant, the e
 
 :math:`G_i = U_i - \sum_j (n_j R_j)`
 
-However, CatMAP supports the better accuracy afforded by inclusion of an entropy term:
+However, CatMAP supports an inclusion of an approximate entropy, and use of this feature is encouraged.
 CatMAP uses existing codes to calculate the entropy contributions of 
 for vibrational stretching modes and gas phase translations from statistical mechanics,
 and thus we include stretching mode vibrational frequencies near the end of the example below.
