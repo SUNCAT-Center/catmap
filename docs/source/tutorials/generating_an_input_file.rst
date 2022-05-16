@@ -296,9 +296,9 @@ When looking at an input file that has been created correctly, the gas-phase spe
 as part of the reference state are easy to recognize since their relative formation
 energies will be set to 0. (see :ref:`overview <overview>`).
 
-Formation Energy Approach and Temperature Dependence
-----------------------------------------------------
-This paragraph is for informational purposes only.
+.. Formation Energy Approach and Temperature Dependence::
+
+The below paragraphs are for informational purposes only.
 
 In general, for formation energies, the Temperature and Pressure and any other quantities used for defining the 
 reference states should be reported in the manuscript (whether using a relative formation energy or a standard formation energy).
@@ -320,7 +320,10 @@ When the term :math:`T*S_i` is approximated as sufficiently insignificant, the e
 
 :math:`G_i = U_i - \sum_j (n_j R_j)`
 
-We use this simpler equation to demonstrate the example below.
+However, CatMAP supports the better accuracy afforded by inclusion of the entropy term:
+CatMAP uses existing codes to calculate the entropy contributions of 
+for vibrational stretching modes and gas phase translations from statistical mechanics,
+and thus we include stretching mode vibrational frequencies near the end of the example below.
 
 
 Example
