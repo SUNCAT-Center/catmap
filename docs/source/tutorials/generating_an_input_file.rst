@@ -235,8 +235,10 @@ and will use the variable :math:`E_i` to emphasize that we are using an approxim
 for the free energy, such that :math:`G_i ~ E_i` . However,
 the approach and the use of input files are the same when using a better estimate for :math:`G_i`,
 in which case :math:`-T*S_i` would be added directly after each :math:`U_i`.
-This example will not include Zero Point Energy correction terms in `U_i`, 
-but it is a best practice to include zero point energy correction terms in `U_i`
+
+In CatMAP, the the Zero Point Energy (ZPE) correction terms should not be included in `U_i`, 
+While the ZPE correction terms for `U_i` will be added later by CatMAP based on
+the vibrational frequencies provided. 
 
 
 Now let's look at the example. Say we want to find the
@@ -329,6 +331,8 @@ However, CatMAP supports the better accuracy afforded by inclusion of an entropy
 CatMAP uses existing codes to calculate the entropy contributions of 
 for vibrational stretching modes and gas phase translations from statistical mechanics,
 and thus we include stretching mode vibrational frequencies near the end of the example below.
+
+CatMAP's built-in thermo corrections will then use the frequencies to add in ZPE + enthalpy + entropy to complete `G_i`.
 In the future, even more accurate entropy terms may be included, but present day
 studies are adequately served by using stretching mode contributions for adsorbates.
 
