@@ -223,7 +223,7 @@ In this part of CatMAP, we will
 only be specifying the 0K electronic contribution to the relative formation energies,
 and these do not have a temperature depndence.
 
-In practice, today, the value for :math:`H_i` is genreally approximated as being equal to the electronic energy.
+In practice, today, the value for :math:`H_i` is generally approximated as being equal to the electronic energy.
 In this case, the equation becomes 
 
 :math:`G_i = U_i - T*S_i - \sum_j (n_j R_j)`
