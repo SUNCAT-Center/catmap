@@ -587,6 +587,7 @@ class NewtonRootNumbers:
             if self.DEBUG:
                 # Return the norm of the Jacobian as well
                 Jxnorm = norm(Jx)
+                Jx_numerical_norm = norm(Jx_numerical)
                 yield (x0, fxnorm, Jxnorm, Jx_numerical_norm)
             else:
                 yield (x0, fxnorm)

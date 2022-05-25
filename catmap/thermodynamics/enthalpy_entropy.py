@@ -987,7 +987,7 @@ class ThermoCorrections(ReactionModelWrapper):
                                     delimiter=',',
                                     quotechar='|',
                                     quoting=csv.QUOTE_MINIMAL)
-                _writeout_boltz = self.descriptors + cvgs
+                _writeout_boltz = self._descriptors + cvgs
                 writer.writerow(_writeout_boltz)
 
         return cvgs
