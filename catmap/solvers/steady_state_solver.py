@@ -201,7 +201,8 @@ class SteadyStateSolver(MeanFieldSolver):
         # and is returning the coverages instead of the numbers
         # The simple condition to check this is to see if the norm is lower
         # than the tolerance
-        if norm(f(self.change_x_to_theta(c0))) <= self.tolerance:
+        initial_norm_error = norm(f(self.change_x_to_theta(c0)))
+        if initial_norm_error <= self.tolerance:
             self._coverage = self.change_x_to_theta(c0)
             self._numbers = c0
 
@@ -229,6 +230,23 @@ class SteadyStateSolver(MeanFieldSolver):
                     writer.writerow(writeout)
 
             return self.change_x_to_theta(c0)
+        else:
+            # The initial error is not good enough to say that 
+            # the values are convereged, perform the loop
+            if self.DEBUG:
+                # Write the norm error to file error file in recognition
+                # of the failure of the initial guess to be good enough
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    # If it converges instantly, only the 
+                    # first row will be written because only one
+                    # iteration was needed.
+                    _norm_error = norm(f(self.change_x_to_theta(c0)))
+                    writeout = self._descriptors + [ 0, _norm_error]
+                    writer.writerow(writeout)
 
         # Populate the kwargs 
         solver_kwargs = dict(
@@ -265,7 +283,7 @@ class SteadyStateSolver(MeanFieldSolver):
         maxiter = self.max_rootfinding_iterations
         iterations.maxiter = maxiter
 
-        i = 0
+        i = 1
         for data_iteration in iterations:
 
             # The data given out by the solver is 
@@ -394,6 +412,16 @@ class SteadyStateSolver(MeanFieldSolver):
                     _writeout = self._descriptors + [ 0 ]  + [ f_resid(c0) ]
                     writer.writerow(_writeout)
             return c0
+        else:
+            if self.DEBUG:
+                # Write out the error
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    _writeout = self._descriptors + [ 0 ]  + [ f_resid(c0) ]
+                    writer.writerow(_writeout)
 
         solver_kwargs = dict(
                 norm = norm,
@@ -415,7 +443,7 @@ class SteadyStateSolver(MeanFieldSolver):
         coverages = None
         maxiter = self.max_rootfinding_iterations
         iterations.maxiter = maxiter
-        i = 0
+        i = 1
         x = c0
         for x,error in iterations:
             if self.DEBUG:
