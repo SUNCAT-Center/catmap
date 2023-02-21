@@ -438,7 +438,10 @@ class ThermoCorrections(ReactionModelWrapper):
                         nu_min /= 1000.
                         self._freq_cutoffs[temperature] = nu_min
 
-                    frequencies = [max(nu,nu_min) for nu in frequencies]
+                    for i,nu in enumerate(frequencies):
+                        if nu < nu_min:
+                            frequencies[i] = nu_min[0]
+
                 therm = HarmonicThermo(frequencies)
                 try:
                     free_energy = therm.get_helmholtz_energy(

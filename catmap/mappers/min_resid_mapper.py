@@ -675,6 +675,8 @@ class MinResidMapper(MapperBase):
             norm_old = np.linalg.norm(isMapped)
             isMapped = minresid_iteration(isMapped)
             norm_new = np.linalg.norm(isMapped)
+            if self.DEBUG:
+                break
 
         if n_unmapped == 0:
             self.log('mapper_success',
