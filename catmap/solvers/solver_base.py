@@ -320,6 +320,11 @@ class NewtonRootNumbers:
         # Decide if x_star is fixed or free
         self.fix_x_star = kwargs['fix_x_star']
 
+        if "rcond" in kwargs:
+            self.rcond = kwargs['rcond']
+        else:
+            self.rcond = None 
+
         # Decide if the Jacobian should be checked
         if kwargs['DEBUG']:
             # The Jacobian is checked based on the numerical Jacobian
@@ -394,15 +399,19 @@ class NewtonRootNumbers:
         else:
             return analytical, numerical
 
-    def moore_penrose_inverse(self, M):
+    def moore_penrose_inverse(self, M, rcond=None):
         """Determine the moore-penrose inverse of a matrix."""
         # Take the SVD of M
         U, S, V = self._math.svd_r(M)
+        if rcond:
+            cutoff = rcond * mp.fabs(S[0])
+        else:
+            cutoff = self.precision        
 
         # Take the inverse of S
         S_inv = []
         for i in range(len(S)):
-            if mp.fabs(S[i]) < self.precision:
+            if mp.fabs(S[i]) < cutoff:
                 S_inv.append(self._mpfloat('0.0'))
             else:
                 S_inv.append(self._mpfloat('1.0') / S[i])
@@ -550,7 +559,11 @@ class NewtonRootNumbers:
                 # variables than equations, so we need to use
                 # a least-squares method, which starts with
                 # taking the Moore-Penrose inverse of Jx
-                Jx_plus = self.moore_penrose_inverse(M=Jx)
+                # The conditioning number rcond is 10^5 times
+                # the machine precision
+                prec = -1*int(mp.log10(self.precision)/2) 
+                rcond = self._mpfloat(f'1e{prec}') * self.precision
+                Jx_plus = self.moore_penrose_inverse(M=Jx, rcond=self.rcond)
                 s = Jx_plus * fxn 
 
             # damping step size

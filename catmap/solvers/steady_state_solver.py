@@ -194,7 +194,8 @@ class SteadyStateSolver(MeanFieldSolver):
         solver = NewtonRootNumbers
 
         # The norm that is used to check the error
-        norm = self._math.infnorm
+        # norm = self._math.infnorm
+        norm = self._math.lsqnorm
 
         # Before starting the calculation check if the job is a return job
         # That is, some part of this code has already used this function
@@ -409,7 +410,8 @@ class SteadyStateSolver(MeanFieldSolver):
                                         delimiter=',',
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
-                    _writeout = self._descriptors + [ 0 ]  + [ f_resid(c0) ]
+                    _norm_error = self._math.lsqnorm(c0)
+                    _writeout = self._descriptors + [ 0 ]  + [ _norm_error ]
                     writer.writerow(_writeout)
             return c0
         else:
@@ -452,7 +454,8 @@ class SteadyStateSolver(MeanFieldSolver):
                                         delimiter=',',
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
-                    _writeout = self._descriptors + [ i ] + [ error ]
+                    _norm_error = self._math.lsqnorm(c0)
+                    _writeout = self._descriptors + [ i ] + [ _norm_error ]
                     writer.writerow(_writeout)
             self.log('rootfinding_status',
                     n_iter=i,

@@ -168,6 +168,7 @@ class ReactionModel:
             #self._Axb_solver = mp.qr_solve
             self._Axb_solver = mp.lu_solve
             self._math.infnorm = lambda x: mp.norm(x, 'inf')
+            self._math.lsqnorm = lambda x: mp.norm(x, 2)**2
         elif self.numerical_representation in ['numpy', 'python']:
             self._log_imports += "\nfrom numpy import matrix \n\n"
             self._math = np
