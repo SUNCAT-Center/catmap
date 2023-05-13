@@ -410,7 +410,7 @@ class SteadyStateSolver(MeanFieldSolver):
                                         delimiter=',',
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
-                    _norm_error = self._math.lsqnorm(c0)
+                    _norm_error = self._math.lsqnorm(f(c0))
                     _writeout = self._descriptors + [ 0 ]  + [ _norm_error ]
                     writer.writerow(_writeout)
             return c0
@@ -422,7 +422,8 @@ class SteadyStateSolver(MeanFieldSolver):
                                         delimiter=',',
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
-                    _writeout = self._descriptors + [ 0 ]  + [ f_resid(c0) ]
+                    _norm_error = self._math.lsqnorm(f(c0))
+                    _writeout = self._descriptors + [ 0 ]  + [ _norm_error ]
                     writer.writerow(_writeout)
 
         solver_kwargs = dict(
@@ -454,7 +455,7 @@ class SteadyStateSolver(MeanFieldSolver):
                                         delimiter=',',
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
-                    _norm_error = self._math.lsqnorm(c0)
+                    _norm_error = self._math.lsqnorm(f(x))
                     _writeout = self._descriptors + [ i ] + [ _norm_error ]
                     writer.writerow(_writeout)
             self.log('rootfinding_status',
