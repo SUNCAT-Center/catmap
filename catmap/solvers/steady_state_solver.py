@@ -194,9 +194,31 @@ class SteadyStateSolver(MeanFieldSolver):
         solver = NewtonRootNumbers
 
         # The norm that is used to check the error
-        # norm = self._math.infnorm
         norm = self._math.lsqnorm
-
+        if self.DEBUG:
+            with open('solution.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                coverages_0 = self.change_x_to_theta(c0)
+                writeout = self._descriptors + [0] + [ float(_c) for _c in coverages_0]
+                writer.writerow(writeout)
+            with open("solution_numbers.csv", 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                writeout = self._descriptors + [0] + [float(_x) for _x in c0]
+                writer.writerow(writeout)
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _norm_error = norm(f(self.change_x_to_theta(c0)))
+                writeout = self._descriptors + [ 0, _norm_error]
+                writer.writerow(writeout)
         # Before starting the calculation check if the job is a return job
         # That is, some part of this code has already used this function
         # and is returning the coverages instead of the numbers
@@ -206,48 +228,7 @@ class SteadyStateSolver(MeanFieldSolver):
         if initial_norm_error <= self.tolerance:
             self._coverage = self.change_x_to_theta(c0)
             self._numbers = c0
-
-            if self.DEBUG:
-                # Store the coverages for debugging
-                with open('solution.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile,
-                                        delimiter=',',
-                                        quotechar='|',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    writeout = [ self._descriptors + self.change_x_to_theta(c0) ]
-                    writer.writerow(writeout)
-
-                # Write the norm error to file error file
-                with open('error_log.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile,
-                                        delimiter=',',
-                                        quotechar='|',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    # If it converges instantly, only the 
-                    # first row will be written because only one
-                    # iteration was needed.
-                    _norm_error = norm(f(self.change_x_to_theta(c0)))
-                    writeout = self._descriptors + [ 0, _norm_error]
-                    writer.writerow(writeout)
-
             return self.change_x_to_theta(c0)
-        else:
-            # The initial error is not good enough to say that 
-            # the values are convereged, perform the loop
-            if self.DEBUG:
-                # Write the norm error to file error file in recognition
-                # of the failure of the initial guess to be good enough
-                with open('error_log.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile,
-                                        delimiter=',',
-                                        quotechar='|',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    # If it converges instantly, only the 
-                    # first row will be written because only one
-                    # iteration was needed.
-                    _norm_error = norm(f(self.change_x_to_theta(c0)))
-                    writeout = self._descriptors + [ 0, _norm_error]
-                    writer.writerow(writeout)
 
         # Populate the kwargs 
         solver_kwargs = dict(
@@ -286,14 +267,9 @@ class SteadyStateSolver(MeanFieldSolver):
 
         i = 1
         for data_iteration in iterations:
-
-            # The data given out by the solver is 
-            # based on if the code is run in debug mode
             if self.DEBUG:
                 x, error, Jxnorm, Jxnorm_numer = data_iteration 
-                # Store information for debugging and plotting
-                print (f"{i} \t {error}",
-                       file=open(self.outer_solver_log, 'a'))
+                coverages = self.change_x_to_theta(list(x))
                 with open('error_log.csv', 'a') as csvfile:
                     writer = csv.writer(csvfile,
                                         delimiter=',',
@@ -306,8 +282,23 @@ class SteadyStateSolver(MeanFieldSolver):
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
                     writer.writerow(self._descriptors + [ i, Jxnorm, Jxnorm_numer])
+                with open('solution.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writeout = self._descriptors + [i] + [float(_c) for _c in coverages]
+                    writer.writerow(writeout)
+                with open("solution_numbers.csv", 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writeout = self._descriptors + [i] + [float(_x) for _x in x]
+                    writer.writerow(writeout)
             else:
                 x, error = data_iteration
+                coverages = self.change_x_to_theta(list(x))
 
             self.log('rootfinding_status',
                     n_iter=i,
@@ -319,37 +310,17 @@ class SteadyStateSolver(MeanFieldSolver):
                         n_iter = i,
                         priority = 1)
                 self._error = error
-                coverages = self.change_x_to_theta(list(x))
-
-                if self.DEBUG:
-                    # Store the coverages for debugging
-                    with open('solution.csv', 'a') as csvfile:
-                        writer = csv.writer(csvfile,
-                                            delimiter=',',
-                                            quotechar='|',
-                                            quoting=csv.QUOTE_MINIMAL)
-                        writer.writerow(self._descriptors + coverages)
-
-                # We dont need the coverage of the free sites to be stored
-                numbers = x
                 break
-
-            # Break if the maximum number of iterations is reached
             if i >= maxiter:
                 self.log('rootfinding_maxiter',
                         n_iter=i,
                         resid = float(error))
                 raise ValueError('Out of iterations (resid='+\
                         str(float(error))+')')
-
-        if self.DEBUG:
-            print("", file=open(self.outer_solver_log, 'a'))
-
         if coverages:
             self._coverage = [c for c in coverages]
-            self._numbers = [n for n in numbers]
+            self._numbers = [n for n in x]
             return [c for c in coverages]
-
         else:
             self.log('rootfinding_cancel',
                     n_iter=i,
@@ -387,44 +358,38 @@ class SteadyStateSolver(MeanFieldSolver):
         f = steady_state_fn
         f_resid = lambda x: self.get_residual(x,True,False)
         norm = self._math.infnorm
+        norm_lsqnorm = self._math.lsqnorm
 
         if self.internally_constrain_coverages == True:
             constraint = self.constrain_coverages
         else:
             constraint = lambda x: x
         solver = NewtonRoot
+        if self.DEBUG:
+            with open('solution.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [0] +  c0)
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _writeout = self._descriptors + [ 0 ]  + [ norm_lsqnorm(f(c0)) ]
+                writer.writerow(_writeout)
+            with open('norm_error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _writeout = self._descriptors + [ 0 ]  + [ norm(f(c0)) ]
+                writer.writerow(_writeout)
 
         if f_resid(c0) <= self.tolerance:
             self._coverage = c0
-            if self.DEBUG:
-                # Store the coverages for debugging
-                with open('solution.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile,
-                                        delimiter=',',
-                                        quotechar='|',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    writer.writerow(self._descriptors + c0)
-                # Store the error in a file
-                with open('error_log.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile,
-                                        delimiter=',',
-                                        quotechar='|',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    _norm_error = self._math.lsqnorm(f(c0))
-                    _writeout = self._descriptors + [ 0 ]  + [ _norm_error ]
-                    writer.writerow(_writeout)
             return c0
-        else:
-            if self.DEBUG:
-                # Write out the error
-                with open('error_log.csv', 'a') as csvfile:
-                    writer = csv.writer(csvfile,
-                                        delimiter=',',
-                                        quotechar='|',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    _norm_error = self._math.lsqnorm(f(c0))
-                    _writeout = self._descriptors + [ 0 ]  + [ _norm_error ]
-                    writer.writerow(_writeout)
 
         solver_kwargs = dict(
                 norm = norm,
@@ -449,15 +414,28 @@ class SteadyStateSolver(MeanFieldSolver):
         i = 1
         x = c0
         for x,error in iterations:
+            coverages = self.constrain_coverages(x)
             if self.DEBUG:
                 with open('error_log.csv', 'a') as csvfile:
                     writer = csv.writer(csvfile,
                                         delimiter=',',
                                         quotechar='|',
                                         quoting=csv.QUOTE_MINIMAL)
-                    _norm_error = self._math.lsqnorm(f(x))
-                    _writeout = self._descriptors + [ i ] + [ _norm_error ]
+                    _writeout = self._descriptors + [ i ] + [  norm_lsqnorm(f(x)) ]
                     writer.writerow(_writeout)
+                with open('norm_error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    _writeout = self._descriptors + [ i ] + [ norm(f(x)) ]
+                    writer.writerow(_writeout)
+                with open('solution.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(self._descriptors + [ i ] + [ float(_c) for _c in coverages])
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
@@ -465,15 +443,6 @@ class SteadyStateSolver(MeanFieldSolver):
             i+=1
             if error < self.tolerance:
                 if f_resid(x) < self.tolerance:
-                    coverages = self.constrain_coverages(x)
-                    if self.DEBUG:
-                        # Store the coverages for debugging
-                        with open('solution.csv', 'a') as csvfile:
-                            writer = csv.writer(csvfile,
-                                                delimiter=',',
-                                                quotechar='|',
-                                                quoting=csv.QUOTE_MINIMAL)
-                            writer.writerow(self._descriptors + coverages)
                     self.log('rootfinding_success',
                             n_iter = i,
                             priority = 1)
