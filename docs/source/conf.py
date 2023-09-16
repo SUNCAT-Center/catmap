@@ -56,8 +56,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'CatMAP'
-copyright = u'2014, Andrew J. Medford'
+project = 'CatMAP'
+copyright = '2014, Andrew J. Medford'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -209,8 +209,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'CatMAP.tex', u'CatMAP Documentation',
-   u'Andrew J. Medford', 'manual'),
+  ('index', 'CatMAP.tex', 'CatMAP Documentation',
+   'Andrew J. Medford', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -239,8 +239,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'catmap', u'CatMAP Documentation',
-     [u'Andrew J. Medford'], 1)
+    ('index', 'catmap', 'CatMAP Documentation',
+     ['Andrew J. Medford'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -253,8 +253,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'CatMAP', u'CatMAP Documentation',
-   u'Andrew J. Medford', 'CatMAP', 'One line description of project.',
+  ('index', 'CatMAP', 'CatMAP Documentation',
+   'Andrew J. Medford', 'CatMAP', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -274,10 +274,10 @@ texinfo_documents = [
 # -- Options for Epub output ----------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'CatMAP'
-epub_author = u'Andrew J. Medford'
-epub_publisher = u'Andrew J. Medford'
-epub_copyright = u'2014, Andrew J. Medford'
+epub_title = 'CatMAP'
+epub_author = 'Andrew J. Medford'
+epub_publisher = 'Andrew J. Medford'
+epub_copyright = '2014, Andrew J. Medford'
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = u'CatMAP'
