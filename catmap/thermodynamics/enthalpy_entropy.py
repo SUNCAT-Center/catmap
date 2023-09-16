@@ -1032,20 +1032,6 @@ class ThermoCorrections(ReactionModelWrapper):
         for site in self.site_names:
             if site != 'g':
                 numbers.append(self._mpfloat('1.0'))
-
-        if self.DEBUG:
-            # Write out a csv file with the initial guess
-            # the format of the csv file is a list of self._descriptors
-            # and the initial guess c0 as the output
-            with open('initial_guess.csv', 'a') as csvfile:
-                writer = csv.writer(csvfile,
-                                    delimiter=',',
-                                    quotechar='|',
-                                    quoting=csv.QUOTE_MINIMAL)
-                _boltz_writeout = self._descriptors \
-                                + self.solver.change_x_to_theta(numbers)
-                writer.writerow(_boltz_writeout)
-
         return numbers
 
     def static_pressure(self):
