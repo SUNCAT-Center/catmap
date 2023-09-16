@@ -327,6 +327,42 @@ class SteadyStateSolver(MeanFieldSolver):
                     resid=float(error))
             raise ValueError('Solver cancellation. (resid='+\
                     str(float(error))+')')
+    
+    def get_ode_solution_coverage(self, rxn_parameters, steady_state_fn, c0=None):
+
+        if c0 is None:
+            raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
+
+        self.steady_state_function = steady_state_fn
+        self.steady_state_jacobian = None 
+        self._coverage = [self._mpfloat(ci) for ci in c0]
+        self._rxn_parameters = rxn_parameters
+
+        f = steady_state_fn
+        norm = self._math.infnorm
+        norm_lsqnorm = self._math.lsqnorm
+
+        solver = ODESolver  
+
+        iterations = solver(f,c0, self._matrix, self._mpfloat)
+        i = 0
+        for (t, theta_t, dtheta_dt) in iterations:
+            residual = norm(dtheta_dt)
+            print('t = {t:10.5f} | residual = {residual:10.5f}'.format(t=t, residual=residual))
+            i += 1
+            if residual < self.tolerance:
+                self._coverage = theta_t
+                self.log('rootfinding_success',
+                        n_iter = t,
+                        priority = 1)
+                return theta_t
+            else:
+                if i >= self.max_rootfinding_iterations:
+                    self.log('rootfinding_maxiter',
+                            n_iter=i,
+                            resid = float(residual))
+                    raise ValueError('Out of iterations (resid='+\
+                            str(float(residual))+')') 
 
     def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn,
             c0=None,findrootArgs={}):
@@ -492,6 +528,8 @@ class SteadyStateSolver(MeanFieldSolver):
         """
         if refresh_rate_constants:
             self.get_rate_constants(rxn_parameters,[0]*len(self.adsorbate_names))
+        if self.use_ode_solver:
+            return self.get_ode_solution_coverage(rxn_parameters,self.ideal_steady_state_function,c0)
         if self.use_numbers_solver:
             return self.get_steady_state_numbers(rxn_parameters, self.ideal_steady_state_function,
                     self.ideal_steady_state_jacobian, c0)
@@ -515,6 +553,8 @@ class SteadyStateSolver(MeanFieldSolver):
                 pass
             else:
                 raise ValueError('System does not have enough parameters for interactions')
+        if self.use_ode_solver:
+            return self.get_ode_solution_coverage(rxn_parameters,self.interacting_steady_state_function,c0)
         if self.use_numbers_solver:
             cvgs =  self.get_steady_state_numbers(rxn_parameters,self.interacting_steady_state_function,
                 self.interacting_steady_state_jacobian,c0)

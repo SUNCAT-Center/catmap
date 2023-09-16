@@ -284,6 +284,26 @@ class NewtonRoot:
                 x1 = x0 + l*s
             yield (x0, fxnorm)
 
+class ODESolver:
+    def __init__(self, f, x0, matrix, mpfloat, **kwargs):
+        self._matrix = matrix
+        self._mpfloat = mpfloat
+        self.f = f
+        self.x0 = x0
+        tol = kwargs.get('tol', self._mpfloat('1e-1')) 
+        self.dt = kwargs.get('dt', self._mpfloat('1e-2'))
+        self.t0 = kwargs.get('t0', self._mpfloat('0.0'))
+
+        self.dtheta_dt = lambda t, x: self.f(x)
+        self.theta_t = mp.odefun(self.dtheta_dt, self.t0, self.x0, tol=tol, verbose=True)
+        self.t = self.t0
+
+    def __iter__(self):
+        self.t += self.dt
+        theta_t = self.theta_t(self.t)
+        dtheta_dt = self.f(theta_t)
+        yield (self.t, theta_t, dtheta_dt)
+
 class NewtonRootNumbers:
     """
     Hacked from MDNewton in mpmath/calculus/optimization.py to 
