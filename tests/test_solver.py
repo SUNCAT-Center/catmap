@@ -52,7 +52,12 @@ def generate_solution_coverages():
 @pytest.mark.parametrize("DEBUG", [True, False])
 @pytest.mark.parametrize("numbers_type", ["squared", "exponential"])
 def test_solver_setup(
-    reaction: str, use_numbers_solver: bool, fix_x_star: bool, DEBUG:bool, numbers_type: str, generate_mkm_coverages
+    reaction: str,
+    use_numbers_solver: bool,
+    fix_x_star: bool,
+    DEBUG: bool,
+    numbers_type: str,
+    generate_mkm_coverages,
 ):
     model = generate_mkm_coverages(reaction)
     model.use_numbers_solver = use_numbers_solver
@@ -73,7 +78,7 @@ def test_solver_coverages(
     reaction: str,
     use_numbers_solver: bool,
     fix_x_star: bool,
-    DEBUG:bool,
+    DEBUG: bool,
     generate_mkm_coverages,
     generate_solution_coverages,
 ):

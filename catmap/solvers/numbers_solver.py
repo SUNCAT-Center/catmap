@@ -6,6 +6,7 @@ from .solver_base import NewtonRootNumbers
 
 
 class BaseNumbersSolver(abc.ABC):
+    """Base class for the converting numbers to theta."""
     def __init__(self, *args, **kwargs):
         pass
 
@@ -17,8 +18,15 @@ class BaseNumbersSolver(abc.ABC):
     def get_conversion_matrix(self, x_including_surface, *args, **kwargs):
         pass
 
-class ExponentialNumbersToTheta(BaseNumbersSolver):
 
+class ExponentialNumbersToTheta(BaseNumbersSolver):
+    """Converts the numbers to theta using an exponential numbers to theta conversion
+    
+    This conversion comes from the following equation:
+    .. math::
+        \\theta_i = \\frac{e^{x_i}}{\\sum_{j \\in S_i} e^{x_j}}
+    where :math:`S_i` is the set of all species on site :math:`i`.
+    """
     @classmethod
     def change_x_to_theta(
         cls,
@@ -29,6 +37,27 @@ class ExponentialNumbersToTheta(BaseNumbersSolver):
         species_definitions: Dict[str, Any] = None,
         math_obj=None,
     ):
+        """Converts the numbers to theta
+
+        The conversion is done using the following equation:
+        .. math::
+            \\theta_i = \\frac{e^{x_i}}{\\sum_{j \\in S_i} e^{x_j}}
+        
+        Parameters
+        ----------
+        x_including_surface : list
+            The numbers including the surface
+        return_denominator : bool
+            Whether to return the denominator (sum over the numerator for all sites)
+        adsorbate_names : list
+            The names of the adsorbates
+        site_names : list
+            The names of the sites
+        species_definitions : dict
+            The species definitions
+        math_obj : object
+            The math object to use
+        """
         num_sites = len(site_names) - 1
         site_list = [[] for i in range(num_sites)]
         site_names = list(site_names)
@@ -62,6 +91,29 @@ class ExponentialNumbersToTheta(BaseNumbersSolver):
         math_obj=None,
         mpfloat=None,
     ):
+        """Returns the conversion matrix for the numbers to theta conversion
+
+        This matrix is useful for converting the Jacobian from the coverages
+        basis to the numbers basis. The conversion is done using the following
+        equation:
+        .. math::
+            \\\frac{d\\theta_i}{dx_k} = \\frac{e^{x_i}}{\\sum_{j \\in S_i} e^{x_j}} \\delta_{ik} - \\frac{e^{x_i + x_k}}{\\left(\\sum_{j \\in S_i} e^{x_j}\\right)^2
+        
+        Parameters
+        ----------
+        x_including_surface : list
+            The numbers including the surface
+        adsorbate_names : list
+            The names of the adsorbates
+        site_names : list
+            The names of the sites
+        species_definitions : dict
+            The species definitions
+        math_obj : object
+            The math object to use
+        mpfloat : object
+            The mpfloat object to use
+        """
         coverages, sum_exponentials, species_index = cls.change_x_to_theta(
             x_including_surface,
             adsorbate_names=adsorbate_names,
@@ -80,13 +132,21 @@ class ExponentialNumbersToTheta(BaseNumbersSolver):
                 if species_index[i] == species_index[k]:
                     x_i_plus_x_k = x_including_surface[i] + x_including_surface[k]
                     offdiag_term = math_obj.exp(x_i_plus_x_k)
-                    offdiag_term /= math_obj.power(sum_exponentials[species_index[k]], 2)
+                    offdiag_term /= math_obj.power(
+                        sum_exponentials[species_index[k]], 2
+                    )
                     dtheta_dx_matrix[i, k] -= offdiag_term
         return dtheta_dx_matrix
 
 
 class SquaredNumbersToTheta(BaseNumbersSolver):
-
+    """Converts the numbers to theta using a squared numbers to theta conversion
+    
+    This conversion comes from the following equation:
+    .. math::
+        \\theta_i = \\frac{x_i^2}{\\sum_{j \\in S_i} x_j^2}
+    where :math:`S_i` is the set of all species on site :math:`i`.
+    """
     @classmethod
     def change_x_to_theta(
         cls,
@@ -97,6 +157,27 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
         species_definitions: Dict[str, Any] = None,
         math_obj=None,
     ):
+        """Converts the numbers to theta
+        
+        The conversion is done using the following equation:
+        .. math::
+            \\theta_i = \\frac{x_i^2}{\\sum_{j \\in S_i} x_j^2}
+        
+        Parameters
+        ----------
+        x_including_surface : list
+            The numbers including the surface
+        return_denominator : bool
+            Whether to return the denominator (sum over the numerator for all sites)
+        adsorbate_names : list
+            The names of the adsorbates
+        site_names : list
+            The names of the sites
+        species_definitions : dict
+            The species definitions
+        math_obj : object
+            The math object to use
+        """
         num_sites = len(site_names) - 1
         site_list = [[] for i in range(num_sites)]
         site_names = list(site_names)
@@ -130,6 +211,29 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
         math_obj=None,
         mpfloat=None,
     ):
+        """Returns the conversion matrix for the numbers to theta conversion
+        
+        This matrix is useful for converting the Jacobian from the coverages
+        basis to the numbers basis. The conversion is done using the following
+        equation:
+        .. math::
+            \\\frac{d\\theta_i}{dx_k} = \\frac{2x_i}{\\sum_{j \\in S_i} x_j^2} \\delta_{ik} - \\frac{2x_i^2}{\\left(\\sum_{j \\in S_i} x_j^2\\right)^2}
+        
+        Parameters
+        ----------
+        x_including_surface : list
+            The numbers including the surface
+        adsorbate_names : list
+            The names of the adsorbates
+        site_names : list
+            The names of the sites
+        species_definitions : dict
+            The species definitions
+        math_obj : object
+            The math object to use
+        mpfloat : object
+            The mpfloat object to use
+        """
         coverages, sum_sq_numbers, species_index = cls.change_x_to_theta(
             x_including_surface,
             adsorbate_names=adsorbate_names,
@@ -150,7 +254,7 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
                     offdiag_term /= math_obj.power(sum_sq_numbers[species_index[k]], 2)
                     offdiag_term *= mpfloat("2.")
                     offdiag_term *= x_including_surface[k]
-                    dtheta_dx_matrix[i, k] -= offdiag_term 
+                    dtheta_dx_matrix[i, k] -= offdiag_term
         return dtheta_dx_matrix
 
 
@@ -163,18 +267,42 @@ def debug_writer(filename, writeout):
 
 
 def get_theta_converter(numbers_type):
+    """Returns the theta converter based on the numbers_type
+    
+    Parameters
+    ----------
+    numbers_type : str
+        The type of numbers to use, either squared or exponential
+    """
     if numbers_type == "squared" or numbers_type == None:
         return SquaredNumbersToTheta()
     elif numbers_type == "exponential":
         return ExponentialNumbersToTheta()
     else:
-        raise TypeError( 
+        raise TypeError(
             """\
 Unknown type of numbers_type, use either squared or exponential."""
         )
 
 
 class SteadyStateNumbersSolver:
+    """Steady State Numbers solvers to solve the steady state equations
+    
+    This class is used to solve the steady state equations for the numbers
+    solver. The steady state equations are solved using a Newton-Raphson 
+    method implemented in :meth:`catmap.solvers.solver_base.NewtonRootNumbers`.
+
+    Parameters
+    ----------
+    rxn_parameters : dict
+        The reaction parameters for the reaction
+    steady_state_fn : function
+        The steady state function which is a function of the coverages
+    jacobian_fn : function
+        The Jacobian function which is a function of the coverages
+    c0 : list
+        The initial guess for the numbers
+    """
     def __init__(self):
         pass
 
