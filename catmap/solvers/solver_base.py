@@ -523,6 +523,7 @@ class NewtonRootNumbers:
                     for i in range(Jtheta.cols):
                         assert mp.fabs(mp.fsum(Jtheta[:, i])) < self.precision, "Jacobian column is not zero"
                     for i in range(dtheta_dx.cols):
+                        print(mp.fsum(dtheta_dx[:, i]))
                         assert mp.fabs(mp.fsum(dtheta_dx[:, i])) < self.precision, "dtheta_dx column is not zero"
 
                     # The Jacobian in x-space must also have the same

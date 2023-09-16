@@ -17,24 +17,86 @@ class BaseNumbersSolver(abc.ABC):
     def get_conversion_matrix(self, x_including_surface, *args, **kwargs):
         pass
 
-
-class SquaredNumbersToTheta(BaseNumbersSolver):
-    def __init__(self):
-        pass
+class ExponentialNumbersToTheta(BaseNumbersSolver):
 
     @classmethod
     def change_x_to_theta(
         cls,
         x_including_surface,
-        return_sum_sq_numbers=False,
+        return_denominator=False,
         adsorbate_names: Sequence[str] = None,
         site_names: Sequence[str] = None,
         species_definitions: Dict[str, Any] = None,
         math_obj=None,
     ):
-        # Each site has its own coverage which will
-        # Split the adsorbate names into the different sites
-        # The subtraction of 1 is to remove the 'g' site
+        num_sites = len(site_names) - 1
+        site_list = [[] for i in range(num_sites)]
+        site_names = list(site_names)
+        site_names.remove("g")
+        species_list = list(adsorbate_names) + site_names
+        species_index = []
+        for i, ads in enumerate(species_list):
+            site = species_definitions[ads]["site"]
+            site_index = site_names.index(site)
+            site_list[site_index].append(x_including_surface[i])
+            species_index.append(site_index)
+        sum_exponentials = [[] for i in range(num_sites)]
+        for i, site_x in enumerate(site_list):
+            sum_exponentials[i] = math_obj.fsum([math_obj.exp(n) for n in site_x])
+        theta = []
+        for i, x in enumerate(x_including_surface):
+            coverage = math_obj.exp(x) / sum_exponentials[species_index[i]]
+            theta.append(coverage)
+        if return_denominator:
+            return theta, sum_exponentials, species_index
+        else:
+            return theta
+
+    @classmethod
+    def get_conversion_matrix(
+        cls,
+        x_including_surface,
+        adsorbate_names: Sequence[str] = None,
+        site_names: Sequence[str] = None,
+        species_definitions: Dict[str, Any] = None,
+        math_obj=None,
+        mpfloat=None,
+    ):
+        coverages, sum_exponentials, species_index = cls.change_x_to_theta(
+            x_including_surface,
+            adsorbate_names=adsorbate_names,
+            site_names=site_names,
+            species_definitions=species_definitions,
+            math_obj=math_obj,
+            return_denominator=True,
+        )
+        dtheta_dx_matrix = math_obj.matrix(len(coverages), len(coverages))
+        for i in range(dtheta_dx_matrix.rows):
+            for k in range(dtheta_dx_matrix.cols):
+                if i == k:
+                    diag_term = math_obj.exp(x_including_surface[i])
+                    diag_term /= sum_exponentials[species_index[i]]
+                    dtheta_dx_matrix[i, k] += diag_term
+                if species_index[i] == species_index[k]:
+                    x_i_plus_x_k = x_including_surface[i] + x_including_surface[k]
+                    offdiag_term = math_obj.exp(x_i_plus_x_k)
+                    offdiag_term /= math_obj.power(sum_exponentials[species_index[k]], 2)
+                    dtheta_dx_matrix[i, k] -= offdiag_term
+        return dtheta_dx_matrix
+
+
+class SquaredNumbersToTheta(BaseNumbersSolver):
+
+    @classmethod
+    def change_x_to_theta(
+        cls,
+        x_including_surface,
+        return_denominator=False,
+        adsorbate_names: Sequence[str] = None,
+        site_names: Sequence[str] = None,
+        species_definitions: Dict[str, Any] = None,
+        math_obj=None,
+    ):
         num_sites = len(site_names) - 1
         site_list = [[] for i in range(num_sites)]
         site_names = list(site_names)
@@ -53,7 +115,7 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
         for i, x in enumerate(x_including_surface):
             coverage = math_obj.power(x, 2) / sum_sq_numbers[species_index[i]]
             theta.append(coverage)
-        if return_sum_sq_numbers:
+        if return_denominator:
             return theta, sum_sq_numbers, species_index
         else:
             return theta
@@ -74,29 +136,21 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
             site_names=site_names,
             species_definitions=species_definitions,
             math_obj=math_obj,
-            return_sum_sq_numbers=True,
+            return_denominator=True,
         )
-        # Populate the diagonal of M with the dtheta/dx terms
         dtheta_dx_matrix = math_obj.matrix(len(coverages), len(coverages))
         for i in range(dtheta_dx_matrix.rows):
             for k in range(dtheta_dx_matrix.cols):
                 if i == k:
-                    # This is a diagonal element and so has the additional delta_{ik}
-                    # term.
-                    dtheta_dx_matrix[i, k] += mpfloat("2.0") * x_including_surface[i]
-                    dtheta_dx_matrix[i, k] /= sum_sq_numbers[species_index[i]]
-                # This extra term is to to account for the influence of
-                # all other x's on a particular theta value, this
-                # term is present only if the species index of both
-                # the x's i and k are the same
+                    diag_term = mpfloat("2.0") * x_including_surface[i]
+                    diag_term /= sum_sq_numbers[species_index[i]]
+                    dtheta_dx_matrix[i, k] += diag_term
                 if species_index[i] == species_index[k]:
-                    dtheta_dx_matrix[i, k] -= (
-                        math_obj.power(x_including_surface[i], 2)
-                        / math_obj.power(sum_sq_numbers[species_index[k]], 2)
-                        * mpfloat("2.")
-                        * x_including_surface[k]
-                    )
-        # The dtheta/dx matrix has all the terms for all the species + empty sites
+                    offdiag_term = math_obj.power(x_including_surface[i], 2)
+                    offdiag_term /= math_obj.power(sum_sq_numbers[species_index[k]], 2)
+                    offdiag_term *= mpfloat("2.")
+                    offdiag_term *= x_including_surface[k]
+                    dtheta_dx_matrix[i, k] -= offdiag_term 
         return dtheta_dx_matrix
 
 
@@ -111,8 +165,10 @@ def debug_writer(filename, writeout):
 def get_theta_converter(numbers_type):
     if numbers_type == "squared" or numbers_type == None:
         return SquaredNumbersToTheta()
+    elif numbers_type == "exponential":
+        return ExponentialNumbersToTheta()
     else:
-        raise ValueError(
+        raise TypeError( 
             """\
 Unknown type of numbers_type, use either squared or exponential."""
         )
@@ -149,7 +205,7 @@ class SteadyStateNumbersSolver:
             site_names=self.site_names,
             species_definitions=self.species_definitions,
             math_obj=self._math,
-            return_sum_sq_numbers=False,
+            return_denominator=False,
         )
         get_conversion_matrix = lambda x: totheta.get_conversion_matrix(
             x,

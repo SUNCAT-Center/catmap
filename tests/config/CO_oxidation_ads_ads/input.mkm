@@ -44,7 +44,7 @@ scaling_constraint_dict = {
                            }
 
 decimal_precision = 300
-tolerance = 1e-50
+tolerance = 1e-10
 max_root_finding_iterations = 250
 max_bisections = 0
 max_damping_iterations = 15
