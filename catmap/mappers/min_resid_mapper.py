@@ -427,8 +427,6 @@ class MinResidMapper(MapperBase):
                         elif self.use_numbers_solver:
                             self.get_point_output(point,guess_coverage)
                             self._numbers_map.append([point, self._numbers])
-                            # esites = len(self.site_names) - 1
-                            point_coverage = self.solver.change_x_to_theta(guess_coverage)#[:-esites]
                             self._coverage_map.append([point, self._coverage])
                         else:
                             raise ValueError('Unknown solver type')
