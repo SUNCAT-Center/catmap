@@ -14,7 +14,7 @@ import re
 import mpmath
 import csv
 
-from .numbers_solver import SquaredNumbersToTheta, SteadyStateNumbersSolver 
+from .numbers_solver import SquaredNumbersToTheta, SteadyStateNumbersSolver, debug_writer
 
 class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
 
@@ -91,6 +91,43 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
             return self.get_ideal_coverages(rxn_parameters,c0,True,findrootArgs)
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
+
+    def get_ode_solution_coverage(self, rxn_parameters, steady_state_fn, c0=None):
+
+        if c0 is None:
+            raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
+
+        self.steady_state_function = steady_state_fn
+        self.steady_state_jacobian = None 
+        self._coverage = [self._mpfloat(ci) for ci in c0]
+        self._rxn_parameters = rxn_parameters
+
+        f = steady_state_fn
+        norm = self._math.infnorm
+        norm_lsqnorm = self._math.lsqnorm
+
+        solver = ODESolver  
+
+        iterations = solver(f,c0, self._matrix, self._mpfloat)
+        i = 0
+        for (t, theta_t, dtheta_dt) in iterations:
+            residual = norm(dtheta_dt)
+            print('iteration={i}, t = {t:10.16f} | residual = {residual:10.5f}'.format(i=i,t=float(t), residual=float(residual)))
+            debug_writer("error_log.csv", self._descriptors + [i, residual])
+            i += 1
+            if residual < self.tolerance:
+                self._coverage = theta_t
+                self.log('rootfinding_success',
+                        n_iter = t,
+                        priority = 1)
+                return theta_t
+            else:
+                if i >= self.max_rootfinding_iterations:
+                    self.log('rootfinding_maxiter',
+                            n_iter=i,
+                            resid = float(residual))
+                    raise ValueError('Out of iterations (resid='+\
+                            str(float(residual))+')') 
 
     def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn,
             c0=None,findrootArgs={}):
