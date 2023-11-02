@@ -168,6 +168,7 @@ class ReactionModel:
             #self._Axb_solver = mp.qr_solve
             self._Axb_solver = mp.lu_solve
             self._math.infnorm = lambda x: mp.norm(x, 'inf')
+            self._math.lsqnorm = lambda x: mp.norm(x, 2)**2
         elif self.numerical_representation in ['numpy', 'python']:
             self._log_imports += "\nfrom numpy import matrix \n\n"
             self._math = np
@@ -284,6 +285,8 @@ class ReactionModel:
                         # Line is too long for logfile -> put into pickle
                         self._pickle_attrs.append(attr)
             pickled_data = {}
+            if self.use_numbers_solver:
+                self._pickle_attrs.append('numbers_map')
             for attr in self._pickle_attrs:
                 pickled_data[attr] = getattr(self, attr)
             if sys.version_info[0]<3:
@@ -376,7 +379,11 @@ class ReactionModel:
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
-                data_file = 'data.pkl')
+                use_numbers_solver = False,
+                max_damping_iterations = 10,
+                fix_x_star = False,
+                data_file = 'data.pkl',
+                DEBUG = False,)
 
         globs = {}
         locs = defaults
@@ -1157,7 +1164,6 @@ class ReactionModel:
                     not callable(getattr(self,attr)) and
                     attr not in self._classes and
                     not inspect.ismodule(getattr(self,attr))):
-                print(attr)
                 val = repr(getattr(self,attr))
                 new_line = ''
                 if attr not in self._pickle_attrs:

@@ -1,0 +1,58 @@
+surface_name	site_name	species_name	coverage	formation_energy	bulk_structure	frequencies	other_parameters	reference
+None	gas	CO2	0	2.46	None	[1333,2349,667,667]	[]	"NIST"
+None	gas	CO	0	2.77	None	[2170]	[]	"Energy Environ. Sci., 3, 1311-1315 (2010)"
+None	gas	O2	0	5.42	None	[1580]	[]	NIST
+Ru	111	O	0.25	-0.07	fcc	[]	[]	Falsig et al (2012)
+Ni	111	O	0.25	0.35	fcc	[]	[]	Falsig et al (2012)
+Rh	111	O	0.25	0.54	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	O	0.25	1.62	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pd	111	O	0.25	1.55	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Cu	111	O	0.25	1.08	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	O	0.25	2.04	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Au	111	O	0.25	2.75	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Rh	111	O	0.50	0.76	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	O	0.50	1.9	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pd	111	O	0.50	1.88	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Cu	111	O	0.50	1.755	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	O	0.50	2.585	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Au	111	O	0.50	3.065	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Rh	111	O	0.75	1.043	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	O	0.75	2.243	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pd	111	O	0.75	2.237	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Cu	111	O	0.75	2.423	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	O	0.75	3.147	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Au	111	O	0.75	3.5	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Rh	111	O	1.00	1.31	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	O	1.00	2.592	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pd	111	O	1.00	2.665	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Cu	111	O	1.00	2.925	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	O	1.00	3.55	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Au	111	O	1.00	3.797	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ru	111	CO	0.25	1.3	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ni	111	CO	0.25	1.63	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Au	111	CO	0.25	3.04	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Rh	111	CO	0.25	1.25	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	CO	0.25	1.49	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pd	111	CO	0.25	1.3	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Cu	111	CO	0.25	2.53	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	CO	0.25	2.96	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Rh	111	CO	0.50	1.58	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	CO	0.50	1.915	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	CO	0.50	3.07	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Rh	111	CO	1.00	2.193	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pt	111	CO	1.00	2.473	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Pd	111	CO	1.00	2.335	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Cu	111	CO	1.00	3.455	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Ag	111	CO	1.00	3.247	fcc	[]	[]	Khan et. al. Parameterization of an interaction model for adsorbate-adsorbate interactions
+Rh	111	O-CO	0.25	3.1	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pt	111	O-CO	0.25	4.04	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Pd	111	O-CO	0.25	4.2	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Cu	111	O-CO	0.25	4.18	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Ag	111	O-CO	0.25	5.05	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Au	111	O-CO	0.25	5.74	fcc	[]	[]	"Angew. Chem. Int. Ed., 47, 4835 (2008)"
+Rh	111	O-O	0.25	3.79	fcc	[]	[]	Falsig et al (2012)
+Pt	111	O-O	0.25	5.35	fcc	[]	[]	Falsig et al (2012)
+Pd	111	O-O	0.25	5.34	fcc	[]	[]	Falsig et al (2012)
+Cu	111	O-O	0.25	4.74	fcc	[]	[]	Falsig et al (2012)
+Ag	111	O-O	0.25	5.98	fcc	[]	[]	Falsig et al (2012)
+Au	111	O-O	0.25	7.22	fcc	[]	[]	Falsig et al (2012)

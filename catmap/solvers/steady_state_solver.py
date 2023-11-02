@@ -11,11 +11,16 @@ import math
 from string import Template
 import random
 import re
+import mpmath
+import csv
 
-class SteadyStateSolver(MeanFieldSolver):
+from .numbers_solver import SquaredNumbersToTheta, SteadyStateNumbersSolver, debug_writer
+
+class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
 
     def __init__(self,reaction_model=None):
         MeanFieldSolver.__init__(self,reaction_model)
+        SteadyStateNumbersSolver.__init__(self)
         defaults = dict(
                 max_rootfinding_iterations = 50,
                 internally_constrain_coverages = True,
@@ -51,7 +56,10 @@ class SteadyStateSolver(MeanFieldSolver):
         :type coverages: [float]
 
         """
-
+        # Flatten the rxn_parameters
+        for i, param in enumerate(rxn_parameters):
+            if isinstance(param, np.ndarray):
+                rxn_parameters[i] = param[0]
         if self.adsorbate_interaction_model not in [None,'ideal']:
             memo = tuple(rxn_parameters) + tuple(coverages) + tuple(self._gas_energies)
         else:
@@ -84,6 +92,43 @@ class SteadyStateSolver(MeanFieldSolver):
         else:
             return self.get_interacting_coverages(rxn_parameters,c0,1.0,findrootArgs)
 
+    def get_ode_solution_coverage(self, rxn_parameters, steady_state_fn, c0=None):
+
+        if c0 is None:
+            raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
+
+        self.steady_state_function = steady_state_fn
+        self.steady_state_jacobian = None 
+        self._coverage = [self._mpfloat(ci) for ci in c0]
+        self._rxn_parameters = rxn_parameters
+
+        f = steady_state_fn
+        norm = self._math.infnorm
+        norm_lsqnorm = self._math.lsqnorm
+
+        solver = ODESolver  
+
+        iterations = solver(f,c0, self._matrix, self._mpfloat)
+        i = 0
+        for (t, theta_t, dtheta_dt) in iterations:
+            residual = norm(dtheta_dt)
+            print('iteration={i}, t = {t:10.16f} | residual = {residual:10.5f}'.format(i=i,t=float(t), residual=float(residual)))
+            debug_writer("error_log.csv", self._descriptors + [i, residual])
+            i += 1
+            if residual < self.tolerance:
+                self._coverage = theta_t
+                self.log('rootfinding_success',
+                        n_iter = t,
+                        priority = 1)
+                return theta_t
+            else:
+                if i >= self.max_rootfinding_iterations:
+                    self.log('rootfinding_maxiter',
+                            n_iter=i,
+                            resid = float(residual))
+                    raise ValueError('Out of iterations (resid='+\
+                            str(float(residual))+')') 
+
     def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn,
             c0=None,findrootArgs={}):
         """Return steady-state coverages using catmap.solvers.solver_base.NewtonRoot .
@@ -114,12 +159,34 @@ class SteadyStateSolver(MeanFieldSolver):
         f = steady_state_fn
         f_resid = lambda x: self.get_residual(x,True,False)
         norm = self._math.infnorm
+        norm_lsqnorm = self._math.lsqnorm
 
         if self.internally_constrain_coverages == True:
             constraint = self.constrain_coverages
         else:
             constraint = lambda x: x
         solver = NewtonRoot
+        if self.DEBUG:
+            with open('solution.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(self._descriptors + [0] +  c0)
+            with open('error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _writeout = self._descriptors + [ 0 ]  + [ norm_lsqnorm(f(c0)) ]
+                writer.writerow(_writeout)
+            with open('norm_error_log.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='|',
+                                    quoting=csv.QUOTE_MINIMAL)
+                _writeout = self._descriptors + [ 0 ]  + [ norm(f(c0)) ]
+                writer.writerow(_writeout)
 
         if f_resid(c0) <= self.tolerance:
             self._coverage = c0
@@ -145,9 +212,31 @@ class SteadyStateSolver(MeanFieldSolver):
         coverages = None
         maxiter = self.max_rootfinding_iterations
         iterations.maxiter = maxiter
-        i = 0
+        i = 1
         x = c0
         for x,error in iterations:
+            coverages = self.constrain_coverages(x)
+            if self.DEBUG:
+                with open('error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    _writeout = self._descriptors + [ i ] + [  norm_lsqnorm(f(x)) ]
+                    writer.writerow(_writeout)
+                with open('norm_error_log.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    _writeout = self._descriptors + [ i ] + [ norm(f(x)) ]
+                    writer.writerow(_writeout)
+                with open('solution.csv', 'a') as csvfile:
+                    writer = csv.writer(csvfile,
+                                        delimiter=',',
+                                        quotechar='|',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(self._descriptors + [ i ] + [ float(_c) for _c in coverages])
             self.log('rootfinding_status',
                     n_iter=i,
                     resid=float(error),
@@ -155,7 +244,6 @@ class SteadyStateSolver(MeanFieldSolver):
             i+=1
             if error < self.tolerance:
                 if f_resid(x) < self.tolerance:
-                    coverages = self.constrain_coverages(x)
                     self.log('rootfinding_success',
                             n_iter = i,
                             priority = 1)
@@ -205,8 +293,14 @@ class SteadyStateSolver(MeanFieldSolver):
         """
         if refresh_rate_constants:
             self.get_rate_constants(rxn_parameters,[0]*len(self.adsorbate_names))
-        return self.get_steady_state_coverage(rxn_parameters,self.ideal_steady_state_function,
-                self.ideal_steady_state_jacobian,c0,findrootArgs)
+        if self.use_ode_solver:
+            return self.get_ode_solution_coverage(rxn_parameters,self.ideal_steady_state_function,c0)
+        if self.use_numbers_solver:
+            return self.get_steady_state_numbers(rxn_parameters, self.ideal_steady_state_function,
+                    self.ideal_steady_state_jacobian, c0)
+        else:
+            return self.get_steady_state_coverage(rxn_parameters,self.ideal_steady_state_function,
+                    self.ideal_steady_state_jacobian,c0,findrootArgs)
 
     def get_interacting_coverages(self,rxn_parameters,c0=None,
             interaction_strength=1.0,findrootArgs={}):
@@ -224,8 +318,14 @@ class SteadyStateSolver(MeanFieldSolver):
                 pass
             else:
                 raise ValueError('System does not have enough parameters for interactions')
-        cvgs =  self.get_steady_state_coverage(rxn_parameters,self.interacting_steady_state_function,
-            self.interacting_steady_state_jacobian,c0,findrootArgs)
+        if self.use_ode_solver:
+            return self.get_ode_solution_coverage(rxn_parameters,self.interacting_steady_state_function,c0)
+        if self.use_numbers_solver:
+            cvgs =  self.get_steady_state_numbers(rxn_parameters,self.interacting_steady_state_function,
+                self.interacting_steady_state_jacobian,c0)
+        else:
+            cvgs =  self.get_steady_state_coverage(rxn_parameters,self.interacting_steady_state_function,
+                self.interacting_steady_state_jacobian,c0,findrootArgs)
         return cvgs
 
     def bisect_interaction_strength(self,rxn_parameters,valid_strength,valid_coverages,target_strength,max_bisections,findrootArgs={}):
@@ -269,14 +369,31 @@ class SteadyStateSolver(MeanFieldSolver):
         if not self.atomic_reservoir_dict:
             #check all possibilities, return min residual
             min_resid = 1e99
-            boltz_cvgs = [[0]*len(self.adsorbate_names)] #include empty coverage as possible guess
+            if self.use_numbers_solver:
+                # no need to include empty coverage as possible guess
+                # As the Jacobian for such a guess will be singular
+                # sites = len(self.site_names) - 1 
+                # boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names) + [self._mpfloat('1.0')]*sites] 
+                boltz_cvgs = []
+            else:
+                #include empty coverage as possible guess
+                boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names)] 
+
             for ref_dict in self.atomic_reservoir_list:
                 self.atomic_reservoir_dict = ref_dict
-                cvgs = self.thermodynamics.boltzmann_coverages(energy_dict)
+                if self.use_numbers_solver:
+                    cvgs = self.thermodynamics.boltzmann_numbers(energy_dict)
+                else:
+                    cvgs = self.thermodynamics.boltzmann_coverages(energy_dict)
                 boltz_cvgs.append(cvgs)
+            
 
         else:
-            boltz_cvgs = [self.thermodynamics.boltzmann_coverages(energy_dict)]
+            if self.use_numbers_solver:
+                boltz_cvgs = [self.thermodynamics.boltzmann_numbers(energy_dict)]
+            else:
+                boltz_cvgs = [self.thermodynamics.boltzmann_coverages(energy_dict)]
+            
 
         return boltz_cvgs
 
@@ -286,7 +403,7 @@ class SteadyStateSolver(MeanFieldSolver):
             :TODO:
         """
 
-        if validate_coverages == True:
+        if validate_coverages == True and not self.use_numbers_solver:
             coverages = self.constrain_coverages(coverages)
         self._coverage = coverages
         if refresh_rate_constants == True:
@@ -303,8 +420,12 @@ class SteadyStateSolver(MeanFieldSolver):
         """
             :TODO:
         """
-
-        memo = tuple(self._rxn_parameters) + tuple(self._gas_energies) + \
+        # Flatten the rxn_parameters
+        rxn_parameters = self._rxn_parameters
+        for i, param in enumerate(rxn_parameters):
+            if isinstance(param, np.ndarray):
+                rxn_parameters[i] = param[0]
+        memo = tuple(rxn_parameters) + tuple(self._gas_energies) + \
                 tuple(self._site_energies) + tuple(coverages) + tuple(self.gas_pressures+[self.temperature])
         if memo in self._steady_state_memoize:
             return self._steady_state_memoize[memo]
@@ -374,19 +495,48 @@ class SteadyStateSolver(MeanFieldSolver):
             #make 2 versions of rate-constants function
             energy_expressions_noderivs = '\n    '.join(self.reaction_energy_equations(adsorbate_interactions = False))
             energy_expressions_derivs = '\n    '.join(self.reaction_energy_equations(adsorbate_interactions = True))
+            if self.DEBUG:
+                with open('elementary_rxn_energy_expressions.log','w') as f:
+                    f.write(energy_expressions_noderivs)
+                with open('elementary_rxn_energy_expressions_derivs.log','w') as f:
+                    f.write(energy_expressions_derivs)
 
             templates['rate_constants_no_derivatives'] = Template(templates['rate_constants']).safe_substitute({'elementary_step_energetics':energy_expressions_noderivs})
             templates['rate_constants_with_derivatives'] = Template(templates['rate_constants']).safe_substitute({'elementary_step_energetics':energy_expressions_derivs})
 
             #make steady-state expressions
             ss_eqs = self.rate_equations()
+            if self.DEBUG:
+                with open('steady_state_equations.log', 'w') as handle:
+                    handle.write('\n'.join(ss_eqs))
+            # If we are using the numbers solver, the length of the 
+            # steady state function needs to be one more than that of the 
+            # number of adsorbates.
+            if self.use_numbers_solver:
+                # Determine the length of the surface based on the number of
+                # adsorbates and sites. Current implementation has the 'g' as a
+                # site, and that should not be included in the numbers solver.
+                # Hence the total number of theta's to solver for is 
+                # the number of adsorbate + sites -1 (to account for the 'g' site)
+                self._function_substitutions['theta_length'] = len(self.adsorbate_names) + len(self.site_names) - 1
+                self._function_substitutions['number_of_adsorbates'] = len(self.adsorbate_names)
+            else:
+                self._function_substitutions['theta_length'] = len(self.adsorbate_names)
+                self._function_substitutions['number_of_adsorbates'] = len(self.adsorbate_names)
+
             self._function_substitutions['steady_state_expressions'] = '\n    '.join(ss_eqs)
 
-            #make jacobian expressions
+            # make jacobian expressions
             jac_eqs = self.jacobian_equations(adsorbate_interactions=True)
+            if self.DEBUG:
+                with open('jacobian_eqs.log','w') as handle:
+                    handle.write('\n'.join(jac_eqs))
             self._function_substitutions['jacobian_expressions'] = '\n    '.join(jac_eqs)
             jac_eqs_nd = self.jacobian_equations(adsorbate_interactions=False)
             self._function_substitutions['jacobian_expressions_no_derivatives'] = '\n    '.join(jac_eqs_nd)
+            if self.DEBUG:
+                with open('jacobian_eqs_noderiv.log','w') as handle:
+                    handle.write('\n'.join(jac_eqs_nd))
 
             def indent_string(string,levels):
                 lines = string.split('\n')
