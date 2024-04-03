@@ -349,7 +349,7 @@ class MeanFieldSolver(SolverBase):
             if (d_wrt not in sites # Not differentiating with respect to a site 
                 and d_idx in ads_idxs # Differentiating with respect to an adsorbate 
                 and d_site not in sites # Site not present in the rate expression 
-                and self.fix_x_star == True): # Fixing x_star
+                and (self.use_numbers_solver == False or self.fix_x_star == True)): # Fixing x_star
                 # Scenario 1: Differentiating with respect to an adsorbate
                 # but there is no site term in the rate equation. 
                 multiplier = ads_idxs.count(d_idx) #get order
@@ -389,7 +389,7 @@ class MeanFieldSolver(SolverBase):
 
             elif ( d_site in sites # Site present in the rate expression 
                   and d_idx not in ads_idxs # Adsorbates not present in the rate expression 
-                  and self.fix_x_star == True): # Fixing x_star
+                  and (self.use_numbers_solver == False or self.fix_x_star == True)): # Fixing x_star
                 # Scenario 3: There is an empty site in 
                 # the rate equation but there is no adsorbate term
                 multiplier = sites.count(d_site)
@@ -438,7 +438,7 @@ class MeanFieldSolver(SolverBase):
                         [ads_str]*(ads_mult-1))+ ')'
                 rate_string += '*'+mult_rule
 
-            elif self.fix_x_star == False:
+            elif (self.use_numbers_solver == True and self.fix_x_star == False):
                 # Scenario 5: If x_star is not fixed, then 
                 # the partial derivatives are to be taken 
                 # independently for each site and adsorbate   
