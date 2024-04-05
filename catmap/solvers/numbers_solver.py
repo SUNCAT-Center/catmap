@@ -21,7 +21,7 @@ class BaseNumbersSolver(abc.ABC):
 
 class ExponentialNumbersToTheta(BaseNumbersSolver):
     """Converts the numbers to theta using an exponential numbers to theta conversion
-    
+
     This conversion comes from the following equation:
     .. math::
         \\theta_i = \\frac{e^{x_i}}{\\sum_{j \\in S_i} e^{x_j}}
@@ -42,7 +42,7 @@ class ExponentialNumbersToTheta(BaseNumbersSolver):
         The conversion is done using the following equation:
         .. math::
             \\theta_i = \\frac{e^{x_i}}{\\sum_{j \\in S_i} e^{x_j}}
-        
+
         Parameters
         ----------
         x_including_surface : list
@@ -98,7 +98,7 @@ class ExponentialNumbersToTheta(BaseNumbersSolver):
         equation:
         .. math::
             \\\frac{d\\theta_i}{dx_k} = \\frac{e^{x_i}}{\\sum_{j \\in S_i} e^{x_j}} \\delta_{ik} - \\frac{e^{x_i + x_k}}{\\left(\\sum_{j \\in S_i} e^{x_j}\\right)^2
-        
+
         Parameters
         ----------
         x_including_surface : list
@@ -141,7 +141,7 @@ class ExponentialNumbersToTheta(BaseNumbersSolver):
 
 class SquaredNumbersToTheta(BaseNumbersSolver):
     """Converts the numbers to theta using a squared numbers to theta conversion
-    
+
     This conversion comes from the following equation:
     .. math::
         \\theta_i = \\frac{x_i^2}{\\sum_{j \\in S_i} x_j^2}
@@ -158,11 +158,11 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
         math_obj=None,
     ):
         """Converts the numbers to theta
-        
+
         The conversion is done using the following equation:
         .. math::
             \\theta_i = \\frac{x_i^2}{\\sum_{j \\in S_i} x_j^2}
-        
+
         Parameters
         ----------
         x_including_surface : list
@@ -212,13 +212,13 @@ class SquaredNumbersToTheta(BaseNumbersSolver):
         mpfloat=None,
     ):
         """Returns the conversion matrix for the numbers to theta conversion
-        
+
         This matrix is useful for converting the Jacobian from the coverages
         basis to the numbers basis. The conversion is done using the following
         equation:
         .. math::
             \\\frac{d\\theta_i}{dx_k} = \\frac{2x_i}{\\sum_{j \\in S_i} x_j^2} \\delta_{ik} - \\frac{2x_i^2}{\\left(\\sum_{j \\in S_i} x_j^2\\right)^2}
-        
+
         Parameters
         ----------
         x_including_surface : list
@@ -268,7 +268,7 @@ def debug_writer(filename, writeout):
 
 def get_theta_converter(numbers_type):
     """Returns the theta converter based on the numbers_type
-    
+
     Parameters
     ----------
     numbers_type : str
@@ -287,9 +287,9 @@ Unknown type of numbers_type, use either squared or exponential."""
 
 class SteadyStateNumbersSolver:
     """Steady State Numbers solvers to solve the steady state equations
-    
+
     This class is used to solve the steady state equations for the numbers
-    solver. The steady state equations are solved using a Newton-Raphson 
+    solver. The steady state equations are solved using a Newton-Raphson
     method implemented in :meth:`catmap.solvers.solver_base.NewtonRootNumbers`.
 
     Parameters
@@ -308,7 +308,7 @@ class SteadyStateNumbersSolver:
 
     def change_x_to_theta(self, x):
         """A generic change_x_to_theta function which is needed for all bisections.
-        
+
         This method is a wrapper around the output of the change_x_to_theta method in
         the get_theta_converter function (which return a class based on inputs).
 
@@ -316,11 +316,11 @@ class SteadyStateNumbersSolver:
         ------
         x: List
             Numbers
-        
+
         Returns
         -------
         theta: List
-            Coverages based on the numbers        
+            Coverages based on the numbers
         """
         totheta = get_theta_converter(self.numbers_type)
         _change_x_to_theta = lambda x: totheta.change_x_to_theta(

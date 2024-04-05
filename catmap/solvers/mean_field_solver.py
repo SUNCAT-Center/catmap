@@ -20,7 +20,7 @@ class MeanFieldSolver(SolverBase):
                             "stagnated or diverging (residual = ${resid})."+\
                             " Assuming Jacobian is 0.",
                             }
-        # Create a log file of the solver 
+        # Create a log file of the solver
         self.outer_solver_log = 'outer_solver.log'
 
     def get_rxn_rates(self,coverages,rate_constants):
@@ -110,7 +110,7 @@ class MeanFieldSolver(SolverBase):
         tofs = self.get_turnover_frequency(rxn_parameters)
         if weights is None:
             weights = [1]*len(tofs) #use for weighted selectivity (e.g. % carbon)
-            
+
         if self.products is None:
             self.products = [g for g,r in zip(self.gas_names,tofs) if r >0]
         if self.reactants is None:
@@ -241,7 +241,7 @@ class MeanFieldSolver(SolverBase):
                 dP = (new_p[i] - current_Ps[i])/current_Ps[i]
                 DRC_i.append(float(dTOF/dP))
             DRC.append(DRC_i)
-        self.gas_pressures = current_Ps 
+        self.gas_pressures = current_Ps
         self._rxn_order = DRC
         return DRC
 
@@ -299,12 +299,12 @@ class MeanFieldSolver(SolverBase):
             adsorbate_names = specific_ads_names
         else:
             adsorbate_names = self.adsorbate_names
-        
+
         # Separate the species_list into gas and sites
         gas_idxs = [self.gas_names.index(gas)
                 for gas in species_list if gas in self.gas_names]
         #allows for multiple site types
-        sites = [s for s in species_list if s in self.site_names] 
+        sites = [s for s in species_list if s in self.site_names]
 
         # Create an adsorbate list by making sure that the adsorbates do not
         # include elements already present in the sites list.
@@ -314,9 +314,9 @@ class MeanFieldSolver(SolverBase):
                 ads_idxs.append(adsorbate_names.index(ads))
         if len(gas_idxs+ads_idxs+sites) != len(species_list):
             raise ValueError('Undefined species in '+','.join(species_list))
-        
+
         if not d_wrt:
-            # If the derivative is not required, simply 
+            # If the derivative is not required, simply
             # return the rate string based on the pressures and coverages
             # of the relevant species
             for iden in gas_idxs:
@@ -346,17 +346,17 @@ class MeanFieldSolver(SolverBase):
             # Also get the site in which the adsorbate is present
             d_site = self.species_definitions[d_wrt]['site']
 
-            if (d_wrt not in sites # Not differentiating with respect to a site 
-                and d_idx in ads_idxs # Differentiating with respect to an adsorbate 
-                and d_site not in sites # Site not present in the rate expression 
+            if (d_wrt not in sites # Not differentiating with respect to a site
+                and d_idx in ads_idxs # Differentiating with respect to an adsorbate
+                and d_site not in sites # Site not present in the rate expression
                 and (self.use_numbers_solver == False or self.fix_x_star == True)): # Fixing x_star
                 # Scenario 1: Differentiating with respect to an adsorbate
-                # but there is no site term in the rate equation. 
+                # but there is no site term in the rate equation.
                 multiplier = ads_idxs.count(d_idx) #get order
                 ads_idxs.remove(d_idx) #reduce order by 1
                 if multiplier != 1:
                     rate_string = str(multiplier)+'*'+rate_string
-            
+
             elif (len(ads_idxs)>0 # Adsorbate is present in the rate expression
                   and d_site not in sites # Site not present in the rate expression
                   and d_wrt in self.site_names # Differentiating with respect to a site
@@ -367,7 +367,7 @@ class MeanFieldSolver(SolverBase):
                 # of each adsorbate with respect to the site.
                 temp_rate_string = ''
                 for ie, ads_idx in enumerate(ads_idxs):
-                    # get the other adsorbates by getting 
+                    # get the other adsorbates by getting
                     # all other index of ads_idxs expect ie
                     other_ads_idxs = []
                     for je in range(len(ads_idxs)):
@@ -376,7 +376,7 @@ class MeanFieldSolver(SolverBase):
                     # the rate string will just be the coverage of
                     # the other adsorbates multiplied to each other
                     # multiplied by a -1 because the derivative with
-                    # respect to the site is negative of that of the 
+                    # respect to the site is negative of that of the
                     # adsorbate.
                     if other_ads_idxs:
                         temp_rate_string += '*'.join(['theta['+str(i)+']' for i in other_ads_idxs])
@@ -387,26 +387,26 @@ class MeanFieldSolver(SolverBase):
                 rate_string += '*-1*('+temp_rate_string + ')'
                 ads_idxs = [] #no more adsorbates
 
-            elif ( d_site in sites # Site present in the rate expression 
-                  and d_idx not in ads_idxs # Adsorbates not present in the rate expression 
+            elif ( d_site in sites # Site present in the rate expression
+                  and d_idx not in ads_idxs # Adsorbates not present in the rate expression
                   and (self.use_numbers_solver == False or self.fix_x_star == True)): # Fixing x_star
-                # Scenario 3: There is an empty site in 
+                # Scenario 3: There is an empty site in
                 # the rate equation but there is no adsorbate term
                 multiplier = sites.count(d_site)
-                # Account for the fact that d/dsite does not have 
+                # Account for the fact that d/dsite does not have
                 # a -1 pre-multiplier while d/dads does
                 if d_wrt not in self.site_names:
-                    multiplier = -1 * multiplier # dsite/dtheta_* is negative 
+                    multiplier = -1 * multiplier # dsite/dtheta_* is negative
                 sites.remove(d_site) # reduce the order of site by 1
                 rate_string = str(multiplier)+'*'+rate_string
 
-            elif ( d_site in sites # Site present in the rate expression 
+            elif ( d_site in sites # Site present in the rate expression
                    and d_idx in ads_idxs # Adsorbates present in the rate expression
                    and self.fix_x_star == True): # Fixing x_star
                 # Scenario 4: Both an empty site and adsorbate in the rate equation
                 # need to use chain rule.
                 ads_mult = ads_idxs.count(d_idx)
-                # Account for the fact that d/dsite doesnt have 
+                # Account for the fact that d/dsite doesnt have
                 # a -1 pre-multiplier while d/dads does
                 if d_wrt not in self.site_names:
                     site_mult = -1 * sites.count(d_site) #negative 1 to account for d_site/d_ads
@@ -439,17 +439,17 @@ class MeanFieldSolver(SolverBase):
                 rate_string += '*'+mult_rule
 
             elif (self.use_numbers_solver == True and self.fix_x_star == False):
-                # Scenario 5: If x_star is not fixed, then 
-                # the partial derivatives are to be taken 
-                # independently for each site and adsorbate   
+                # Scenario 5: If x_star is not fixed, then
+                # the partial derivatives are to be taken
+                # independently for each site and adsorbate
                 if d_idx in ads_idxs and d_wrt not in self.site_names:
-                    # Taking a derivative with respect to an 
+                    # Taking a derivative with respect to an
                     # adsorbate coverage
                     multiplier = ads_idxs.count(d_idx) #get order
                     ads_idxs.remove(d_idx) #reduce order by 1
                     if multiplier != 1:
                         rate_string = str(multiplier)+'*'+rate_string
-                elif d_wrt in sites: 
+                elif d_wrt in sites:
                     # Taking the derivative with respect to a site
                     multiplier = sites.count(d_site)
                     sites.remove(d_site) #reduce order by 1
@@ -463,9 +463,9 @@ class MeanFieldSolver(SolverBase):
             else:
                 # No dependence on either the adsorbate or the site
                 return '0'
-            
-            # Create the rate string for the derivative by taking into 
-            # account the derivative done by string manipulation in the 
+
+            # Create the rate string for the derivative by taking into
+            # account the derivative done by string manipulation in the
             # previous step
             for iden in gas_idxs:
                 rate_string += '*p['+str(iden)+']'
@@ -577,7 +577,7 @@ class MeanFieldSolver(SolverBase):
 
         if self.use_numbers_solver:
             # In case we use the numbers solver, the steady state
-            # equations needs to be n+1 dimensional 
+            # equations needs to be n+1 dimensional
             adsorbate_names = self.adsorbate_names + self.site_names
             # Remove 'g' if adsorbate_names if present
             if 'g' in adsorbate_names:
@@ -609,7 +609,7 @@ class MeanFieldSolver(SolverBase):
             surface_names = list(surface_names)
             surface_names.remove('g')
             surface_names = tuple(surface_names)
-            species_iterate = self.adsorbate_names + surface_names 
+            species_iterate = self.adsorbate_names + surface_names
         else:
             species_iterate = self.adsorbate_names
 
@@ -630,7 +630,7 @@ class MeanFieldSolver(SolverBase):
             dcdt_strings.append(dcdt_str)
 
         all_strings = rate_strings + dcdt_strings
-        
+
         return all_strings
 
     def jacobian_equations(self,adsorbate_interactions=True):
@@ -683,7 +683,7 @@ class MeanFieldSolver(SolverBase):
             # Standard CatMAP solver needs only an nxn Jacobian matrix
             adsorbate_names = self.adsorbate_names
 
-        if self.DEBUG: 
+        if self.DEBUG:
             with open('adsorbate_names.log','w') as f:
                 f.write(str(adsorbate_names))
 
@@ -693,10 +693,10 @@ class MeanFieldSolver(SolverBase):
         for i, ads_i in enumerate(adsorbate_names):
             # The second index is for the column
             for j, ads_j in enumerate(adsorbate_names):
-                # Populate the Jacobian matrix based on the 
+                # Populate the Jacobian matrix based on the
                 # required dimensions
                 J_str = 'J['+str(i)+']['+str(j)+'] = 0'
-                # Iterate over the elementary reactions such that 
+                # Iterate over the elementary reactions such that
                 # we get how much of the species are present
                 for k, rxn in enumerate(self.elementary_rxns):
                     # Get the number of ads_i in the forward and reverse
@@ -705,7 +705,7 @@ class MeanFieldSolver(SolverBase):
                     rxnCounts = [-1.0*rxn[0].count(ads_i),
                                   1.0*rxn[-1].count(ads_i)]
                     rxnOrder = [o for o in rxnCounts if o]
-                    # In the following, the drdx term is constructed 
+                    # In the following, the drdx term is constructed
                     # and then multiplied by the reaction order to get
                     # the df/dx term.
                     if rxnOrder:
@@ -714,7 +714,7 @@ class MeanFieldSolver(SolverBase):
                         rRate_string = self.rate_equation_term(rxn[-1], 'kr['+str(k)+']', ads_j, adsorbate_names)
                         if adsorbate_interactions == True:
                             if ads_j not in self.site_names:
-                                # If one of the "adsorbates" is an empty site then 
+                                # If one of the "adsorbates" is an empty site then
                                 # there should be no inclusion of adsorbate-adsorbate interaction
                                 dfRate_string = self.rate_equation_term(rxn[0],'(kfkBT['+str(k)+'])*dEf['+str(k)+']['+str(j)+']')
                                 drRate_string = self.rate_equation_term(rxn[-1],'(krkBT['+str(k)+'])*dEr['+str(k)+']['+str(j)+']')
