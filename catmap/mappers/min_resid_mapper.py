@@ -593,7 +593,6 @@ class MinResidMapper(MapperBase):
                                                 [resid,sol_pt,cvg])
 
                                     checked_dirs[k] = 1
-
                                 if sol_cvgs:
                                     self._coverage = sol_cvgs
                                     if self.use_numbers_solver:

@@ -306,6 +306,33 @@ class SteadyStateNumbersSolver:
     def __init__(self):
         pass
 
+    def change_x_to_theta(self, x):
+        """A generic change_x_to_theta function which is needed for all bisections.
+        
+        This method is a wrapper around the output of the change_x_to_theta method in
+        the get_theta_converter function (which return a class based on inputs).
+
+        Parameters
+        ------
+        x: List
+            Numbers
+        
+        Returns
+        -------
+        theta: List
+            Coverages based on the numbers        
+        """
+        totheta = get_theta_converter(self.numbers_type)
+        _change_x_to_theta = lambda x: totheta.change_x_to_theta(
+            x,
+            adsorbate_names=self.adsorbate_names,
+            site_names=self.site_names,
+            species_definitions=self.species_definitions,
+            math_obj=self._math,
+            return_denominator=False,
+        )
+        return _change_x_to_theta(x)
+
     def get_steady_state_numbers(
         self, rxn_parameters, steady_state_fn, jacobian_fn, c0=None
     ):
@@ -391,6 +418,7 @@ class SteadyStateNumbersSolver:
         maxiter = self.max_rootfinding_iterations
         iterations.maxiter = maxiter
         i = 1
+        converged = False
         for data_iteration in iterations:
             if self.DEBUG:
                 x, error, Jxnorm, Jxnorm_numer = data_iteration
@@ -407,14 +435,15 @@ class SteadyStateNumbersSolver:
                 coverages = change_x_to_theta(list(x))
             self.log("rootfinding_status", n_iter=i, resid=float(error), priority=1)
             i += 1
-            if error < self.tolerance:
+            if error <= self.tolerance:
                 self.log("rootfinding_success", n_iter=i, priority=1)
                 self._error = error
+                converged = True
                 break
             if i >= maxiter:
                 self.log("rootfinding_maxiter", n_iter=i, resid=float(error))
                 raise ValueError("Out of iterations (resid=" + str(float(error)) + ")")
-        if coverages:
+        if coverages is not None and converged == True:
             self._coverage = [c for c in coverages]
             self._numbers = [n for n in x]
             return [c for c in coverages]
