@@ -410,9 +410,11 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
             self._rxn_parameters = self.scaler.get_rxn_parameters(
                     self._descriptors)
             self.get_rate_constants(self._rxn_parameters,coverages)
-#        cvg_rates = self.steady_state_function(None)
         cvg_rates = self.steady_state_function(coverages)
-        residual = max([abs(r) for r in cvg_rates])
+        if self.use_numbers_solver:
+            residual = self._math.lsqnorm(cvg_rates)
+        else:
+            residual = max([abs(r) for r in cvg_rates])
         return residual
 
 
