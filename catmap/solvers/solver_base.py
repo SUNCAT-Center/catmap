@@ -9,20 +9,20 @@ import logging
 class SolverBase(ReactionModelWrapper):
     def __init__(self,reaction_model=None):
         """
-        Class for `solving' for equilibrium coverages and rates as a 
-        function of reaction parameters. This class acts as a base class 
-        to be inherited by other solver classes, but is not 
-        functional on its own. 
+        Class for `solving' for equilibrium coverages and rates as a
+        function of reaction parameters. This class acts as a base class
+        to be inherited by other solver classes, but is not
+        functional on its own.
 
-        rxn_parameters: list of necessary parameters to solve the kinetic 
+        rxn_parameters: list of necessary parameters to solve the kinetic
         system. This will usually be populated by the scaler.
 
         A functional derived solver class must also contain the methods:
 
-        get_coverage(): a function which returns coverages for each 
+        get_coverage(): a function which returns coverages for each
             adsorbate as a list [cvg_ads1,cvg_ads2,...]
 
-        get_rate(): a function which returns steady-state reaction 
+        get_rate(): a function which returns steady-state reaction
             rates for each elementary step as a list [rate_rxn1,rate_rxn2,...]
 
         get_residual(): a function for computing the norm of the residual. This
@@ -41,18 +41,18 @@ class SolverBase(ReactionModelWrapper):
         :param rxn_parameters: Reaction parameters.
         :type rxn_parameters: list
         """
-        if True in [v in self.mapper._solver_output 
+        if True in [v in self.mapper._solver_output
                 for v in self.output_variables]:
             cvgs = self._coverage
             # If the numbers solver is being used
-            # make sure to pass along the numbers and not 
+            # make sure to pass along the numbers and not
             # the coverage as an initial guess
             if self.use_numbers_solver:
                 numbers = self._numbers
-                self._coverage = list(self.solver.get_coverage( 
+                self._coverage = list(self.solver.get_coverage(
                         rxn_parameters,c0=numbers)) #verify coverage
             else:
-                self._coverage = list(self.solver.get_coverage( 
+                self._coverage = list(self.solver.get_coverage(
                         rxn_parameters,c0=cvgs)) #verify coverage
 
             self._rate = list(self.solver.get_rate(rxn_parameters,
@@ -66,7 +66,7 @@ class SolverBase(ReactionModelWrapper):
 
             self._turnover_frequency = self.get_turnover_frequency(
                     rxn_parameters)
-        
+
         if 'selectivity' in self.output_variables:
             self._selectivity = self.get_selectivity(rxn_parameters)
             self.output_labels['selectivity'] = self.gas_names
@@ -114,23 +114,23 @@ class SolverBase(ReactionModelWrapper):
 
         for out in self.output_variables:
             if out == 'production_rate':
-                self._production_rate = [max(0,r) 
+                self._production_rate = [max(0,r)
                         for r in self._turnover_frequency]
                 self.output_labels['production_rate'] = self.gas_names
             if out == 'consumption_rate':
-                self._consumption_rate = [max(0,-r) 
+                self._consumption_rate = [max(0,-r)
                         for r in self._turnover_frequency]
                 self.output_labels['consumption_rate'] = self.gas_names
             if out == 'forward_rate':
-                self._forward_rate = [max(0,r) 
+                self._forward_rate = [max(0,r)
                         for r in self._rate]
                 self.output_labels['forward_rate'] = self.elementary_rxns
             if out == 'reverse_rate':
-                self._reverse_rate = [max(0,-r) 
+                self._reverse_rate = [max(0,-r)
                         for r in self._rate]
                 self.output_labels['reverse_rate'] = self.elementary_rxns
             if out == 'rxn_direction':
-                self._rxn_direction = [np.sign(r) 
+                self._rxn_direction = [np.sign(r)
                         for r in self._turnover_frequency]
                 self.output_labels['rxn_direction'] = self.elementary_rxns
             if out == 'rate_constant':
@@ -143,7 +143,7 @@ class SolverBase(ReactionModelWrapper):
                 self._reverse_rate_constant = list(self._kr)
                 self.output_labels['reverse_rate_constant'] = self.elementary_rxns
             if out == 'equilibrium_constant':
-                self._equilibrium_constant = [kf/kr 
+                self._equilibrium_constant = [kf/kr
                         for kf,kr in zip(self._kf,self._kr)]
                 self.output_labels['equilibrium_constant'] = self.elementary_rxns
 
@@ -290,7 +290,7 @@ class ODESolver:
         self._mpfloat = mpfloat
         self.f = f
         self.x0 = x0
-        tol = kwargs.get('tol', self._mpfloat('1e-1')) 
+        tol = kwargs.get('tol', self._mpfloat('1e-1'))
         self.dt = kwargs.get('dt', self._mpfloat('1e-15'))
         self.t0 = kwargs.get('t0', self._mpfloat('0.0'))
 
@@ -308,7 +308,7 @@ class ODESolver:
 
 class NewtonRootNumbers:
     """
-    Hacked from MDNewton in mpmath/calculus/optimization.py to 
+    Hacked from MDNewton in mpmath/calculus/optimization.py to
     implement the numbers solver method.
 
     Find the root of a vector function numerically using Newton's method.
@@ -322,14 +322,14 @@ class NewtonRootNumbers:
     """
 
     def __init__(self, f, x0, math, matrix, mpfloat, Axb_solver, **kwargs):
-        # Store an inner log file and get what to store 
+        # Store an inner log file and get what to store
         self.verbose = kwargs['verbose']
 
         # Get the information about how the math should be handled
         self._math = math
         self._matrix = matrix
         self._mpfloat = mpfloat
-        
+
         # Solver for the inner optimization problem
         self._Axb = Axb_solver
 
@@ -345,13 +345,13 @@ class NewtonRootNumbers:
         if "rcond" in kwargs:
             self.rcond = kwargs['rcond']
         else:
-            self.rcond = None 
+            self.rcond = None
 
         # Decide if the Jacobian should be checked
         if kwargs['DEBUG']:
             # The Jacobian is checked based on the numerical Jacobian
             # determined by finite differences at the same point
-            self.check_jacobian = True 
+            self.check_jacobian = True
             self.DEBUG = True
         else:
             # If not debugging, then don't check the Jacobian
@@ -371,8 +371,8 @@ class NewtonRootNumbers:
         self.norm = kwargs['norm']
         self.max_damping = kwargs['max_damping']
 
-        # conversion from coverages to numbers and conversion 
-        # dtheta/dx matrix to get the Jacobian matrix 
+        # conversion from coverages to numbers and conversion
+        # dtheta/dx matrix to get the Jacobian matrix
         self.conversion_function = kwargs['conversion_function']
         self.dtheta_dx_function = kwargs['dtheta_dx_function']
 
@@ -399,7 +399,7 @@ class NewtonRootNumbers:
         # Get the analytical Jacobian
         analytical = self.J_analytical(theta)
         # Get the numerical Jacobian
-        numerical = self.J_numerical(theta) 
+        numerical = self.J_numerical(theta)
         # Compare the analytical and numerical Jacobian
         error = analytical - numerical
         if self.fix_x_star:
@@ -428,7 +428,7 @@ class NewtonRootNumbers:
         if rcond:
             cutoff = rcond * mp.fabs(S[0])
         else:
-            cutoff = self.precision        
+            cutoff = self.precision
 
         # Take the inverse of S
         S_inv = []
@@ -441,7 +441,7 @@ class NewtonRootNumbers:
         # S is a diagonal matrix
         S_plus = self._math.diag(S_inv)
 
-        # Take the pseudo-inverse of M 
+        # Take the pseudo-inverse of M
         M_plus = V.T * S_plus * U.T
 
         return M_plus
@@ -450,12 +450,12 @@ class NewtonRootNumbers:
         # There are two possible routines for finding the root
         # through the multi-dimensional Newton method.
         # The first is to consider all x as independent variables
-        # The second is to consider x_star = 1 and change the other 
+        # The second is to consider x_star = 1 and change the other
         if not self.fix_x_star:
-            # Note that this is the objective function 
+            # Note that this is the objective function
             # That still depends on theta
             f = self.f
-            # The Jacobian which depends on coverage 
+            # The Jacobian which depends on coverage
             J = self.J
             # matrix to get_dtheta_dx
             dtheta_dx_function = lambda x: self.dtheta_dx_function(list(x))
@@ -498,10 +498,10 @@ class NewtonRootNumbers:
                     # Ensure that the sum of fx is 0
                     assert mp.fabs(mp.fsum(fx)) < self.precision, "fx is not zero"
 
-                # Check if the objective function is the 
-                # same length as theta 
+                # Check if the objective function is the
+                # same length as theta
                 assert fx.rows == len(theta)
-            
+
             if self.fix_x_star:
                 assert fx.rows == len(theta) - self.esites
 
@@ -538,8 +538,8 @@ class NewtonRootNumbers:
 
             if self.DEBUG:
                 if not self.fix_x_star:
-                    # The sum over all columns of the Jacobian 
-                    # matrix must be 0. This is because the term would be 
+                    # The sum over all columns of the Jacobian
+                    # matrix must be 0. This is because the term would be
                     # d/dtheta_i (sum_i f_i)
                     # where sum_i f_i = 0
                     for i in range(Jtheta.cols):
@@ -576,17 +576,17 @@ class NewtonRootNumbers:
                 s = self._matrix(s)
 
             else:
-                # Since we are not fixing x_star, we are 
+                # Since we are not fixing x_star, we are
                 # solving an unconstrained problem, with more
                 # variables than equations, so we need to use
                 # a least-squares method, which starts with
                 # taking the Moore-Penrose inverse of Jx
                 # The conditioning number rcond is 10^5 times
                 # the machine precision
-                prec = -1*int(mp.log10(self.precision)/2) 
+                prec = -1*int(mp.log10(self.precision)/2)
                 rcond = self._mpfloat(f'1e{prec}') * self.precision
                 Jx_plus = self.moore_penrose_inverse(M=Jx, rcond=self.rcond)
-                s = Jx_plus * fxn 
+                s = Jx_plus * fxn
 
             # damping step size
             l = self._mpfloat('1.0')

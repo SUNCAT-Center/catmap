@@ -45,12 +45,12 @@ class IntegratedRateControlSolver(SolverBase):
             for dname in self.descriptor_names:
                 Ef = self.species_definitions[dname]['formation_energy'][ref_idx]
                 desc_energies.append(Ef)
-            
+
             ref_dict = self.scaler.get_free_energies(desc_energies)
             self.reference_free_energies = ref_dict
             self._static_rate_controls = DRCs
             self._initialized = True
-        
+
         Gs = {}
         for key,G in zip(self.adsorbate_names + self.transition_state_names, params):
             Gs[key] = G
