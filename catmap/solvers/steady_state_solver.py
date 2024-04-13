@@ -98,7 +98,7 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
             raise ValueError("No initial coverage supplied. Mapper must supply initial guess")
 
         self.steady_state_function = steady_state_fn
-        self.steady_state_jacobian = None 
+        self.steady_state_jacobian = None
         self._coverage = [self._mpfloat(ci) for ci in c0]
         self._rxn_parameters = rxn_parameters
 
@@ -106,7 +106,7 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
         norm = self._math.infnorm
         norm_lsqnorm = self._math.lsqnorm
 
-        solver = ODESolver  
+        solver = ODESolver
 
         iterations = solver(f,c0, self._matrix, self._mpfloat)
         i = 0
@@ -127,7 +127,7 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
                             n_iter=i,
                             resid = float(residual))
                     raise ValueError('Out of iterations (resid='+\
-                            str(float(residual))+')') 
+                            str(float(residual))+')')
 
     def get_steady_state_coverage(self,rxn_parameters,steady_state_fn, jacobian_fn,
             c0=None,findrootArgs={}):
@@ -372,12 +372,12 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
             if self.use_numbers_solver:
                 # no need to include empty coverage as possible guess
                 # As the Jacobian for such a guess will be singular
-                # sites = len(self.site_names) - 1 
-                # boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names) + [self._mpfloat('1.0')]*sites] 
+                # sites = len(self.site_names) - 1
+                # boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names) + [self._mpfloat('1.0')]*sites]
                 boltz_cvgs = []
             else:
                 #include empty coverage as possible guess
-                boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names)] 
+                boltz_cvgs = [[self._mpfloat('0.0')]*len(self.adsorbate_names)]
 
             for ref_dict in self.atomic_reservoir_list:
                 self.atomic_reservoir_dict = ref_dict
@@ -386,14 +386,14 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
                 else:
                     cvgs = self.thermodynamics.boltzmann_coverages(energy_dict)
                 boltz_cvgs.append(cvgs)
-            
+
 
         else:
             if self.use_numbers_solver:
                 boltz_cvgs = [self.thermodynamics.boltzmann_numbers(energy_dict)]
             else:
                 boltz_cvgs = [self.thermodynamics.boltzmann_coverages(energy_dict)]
-            
+
 
         return boltz_cvgs
 
@@ -410,9 +410,11 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
             self._rxn_parameters = self.scaler.get_rxn_parameters(
                     self._descriptors)
             self.get_rate_constants(self._rxn_parameters,coverages)
-#        cvg_rates = self.steady_state_function(None)
         cvg_rates = self.steady_state_function(coverages)
-        residual = max([abs(r) for r in cvg_rates])
+        if self.use_numbers_solver:
+            residual = self._math.lsqnorm(cvg_rates)
+        else:
+            residual = max([abs(r) for r in cvg_rates])
         return residual
 
 
@@ -509,14 +511,14 @@ class SteadyStateSolver(MeanFieldSolver, SteadyStateNumbersSolver):
             if self.DEBUG:
                 with open('steady_state_equations.log', 'w') as handle:
                     handle.write('\n'.join(ss_eqs))
-            # If we are using the numbers solver, the length of the 
-            # steady state function needs to be one more than that of the 
+            # If we are using the numbers solver, the length of the
+            # steady state function needs to be one more than that of the
             # number of adsorbates.
             if self.use_numbers_solver:
                 # Determine the length of the surface based on the number of
                 # adsorbates and sites. Current implementation has the 'g' as a
                 # site, and that should not be included in the numbers solver.
-                # Hence the total number of theta's to solver for is 
+                # Hence the total number of theta's to solver for is
                 # the number of adsorbate + sites -1 (to account for the 'g' site)
                 self._function_substitutions['theta_length'] = len(self.adsorbate_names) + len(self.site_names) - 1
                 self._function_substitutions['number_of_adsorbates'] = len(self.adsorbate_names)
