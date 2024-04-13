@@ -379,7 +379,7 @@ class ReactionModel:
                 interaction_fitting_mode=None,
                 decimal_precision = 75,
                 verbose = 1,
-                use_numbers_solver = False,
+                use_numbers_solver = True,
                 max_damping_iterations = 10,
                 fix_x_star = False,
                 data_file = 'data.pkl',
