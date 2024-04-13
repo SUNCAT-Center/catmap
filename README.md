@@ -45,4 +45,12 @@ following commands:
 See the [documentation](http://catmap.readthedocs.org) for more details
 and tutorials.
 
-[![Analytics](https://suncat-analytics.appspot.com/UA-75027967-2/catmap/githubreadme)](https://github.com/igrigorik/ga-beacon)
+
+## Cite
+If you find CatMAP useful to your research, please cite:
+> Medford, A. J., Shi, C., Hoffmann, M. J., Lausche, A. C., Fitzgibbon, S. R., Bligaard, T., & Nørskov, J. K. (2015). CatMAP: a software package for descriptor-based microkinetic mapping of catalytic trends. Catalysis Letters, 145, 794-807.
+
+If you are using the current version of CatMAP, please also cite:
+> Vijay, S., H. Heenen, H., Singh, A. R., Chan, K., & Voss, J. (2024). Number of sites‐based solver for determining coverages from steady‐state mean‐field micro‐kinetic models. Journal of Computational Chemistry, 45(9), 546-551.
+
+which details the implementation of the numbers solver, the current default solver used by CatMAP for improved numerical stability. The behavior of previous catmap versions ( <=v0.3.2 ) can be reproduced via `use_numbers_solver = False`
