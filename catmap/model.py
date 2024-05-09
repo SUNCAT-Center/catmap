@@ -12,6 +12,19 @@ from .data import regular_expressions
 string2symbols = catmap.string2symbols
 plt = catmap.plt
 
+PAPER1 = """\
+Medford, A. J., Shi, C., Hoffmann, M. J., Lausche, A. C., Fitzgibbon, S. R., \
+Bligaard, T., & Nørskov, J. K. (2015). CatMAP: a software package for descriptor-based \
+microkinetic mapping of catalytic trends. Catalysis Letters, 145, 794-807."""
+
+PAPER2 = f"""\
+Vijay, S., H. Heenen, H., Singh, A. R., Chan, K., & Voss, J. (2024). \
+Number of sites-based solver for determining coverages from steady-state mean-field \
+micro-kinetic models. Journal of Computational Chemistry, 45(9), 546-551."""
+
+CITATION_INFORMATION = f"""\
+If you find CatMAP useful to your research, please cite both the following papers:
+\n {PAPER1} \n {PAPER2}\n"""
 
 class ReactionModel:
     """
@@ -59,6 +72,9 @@ class ReactionModel:
                          'solver', 'mapper']
         self._solved = None
         # Keeps track of whether or not the model was solved.
+
+        # check if citation information is written
+        self.citation_info_written = False
 
         # Attributes for logging
         self._log_lines = []
@@ -1159,6 +1175,10 @@ class ReactionModel:
         header += 'binary_data = ' + 'pickle.load(open("' + \
                                                 self.data_file +'","rb"))\n\n'
         header += 'locals().update(binary_data)\n\n'
+        header += f'__citation__ = """{CITATION_INFORMATION}"""\n'
+        if not self.citation_info_written:
+            print(CITATION_INFORMATION)
+            self.citation_info_written = True
         for attr in dir(self):
             if (not attr.startswith('_') and
                     not callable(getattr(self,attr)) and
