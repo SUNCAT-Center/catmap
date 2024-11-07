@@ -370,6 +370,8 @@ class ThermoCorrections(ReactionModelWrapper):
     def frozen_gas(self):
         """
         Neglect all thermal contributions, including the zero point energy.
+        Assumes that the energies provided in the input file are at standard pressure.
+        The configurational entropy is taken into account in the rate expressions.
         """
         gas_names = self.gas_names
         thermo_dict = {}
@@ -719,6 +721,8 @@ class ThermoCorrections(ReactionModelWrapper):
     def frozen_adsorbate(self):
         """
         Neglect all zero point, enthalpy, entropy corrections to adsorbate energy.
+        Assumes that the energies provided in the input file are at standard pressure.
+        The configurational entropy is taken into account in the rate expressions.
         """
         thermo_dict = {}
         for ads in self.adsorbate_names+self.transition_state_names:
