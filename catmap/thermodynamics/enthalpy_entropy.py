@@ -1145,7 +1145,7 @@ class ThermoCorrections(ReactionModelWrapper):
             SbykB = (get_entropy(nu,T)/kB)
             return (kB_multiplier - SbykB)**2
 
-        nu_cutoff = fmin_powell(target,10,disp=0)
+        nu_cutoff = fmin_powell(target,10,disp=0)[0] #nu_cutoff should be single-value
         return nu_cutoff
 
     def summary_text(self):
