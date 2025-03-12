@@ -15,7 +15,7 @@ class MechanismAnalysis(MechanismPlot,ReactionModelWrapper,MapPlot):
     """
     def __init__(self,reaction_model=None):
         """
-        Class for generating potential energy diagrams.
+        Class for generating potential energy diagrams. Pressure corrections (kb*T*log(P)) are included by default.
 
         :param reaction_model: The ReactionModel object to load.
         """
